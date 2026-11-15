@@ -3,7 +3,7 @@ import zipfile, hashlib, json
 
 root=Path(__file__).resolve().parent.parent
 target=root/'output'/'CHIFAA_DEV_PACKAGE.zip'
-items=['.gitignore','.npmrc','package.json','package-lock.json','README.md','TASKS.md','HANDOFF.md','CHANGELOG.md','MAPPING_GIAO_DIEN.md','src','scripts','tests','docs','source','assets','dist']
+items=['.gitignore','.gitattributes','.npmrc','package.json','package-lock.json','README.md','TASKS.md','HANDOFF.md','CHANGELOG.md','MAPPING_GIAO_DIEN.md','src','scripts','tests','docs','source','assets','dist']
 files=[]
 for item in items:
     p=root/item

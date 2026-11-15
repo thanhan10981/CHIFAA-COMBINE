@@ -13,3 +13,5 @@ Workbook build artifact output/chifaa-dev/CHIFAA_DEV.xlsx đã tạo với 23 ta
 Blockers: kết nối Google Drive/OAuth/Script ID/Gmail admin, quyết định accounting/ki-ốt/bàn giao. Tasks PARTIAL không chỉ là blockers bên ngoài; cần tiếp tục triển khai fidelity so với phác thảo, tài chính và UX. Đọc TASKS.md, MAPPING_GIAO_DIEN.md và docs/NGHIEM_THU.md trước khi tiếp tục. Không tuyên bố đã làm xong T00–T19.
 
 Resume commands: npm ci; npm run check; npm test; npm run build. Npm test dùng --test-isolation=none do worker spawn bị EPERM trong sandbox ban đầu. Source npx clasp tải từ official package registry khi có kết nối, chưa login/push/deploy. Secret/script IDs nằm Script Properties/.clasp.json ignored, không ghi repo.
+
+Checkpoint nền tảng: baff178. Package output/CHIFAA_DEV_PACKAGE.zip có manifest SHA-256 và đã kiểm tra CRC. Tài liệu và workbook là đầu ra dev, không phải bằng chứng UAT. .gitattributes giữ nguyên byte source/assets qua Git; hash HTML gốc và logo gốc đã đối chiếu với Downloads, trùng khớp.
