@@ -1,0 +1,3 @@
+import http from 'node:http';import fs from 'node:fs/promises';import path from 'node:path';
+const root=path.resolve('output');const port=Number(process.env.PORT||4173);
+http.createServer(async(req,res)=>{try{const pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname);const file=path.resolve(root,'.'+(pathname==='/'?'/index.html':pathname));if(!file.startsWith(root+path.sep)){res.writeHead(403).end();return;}const content=await fs.readFile(file);res.writeHead(200,{'Content-Type':file.endsWith('.html')?'text/html; charset=utf-8':'application/octet-stream','Cache-Control':'no-store'});res.end(content);}catch(_){res.writeHead(404).end('Not found');}}).listen(port,'127.0.0.1',()=>console.log('Preview http://127.0.0.1:'+port+'/?demo=1'));

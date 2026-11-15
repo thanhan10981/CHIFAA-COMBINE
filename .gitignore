@@ -1,0 +1,10 @@
+node_modules/
+.env*
+.clasp.json
+dist/
+output/
+*.log
+coverage/
+.npm-cache/
+.pip-cache/
+.tools/

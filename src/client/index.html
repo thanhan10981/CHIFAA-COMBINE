@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CHIFAA COMBINE</title><!--STYLE--></head>
+<body>
+<section id="login" class="login-screen">
+  <div class="brand-intro"><img src="__LOGO__" alt="Chifaa — ngọn lửa và hộp thức ăn" width="260" height="260"><span class="eyebrow">CHIFAA COMBINE</span><h1>Gọn vận hành.<br>Rõ từng con số.</h1><p>Sản xuất, điểm bán và dòng tiền trong một không gian làm việc. Google Sheets là nguồn dữ liệu chính.</p><div class="intro-bottom">SẢN XUẤT &nbsp; / &nbsp; KINH DOANH &nbsp; / &nbsp; ĐIỀU HÀNH</div></div>
+  <div class="login-panel"><div class="login-card"><span class="eyebrow">KHÔNG GIAN NỘI BỘ</span><h2>Chào bạn trở lại</h2><p>Đăng nhập bằng tài khoản Google đã được quản trị cấp quyền.</p><div id="google-button"></div><p id="login-status" role="status">Đang kiểm tra kết nối Apps Script…</p><div id="preview-links" hidden><a class="button primary" href="?demo=1">Xem thử ứng dụng</a><a class="button" href="demo.html" target="_blank" rel="noopener">Mở phác thảo gốc đã thay logo</a><p class="muted">Bản xem thử chỉ lưu trong RAM, không ghi vào Google Sheets.</p></div><div class="login-note">Quyền truy cập do quản trị cấp theo phân hệ. Dữ liệu nội bộ chỉ tải sau khi xác thực.</div></div><small>CHIFAA COMBINE · Không gian vận hành</small></div>
+</section>
+<div id="workspace" class="app" hidden>
+  <div id="backdrop" class="backdrop"></div><aside id="sidebar"><a class="brand" href="#dashboard"><img src="__LOGO__" alt="Chifaa" width="76" height="76"><div><strong>CHIFAA<br><span>COMBINE</span></strong><small>VẬN HÀNH & BÁO CÁO</small></div></a><nav id="navigation" aria-label="Phân hệ"></nav><div class="side-footer"><span class="live-dot"></span><span id="connection">Đang kết nối</span><small id="identity"></small></div></aside>
+  <main><header class="topbar"><div class="top-left"><button id="menu-toggle" class="icon-button" aria-label="Mở menu">☰</button><span>Không gian làm việc <b>/</b> <strong id="breadcrumb">Tổng quan</strong></span></div><div class="top-actions"><button id="refresh" class="button">↻ Đồng bộ</button><button id="logout" class="button">Đăng xuất</button></div></header>
+  <div class="content"><div id="mode-banner" class="notice" hidden></div><div id="error" class="error" role="alert" hidden></div><section id="view" aria-live="polite"></section></div></main>
+</div>
+<dialog id="editor"><form id="record-form"><header><div><span class="eyebrow">PHIẾU DỮ LIỆU</span><h2 id="form-title"></h2></div><button type="button" id="close-editor" class="icon-button" aria-label="Đóng">✕</button></header><div id="form-fields" class="form-grid"></div><div id="form-error" class="error" hidden></div><footer><button type="button" id="cancel-editor" class="button">Hủy</button><button id="submit-record" class="button primary" type="submit">Lưu phiếu</button></footer></form></dialog>
+<div id="toast" role="status" hidden></div>
+<!--APP-->
+</body></html>

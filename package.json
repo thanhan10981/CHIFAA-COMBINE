@@ -1,0 +1,21 @@
+{
+  "name": "chifaa-combine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "check": "node scripts/check.mjs",
+    "test": "node --test --test-isolation=none tests/*.test.mjs",
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/serve.mjs",
+    "clasp:login": "npx @google/clasp login",
+    "clasp:push": "node scripts/push.mjs",
+    "clasp:deploy": "npx @google/clasp deploy"
+  },
+  "devDependencies": {
+    "linkedom": "^0.18.15"
+  }
+}
