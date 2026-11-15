@@ -96,7 +96,7 @@ function payroll(rows) {
   for (const r of effective(rows)) {
     const hours = shiftHours(r.start, r.end, r.breakMinutes);
     const k = r.employeeId + ':' + r.department;
-    const g = grouped[k] ||= { employeeId: r.employeeId, department: r.department, hours: 0, base: 0, allowances: 0, advance: 0, deduction: 0, net: 0 };
+    const g = grouped[k] || (grouped[k] = { employeeId: r.employeeId, department: r.department, hours: 0, base: 0, allowances: 0, advance: 0, deduction: 0, net: 0 });
     g.hours += hours; g.base += hours * r.hourlyRate;
     g.allowances += r.defaultAllowance + r.dailyAllowance + r.support; g.advance += r.advance; g.deduction += r.deduction;
     g.net = round(g.base + g.allowances - g.advance - g.deduction);

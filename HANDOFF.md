@@ -1,5 +1,7 @@
 # Handoff 2026-11-15 (Asia/Saigon)
 
+Cập nhật hỗ trợ cài đặt: người dùng đã mở Apps Script và dán Code.gs; ảnh báo ParseError Unexpected token = dòng 162 ở `grouped[k] ||=`. Đã thay logical assignment bằng biểu thức tương đương, thêm regression test (tổng 67). Build/package mới cần được dán lại lên Google. Manifest hiện bị ẩn; hướng dẫn bật trong Project Settings. Không suy ra user đã setup hoặc deploy thành công từ ảnh editor.
+
 Người dùng yêu cầu đọc 3 prompt, làm logo đẹp hơn; sau đó chọn triển khai cả app. Xác nhận dùng Gmail cá nhân, đang là dev chưa bàn giao khách; chưa có Sheet, yêu cầu tạo mới. Chưa gửi email admin. Google Drive chưa cài/kết nối; đã đề xuất đúng plugin. Không có Codex document session hoặc browser khả dụng. Không có tài nguyên Google nào được tạo.
 
 Đầu vào trong source/ giữ nguyên. Workspace ban đầu trống, không Git; đã init repo. Không có AGENTS/TASKS/handoff gốc, các schema/mapping/task hiện tại là bản suy ra, không giả làm tài liệu gốc.
