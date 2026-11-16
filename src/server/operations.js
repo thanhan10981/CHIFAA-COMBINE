@@ -81,19 +81,19 @@ function installTriggers_(){
 function sheetEdited_(event){if(event?.source?.getId()!==config_('SPREADSHEET_ID'))return;scanSheets_();}
 function scanSheets_(){
   return locked_(()=>{
-    const data=data_(),seen=rowsPlain_('_Sync'),next=[],changes=[];
+    const data=Object.fromEntries(Object.keys(SCHEMA).map(m=>[m,rawRows_(m)])),seen=rowsPlain_('_Sync'),next=[],changes=[],invalid=sourceIssues(data);
     for(const [module,rows]of Object.entries(data)){
       for(const row of rows){
         const old=seen.find(r=>r[0]===module&&r[1]===row.recordId);
         if(!row.recordId){changes.push({module,id:'unknown',issue:'Dòng thiếu ID; thêm mới qua ứng dụng'});continue;}
         if(!old||old[2]!==row._hash){
           let issue='';
-          try{const input={};for(const k of Object.keys(SCHEMA[module].fields))input[k]=row[k];cleanRecord(module,input,data);if(module==='recipes')flattenRecipe(row.recordId,1,data.recipes);}catch(e){issue=String(e.message);}
+          issue=invalid.find(i=>i.module===module&&i.row===row._row)?.message||'';
           if(old){
             if(row.source==='SHEETS'||row.updatedAt<=String(old[3])){
-              row.version=(Number(row.version)||0)+1;row.updatedAt=now_();row.updatedBy='SHEET_EDITOR';row.source='SHEETS';
+              row.version=(Number(row.version)||0)+1;row.updatedAt=now_();row.updatedBy='SHEET_EDITOR_UNVERIFIED';row.source='SHEETS';
               table_(module).getRange(row._row,1,1,META.length).setValues([META.map(k=>row[k]??'')]);
-              audit_('SHEET_EDITOR','DIRECT_EDIT',module,row.recordId,null,{issue:issue||null});
+              audit_('SHEET_EDITOR_UNVERIFIED','DIRECT_EDIT',module,row.recordId,null,{issue:issue||null});
             }
           }
           changes.push({module,id:row.recordId,issue});
@@ -103,7 +103,7 @@ function scanSheets_(){
     for(const old of seen){
       if(!data[old[0]]?.some(r=>r.recordId===old[1])){
         changes.push({module:old[0],id:old[1],issue:'Dòng đã bị xóa trực tiếp khỏi Sheet'});
-        audit_('SHEET_EDITOR','DIRECT_ROW_DELETE',old[0],old[1],null,null);
+        audit_('SHEET_EDITOR_UNVERIFIED','DIRECT_ROW_DELETE',old[0],old[1],null,null);
       }
     }
     // Store current hashes after metadata changes. _Sync holds no business payload.
@@ -111,6 +111,9 @@ function scanSheets_(){
     const sheet=table_('_Sync');if(sheet.getLastRow()>1)sheet.getRange(2,1,sheet.getLastRow()-1,4).clearContent();
     if(next.length)sheet.getRange(2,1,next.length,4).setValues(next);
     if(changes.length)bump_();props_().setProperty('LAST_SCAN',now_());
+    // Recheck unchanged invalid rows on every scan; never overwrite their cells.
+    for(const issue of invalid)if(!changes.some(c=>c.module===issue.module&&c.id===issue.id&&c.issue))changes.push({module:issue.module,id:issue.id,issue:issue.message});
+    props_().setProperty('SOURCE_QUALITY',JSON.stringify({checkedAt:now_(),invalidRows:invalid.length}));
     console.log(JSON.stringify({event:'sync',changes:changes.length,invalid:changes.filter(c=>c.issue).length}));return changes;
   });
 }

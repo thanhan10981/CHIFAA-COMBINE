@@ -10,7 +10,7 @@ test('paginated server reads beyond 5000 rows, filters and exports without trunc
  g.ctx.bump_();assert.equal(rpc('list',{module:'materials',stamp:b.data.stamp}).error.code,'CONFLICT');assert.equal(rpc('list',{module:'_Users'}).error.code,'VALIDATION');
 });
 test('scoped financial summary returns own debt balance without granting raw cash or employee data',()=>{
- const {g}=admin();g.ctx.writeRow_('debts',{recordId:'d',version:1,name:'A',type:'phai-thu',amount:100,date:'2026-01-01',dueDate:'2026-02-01'});g.ctx.writeRow_('cash',{recordId:'c',version:1,date:'2026-01-02',category:'thu-no',linkedId:'d',amount:30});
+ const {g}=admin();g.ctx.writeRow_('debts',{recordId:'d',version:1,name:'A',type:'phai-thu',amount:100,date:'2026-01-01',dueDate:'2026-02-01'});g.ctx.writeRow_('cash',{recordId:'c',version:1,date:'2026-01-02',direction:'thu',account:'cash',category:'thu-no',linkedId:'d',amount:30});
  g.ctx.append_('_Users',['accountant','a@example.com','accountant',JSON.stringify({debts:['read']}),true,1]);const token=g.ctx.issueSession_('a@example.com','a-sub').token;
  const r=send(g,'financialSummary',{token,module:'debts',to:'2026-01-03'});assert.equal(r.data.rows[0].remaining,70);assert.equal(Object.keys(r.data).join(','),'rows');assert.equal(send(g,'list',{token,module:'cash'}).error.code,'FORBIDDEN');assert.equal(send(g,'financialSummary',{token,module:'loans',to:'2026-01-03'}).error.code,'FORBIDDEN');
 });

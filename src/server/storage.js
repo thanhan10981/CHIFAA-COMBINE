@@ -22,16 +22,18 @@ function rawRows_(module,book=db_()) {
   return cellsAll.map((cells,i)=>{
     if(cells.every(c=>c===''))return null;
     const row={}; headers.forEach((h,j)=>{row[h]=cells[j] instanceof Date?Utilities.formatDate(cells[j],'Asia/Ho_Chi_Minh',fields_(module)[h]?.type==='time'?'HH:mm':'yyyy-MM-dd'):cells[j];});
+    if(![true,false,''].includes(row.deleted))row._sourceError='Cờ xóa không hợp lệ';
     row.deleted=row.deleted===true;row.version=Number(row.version);
     for(const [k,f]of Object.entries(fields_(module))){
       if(f.type==='lines' && typeof row[k]==='string'){try{row[k]=JSON.parse(row[k]);}catch(_){row[k]=null;}}
-      if(f.type==='boolean')row[k]=row[k]===true;
+      if(f.type==='boolean'){if(![true,false,''].includes(row[k]))row._sourceError='Giá trị đúng/sai không hợp lệ';row[k]=row[k]===true;}
     }
     row._hash=hash_(cells.map(v=>v instanceof Date?v.toISOString():v)); row._row=i+2;
     return row;
   }).filter(Boolean);
 }
 function data_() { const data={};for(const m of Object.keys(SCHEMA))data[m]=rawRows_(m);data.debts=attachDebtAllocations_(data.debts);data.production=attachProductionCosts_(data.production,{role:'admin',permissions:{}});return data; }
+function requireValidSources_(data){if(sourceIssues(data).length)throw new Error('DATA_INVALID: Dữ liệu nguồn không hợp lệ. Quản trị viên cần kiểm tra và sửa trên phân hệ nguồn trước khi tính hoặc chốt.');}
 function publicRow_(row) { const copy={...row};delete copy._row;return copy; }
 function cells_(module,row) { return headers_(module).map(k=>{const v=row[k]??'';return Array.isArray(v)?JSON.stringify(v):v;}); }
 function writeRow_(module,row,book=db_()) {

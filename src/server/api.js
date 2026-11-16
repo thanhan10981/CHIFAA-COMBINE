@@ -25,7 +25,7 @@ function rpc(action,args){
       else if(action==='workflow')result=locked_(()=>workflow_(authenticate_(args.token),args));
       else if(action==='workflowReports')result=workflowReports_(user,args);
       else if(action==='workflowStatus'){requireAdmin_(user);result={ready:operationalReady_(),periods:periodRows_().map(publicRow_),history:effective(workflowRows_()).filter(w=>['payroll','interest','debt'].includes(w.kind)).slice(-100).map(w=>({recordId:w.recordId,date:w.date,kind:w.kind,referenceId:w.referenceId})),portalConfigured:!!props_().getProperty('PORTAL_SPREADSHEET_ID'),backupConfigured:!!props_().getProperty('BACKUP_FOLDER_ID'),backupFolderId:props_().getProperty('BACKUP_FOLDER_ID')||'',portalSpreadsheetId:props_().getProperty('PORTAL_SPREADSHEET_ID')||'',portalUrl:props_().getProperty('PORTAL_WEB_APP_URL')||''};}
-      else if(action==='financialSummary'){if(!['assets','debts','loans'].includes(args.module)||!validDate(args.to))throw new Error('VALIDATION: Bảng/ngày không hợp lệ');require_(user,args.module,'read');const data={[args.module]:rawRows_(args.module),cash:args.module==='assets'?[]:rawRows_('cash')};if(args.module==='debts')data.debts=attachDebtAllocations_(data.debts);result={rows:finance(data,args.to)[args.module==='assets'?'depreciation':args.module]};}
+      else if(action==='financialSummary'){if(!['assets','debts','loans'].includes(args.module)||!validDate(args.to))throw new Error('VALIDATION: Bảng/ngày không hợp lệ');require_(user,args.module,'read');const data={[args.module]:rawRows_(args.module),cash:args.module==='assets'?[]:rawRows_('cash')};requireValidSources_(data);if(args.module==='debts')data.debts=attachDebtAllocations_(data.debts);result={rows:finance(data,args.to)[args.module==='assets'?'depreciation':args.module]};}
       else if(action==='maintenance')result=maintenance_(user,args);
       else if(action==='admin')result=locked_(()=>admin_(authenticate_(args.token),args));
       else if(action==='health'){requireAdmin_(user);result={stamp:stamp_(),audit:rowsPlain_('_Audit').slice(-100).map(r=>({id:r[0],at:r[1],user:r[2],action:r[3],module:r[4],recordId:r[5]})),pending:rowsPlain_('_Requests').filter(r=>r[3]==='PREPARED').map(r=>({key:r[0],state:r[3],createdAt:r[6]})),lastScan:props_().getProperty('LAST_SCAN'),lastBackup:props_().getProperty('LAST_BACKUP')};}
@@ -51,13 +51,13 @@ function bootstrap_(user,force=false){
     const saved=force?null:cache.get(key);
     if(saved){const entry=JSON.parse(saved);if(entry.until>Date.now()&&entry.value?.user?.email===user.email)return entry.value;}
   }catch(_){/* Cache is optional; eviction or corruption must fall back to Sheets. */}
-  const data={},permissions={},partialModules={};
+  const data={},permissions={},partialModules={},sourceData={};
   if(Array.isArray(user.permissions?._routes))permissions._routes=[...user.permissions._routes];
   for(const module of Object.keys(SCHEMA)){
     permissions[module]=ACTIONS.filter(a=>allowed_(user,module,a));
-    if(allowed_(user,module,'read')){const rows=rawRows_(module);if(rows.length>200)partialModules[module]={total:rows.length,next:200};const page=rows.slice(0,200).map(publicRow_);data[module]=module==='production'?attachProductionCosts_(page,user):module==='debts'?attachDebtAllocations_(page):module==='loans'?attachLoanPeriods_(page):page;}
+    if(allowed_(user,module,'read')){const rows=rawRows_(module);sourceData[module]=rows;if(rows.length>200)partialModules[module]={total:rows.length,next:200};const page=rows.slice(0,200).map(publicRow_);data[module]=module==='production'?attachProductionCosts_(page,user):module==='debts'?attachDebtAllocations_(page):module==='loans'?attachLoanPeriods_(page):page;}
   }
-  const result={data,partialModules,permissions,user:{email:user.email,role:user.role},permissionVersion:user.permissionVersion,stamp,accountingApproved:approved};
+  const result={data,issues:sourceIssues(sourceData),partialModules,permissions,user:{email:user.email,role:user.role},permissionVersion:user.permissionVersion,stamp,accountingApproved:approved};
   // Never publish a snapshot assembled across a concurrent write.
   if(stamp===stamp_())try{
     const value=JSON.stringify({until:Date.now()+30000,value:result});
@@ -84,6 +84,10 @@ function mutate_(user,args){
   const request={action,module,operation:action,id:args.id||'',record:args.record||null,expectedVersion:args.expectedVersion??null,expectedHash:args.expectedHash||''};
   const previous=replay_(user.email,args.key,request);if(previous)return previous;
   const data=data_(),before=data[module].find(r=>r.recordId===args.id);
+  if(action==='create'){
+    const sources={production:['production','recipes','materials','stock','counts','dishes'],counts:['counts','stock','materials'],attendance:['attendance','employees'],sales:['sales','stores','dishes'],cash:['cash','debts','loans']}[module];
+    if(sources)requireValidSources_(Object.fromEntries(sources.map(m=>[m,data[m]])));
+  }
   periodGuard_([args.record?.date,before?.date]);
   if(module==='stock'&&[before,args.record].filter(Boolean).some(s=>effective(data.counts).some(c=>c.materialId===s.materialId&&c.date>=s.date)))throw new Error('CLOSED: Hoàn tác kiểm kê liên quan trước khi đổi phiếu kho hồi tố');
   if(module==='cash'&&action==='reverse'&&before?.category==='tra-vay'&&effective(workflowRows_()).some(w=>w.kind==='interest'&&w.referenceId===before.linkedId&&workflowDetails_(w).to>before.date))throw new Error('CLOSED: Hoàn tác kỳ lãi liên quan trước khi đảo phiếu trả gốc');

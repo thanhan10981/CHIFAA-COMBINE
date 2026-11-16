@@ -1,5 +1,5 @@
 import { SCHEMA, ROUTES, ACTIONS } from '../shared/schema.js';
-import { cleanRecord, effective, flattenRecipe, costRecipe, salesMetrics, payroll, inventory, demand, report, scenario, variance, validDate, finance, targets, compareWeeks } from '../shared/domain.js';
+import { cleanRecord, sourceIssues, effective, flattenRecipe, costRecipe, salesMetrics, payroll, inventory, demand, report, scenario, variance, validDate, finance, targets, compareWeeks } from '../shared/domain.js';
 import { rpcCall, setRpcSession, clearRpcSession, setRpcScope, restoreRpcSession } from './rpc.js';
 import { NAV_SECTIONS, NAV_ICONS } from './navigation.js';
 import {createPermissionPicker} from './permissions.js';
@@ -46,27 +46,12 @@ async function load(force=false){
   const token=state.token,b=await call('bootstrap',{force});
   if(token!==state.token)throw Object.assign(new Error('Phiên đăng nhập đã thay đổi.'),{code:'AUTH'});
   state.data=b.data;state.permissions=b.permissions;state.user=b.user;state.stamp=b.stamp;state.permissionVersion=b.permissionVersion;state.accountingApproved=b.accountingApproved;
-  state.partialModules=b.partialModules||{};
+  state.partialModules=b.partialModules||{};state.serverIssues=b.issues||[];
   validateData();
 }
 function validateData(){
-  state.issues=[];
-  for(const [m,rows]of Object.entries(state.data)){
-    if(state.partialModules?.[m])continue;
-    const counts=new Map();for(const r of rows)counts.set(r.recordId,(counts.get(r.recordId)||0)+1);
-    for(const r of effective(rows)){
-    try{
-      if(typeof r.recordId!=='string'||!r.recordId||!Number.isInteger(r.version)||r.version<1)throw new Error('Thiếu ID / phiên bản hợp lệ. Tạo mới qua ứng dụng.');
-      if(counts.get(r.recordId)>1)throw new Error('ID bị trùng trong Sheet');
-      // Missing permission to a referenced table is not evidence of a bad record.
-      const requiredRefs=Object.values(SCHEMA[m].fields).filter(f=>f.ref).map(f=>f.ref);
-      if(requiredRefs.some(ref=>!Object.hasOwn(state.data,ref)||state.partialModules?.[ref]))continue;
-      if(m==='recipes'&&!state.data.materials)continue;
-      const input={};for(const k of Object.keys(SCHEMA[m].fields))input[k]=r[k];cleanRecord(m,input,state.data);
-      if(m==='recipes')flattenRecipe(r.recordId,1,state.data.recipes);
-    }catch(e){state.issues.push(m+' / '+r.recordId+': '+e.message);}
-    }
-  }
+  const local=sourceIssues(state.data,state.partialModules);
+  state.issues=[...new Set([...(state.serverIssues||[]),...local].map(i=>i.module+' / '+(i.id||('d?ng '+i.row))+': '+i.message))];
 }
 function navIcon(key){
   const span=el('span',null,'nav-icon'),ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');

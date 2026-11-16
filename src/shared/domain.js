@@ -45,6 +45,32 @@ function effective(rows) {
   const reversed = new Set(rows.filter(r => !r.deleted && r.reverses).map(r => r.reverses));
   return rows.filter(r => !r.deleted && !r.reverses && !reversed.has(r.recordId));
 }
+// Validate source rows without changing them. Missing/partial reference tables are
+// unknown, not proof of a broken reference (e.g. a sales-only accountant).
+function sourceIssues(data, partial = {}) {
+  const issues=[];
+  for(const [module,rows] of Object.entries(data)){
+    if(!SCHEMA[module])continue;
+    const counts=new Map();for(const row of rows)counts.set(row.recordId,(counts.get(row.recordId)||0)+1);
+    for(const row of rows){
+      if(row.deleted===true)continue;
+      try{
+        if(row._sourceError)fail(row._sourceError);
+        if(typeof row.recordId!=='string'||!row.recordId||!Number.isInteger(row.version)||row.version<1)fail('Thiếu ID / phiên bản hợp lệ');
+        if(counts.get(row.recordId)>1)fail('ID bị trùng trong Sheet');
+        const refs={...data},input={};
+        for(const [key,field]of Object.entries(SCHEMA[module].fields)){
+          input[key]=row[key];
+          if(field.ref&&(!Object.hasOwn(data,field.ref)||partial[field.ref]))refs[field.ref]=[{recordId:row[key]}];
+        }
+        if(module==='recipes')for(const ref of ['materials','recipes'])if(!Object.hasOwn(data,ref)||partial[ref])refs[ref]=(Array.isArray(row.lines)?row.lines:[]).filter(l=>l?.type===(ref==='recipes'?'recipe':'material')).map(l=>({recordId:l.id}));
+        cleanRecord(module,input,refs);
+        if(module==='recipes'&&!partial.recipes)flattenRecipe(row.recordId,1,rows);
+      }catch(error){issues.push({module,id:row.recordId||'',row:row._row||null,message:String(error.message)});}
+    }
+  }
+  return issues;
+}
 function shiftHours(start, end, breakMinutes = 0) {
   const minute = s => {
     if (typeof s !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(s)) fail('Giờ không hợp lệ');
@@ -225,4 +251,4 @@ function compareWeeks(data,anchor){
     rows.push({date:iso(current),previousDate:iso(previous),revenue:a.revenue,previousRevenue:b.revenue,difference:a.revenue==null||b.revenue==null?null:round(a.revenue-b.revenue)});
   }return rows;
 }
-export { ACCOUNTING_POLICY, round, cleanRecord, effective, validDate, shiftHours, flattenRecipe, costRecipe, salesMetrics, payroll, inventory, demand, report, scenario, variance, finance, targets, compareWeeks };
+export { ACCOUNTING_POLICY, round, cleanRecord, sourceIssues, effective, validDate, shiftHours, flattenRecipe, costRecipe, salesMetrics, payroll, inventory, demand, report, scenario, variance, finance, targets, compareWeeks };

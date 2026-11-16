@@ -258,3 +258,12 @@ G02 source commit3896256 reproduced: git archive exported to output/checkpoint-3
 
 Durable checkpoint docs/checkpoints/REQUIREMENTS_2026-11-16.md; T00ba0ad6c and source3896256. Source/test/build dependencies and prior verifier removal were captured in source checkpoint because tests require AppsScript-only/no verifier; unrelated previous docs/generator changes remain, do not reset. Matrix remains1DONE/70PARTIAL/4MISSING/3BLOCKED. Auth gate is BLOCKED_GOOGLE_UAT, source import gate BLOCKED_SOURCE. Browser inventory refreshed empty; never claim twoGmail/Cloud/ACL/trigger verified. User question on second accountant Gmail pending. Next: Googlegate then G04sync invalid-row quarantine and G03return/kiosk; do not invent unconfirmed D07–D27 policies. Stop broad external-account release at Gate1; safely completed D01/D02/D03 within existing DEV scope.
 
+
+## G04 / T07 ? Source validation checkpoint ? 2026-11-16
+
+Implemented shared sourceIssues in domain.js, full permitted-table bootstrap validation before pagination, client server/local issue merge and report gate; financialSummary non-disclosing DATA_INVALID; workflow and direct mutate source checks before linked writes. rawRows flags invalid deletion/checkbox values instead of silently accepting coercion. scan validates unchanged errors, preserves business cells, records SHEET_EDITOR_UNVERIFIED and private SOURCE_QUALITY count/time. No schema/header change or setup required. Existing reference permissions respected; no new data grants.
+
+177/177 local/mock tests, syntax50/build pass. Added7tests in tests/source-quality.test.mjs, corrected3 incomplete prior fixtures to contain required business fields. output/g04-tests.txt is local evidence. See docs/SOURCE_QUALITY.md for exact coverage and limitations: G04 remains PARTIAL, no journal-wide/import/Portal quarantine, onChange/cursor/Google UAT yet. Scan retains original cells; validation can conservatively block an entire relevant table including out-of-period errors. Fresh remote backup remote-before-quality/source matched verified version22. Push/deployment status to be appended after readback. No Sheets business/ACL/trigger writes and no Production.
+
+Next: finish verified DEV rollout, then remaining G04 incremental/onChange and G03 return/kiosk design following unresolved policies; two-Gmail/ACL gate remains pending connected Google browser. Preserve unrelated pre-existing docs/generator modifications.
+

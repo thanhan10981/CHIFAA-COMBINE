@@ -62,6 +62,8 @@ function workflow_(user,args){
   const request={...args,action:'WORKFLOW'};delete request.token;delete request.proof;delete request.key;
   const previous=replay_(user.email,args.key,request);if(previous)return previous;requireOperational_();
   const data=data_();let effects=[];
+  const sources={production:['production','recipes','materials','stock','counts'],count:['counts','stock','materials'],payroll:['attendance','employees','cash',...(args.bonuses?.length?['plans','sales','production','recipes','materials','stock']:[])],interest:['loans','cash'],debt:['debts','cash',...(args.saleId?['sales','stores','dishes']:[])],close:Object.keys(SCHEMA)}[args.kind];
+  if(sources)requireValidSources_(Object.fromEntries(sources.map(m=>[m,data[m]])));
   if(['production','count'].includes(args.kind)){
     const module=args.kind==='production'?'production':'counts';require_(user,module,'approve');require_(user,module,'read');const row=effective(data[module]).find(r=>r.recordId===args.id);if(!row)throw new Error('NOT_FOUND: Không tìm thấy phiếu nguồn');effects=stockLinkEffects_(user,args.kind,row,data);
   }else if(['close','reopen'].includes(args.kind)){

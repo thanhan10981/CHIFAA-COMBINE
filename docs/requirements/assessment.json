@@ -78,7 +78,7 @@
     "REQ-DASH-04": ["PARTIAL", "Có giờ SX/productivity; chưa đủ 6 thẻ KPI ngày/tháng, D08 còn mở."],
     "REQ-STRAT-01": ["PARTIAL", "Strategy riêng và filters đã có; Google dữ liệu/visual UAT còn chờ."],
     "REQ-STRAT-02": ["PARTIAL", "8 góc nhìn có code/tests; store discard đang thiếu chứng từ riêng, P&L có giới hạn và cần D26."],
-    "REQ-STRAT-03": ["PARTIAL", "Có missing-data gates/tests; thiếu kiểm định toàn nguồn invalid trực tiếp Sheets và rule readiness."],
+    "REQ-STRAT-03": ["PARTIAL","G04 ki?m tra to?n ngu?n ???c ph?p tr??c chia trang, ch?n b?o c?o khi invalid; 177local/mock. C?n journal/import/Portal, readiness v? Google UAT.",["src/shared/domain.js","src/server/api.js","src/client/app.js","tests/source-quality.test.mjs","docs/SOURCE_QUALITY.md"]],
     "REQ-FIN-01": ["PARTIAL", "Có gốc/dư/vay/nợ và lãi nhập tay đã xác nhận; chưa đầy đủ lịch thanh toán và liên kết AR từ settlement."],
     "REQ-FIN-02": ["PARTIAL", "Cash/AR phân bổ có; chưa đối chiếu đầu kỳ thực tế và contract cash source toàn luồng bán."],
     "REQ-FIN-03": ["PARTIAL", "Khấu hao đường thẳng tạm có; chưa bút toán chốt/expense mapping và xử lý legacy #REF."],
