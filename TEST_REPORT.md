@@ -121,3 +121,5 @@ Source checkpoint1e293cf; fresh remote-before-quality backup matched verified22 
 ## Excel export/import
 
 185 local/mock tests pass; syntax52/build pass. Log output/excel-tests.txt. Real XLSX save/reload, 5101rows, Unicode/types/null-vs-zero, template roundtrip, formula/link/ZIP rejection and client export paging/session change tested. Embedded runtime exact match and bundled JS syntax verified. No hosted Google download or desktop Excel visual UAT. See docs/EXCEL_EXPORT.md.
+
+Excel deployed BOTH existing DEV URLs@26, CLI confirmed each. Fresh remote-before-excel backup matched24; candidate25 was never assigned, final26 includes numeric-error text preservation. Exact version26 readback matched all4tested dist files (manifest semantic). Source commits c200827/e83d68c; 185tests/syntax52/build pass, local embedded payload byte match and bundled syntax verified. No schema/setup/Sheets data/ACL/trigger/Production changes; historical@2 unchanged. Microsoft Excel desktop and actual hosted Google file download remain unverified. deployment.json records26/readbacktrue/UATfalse.

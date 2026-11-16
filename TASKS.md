@@ -63,3 +63,5 @@ G04 checkpoint1e293cf ?? DEPLOYED_DEV23, readback4files kh?p v? hai DEV URL x?c 
 Popup timing: LOCAL_TESTED177, closes before bootstrap after verified oauthFinish; actual Google browser auto-close remains unverified, sandbox/COOP fallback retained.
 
 Excel downloads: LOCAL_TESTED185, all prior CSV output buttons replaced with .xlsx, Excel import template roundtrip and RBAC pagination preserved. No schema migration. Hosted download/desktop Excel UAT pending. See docs/EXCEL_EXPORT.md; rollout status HANDOFF.
+
+Excel DEPLOYED_DEV26 after exact4file readback, no setup required; local185tests pass; hosted/desktop download UAT pending.
