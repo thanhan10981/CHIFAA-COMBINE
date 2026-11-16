@@ -1,3 +1,4 @@
+import {createModuleWorkbook,downloadExcel} from './excel.js';
 import { SCHEMA, ROUTES, ACTIONS } from '../shared/schema.js';
 import { cleanRecord, sourceIssues, effective, flattenRecipe, costRecipe, salesMetrics, payroll, inventory, demand, report, scenario, variance, validDate, finance, targets, compareWeeks } from '../shared/domain.js';
 import { rpcCall, setRpcSession, clearRpcSession, setRpcScope, restoreRpcSession } from './rpc.js';
@@ -132,7 +133,7 @@ function period(){
 function renderRecords(module,head){
   const schema=SCHEMA[module],view=$('view');if(can(module,'create'))head.append(button('+ Thêm phiếu',()=>openEditor(module), 'button primary'));
   const bar=period(),search=document.createElement('input');search.type='search';search.placeholder='Tìm tên, mã hoặc ghi chú…';search.setAttribute('aria-label','Tìm dữ liệu');search.value=state.search;bar.append(search);
-  if(can(module,'export'))bar.append(button('Xuất CSV',()=>exportModule(module)));view.append(bar);
+  if(can(module,'export'))bar.append(button('Xuất Excel',event=>exportModule(module,event.currentTarget)));view.append(bar);
   if(schema.immutable)view.append(el('div','Sổ giao dịch: phiếu đã lưu được giữ nguyên. Khi cần sửa, dùng “Đảo phiếu” và lập phiếu thay thế.','notice'));
   if(module==='sales')view.append(el('div','Điểm bán chịu là phần hàng được ghi nhận doanh thu nhưng chưa thu tiền. Hàng trả về được theo dõi riêng. Công thức doanh thu hiện chờ chủ dự án duyệt.','notice'));
   if(module==='cash')view.append(el('div','Tiền thu từ phiếu doanh thu đã được tính vào sổ tiền. Không ghi lại khoản đó ở đây. Các khoản thu / trả nợ, vay / trả vay cần ID liên kết.','notice'));
@@ -334,11 +335,13 @@ async function renderAdmin(){
   }catch(e){if(generation===viewGeneration)errorText(e);}finally{loading.remove();}
 }
 async function renderHealth(){const generation=viewGeneration,loading=pageLoading();try{const data=await call('health');if(generation!==viewGeneration)return;renderMaintenance();const view=$('view');view.append(el('p','Đồng bộ gần nhất: '+display(data.lastScan)+' · Sao lưu gần nhất: '+display(data.lastBackup),'muted'));if(data.pending.length)view.append(el('div','Có giao dịch PREPARED. Các thao tác ghi bị chặn đến khi chủ sở hữu kiểm tra và chạy recoverPrepared_.','error'));view.append(makeTable(['Thời điểm','Người dùng','Thao tác','Phân hệ','Mã'],data.audit.map(r=>[r.at,r.user,r.action,r.module,r.recordId])));}catch(e){if(generation===viewGeneration)errorText(e);}finally{loading.remove();}}
-async function exportModule(module){
-  try{const rows=[];let offset=0;do{const page=await call('export',{module,offset,limit:200,stamp:state.stamp});rows.push(...page.rows);offset=page.next??null;}while(offset!=null);const keys=[...Object.keys(SCHEMA[module].fields),'recordId','version','updatedAt','updatedBy'];
-    const cell=v=>'"'+String(v??'').replace(/^[=+\-@\t\r]/,"'$&").replace(/"/g,'""')+'"';const csv='\uFEFF'+[keys.map(cell).join(','),...rows.map(r=>keys.map(k=>cell(Array.isArray(r[k])?JSON.stringify(r[k]):r[k])).join(','))].join('\r\n');
-    const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),a=el('a');a.href=url;a.download='CHIFAA-'+module+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Đã chuẩn bị tệp CSV. Kiểm tra mục tải xuống.');
-  }catch(e){errorText(e);}
+async function exportModule(module,control){
+  if(state.exporting)return;state.exporting=true;if(control){control.disabled=true;control.classList.add('is-loading');}
+  const stamp=state.stamp,token=state.token;
+  try{toast('Đang chuẩn bị file Excel…','info');const rows=[];let offset=0;do{const page=await call('export',{module,offset,limit:200,stamp});if(token!==state.token||stamp!==state.stamp)throw new Error('Phiên hoặc dữ liệu đã thay đổi. Xuất lại file Excel.');rows.push(...page.rows);offset=page.next??null;}while(offset!=null);
+    const book=createModuleWorkbook(module,rows,{source:state.demo?'Xem thử · không phải dữ liệu thật':'Google Sheets',stamp});
+    await downloadExcel(book,'CHIFAA-'+module+'-'+dateToday());toast('Đã chuẩn bị file Excel. Kiểm tra mục tải xuống.');
+  }catch(e){errorText(e);}finally{state.exporting=false;if(control){control.disabled=false;control.classList.remove('is-loading');}}
 }
 async function refresh(force=true){if(state.busy||$('editor').open){if(force)toast('Hãy hoàn tất phiếu đang mở hoặc đợi thao tác hiện tại.','info');return;}state.busy=true;$('refresh').disabled=true;$('refresh').classList.add('is-loading');try{await load(force);nav();route();$('connection').textContent=state.demo?'Xem thử · lưu trong RAM':'Đã đồng bộ '+new Date().toLocaleTimeString('vi-VN');if(force)toast(state.demo?'Đã làm mới bản xem thử trên máy.':'Đã tải dữ liệu mới nhất từ Sheets.');}catch(e){if(e.code==='AUTH'){localLogout();toast('Phiên đã hết hiệu lực. Vui lòng đăng nhập lại.','warning');}else errorText(e);}finally{state.busy=false;$('refresh').disabled=false;$('refresh').classList.remove('is-loading');}}
 function localLogout(){state.pendingWorkflow=null;clearToasts();clearRpcSession();state.disconnected=false;state.token=null;state.data={};state.permissions={};state.user=null;state.issues=[];state.loginAttempt=null;if($('editor').open)$('editor').close();$('form-fields').replaceChildren();$('view').replaceChildren();$('navigation').replaceChildren();$('workspace').hidden=true;$('login').hidden=false;$('login-status').textContent='Đã đăng xuất.';if(!state.demo)prepareLogin();}

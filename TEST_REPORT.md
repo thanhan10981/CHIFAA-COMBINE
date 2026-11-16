@@ -117,3 +117,7 @@ Auth local: tests/oauth.test.mjs, session-security.test.mjs, client.test.mjs: co
 Source checkpoint1e293cf; fresh remote-before-quality backup matched verified22 before push. Created23, exact pull remote-quality-version23/source matches Code.gs/Index.html/Portal.html byte-for-byte and manifest semantically. Callback and app existing DEV deployments each confirmed@23 by clasp. Historical separate@2 unchanged. deployment.json records23/177tests/readbacktrue/GoogleUATfalse. No setup/header migration, no workbook business/ACL/trigger/Production writes.
 
 177 local/mock tests pass, syntax50/build pass; hosted Google trigger/ACL/two-Gmail/visual UAT still pending. G04 remains PARTIAL with exact gaps in docs/SOURCE_QUALITY.md. Cache bootstrap remains30seconds unless force sync. Scan behavior for malformed/missing metadata still needs incremental cursor/row-key handling; no claim of complete quarantine. Next independent task G04 incremental/onChange and G03 returns/kiosk; keep Gate1 real auth and missing legacy workbook gates explicit.
+
+## Excel export/import
+
+185 local/mock tests pass; syntax52/build pass. Log output/excel-tests.txt. Real XLSX save/reload, 5101rows, Unicode/types/null-vs-zero, template roundtrip, formula/link/ZIP rejection and client export paging/session change tested. Embedded runtime exact match and bundled JS syntax verified. No hosted Google download or desktop Excel visual UAT. See docs/EXCEL_EXPORT.md.

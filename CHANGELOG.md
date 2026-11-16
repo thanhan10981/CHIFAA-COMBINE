@@ -1,3 +1,9 @@
+## 2026-11-16 — Styled Excel downloads
+
+- Replace CSV output with real .xlsx, Vietnamese headers, CHIFAA title/source, frozen headers, filters and typed dates/numbers.
+- Excel import template + instructions, read-back through existing preview/validation; retain legacy CSV/JSON input.
+- Local embedded ExcelJS4.4.0, loading feedback, no CDN/data upload; 185tests/syntax52/build pass. Hosted/desktop visual UAT pending.
+
 ## 2026-11-16 ? Close verified login popup sooner
 
 - Main window attempts popup.close immediately when oauthFinish issues a verified session, before session persistence and Sheets bootstrap.

@@ -10,7 +10,7 @@ async function client(demo=true,google,store){
   const location={search:demo?'?demo=1':'',hash:'',pathname:'/',href:'http://localhost/'};
   const context=vm.createContext({window,document,Node:window.Node,location,URL,URLSearchParams,crypto,TextEncoder,Uint8Array,google,console,Date,Intl,Promise,Set,Map,Object,Array,Number,String,Math,Error,Blob,
     confirm:()=>true,setInterval:()=>0,setTimeout:()=>0,clearTimeout(){}});
-  for(const p of ['src/shared/schema.js','src/shared/access.js','src/shared/domain.js','src/shared/auth-protocol.js','src/client/navigation.js','src/client/permissions.js','src/client/session-store.js','src/client/rpc.js','src/client/notifications.js','src/shared/strategy.js','src/client/strategy-view.js','src/client/import-csv.js','src/client/operations-view.js','src/client/app.js'])vm.runInContext(strip(fs.readFileSync(p,'utf8')).replace(/^start\(\);$/m,''),context,{filename:p});
+  for(const p of ['src/shared/schema.js','src/shared/access.js','src/shared/domain.js','src/shared/auth-protocol.js','src/client/navigation.js','src/client/permissions.js','src/client/session-store.js','src/client/rpc.js','src/client/notifications.js','src/shared/strategy.js','src/client/strategy-view.js','src/client/import-csv.js','src/client/excel.js','src/client/operations-view.js','src/client/app.js'])vm.runInContext(strip(fs.readFileSync(p,'utf8')).replace(/^start\(\);$/m,''),context,{filename:p});
   if(store)context.sessionStore=store;
   await context.start();return {context,document,dialog,location,run:code=>vm.runInContext(code,context)};
 }
@@ -41,7 +41,7 @@ test('interest screen accepts the manually entered amount with no automatic calc
 
 test('maintenance screen exposes initialization, period lock, Portal sync, backup/restore and import controls',async()=>{
   const c=await client();c.run(`state.demo=false;globalThis.opsCalls=[];call=async(action,args)=>{opsCalls.push({action,args});if(action==='workflowStatus')return {ready:false,periods:[],history:[]};return {};};document.getElementById('view').replaceChildren();`);await c.run('renderMaintenance()');const text=c.document.getElementById('view').textContent;
-  for(const label of ['Khởi tạo / kiểm tra cấu trúc','Khóa kỳ đã đối soát','Đồng bộ Portal ngay','Tạo backup ngay','Tạo bản phục hồi để kiểm tra','Áp dụng lô đã kiểm tra'])assert.match(text,new RegExp(label));assert.equal(c.run('opsCalls.length'),1);assert.equal(c.document.querySelector('input[type=file]').accept,'.json,.csv,application/json,text/csv');
+  for(const label of ['Khởi tạo / kiểm tra cấu trúc','Khóa kỳ đã đối soát','Đồng bộ Portal ngay','Tạo backup ngay','Tạo bản phục hồi để kiểm tra','Áp dụng lô đã kiểm tra'])assert.match(text,new RegExp(label));assert.equal(c.run('opsCalls.length'),1);assert.equal(c.document.querySelector('input[type=file]').accept,'.xlsx,.json,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/json,text/csv');
 });
 test('large report sources load all snapshot pages before computing, never silently use first 200',async()=>{
   const c=await client();c.run(`state.demo=false;state.partialModules={materials:{total:201,next:200}};state.data.materials=[];call=async(action,args)=>({rows:args.offset===0?[{recordId:'one'}]:[{recordId:'last'}],next:args.offset===0?200:null});`);assert.equal(await c.run("ensureReadModules(['materials'])"),true);assert.equal(c.run('state.data.materials.length'),2);assert.equal(c.run('state.partialModules.materials'),undefined);
@@ -268,6 +268,20 @@ test('blocked popup retains noopener login link; repeated clicks do not open mor
   const link=c.document.querySelector('#google-button a'),event=new c.context.window.Event('click',{cancelable:true});link.dispatchEvent(event);
   assert.equal(event.defaultPrevented,false);assert.equal(link.target,'_blank');assert.equal(link.rel,'noopener noreferrer');
   const repeat=new c.context.window.Event('click',{cancelable:true});link.dispatchEvent(repeat);assert.equal(opened,1);assert.equal(repeat.defaultPrevented,true);
+});
+
+test('Excel export collects every authorized page and clears loading state after download',async()=>{
+ const c=await client(),control=c.document.createElement('button');c.context.exportControl=control;
+ c.run(`state.demo=false;state.token='session';state.stamp='snapshot';globalThis.exportCalls=[];globalThis.downloads=[];
+ call=async(action,args)=>{exportCalls.push({action,args});return {rows:args.offset===0?Array.from({length:200},(_,i)=>({recordId:'m'+i})): [{recordId:'last'}],next:args.offset===0?200:null};};
+ createModuleWorkbook=(module,rows,options)=>({module,rows,options});downloadExcel=async(book,filename)=>{if(!exportControl.disabled)throw new Error('Missing loading state');downloads.push({book,filename});};`);
+ await c.run("exportModule('materials',exportControl)");assert.equal(c.run('downloads[0].book.rows.length'),201);assert.equal(c.run('exportCalls[1].args.offset'),200);assert.equal(c.run('exportCalls.every(c=>c.action==="export"&&c.args.stamp==="snapshot")'),true);assert.equal(control.disabled,false);assert.equal(control.classList.contains('is-loading'),false);
+ c.run("location.hash='#catalog';route();");assert.ok([...c.document.querySelectorAll('button')].some(b=>b.textContent==='Xuất Excel'));assert.ok(![...c.document.querySelectorAll('button')].some(b=>b.textContent==='Xuất CSV'));
+});
+
+test('Excel export aborts if the authenticated session changes during pagination',async()=>{
+ const c=await client();c.run(`state.demo=false;state.token='old';state.stamp='snapshot';globalThis.downloaded=false;call=async()=>{state.token='new';return {rows:[],next:null};};downloadExcel=async()=>{downloaded=true;};`);
+ await c.run("exportModule('materials')");assert.equal(c.run('downloaded'),false);assert.equal(c.run('state.exporting'),false);assert.match(c.document.getElementById('error').textContent,/Phiên hoặc dữ liệu đã thay đổi/);
 });
 
 test('draft sidebar groups toggle accessibly, preserve expansion and open the active branch',async()=>{

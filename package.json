@@ -16,6 +16,7 @@
     "clasp:deploy": "npx @google/clasp deploy"
   },
   "devDependencies": {
+    "exceljs": "4.4.0",
     "linkedom": "^0.18.15"
   }
 }
