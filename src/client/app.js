@@ -12,6 +12,7 @@ const $=id=>document.getElementById(id);
 const el=(tag,text,className)=>{const n=document.createElement(tag);if(text!=null)n.textContent=text;if(className)n.className=className;return n;};
 const button=(text,fn,style='button')=>{const b=el('button',text,style);b.type='button';b.addEventListener('click',fn);return b;};
 const dateToday=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+function browserDeviceLabel(){const ua=globalThis.navigator?.userAgent||'',browser=/Edg\//.test(ua)?'Edge':/Firefox\//.test(ua)?'Firefox':/Chrome\//.test(ua)?'Chrome':/Safari\//.test(ua)?'Safari':'Trình duyệt',os=/Android/.test(ua)?'Android':/iPhone|iPad/.test(ua)?'iOS':/Windows/.test(ua)?'Windows':/Macintosh/.test(ua)?'macOS':/Linux/.test(ua)?'Linux':'Web';return browser+' · '+os;}
 const display=v=>v==null||v===''?'—':typeof v==='number'?v.toLocaleString('vi-VN',{maximumFractionDigits:2}):typeof v==='boolean'?(v?'Có':'Không'):Array.isArray(v)?v.length+' thành phần':String(v);
 const state={token:null,data:{},permissions:{},user:null,stamp:'',permissionVersion:null,demo:!globalThis.google?.script?.run&&new URLSearchParams(location.search).get('demo')==='1',from:dateToday(),to:dateToday(),route:'dashboard',search:'',busy:false,editor:null,uncertain:null,formKey:null};
 const can=(m,a)=>state.permissions[m]?.includes(a);
@@ -429,6 +430,9 @@ async function renderAdmin(){
     form.onsubmit=async e=>{e.preventDefault();save.disabled=true;try{await call('admin',{operation:'saveUser',email:email.value,role:role.value,enabled:enabled.checked,permissions:picker.value()});await load();route();toast('Đã cập nhật quyền.');}catch(err){errorText(err);}finally{save.disabled=false;}};
     const summary=user=>user.role==='admin'?'Toàn quyền':Array.isArray(user.permissions._routes)?user.permissions._routes.map(id=>ROUTES.find(r=>r[0]===id)?.[1]||'').join(' · ')||'Chưa cấp mục nào':Object.entries(user.permissions).filter(([m,a])=>SCHEMA[m]&&a.includes('read')).map(([m])=>SCHEMA[m].title).join(' · ')||'Chưa cấp quyền';
     view.append(form,el('h3','Tài khoản được cấp quyền'),makeTable(['Email','Vai trò','Kích hoạt','Mục được cấp','Thao tác'],data.users.map(u=>[u.email,u.role,u.enabled,el('span',summary(u),'permission-summary'),button('Chỉnh quyền',()=>{selectUser(u);form.scrollIntoView?.({behavior:'smooth',block:'start'});})])),el('h3','Phiên & cảnh báo đăng nhập'),makeTable(['Email','Trạng thái','Hết hạn','Thao tác'],data.sessions.map(s=>[s.email,s.status,s.expires,s.status==='active'?button('Thu hồi',async()=>{try{await call('admin',{operation:'revoke',id:s.id});toast('Đã thu hồi phiên.');route();}catch(e){errorText(e);}},'button danger'):'—'])));
+    const security=data.security||{alerts:[]},names={LOGIN:'Đăng nhập Google mới',LOGIN_DENIED:'Đăng nhập bị chặn',SESSION_REPLACED:'Phiên cũ được thay bằng đăng nhập Google mới',OAUTH_DENIED:'Xác minh Google bị từ chối',REVOKE:'Đã thu hồi phiên',USER_UPDATE:'Đã thay đổi tài khoản hoặc quyền',RPC_DENIED:'Yêu cầu bị từ chối quyền'};
+    view.append(el('h3','Cảnh báo bảo mật'),el('p','Tên thiết bị do trình duyệt cung cấp, không phải bằng chứng nhận dạng. Thời gian hoạt động được máy chủ ghi nhận.','report-note'),makeTable(['Thời điểm','Tài khoản','Sự kiện','Xác nhận'],security.alerts.map(a=>[a.at,a.email,names[a.action]||a.action,a.acknowledged?'Đã xem':button('Đã kiểm tra',async()=>{try{await call('admin',{operation:'ackAlert',id:a.id});toast('Đã ghi nhận kiểm tra cảnh báo.');route();}catch(e){errorText(e);}})])));
+    if(security.hasEarlier)view.append(el('p','Đang xem tối đa 100 sự kiện bảo mật trong 1.000 dòng nhật ký gần nhất. Nhật ký đầy đủ vẫn được giữ trên Sheets.','report-note'));
   }catch(e){if(generation===viewGeneration)errorText(e);}finally{loading.remove();}
 }
 async function renderHealth(){const generation=viewGeneration,loading=pageLoading();try{const data=await call('health');if(generation!==viewGeneration)return;renderMaintenance();const view=$('view');view.append(el('p','Đồng bộ gần nhất: '+display(data.lastScan)+' · Sao lưu gần nhất: '+display(data.lastBackup),'muted'));if(data.pending.length)view.append(el('div','Có giao dịch PREPARED. Các thao tác ghi bị chặn đến khi chủ sở hữu kiểm tra và chạy recoverPrepared_.','error'));view.append(makeTable(['Thời điểm','Người dùng','Thao tác','Phân hệ','Mã'],data.audit.map(r=>[r.at,r.user,r.action,r.module,r.recordId])));}catch(e){if(generation===viewGeneration)errorText(e);}finally{loading.remove();}}
@@ -465,7 +469,7 @@ async function prepareLogin({resume=false}={}){
     const browserSecret=Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('');
     const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(browserSecret));
     const browserProof=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
-    const flow=await rpcCall('oauthStart',{browserProof});
+    const flow=await rpcCall('oauthStart',{browserProof,deviceLabel:browserDeviceLabel()});
     setRpcScope(flow.sessionScope);
     if(resume){
       const saved=await restoreRpcSession();

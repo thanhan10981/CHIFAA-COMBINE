@@ -7,7 +7,8 @@ function constantEqual_(a,b){
   let diff=0;for(let i=0;i<a.length;i++)diff|=a.charCodeAt(i)^b.charCodeAt(i);return diff===0;
 }
 function sessionKey_(token){return 'session-key:'+hash_(token);}
-function issueSession_(email,subject,{replaceOwnAdminSession=false}={}){
+function issueSession_(email,subject,{replaceOwnAdminSession=false,deviceLabel='Thiết bị web'}={}){
+  deviceLabel=deviceLabel_(deviceLabel);
   const users=users_(),user=users.find(u=>u.email===email&&u.enabled);
   if(!user)throw new Error('FORBIDDEN: Email chưa được quản trị cấp quyền');
   ensureAuthRequests_(user);
@@ -26,14 +27,15 @@ function issueSession_(email,subject,{replaceOwnAdminSession=false}={}){
     sessions.forEach((r,i)=>{if(r[1]===email&&r[4]==='active'){
       table_('_Sessions').getRange(i+2,5).setValue('revoked');
       if(r[2])CacheService.getScriptCache().remove('session-key:'+r[2]);revoked++;
+      clearSessionDevice_(r[0]);
     }});
     if(revoked)audit_(email,'SESSION_REPLACED','sessions','',null,{revoked,reason:'google-reauthenticated'});
   }
   const token=randomSecret_(),signingKey=randomSecret_(),expires=new Date(Date.now()+2*3600000).toISOString();
   props_().setProperty(binding,hash_(subject));
   CacheService.getScriptCache().put(sessionKey_(token),JSON.stringify({signingKey,expires,fingerprint:authConfig_().fingerprint}),7200);
-  append_('_Sessions',[uid_(),email,hash_(token),expires,'active',now_()]);
-  audit_(email,'LOGIN','sessions','',null,{expires});return {token,signingKey,user:{email,role:user.role},expires};
+  const id=uid_();append_('_Sessions',[id,email,hash_(token),expires,'active',now_()]);recordSessionDevice_(id,deviceLabel_(deviceLabel),expires);
+  audit_(email,'LOGIN','sessions',id,null,{expires,deviceLabel:deviceLabel_(deviceLabel),deviceSource:'client-declared'});return {token,signingKey,user:{email,role:user.role},expires};
 }
 function authenticate_(token){
   authConfig_();
@@ -43,11 +45,12 @@ function authenticate_(token){
   if(!session||!raw)throw new Error('AUTH: Phiên hết hạn hoặc bị thu hồi');
   const credentials=JSON.parse(raw);
   if(Date.parse(credentials.expires)<=Date.now()||credentials.fingerprint!==authConfig_().fingerprint)throw new Error('AUTH: Phiên hết hạn hoặc cấu hình thay đổi');
-  const user=users_().find(u=>u.email===session[1]&&u.enabled);if(!user)throw new Error('AUTH: Tài khoản bị khóa');return user;
+  const user=users_().find(u=>u.email===session[1]&&u.enabled);if(!user)throw new Error('AUTH: Tài khoản bị khóa');Object.defineProperty(user,'_sessionId',{value:session[0],enumerable:false});return user;
 }
 function logout_(user,token){
   const rows=rowsPlain_('_Sessions'),index=rows.findIndex(r=>r[2]===hash_(token));
   if(index>=0)table_('_Sessions').getRange(index+2,5).setValue('revoked');
+  if(index>=0)clearSessionDevice_(rows[index][0]);
   CacheService.getScriptCache().remove(sessionKey_(token));audit_(user.email,'LOGOUT','sessions','',null,null);return {loggedOut:true};
 }
 function verifyRequest_(action,args){
@@ -68,14 +71,15 @@ function verifyRequest_(action,args){
     sheet.deleteRows(i+3,end-i);
   }
   if(sheet.getLastRow()>5000)throw new Error('BUSY: Quá nhiều yêu cầu xác thực. Hãy thử lại');
-  append_('_AuthRequests',[sessionHash,proof.requestId,Date.now()+120000]);return user;
+  append_('_AuthRequests',[sessionHash,proof.requestId,Date.now()+120000]);touchSessionDevice_(user._sessionId);return user;
 }
 function admin_(user,args){
   requireAdmin_(user);
-  if(args.operation==='list')return {users:users_().map(u=>({...u,row:undefined})),sessions:rowsPlain_('_Sessions').map(r=>({id:r[0],email:r[1],expires:r[3],status:r[4],createdAt:r[5]}))};
+  if(args.operation==='list')return {users:users_().map(u=>({...u,row:undefined})),sessions:rowsPlain_('_Sessions').map(r=>{const meta=sessionDevice_(r[0]);return {id:r[0],email:r[1],expires:r[3],status:r[4]==='active'&&Date.parse(r[3])<=Date.now()?'expired':r[4],createdAt:r[5],deviceLabel:meta.deviceLabel||'Chưa có tên thiết bị',lastSeen:meta.lastSeen||r[5],deviceSource:'client-declared'};}),security:securityOverview_()};
+  if(args.operation==='ackAlert')return acknowledgeSecurity_(user,args.id);
   if(args.operation==='revoke'){
     const row=rowsPlain_('_Sessions').findIndex(r=>r[0]===args.id);if(row<0)throw new Error('NOT_FOUND: Không tìm thấy phiên');
-    table_('_Sessions').getRange(row+2,5).setValue('revoked');audit_(user.email,'REVOKE','sessions',args.id,null,null);return {revoked:true};
+    const session=rowsPlain_('_Sessions')[row];table_('_Sessions').getRange(row+2,5).setValue('revoked');if(session[2])CacheService.getScriptCache().remove('session-key:'+session[2]);clearSessionDevice_(args.id);audit_(user.email,'REVOKE','sessions',args.id,null,null);return {revoked:true};
   }
   if(args.operation==='saveUser'){
     const email=String(args.email||'').trim().toLowerCase();
@@ -90,7 +94,7 @@ function admin_(user,args){
     }
     const old=users_().find(u=>u.email===email),row=[old?.recordId||uid_(),email,args.role,JSON.stringify(permissions),args.enabled,(Number(old?.permissionVersion)||0)+1];
     if(old)table_('_Users').getRange(old.row,1,1,row.length).setValues([row]);else append_('_Users',row);
-    if(old&&(old.role!==args.role||!args.enabled))rowsPlain_('_Sessions').forEach((r,i)=>{if(r[1]===email&&r[4]==='active')table_('_Sessions').getRange(i+2,5).setValue('revoked');});
+    if(old&&(old.role!==args.role||!args.enabled))rowsPlain_('_Sessions').forEach((r,i)=>{if(r[1]===email&&r[4]==='active'){table_('_Sessions').getRange(i+2,5).setValue('revoked');if(r[2])CacheService.getScriptCache().remove('session-key:'+r[2]);clearSessionDevice_(r[0]);}});
     audit_(user.email,'USER_UPDATE','users',email,old,{role:args.role,enabled:args.enabled,permissions});bump_();return {saved:true};
   }
   throw new Error('VALIDATION: Thao tác quản trị không hợp lệ');

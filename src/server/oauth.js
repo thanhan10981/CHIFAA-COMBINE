@@ -26,8 +26,9 @@ function writeFlow_(flow,value){
 function oauthStart_(args){
   const c=authConfig_();
   if(typeof args.browserProof!=='string'||!/^[a-f0-9]{64}$/.test(args.browserProof))throw new Error('AUTH: Thiếu ràng buộc trình duyệt');
+  const deviceLabel=deviceLabel_(args.deviceLabel);oauthStartRate_();
   const flow=randomSecret_(),verifier=randomSecret_();
-  writeFlow_(flow,{browserProof:args.browserProof,verifier,expires:Date.now()+AUTH_FLOW_SECONDS*1000,phase:'pending',fingerprint:c.fingerprint});
+  writeFlow_(flow,{browserProof:args.browserProof,deviceLabel,verifier,expires:Date.now()+AUTH_FLOW_SECONDS*1000,phase:'pending',fingerprint:c.fingerprint});
   const challenge=Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,verifier)).replace(/=+$/,'');
   const query={client_id:c.clientId,redirect_uri:c.redirect,response_type:'code',scope:'openid email',state:flow,access_type:'online',prompt:'select_account',code_challenge:challenge,code_challenge_method:'S256'};
   return {flow,sessionScope:hash_(['session-store-v1',c.redirect,config_('SPREADSHEET_ID')]),expiresIn:AUTH_FLOW_SECONDS,url:'https://accounts.google.com/o/oauth2/v2/auth?'+Object.entries(query).map(([k,v])=>encodeURIComponent(k)+'='+encodeURIComponent(v)).join('&')};
@@ -45,11 +46,10 @@ function googleJson_(url,options,stage='GOOGLE'){
   return body;
 }
 function oauthCallback_(parameters){
-  return locked_(()=>{
-    const flow=parameters.state,value=readFlow_(flow);
-    if(value.phase!=='pending')throw new Error('AUTH: Callback đã sử dụng');
+    const flow=parameters.state,value=locked_(()=>{const pending=readFlow_(flow);
+    if(pending.phase!=='pending')throw new Error('AUTH: Callback đã sử dụng');
     // Consume before network access: duplicate/failed callbacks must start again.
-    value.phase='exchanging';writeFlow_(flow,value);
+    pending.phase='exchanging';writeFlow_(flow,pending);return pending;});
     let stage='CALLBACK';
     try{
       if(parameters.error||typeof parameters.code!=='string'||!parameters.code||parameters.code.length>4096)throw new Error('AUTH: Đăng nhập bị hủy hoặc thiếu mã');
@@ -67,15 +67,14 @@ function oauthCallback_(parameters){
       if(domain&&identity.hd!==domain)throw new Error('AUTH: Sai miền Workspace');
       stage='USERS';if(!users_().some(u=>u.email===email&&u.enabled))throw new Error('FORBIDDEN: Email chưa được cấp quyền');
       stage='CACHE';
-      value.phase='verified';value.email=email;value.subject=identity.sub;delete value.verifier;writeFlow_(flow,value);
+      locked_(()=>{if(readFlow_(flow).phase!=='exchanging')throw new Error('AUTH: Callback đã sử dụng');value.phase='verified';value.email=email;value.subject=identity.sub;delete value.verifier;writeFlow_(flow,value);});
     }catch(error){
       value.phase='failed';value.failure=String(error.message).startsWith('FORBIDDEN:')?'FORBIDDEN':'AUTH';delete value.verifier;
-      value.diagnostic=oauthDiagnostic_(error,'OAUTH_'+stage);writeFlow_(flow,value);
+      value.diagnostic=oauthDiagnostic_(error,'OAUTH_'+stage);try{locked_(()=>{if(readFlow_(flow).phase==='exchanging')writeFlow_(flow,value);});}catch(_){/* Expired/reconfigured flows stay unusable. */}
       try{audit_('ANONYMOUS','OAUTH_DENIED','sessions','',null,{reason:value.failure,diagnostic:value.diagnostic});}catch(_){/* Preserve safe diagnostic if audit storage is unavailable. */}
       throw new Error(value.failure+': '+value.diagnostic);
     }
     return true;
-  });
 }
 function oauthFinish_(args){
   return locked_(()=>{
@@ -84,7 +83,7 @@ function oauthFinish_(args){
     if(value.phase==='pending'||value.phase==='exchanging')return {pending:true};
     CacheService.getScriptCache().remove(flowKey_(args.flow));
     if(value.phase!=='verified')throw new Error((value.failure||'AUTH')+': Đăng nhập không thành công. Mã '+oauthDiagnostic_(null,value.diagnostic||'OAUTH_CALLBACK'));
-    return issueSession_(value.email,value.subject,{replaceOwnAdminSession:true});
+    return issueSession_(value.email,value.subject,{replaceOwnAdminSession:true,deviceLabel:value.deviceLabel});
   });
 }
 function oauthDiagnostic_(error,fallback='OAUTH_STATE'){
