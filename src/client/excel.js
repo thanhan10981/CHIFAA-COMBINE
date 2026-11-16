@@ -21,6 +21,7 @@ function styleExcelSheet(sheet,headerRow,lastColumn,lastRow){
 }
 function typedExcelValue(value,field,key){
   if(value==null||value==='')return null;
+  if(typeof value==='number'&&!Number.isFinite(value))return String(value);
   if(Array.isArray(value))return JSON.stringify(value);
   if(field?.type==='date'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value)))return new Date(value+'T00:00:00Z');
   if(key==='updatedAt'&&typeof value==='string'&&!Number.isNaN(Date.parse(value)))return new Date(value);

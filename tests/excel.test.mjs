@@ -6,11 +6,12 @@ import vm from 'node:vm';
 import {createModuleWorkbook,createImportWorkbook,parseImportXlsx,validateExcelArchive} from '../src/client/excel.js';
 const reload=async book=>{const bytes=await book.xlsx.writeBuffer(),copy=new ExcelJS.Workbook();await copy.xlsx.load(bytes);return {bytes,book:copy};};
 test('real XLSX preserves Unicode, native dates/numbers, missing vs zero, inert formula-like text and trace metadata',async()=>{
- const date=new Date('2026-11-16T10:00:00Z'),rows=[{recordId:'00123',version:1,name:'Gạo & nếp <loại A>',purchaseUnit:'kg',unit:'g',conversion:1000,purchasePrice:0,minimum:2,updatedAt:date.toISOString(),deleted:false,reverses:''},{recordId:'002',version:2,name:'=HYPERLINK("https://example.com","click")',purchasePrice:'',deleted:true,reverses:'00123'}];
+ const date=new Date('2026-11-16T10:00:00Z'),rows=[{recordId:'00123',version:1,name:'Gạo & nếp <loại A>',purchaseUnit:'kg',unit:'g',conversion:1000,purchasePrice:0,minimum:2,updatedAt:date.toISOString(),deleted:false,reverses:''},{recordId:'002',version:NaN,name:'=HYPERLINK("https://example.com","click")',purchasePrice:'',deleted:true,reverses:'00123'}];
  const {bytes,book}=await reload(createModuleWorkbook('materials',rows,{exportedAt:date,stamp:'snapshot'},ExcelJS));assert.equal(bytes.subarray(0,2).toString(),'PK');
  const sheet=book.getWorksheet('Du_lieu');assert.match(sheet.getCell('A1').value,/CHIFAA COMBINE/);assert.match(sheet.getCell('A2').value,/2 bản ghi/);
  assert.equal(sheet.getCell('A6').value,rows[0].name);assert.equal(sheet.getCell('E6').value,0);assert.equal(sheet.getCell('E7').value,null);assert.equal(sheet.getCell('A7').type,ExcelJS.ValueType.String);assert.equal(sheet.getCell('A7').value,rows[1].name);
  assert.equal(sheet.getCell('G6').value,'00123');assert.equal(sheet.getCell('I6').value.toISOString(),date.toISOString());assert.equal(sheet.views[0].ySplit,5);assert.equal(sheet.autoFilter,'A5:M7');assert.equal(sheet.getCell('A5').fill.fgColor.argb,'FF17283D');assert.equal(book.worksheets.length,2);
+ assert.equal(sheet.getCell('H7').value,'NaN');
 });
 test('empty exports and all pages are preserved without invented zero rows',async()=>{
  const empty=await reload(createModuleWorkbook('materials',[],{},ExcelJS));assert.equal(empty.book.getWorksheet('Du_lieu').rowCount,5);
