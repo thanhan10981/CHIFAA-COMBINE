@@ -27,16 +27,24 @@ function readRows_(module,book) {
   if(JSON.stringify(s.getRange(1,1,1,headers.length).getValues()[0])!==JSON.stringify(headers)) throw new Error('SCHEMA: Sai cột bảng '+module);
   const last=s.getLastRow();if(last<2) return [];
   const cellsAll=[];for(let offset=2;offset<=last;offset+=1000)cellsAll.push(...s.getRange(offset,1,Math.min(1000,last-offset+1),headers.length).getValues());
+  return decodeRows_(module,cellsAll,2);
+}
+function rawRowsRange_(module,offset,limit){
+  return timed_('window:'+module,()=>{const s=table_(module),headers=headers_(module);if(JSON.stringify(s.getRange(1,1,1,headers.length).getValues()[0])!==JSON.stringify(headers))throw new Error('SCHEMA: Sai cột bảng '+module);const total=Math.max(0,s.getLastRow()-1),count=Math.max(0,Math.min(limit,total-offset));return {rows:count?decodeRows_(module,s.getRange(offset+2,1,count,headers.length).getValues(),offset+2):[],total,next:offset+limit<total?offset+limit:null};});
+}
+function decodeRows_(module,cellsAll,firstRow){
+  const headers=headers_(module),fields=fields_(module),definitions=Object.entries(fields);
   return cellsAll.map((cells,i)=>{
     if(cells.every(c=>c===''))return null;
-    const row={}; headers.forEach((h,j)=>{row[h]=cells[j] instanceof Date?Utilities.formatDate(cells[j],'Asia/Ho_Chi_Minh',fields_(module)[h]?.type==='time'?'HH:mm':'yyyy-MM-dd'):cells[j];});
+    const row={}; headers.forEach((h,j)=>{row[h]=cells[j] instanceof Date?Utilities.formatDate(cells[j],'Asia/Ho_Chi_Minh',fields[h]?.type==='time'?'HH:mm':'yyyy-MM-dd'):cells[j];});
     if(![true,false,''].includes(row.deleted))row._sourceError='Cờ xóa không hợp lệ';
     row.deleted=row.deleted===true;row.version=Number(row.version);
-    for(const [k,f]of Object.entries(fields_(module))){
+    for(const [k,f]of definitions){
       if(f.type==='lines' && typeof row[k]==='string'){try{row[k]=JSON.parse(row[k]);}catch(_){row[k]=null;}}
       if(f.type==='boolean'){if(![true,false,''].includes(row[k]))row._sourceError='Giá trị đúng/sai không hợp lệ';row[k]=row[k]===true;}
     }
-    row._hash=hash_(cells.map(v=>v instanceof Date?v.toISOString():v)); row._row=i+2;
+    row._hash=hash_(cells.map(v=>v instanceof Date?v.toISOString():v)); row._row=i+firstRow;
+    Object.defineProperty(row,'_cells',{value:cells,enumerable:false});
     return row;
   }).filter(Boolean);
 }

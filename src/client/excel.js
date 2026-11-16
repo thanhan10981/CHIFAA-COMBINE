@@ -1,14 +1,22 @@
 import {SCHEMA,META} from '../shared/schema.js';
 import {parseImportCsv} from './import-csv.js';
+import {rpcCall} from './rpc.js';
 const EXCEL_MIME='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-function excelRuntime(){
+const EXCEL_ASSET_HASH='__EXCEL_ASSET_HASH__';
+let excelLoading=null;
+async function ensureExcelRuntime(){
   if(globalThis.ExcelJS)return globalThis.ExcelJS;
-  const source=document.getElementById('excel-runtime');
-  if(!source)throw new Error('Thiếu thư viện Excel. Tải lại ứng dụng rồi thử lại.');
-  const script=document.createElement('script');script.textContent=source.textContent;document.head.append(script);script.remove();
-  if(!globalThis.ExcelJS)throw new Error('Không thể khởi động Excel trên trình duyệt này.');
-  source.remove();return globalThis.ExcelJS;
+  if(excelLoading)return excelLoading;
+  excelLoading=(async()=>{
+    const url='https://script.google.com/chifaa-public-assets/excel-'+EXCEL_ASSET_HASH+'.js';let cache,source;
+    const valid=async text=>{const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));return Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('')===EXCEL_ASSET_HASH;};
+    try{cache=await globalThis.caches?.open('chifaa-public-assets-v1');source=await (await cache?.match(url))?.text();if(source&&!await valid(source)){source=null;await cache.delete(url);}}catch(_){source=null;}
+    if(!source){source=(await rpcCall('publicAsset',{id:'exceljs-4.4.0'})).source;if(typeof source!=='string'||!await valid(source))throw new Error('Thư viện Excel không đúng phiên bản. Tải lại trang rồi thử lại.');try{await cache?.put(url,new Response(source,{headers:{'Content-Type':'application/javascript'}}));}catch(_){/* Public-asset storage is optional. */}}
+    const script=document.createElement('script');script.textContent=source;document.head.append(script);script.remove();
+    if(!globalThis.ExcelJS)throw new Error('Không thể khởi động Excel trên trình duyệt này.');return globalThis.ExcelJS;
+  })();try{return await excelLoading;}finally{excelLoading=null;}
 }
+function excelRuntime(){if(!globalThis.ExcelJS)throw new Error('Chưa tải thư viện Excel');return globalThis.ExcelJS;}
 const metaLabels={recordId:'Mã bản ghi',version:'Phiên bản',updatedAt:'Cập nhật lúc (UTC)',updatedBy:'Người cập nhật',source:'Nguồn',deleted:'Đã xóa',reverses:'Mã phiếu bị đảo'};
 function excelColumn(key,field={}){return {key,header:field.label||metaLabels[key]||key,width:key==='recordId'||key==='reverses'||field.ref?38:field.type==='number'?20:field.type==='date'?16:field.type==='boolean'?15:field.type==='lines'?60:key==='updatedAt'?25:30};}
 function styleExcelSheet(sheet,headerRow,lastColumn,lastRow){
@@ -61,11 +69,12 @@ function validateExcelArchive(buffer){
   if(count>300||!count)throw new Error('Tệp Excel có quá nhiều thành phần');
   for(let i=0;i<count;i++){if(at+46>bytes.length||v.getUint32(at,true)!==0x02014b50)throw new Error('Cấu trúc Excel không hợp lệ');if(v.getUint16(at+8,true)&1)throw new Error('Không nhận Excel có mật khẩu');total+=v.getUint32(at+24,true);if(total>12000000)throw new Error('Dữ liệu Excel sau giải nén vượt 12 MB');at+=46+v.getUint16(at+28,true)+v.getUint16(at+30,true)+v.getUint16(at+32,true);}
 }
-async function parseImportXlsx(buffer,module,Excel=excelRuntime()){
+async function parseImportXlsx(buffer,module,Excel){
+  if(!Excel)Excel=await ensureExcelRuntime();
   validateExcelArchive(buffer);const book=new Excel.Workbook();await book.xlsx.load(buffer);const sheet=book.getWorksheet('Nhap_lieu');if(!sheet)throw new Error('Dùng mẫu Excel có sheet Nhap_lieu');
   if(sheet.rowCount>501||sheet.columnCount>Object.keys(SCHEMA[module]?.fields||{}).length+META.length)throw new Error('Excel tối đa 500 dòng và các cột theo mẫu');
   const lines=[];for(let r=1;r<=sheet.rowCount;r++){const row=[];for(let c=1;c<=sheet.columnCount;c++){const value=sheet.getCell(r,c).value;if(value&&typeof value==='object'&&!(value instanceof Date))throw new Error('Không nhận công thức, liên kết hoặc ô phức tạp ở dòng '+r);row.push(value instanceof Date?value.toISOString().slice(0,10):String(value??''));}if(r===1||row.some(v=>v!==''))lines.push(row.map(v=>'"'+v.replace(/"/g,'""')+'"').join(','));}
   return parseImportCsv(lines.join('\r\n'),module);
 }
 async function downloadExcel(book,filename){const buffer=await book.xlsx.writeBuffer(),url=URL.createObjectURL(new Blob([buffer],{type:EXCEL_MIME})),a=document.createElement('a');a.href=url;a.download=filename.replace(/\.xlsx$/i,'')+'.xlsx';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-export {EXCEL_MIME,createModuleWorkbook,createImportWorkbook,parseImportXlsx,validateExcelArchive,downloadExcel};
+export {EXCEL_MIME,ensureExcelRuntime,createModuleWorkbook,createImportWorkbook,parseImportXlsx,validateExcelArchive,downloadExcel};

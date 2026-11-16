@@ -31,7 +31,7 @@ for(const n of [100,1000,5000]){
  measure('save-material',()=>send(g,'mutate',{token,module:'materials',operation:'create',key:crypto.randomUUID(),record:{name:'New material',purchaseUnit:'kg',unit:'kg',conversion:1,purchasePrice:10,minimum:0}}));
  measure('full-scan',()=>g.ctx.scanSheets_());
  g.tables.get('materials').rows[1][11]=11;
- measure('direct-edit-detection',()=>g.ctx.sheetEdited_({source:g.ctx.db_(),range:{getSheet:()=>({getName:()=> 'materials'})}}));
+ measure('direct-edit-detection',()=>g.ctx.sheetEdited_({source:g.ctx.db_(),range:{getSheet:()=>({getName:()=> 'materials'}),getRow:()=>2,getNumRows:()=>1,getColumn:()=>12}}));
  // New APIs are measured when present; baseline is retained without pretending
  // that RAM timings include Google network, OAuth, locks or concurrent users.
  if(g.ctx.summary_)measure('dashboard-summary',()=>send(g,'summary',{token,from:'2026-11-16',to:'2026-11-16'}));

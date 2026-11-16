@@ -74,49 +74,18 @@ function ensureAuthRequests_(user){
 function installTriggers_(){
   const id=config_('SPREADSHEET_ID'),triggers=ScriptApp.getProjectTriggers();
   if(!triggers.some(t=>t.getHandlerFunction()==='sheetEdited_'))ScriptApp.newTrigger('sheetEdited_').forSpreadsheet(id).onEdit().create();
-  if(!triggers.some(t=>t.getHandlerFunction()==='scanSheets_'))ScriptApp.newTrigger('scanSheets_').timeBased().everyMinutes(5).create();
+  if(!triggers.some(t=>t.getHandlerFunction()==='sheetChanged_'))ScriptApp.newTrigger('sheetChanged_').forSpreadsheet(id).onChange().create();
+  if(!triggers.some(t=>t.getHandlerFunction()==='scanSlice_'))ScriptApp.newTrigger('scanSlice_').timeBased().everyMinutes(1).create();
+  for(const t of triggers)if(t.getHandlerFunction()==='scanSheets_')ScriptApp.deleteTrigger(t);
   if(props_().getProperty('BACKUP_FOLDER_ID')&&!triggers.some(t=>t.getHandlerFunction()==='backup_'))ScriptApp.newTrigger('backup_').timeBased().everyDays(1).atHour(2).inTimezone('Asia/Ho_Chi_Minh').create();
   if(props_().getProperty('PORTAL_SPREADSHEET_ID')&&props_().getProperty('PORTAL_WEB_APP_URL')&&!triggers.some(t=>t.getHandlerFunction()==='portalSync_'))ScriptApp.newTrigger('portalSync_').timeBased().everyMinutes(5).create();
 }
-function sheetEdited_(event){if(event?.source?.getId()!==config_('SPREADSHEET_ID'))return;scanSheets_();}
-function scanSheets_(){
-  return locked_(()=>{
-    const data=Object.fromEntries(Object.keys(SCHEMA).map(m=>[m,rawRows_(m)])),seen=rowsPlain_('_Sync'),next=[],changes=[],invalid=sourceIssues(data);
-    for(const [module,rows]of Object.entries(data)){
-      for(const row of rows){
-        const old=seen.find(r=>r[0]===module&&r[1]===row.recordId);
-        if(!row.recordId){changes.push({module,id:'unknown',issue:'Dòng thiếu ID; thêm mới qua ứng dụng'});continue;}
-        if(!old||old[2]!==row._hash){
-          let issue='';
-          issue=invalid.find(i=>i.module===module&&i.row===row._row)?.message||'';
-          if(old){
-            if(row.source==='SHEETS'||row.updatedAt<=String(old[3])){
-              row.version=(Number(row.version)||0)+1;row.updatedAt=now_();row.updatedBy='SHEET_EDITOR_UNVERIFIED';row.source='SHEETS';
-              table_(module).getRange(row._row,1,1,META.length).setValues([META.map(k=>row[k]??'')]);
-              audit_('SHEET_EDITOR_UNVERIFIED','DIRECT_EDIT',module,row.recordId,null,{issue:issue||null});
-            }
-          }
-          changes.push({module,id:row.recordId,issue});
-        }
-      }
-    }
-    for(const old of seen){
-      if(!data[old[0]]?.some(r=>r.recordId===old[1])){
-        changes.push({module:old[0],id:old[1],issue:'Dòng đã bị xóa trực tiếp khỏi Sheet'});
-        audit_('SHEET_EDITOR_UNVERIFIED','DIRECT_ROW_DELETE',old[0],old[1],null,null);
-      }
-    }
-    // Store current hashes after metadata changes. _Sync holds no business payload.
-    for(const module of Object.keys(SCHEMA))for(const row of rawRows_(module))next.push([module,row.recordId,row._hash,now_()]);
-    const sheet=table_('_Sync');if(sheet.getLastRow()>1)sheet.getRange(2,1,sheet.getLastRow()-1,4).clearContent();
-    if(next.length)sheet.getRange(2,1,next.length,4).setValues(next);
-    if(changes.length)bump_();props_().setProperty('LAST_SCAN',now_());
-    // Recheck unchanged invalid rows on every scan; never overwrite their cells.
-    for(const issue of invalid)if(!changes.some(c=>c.module===issue.module&&c.id===issue.id&&c.issue))changes.push({module:issue.module,id:issue.id,issue:issue.message});
-    props_().setProperty('SOURCE_QUALITY',JSON.stringify({checkedAt:now_(),invalidRows:invalid.length}));
-    console.log(JSON.stringify({event:'sync',changes:changes.length,invalid:changes.filter(c=>c.issue).length}));return changes;
-  });
+function sheetEdited_(event){
+  if(event?.source?.getId()!==config_('SPREADSHEET_ID'))return;const module=event.range?.getSheet()?.getName();
+  if(Object.hasOwn(SCHEMA,module)){const range=event.range?.getRow?{start:event.range.getRow(),count:event.range.getNumRows(),column:event.range.getColumn()}:null;try{return scanModules_([module],{direct:true,range});}catch(e){if(String(e.message).startsWith('SCHEMA:'))locked_(()=>bump_([module]));throw e;}}
+  if(module?.startsWith('_'))return locked_(()=>bump_());
 }
+function scanSheets_(){return scanModules_(Object.keys(SCHEMA));}
 function backup_(){
   return locked_(()=>{
     const folder=privateBackupFolder_(config_('BACKUP_FOLDER_ID'));

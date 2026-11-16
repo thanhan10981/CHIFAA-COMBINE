@@ -49,6 +49,7 @@ function effective(rows) {
 // unknown, not proof of a broken reference (e.g. a sales-only accountant).
 function sourceIssues(data, partial = {}) {
   const issues=[];
+  const activeRefs=new Map(Object.entries(data).filter(([m])=>SCHEMA[m]).map(([m,rows])=>[m,new Set(effective(rows).map(r=>r.recordId))]));
   for(const [module,rows] of Object.entries(data)){
     if(!SCHEMA[module])continue;
     const counts=new Map();for(const row of rows)counts.set(row.recordId,(counts.get(row.recordId)||0)+1);
@@ -58,12 +59,12 @@ function sourceIssues(data, partial = {}) {
         if(row._sourceError)fail(row._sourceError);
         if(typeof row.recordId!=='string'||!row.recordId||!Number.isInteger(row.version)||row.version<1)fail('Thiếu ID / phiên bản hợp lệ');
         if(counts.get(row.recordId)>1)fail('ID bị trùng trong Sheet');
-        const refs={...data},input={};
+        const refs={},input={};
         for(const [key,field]of Object.entries(SCHEMA[module].fields)){
           input[key]=row[key];
-          if(field.ref&&(!Object.hasOwn(data,field.ref)||partial[field.ref]))refs[field.ref]=[{recordId:row[key]}];
+          if(field.ref){if(row[key]&&activeRefs.has(field.ref)&&!partial[field.ref]&&!activeRefs.get(field.ref).has(row[key]))fail('Mã tham chiếu không tồn tại: '+field.label);if(!refs[field.ref])refs[field.ref]=[];refs[field.ref].push({recordId:row[key]});}
         }
-        if(module==='recipes')for(const ref of ['materials','recipes'])if(!Object.hasOwn(data,ref)||partial[ref])refs[ref]=(Array.isArray(row.lines)?row.lines:[]).filter(l=>l?.type===(ref==='recipes'?'recipe':'material')).map(l=>({recordId:l.id}));
+        if(module==='recipes')for(const ref of ['materials','recipes'])refs[ref]=(Array.isArray(row.lines)?row.lines:[]).filter(l=>l?.type===(ref==='recipes'?'recipe':'material')).map(l=>{if(activeRefs.has(ref)&&!partial[ref]&&!activeRefs.get(ref).has(l.id))fail('Thành phần không tồn tại');return {recordId:l.id};});
         cleanRecord(module,input,refs);
         if(module==='recipes'&&!partial.recipes)flattenRecipe(row.recordId,1,rows);
       }catch(error){issues.push({module,id:row.recordId||'',row:row._row||null,message:String(error.message)});}

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import ExcelJS from 'exceljs';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import crypto from 'node:crypto';
 import {createModuleWorkbook,createImportWorkbook,parseImportXlsx,validateExcelArchive} from '../src/client/excel.js';
 const reload=async book=>{const bytes=await book.xlsx.writeBuffer(),copy=new ExcelJS.Workbook();await copy.xlsx.load(bytes);return {bytes,book:copy};};
 test('real XLSX preserves Unicode, native dates/numbers, missing vs zero, inert formula-like text and trace metadata',async()=>{
@@ -32,7 +33,18 @@ test('Excel archive guard rejects invalid zip and declared decompression bombs b
  const book=createImportWorkbook('materials',ExcelJS),bytes=Buffer.from(await book.xlsx.writeBuffer());validateExcelArchive(bytes);
  const central=bytes.indexOf(Buffer.from([0x50,0x4b,0x01,0x02]));bytes.writeUInt32LE(13000000,central+24);assert.throws(()=>validateExcelArchive(bytes),/12 MB/);
 });
-test('browser build embeds Excel runtime locally and defers its execution until requested',()=>{
- const build=fs.readFileSync('scripts/build.mjs','utf8'),source=fs.readFileSync('src/client/excel.js','utf8');assert.match(build,/id="excel-runtime" type="application\/octet-stream"/);assert.match(build,/node_modules\/exceljs\/dist\/exceljs.min.js/);assert.match(build,/replace\('<!--APP-->',\(\)=>/);assert.doesNotMatch(source,/https?:\/\//);
+test('browser build separates Excel runtime and verifies cached public asset integrity before execution',()=>{
+ const build=fs.readFileSync('scripts/build.mjs','utf8'),source=fs.readFileSync('src/client/excel.js','utf8');assert.match(build,/dist\/ExcelRuntime.html/);assert.match(build,/node_modules\/exceljs\/dist\/exceljs.min.js/);assert.match(build,/replace\('<!--APP-->',\(\)=>/);assert.match(source,/rpcCall\('publicAsset'/);assert.match(source,/subtle.digest\('SHA-256'/);assert.doesNotMatch(source,/cdnjs|unpkg|jsdelivr/);
  const browser=vm.createContext({setTimeout,clearTimeout,console});vm.runInContext(fs.readFileSync('node_modules/exceljs/dist/exceljs.min.js','utf8'),browser);assert.equal(typeof browser.ExcelJS.Workbook,'function');assert.equal(vm.runInContext('new ExcelJS.Workbook().worksheets.length',browser),0);
+});
+test('Excel lazy loader rejects a tampered public cache, downloads once and reuses verified code without authentication',async()=>{
+ const code='globalThis.ExcelJS={Workbook:function FixtureWorkbook(){}};',hash=crypto.createHash('sha256').update(code).digest('hex');let cached='globalThis.untrustedExecuted=true;',calls=0;
+ const ctx=vm.createContext({crypto:crypto.webcrypto,TextEncoder,Uint8Array,Response,document:{createElement:()=>({remove(){}}),head:{append:script=>vm.runInContext(script.textContent,ctx)}},caches:{open:async()=>({match:async()=>cached?new Response(cached):undefined,delete:async()=>{cached=null;},put:async(_,response)=>{cached=await response.text();}})},rpcCall:async(action,args)=>{assert.equal(action,'publicAsset');assert.equal(args.id,'exceljs-4.4.0');calls++;return {source:code};}});
+ const source=fs.readFileSync('src/client/excel.js','utf8').replace(/^import .*?;\r?\n/gm,'').replace(/^export \{[^}]*\};?\r?\n?/gm,'').replaceAll('__EXCEL_ASSET_HASH__',hash);vm.runInContext(source,ctx);
+ await vm.runInContext('ensureExcelRuntime()',ctx);assert.equal(ctx.untrustedExecuted,undefined);assert.equal(calls,1);assert.equal(cached,code);ctx.ExcelJS=undefined;await vm.runInContext('ensureExcelRuntime()',ctx);assert.equal(calls,1);assert.equal(typeof ctx.ExcelJS.Workbook,'function');
+});
+test('Excel lazy loader fails closed if a downloaded library does not match the build hash',async()=>{
+ const ctx=vm.createContext({crypto:crypto.webcrypto,TextEncoder,Uint8Array,rpcCall:async()=>({source:'globalThis.untrustedExecuted=true;'})});
+ vm.runInContext(fs.readFileSync('src/client/excel.js','utf8').replace(/^import .*?;\r?\n/gm,'').replace(/^export \{[^}]*\};?\r?\n?/gm,'').replaceAll('__EXCEL_ASSET_HASH__','0'.repeat(64)),ctx);
+ await assert.rejects(()=>vm.runInContext('ensureExcelRuntime()',ctx),/không đúng phiên bản/);assert.equal(ctx.untrustedExecuted,undefined);
 });

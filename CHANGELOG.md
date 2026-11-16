@@ -147,3 +147,7 @@ Khởi tạo từ đầu vào được cung cấp, giữ phác thảo và logo g
 ## 2026-11-17 - Performance PERF01/02 (local)
 
 Scoped mutation dependencies, request-only reads, batch effects/audit/journal, module versions and safe read guard. 190tests pass; measured mock evidence and next phases in docs/PERFORMANCE_2026-11-17.md. Not deployed.
+
+## 2026-11-17 - Performance PERF03-05 (local)
+
+Lazy shell, scoped cache, aggregate dashboards/strategy, windowed exports, incremental onEdit/reconciliation, RAM router/read dedupe and pending/ACK handling. Shared logo and on-demand verified public Excel runtime reduce initial HTML. 206tests pass, Google/browser UAT pending.

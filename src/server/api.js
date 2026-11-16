@@ -8,7 +8,8 @@ function rpc(action,args){
   const started=Date.now();args=args||{};let actor=null;
   try{
     let result;
-    if(action==='oauthStart')result=oauthStart_(args);
+    if(action==='publicAsset')result=publicAsset_(args);
+    else if(action==='oauthStart')result=oauthStart_(args);
     else if(action==='oauthFinish')result=oauthFinish_(args);
     else if(action==='challenge'||action==='login')throw new Error('AUTH: Luồng đăng nhập cũ đã tắt. Tải lại ứng dụng');
     else if(action==='portalCatalog')result=portalCatalog_(args);
@@ -18,10 +19,13 @@ function rpc(action,args){
       const user=timed_('auth',()=>locked_(()=>verifyRequest_(action,args)));
       actor=user.email;
       const readStamp=stamp_();
-      if(['bootstrap','list','export','financialSummary','workflowReports'].includes(action))assertReadable_();
-      if(action==='bootstrap')result=bootstrap_(user,args.force===true);
+      if(['bootstrap','list','export','summary','strategySummary','settlements','financialSummary','workflowReports'].includes(action))assertReadable_();
+      if(action==='bootstrap')result=bootstrap_(user,args.force===true,args);
       else if(action==='list')result=listPage_(user,args);
-      else if(action==='sync')result={stamp:stamp_(),permissionVersion:user.permissionVersion};
+      else if(action==='summary')result=summary_(user,args);
+      else if(action==='strategySummary')result=strategySummary_(user,args);
+      else if(action==='settlements')result=settlements_(user,args);
+      else if(action==='sync')result={stamp:stamp_(),moduleVersions:permittedVersions_(user),permissionVersion:user.permissionVersion,grants:hash_({role:user.role,permissions:user.permissions})};
       else if(action==='logout')result=locked_(()=>logout_(user,args.token));
       else if(action==='mutate')result=timed_('mutate',()=>locked_(()=>mutate_(authenticate_(args.token),args)));
       else if(action==='workflow')result=locked_(()=>workflow_(authenticate_(args.token),args));
@@ -33,9 +37,9 @@ function rpc(action,args){
       else if(action==='health'){requireAdmin_(user);result={stamp:stamp_(),audit:rowsPlain_('_Audit').slice(-100).map(r=>({id:r[0],at:r[1],user:r[2],action:r[3],module:r[4],recordId:r[5]})),pending:rowsPlain_('_Requests').filter(r=>r[3]==='PREPARED').map(r=>({key:r[0],state:r[3],createdAt:r[6]})),lastScan:props_().getProperty('LAST_SCAN'),lastBackup:props_().getProperty('LAST_BACKUP')};}
       else if(action==='export'){require_(user,args.module,'export');result=listPage_(user,{...args,mode:'snapshot'});}
       else throw new Error('NOT_FOUND: Endpoint không tồn tại');
-      if(['bootstrap','list','export','financialSummary','workflowReports'].includes(action))assertReadable_();
-      if(['bootstrap','list','export','financialSummary','workflowReports'].includes(action)&&readStamp!==stamp_())throw new Error('CONFLICT: Dữ liệu đổi trong lúc đọc. Đồng bộ rồi thử lại.');
-      if(['bootstrap','list','export','health','financialSummary','workflowReports','workflowStatus'].includes(action))audit_(user.email,'READ','rpc',action,null,{module:args.module||args.kind||''});
+      if(['bootstrap','list','export','summary','strategySummary','settlements','financialSummary','workflowReports'].includes(action))assertReadable_();
+      if(['bootstrap','list','export','summary','strategySummary','settlements','financialSummary','workflowReports'].includes(action)&&readStamp!==stamp_())throw new Error('CONFLICT: Dữ liệu đổi trong lúc đọc. Đồng bộ rồi thử lại.');
+      if(['bootstrap','list','export','summary','strategySummary','settlements','health','financialSummary','workflowReports','workflowStatus'].includes(action))audit_(user.email,'READ','rpc',action,null,{module:args.module||args.kind||''});
     }
     console.log(JSON.stringify({event:'rpc',action,ms:Date.now()-started,ok:true}));return {ok:true,data:result};
   }catch(error){
@@ -45,10 +49,10 @@ function rpc(action,args){
     return {ok:false,error:{code,message:code==='ERROR'?'Không thể xử lý. Kiểm tra nhật ký Apps Script.':message}};
   }finally{console.log(JSON.stringify({event:'rpc_profile',action,steps:requestProfile_}));requestBooks_=null;requestRows_=null;requestTables_=null;requestProfile_=null;}
 }
-function bootstrap_(user,force=false){
+function bootstrap_(user,force=false,{shell=false}={}){
   // Called only after fresh session, signature, replay and _Users checks.
   const stamp=stamp_(),approved=props_().getProperty('ACCOUNTING_APPROVED')==='true';
-  const key='bootstrap:v1:'+hash_({book:config_('SPREADSHEET_ID'),stamp,approved,email:user.email,role:user.role,permissions:user.permissions,version:user.permissionVersion});
+  const key='bootstrap:v1:'+hash_({book:config_('SPREADSHEET_ID'),stamp,approved,shell,email:user.email,role:user.role,permissions:user.permissions,version:user.permissionVersion});
   let cache;
   try{
     cache=CacheService.getScriptCache();
@@ -59,9 +63,10 @@ function bootstrap_(user,force=false){
   if(Array.isArray(user.permissions?._routes))permissions._routes=[...user.permissions._routes];
   for(const module of Object.keys(SCHEMA)){
     permissions[module]=ACTIONS.filter(a=>allowed_(user,module,a));
+    if(shell&&allowed_(user,module,'read')){data[module]=[];partialModules[module]={total:null,next:0};continue;}
     if(allowed_(user,module,'read')){const rows=rawRows_(module);sourceData[module]=rows;if(rows.length>200)partialModules[module]={total:rows.length,next:200};const page=rows.slice(0,200).map(publicRow_);data[module]=module==='production'?attachProductionCosts_(page,user):module==='debts'?attachDebtAllocations_(page):module==='loans'?attachLoanPeriods_(page):page;}
   }
-  const result={data,issues:sourceIssues(sourceData),partialModules,permissions,user:{email:user.email,role:user.role},permissionVersion:user.permissionVersion,stamp,accountingApproved:approved};
+  const result={data,issues:sourceIssues(sourceData),partialModules,permissions,user:{email:user.email,role:user.role},permissionVersion:user.permissionVersion,grants:hash_({role:user.role,permissions:user.permissions}),moduleVersions:permittedVersions_(user),stamp,accountingApproved:approved};
   // Never publish a snapshot assembled across a concurrent write.
   if(stamp===stamp_())try{
     const value=JSON.stringify({until:Date.now()+30000,value:result});
@@ -76,6 +81,11 @@ function listPage_(user,args){
   if(args.stamp&&args.stamp!==stamp)throw new Error('CONFLICT: Dữ liệu đổi trong lúc phân trang. Đồng bộ rồi thử lại.');
   for(const key of ['from','to'])if(args[key]&&!validDate(args[key]))throw new Error('VALIDATION: Ngày lọc không hợp lệ');
   if(args.search&&(typeof args.search!=='string'||args.search.length>200))throw new Error('VALIDATION: Tìm kiếm tối đa 200 ký tự');
+  const selection={module:args.module,offset,limit,from:args.from||'',to:args.to||'',kind:args.kind||'',search:args.search||'',mode:args.mode||'',window:args.window===true};
+  const result=scopedCache_(user,'list',moduleVersions_()[args.module],selection,args.force===true,()=>listPageData_(user,args,offset,limit,stamp));return {...result,stamp};
+}
+function listPageData_(user,args,offset,limit,stamp){
+  if(args.mode==='snapshot'&&args.window===true){const window=rawRowsRange_(args.module,offset,limit);let rows=window.rows.map(publicRow_);if(args.module==='production')rows=attachProductionCosts_(rows,user);if(args.module==='debts')rows=attachDebtAllocations_(rows);if(args.module==='loans')rows=attachLoanPeriods_(rows);return {...window,rows,offset,stamp};}
   let rows=rawRows_(args.module);if(args.mode!=='snapshot')rows=rows.filter(r=>!r.deleted&&(!args.from||!r.date||r.date>=args.from)&&(!args.to||!r.date||r.date<=args.to)&&(!args.kind||r.kind===args.kind)&&(!args.search||Object.values(r).some(v=>String(v).toLowerCase().includes(args.search.toLowerCase()))));
   let page=rows.slice(offset,offset+limit).map(publicRow_);if(args.module==='production')page=attachProductionCosts_(page,user);if(args.module==='debts')page=attachDebtAllocations_(page);if(args.module==='loans')page=attachLoanPeriods_(page);
   if(stamp!==stamp_())throw new Error('CONFLICT: Dữ liệu vừa đổi. Đồng bộ rồi thử lại.');return {rows:page,total:rows.length,offset,next:offset+limit<rows.length?offset+limit:null,stamp};

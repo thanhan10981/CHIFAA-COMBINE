@@ -19,7 +19,7 @@ test('maintenance initialization is idempotent, backup is registered, restore cr
  const backup=rpc('maintenance',{operation:'backup'});assert.equal(backup.ok,true);assert.equal(g.books.size,2);
  const restored=rpc('maintenance',{operation:'restore',backupId:backup.data.fileId});assert.equal(restored.ok,true);assert.notEqual(restored.data.reviewSpreadsheetId,'test');assert.equal(g.properties.get('SPREADSHEET_ID'),'test');assert.equal(g.books.size,3);
  assert.equal(rpc('maintenance',{operation:'restore',backupId:'unregistered-backup-123456'}).error.code,'FORBIDDEN');
- rpc('maintenance',{operation:'installTriggers'});rpc('maintenance',{operation:'installTriggers'});assert.equal(g.triggers.length,3);assert.ok(g.triggers.some(t=>t.handler==='backup_'&&t.days===1));
+ rpc('maintenance',{operation:'installTriggers'});rpc('maintenance',{operation:'installTriggers'});assert.equal(g.triggers.length,4);assert.ok(g.triggers.some(t=>t.handler==='backup_'&&t.days===1));
 });
 test('import UI backend preview is read-only, applies once and rejects locked periods or duplicate IDs',()=>{
  const {g,rpc}=admin(),bundle={records:[{module:'materials',recordId:'imported',record:{name:'M',purchaseUnit:'kg',unit:'g',conversion:1000,purchasePrice:10,minimum:0}}]};

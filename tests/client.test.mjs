@@ -274,7 +274,7 @@ test('Excel export collects every authorized page and clears loading state after
  const c=await client(),control=c.document.createElement('button');c.context.exportControl=control;
  c.run(`state.demo=false;state.token='session';state.stamp='snapshot';globalThis.exportCalls=[];globalThis.downloads=[];
  call=async(action,args)=>{exportCalls.push({action,args});return {rows:args.offset===0?Array.from({length:200},(_,i)=>({recordId:'m'+i})): [{recordId:'last'}],next:args.offset===0?200:null};};
- createModuleWorkbook=(module,rows,options)=>({module,rows,options});downloadExcel=async(book,filename)=>{if(!exportControl.disabled)throw new Error('Missing loading state');downloads.push({book,filename});};`);
+ ensureExcelRuntime=async()=>{};createModuleWorkbook=(module,rows,options)=>({module,rows,options});downloadExcel=async(book,filename)=>{if(!exportControl.disabled)throw new Error('Missing loading state');downloads.push({book,filename});};`);
  await c.run("exportModule('materials',exportControl)");assert.equal(c.run('downloads[0].book.rows.length'),201);assert.equal(c.run('exportCalls[1].args.offset'),200);assert.equal(c.run('exportCalls.every(c=>c.action==="export"&&c.args.stamp==="snapshot")'),true);assert.equal(control.disabled,false);assert.equal(control.classList.contains('is-loading'),false);
  c.run("location.hash='#catalog';route();");assert.ok([...c.document.querySelectorAll('button')].some(b=>b.textContent==='Xuất Excel'));assert.ok(![...c.document.querySelectorAll('button')].some(b=>b.textContent==='Xuất CSV'));
 });
@@ -282,6 +282,32 @@ test('Excel export collects every authorized page and clears loading state after
 test('Excel export aborts if the authenticated session changes during pagination',async()=>{
  const c=await client();c.run(`state.demo=false;state.token='old';state.stamp='snapshot';globalThis.downloaded=false;call=async()=>{state.token='new';return {rows:[],next:null};};downloadExcel=async()=>{downloaded=true;};`);
  await c.run("exportModule('materials')");assert.equal(c.run('downloaded'),false);assert.equal(c.run('state.exporting'),false);assert.match(c.document.getElementById('error').textContent,/Phiên hoặc dữ liệu đã thay đổi/);
+});
+
+test('hot module navigation reuses scoped RAM page data without another server request',async()=>{
+ const c=await client();c.run(`state.demo=false;state.grantKey='admin';state.moduleVersions={materials:'v1'};globalThis.listCalls=0;call=async(action)=>{if(action==='list'){listCalls++;return {rows:[{recordId:'m',version:1,name:'Rice',purchaseUnit:'kg',unit:'kg',conversion:1,purchasePrice:10,minimum:0}],total:1,next:null};}return {};};location.hash='#catalog';route();`);
+ for(let i=0;i<8;i++)await Promise.resolve();assert.equal(c.run('listCalls'),1);assert.match(c.document.getElementById('view').textContent,/Rice/);
+ c.run('route()');assert.equal(c.run('listCalls'),1);assert.match(c.document.getElementById('view').textContent,/Rice/);
+ c.run("state.moduleVersions.materials='v2';route();");for(let i=0;i<8;i++)await Promise.resolve();assert.equal(c.run('listCalls'),2);
+});
+
+test('Dashboard startup fetches an aggregate and leaves raw business history unloaded',async()=>{
+ const c=await client();c.run(`state.demo=false;state.token='test';state.grantKey='admin';state.moduleVersions={sales:'v1'};state.partialModules=Object.fromEntries(Object.keys(SCHEMA).map(m=>[m,{next:0}]));globalThis.actions=[];
+ call=async(action,args)=>{actions.push(action);return {report:report(state.data,state.from,state.to),target:null,weeks:[],series:[],settlements:{rows:[],offset:0,total:0,next:null}};};location.hash='#dashboard';route();`);
+ for(let i=0;i<8;i++)await Promise.resolve();assert.equal(c.run('actions.join(",")'),'summary');assert.equal(c.run('state.data.sales.length'),0);assert.match(c.document.getElementById('view').textContent,/Doanh thu thuần/);
+ c.run('route()');assert.equal(c.run('actions.length'),1);
+});
+
+test('Strategy revisits reuse the existing chart DOM and cached aggregate',async()=>{
+ const c=await client();c.run(`state.demo=false;state.grantKey='admin';state.moduleVersions={sales:'v1'};globalThis.strategyCalls=0;
+ call=async(action)=>{if(action==='list')return {rows:[],total:0,next:null};strategyCalls++;return {aggregate:strategyAggregate(state.data,state.from,state.to),prior:strategyAggregate(state.data,state.from,state.to),series:[{label:'Kỳ',revenue:100}],profitSeries:[]};};location.hash='#strategy';route();`);
+ for(let i=0;i<12;i++)await Promise.resolve();const chart=c.document.querySelector('#view svg');assert.ok(chart);c.context.savedChart=chart;
+ c.run("location.hash='#catalog';route();location.hash='#strategy';route();");assert.equal(c.run('strategyCalls'),1);assert.equal(c.document.querySelector('#view svg'),chart);
+});
+
+test('concurrent identical read calls deduplicate, mutations never share an RPC',async()=>{
+ const c=await client();c.run(`globalThis.transportCalls=0;globalThis.readRelease=null;rpcTransport=()=>{transportCalls++;return new Promise(resolve=>{readRelease=resolve;});};globalThis.r1=rpcCall('list',{module:'materials'});globalThis.r2=rpcCall('list',{module:'materials'});`);
+ assert.equal(c.run('transportCalls'),1);c.run('readRelease({rows:[]})');await c.run('Promise.all([r1,r2])');c.run("rpcTransport=async()=>{transportCalls++;return {};};");await c.run("Promise.all([rpcCall('mutate',{key:'a'}),rpcCall('mutate',{key:'a'})])");assert.equal(c.run('transportCalls'),3);
 });
 
 test('draft sidebar groups toggle accessibly, preserve expansion and open the active branch',async()=>{
