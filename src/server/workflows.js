@@ -50,6 +50,10 @@ function attachProductionCosts_(rows,user){
   if(!allowed_(user,'stock','read')||!allowed_(user,'recipes','read'))return rows;
   const markers=new Map(effective(workflowRows_()).filter(w=>w.kind==='production').map(w=>[w.referenceId,w]));return rows.map(row=>{const w=markers.get(row.recordId);return w?{...row,costSnapshot:workflowDetails_(w).snapshot}:row;});
 }
+function attachKioskCostPending_(rows){
+  const ids=new Set(effective(workflowRows_()).filter(w=>w.kind==='kiosk-sale').map(w=>workflowDetails_(w).saleId));
+  return ids.size?rows.map(row=>ids.has(row.recordId)?{...row,costAllocationPending:true}:row):rows;
+}
 function attendanceOverlap_(row,rows){
   const span=r=>{const minute=t=>Number(t.slice(0,2))*60+Number(t.slice(3)),start=Date.parse(r.date)/60000+minute(r.start);let end=Date.parse(r.date)/60000+minute(r.end);if(end<=start)end+=1440;return {start,end};},a=span(row);
   return effective(rows).some(r=>r.recordId!==row.recordId&&r.employeeId===row.employeeId&&a.start<span(r).end&&span(r).start<a.end);

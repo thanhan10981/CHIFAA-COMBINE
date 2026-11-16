@@ -4,7 +4,7 @@ function doGet(event){
   const name=config_('APP_MODE')==='portal'?'Portal':'Index';return HtmlService.createHtmlOutputFromFile(name).setTitle('CHIFAA COMBINE').addMetaTag('viewport','width=device-width, initial-scale=1');
 }
 function rpc(action,args){
-  requestBooks_=new Map();requestRows_=new Map();requestTables_=new Map();requestProfile_={};
+  requestBooks_=new Map();requestRows_=new Map();requestTables_=new Map();requestProfile_={};requestConfig_=new Map();requestPropertyHandle_=null;
   const started=Date.now();args=args||{};let actor=null;
   try{
     let result;
@@ -58,7 +58,7 @@ function rpc(action,args){
     if(actor&&['AUTH','FORBIDDEN'].includes(code)){try{audit_(actor,'RPC_DENIED','rpc',action,null,{code});}catch(_){/* Preserve fail-closed response if audit storage is unavailable. */}}
     console.warn(JSON.stringify({event:'rpc',action,ms:Date.now()-started,ok:false,code}));
     return {ok:false,error:{code,message:code==='ERROR'?'Không thể xử lý. Kiểm tra nhật ký Apps Script.':message}};
-  }finally{console.log(JSON.stringify({event:'rpc_profile',action,steps:requestProfile_}));requestBooks_=null;requestRows_=null;requestTables_=null;requestProfile_=null;}
+  }finally{console.log(JSON.stringify({event:'rpc_profile',action,steps:requestProfile_}));requestBooks_=null;requestRows_=null;requestTables_=null;requestProfile_=null;requestConfig_=null;requestPropertyHandle_=null;}
 }
 function bootstrap_(user,force=false,{shell=false}={}){
   // Called only after fresh session, signature, replay and _Users checks.

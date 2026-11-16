@@ -12,7 +12,7 @@ async function openEntryCommand(module,row){
   const note=operationField(grid,'Lý do nhập / điều chỉnh (ít nhất 5 ký tự)'),inputs={};
   grid.append(el('p','Bổ sung tạo phiếu riêng. Điều chỉnh đảo đúng phiếu gốc đã chọn rồi thay bằng phiếu mới; các phiếu bổ sung khác giữ nguyên. Ví dụ gốc100 + bổ sung30, sửa riêng gốc thành90 thì tổng120.','notice field full'));
   for(const [key,f]of Object.entries(SCHEMA[module].fields)){
-    const value=row?.[key]??(f.type==='date'?state.to:f.type==='number'?0:'');
+    const value=row?.[key]??(f.type==='date'?state.to:f.type==='number'&&f.required?0:'');
     if(['ref','select'].includes(f.type))inputs[key]=operationSelect(grid,f.label,f.ref?[['','Chọn…'],...effective(referenceRows(f.ref)).map(r=>[r.recordId,r.name])]:f.options.map(v=>[v,v]));
     else inputs[key]=operationField(grid,f.label,f.type==='number'?'number':f.type==='date'?'date':f.type==='time'?'time':'text',value);
     inputs[key].value=value;inputs[key].required=f.required;if(f.type==='number'){inputs[key].step='any';if(f.min!=null)inputs[key].min=f.min;if(f.max!=null)inputs[key].max=f.max;}

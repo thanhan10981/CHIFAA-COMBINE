@@ -193,7 +193,11 @@ function report(data, from, to) {
   const money = sales.map(salesMetrics), wages = payroll(attend);
   const produced = prod.reduce((n,r)=>n+r.produced+r.extra-r.rejected,0);
   const totalProduced=prod.reduce((n,r)=>n+r.produced+r.extra,0),rejected=prod.reduce((n,r)=>n+r.rejected,0);
-  const productionHoursComplete=prod.every(p=>attend.some(a=>a.date===p.date&&a.department==='SX'));
+  const productionHoursComplete=prod.filter(p=>p.produced+p.extra>0).every(p=>attend.some(a=>a.date===p.date&&a.department==='SX'));
+  const supply=new Map(),needed=new Map(),productionKey=r=>JSON.stringify([r.date,r.dishId]);
+  for(const p of prod)supply.set(productionKey(p),(supply.get(productionKey(p))||0)+p.produced+p.extra-p.rejected);
+  for(const s of sales)needed.set(productionKey(s),(needed.get(productionKey(s))||0)+s.sold+s.creditQty);
+  const productionCoverageComplete=[...needed].every(([key,quantity])=>quantity<=0||(supply.get(key)||0)+1e-8>=quantity),costAllocationPending=sales.some(s=>s.costAllocationPending===true);
   const sxHours = wages.filter(r=>r.department==='SX').reduce((n,r)=>n+r.hours,0);
   const cash = { cash: 0, bank: 0 };
   // Sales receipts have one source. Cash book does not accept duplicate sales receipts.
@@ -210,21 +214,21 @@ function report(data, from, to) {
     const parts=recipes.map(r=>costRecipe(r.recordId,p.produced+p.extra,data,p.date));
     return parts.some(c=>c.total==null)?null:parts.reduce((n,c)=>n+c.total,0);
   });
-  const cogs = costs.length && costs.every(c=>c!=null) ? round(costs.reduce((a,b)=>a+b,0)) : null;
+  const cogs = costs.length&&costs.every(c=>c!=null)&&productionCoverageComplete&&!costAllocationPending?round(costs.reduce((a,b)=>a+b,0)):null;
   const operating = select('cash').filter(r=>r.direction==='chi' && ['co-dinh','quan-ly','marketing','khac','lai-vay'].includes(r.category)).reduce((n,r)=>n+r.amount,0)+(recoveryExpense??0)+(otherSalesExpense??0);
   const wagesPresent=sales.every(s=>attend.some(a=>a.date===s.date));
-  const profit = revenue==null || cogs==null || !wagesPresent ? null : round(revenue-cogs-wages.reduce((n,r)=>n+r.base+r.allowances,0)-operating);
+  const profit = revenue==null||cogs==null||!wagesPresent||!productionHoursComplete?null:round(revenue-cogs-wages.reduce((n,r)=>n+r.base+r.allowances,0)-operating);
   const days = Math.round((Date.parse(to)-Date.parse(from))/86400000)+1;
   const covered = new Set(sales.map(r=>r.date)).size;
   const sxWagesPresent=sales.length>0&&sales.every(s=>attend.some(a=>a.date===s.date&&a.department==='SX'));
   const sxLabor=sxWagesPresent?round(wages.filter(r=>r.department==='SX').reduce((n,r)=>n+r.base+r.allowances,0)):null;
   const foodCostPct=revenue>0&&cogs!=null?round(cogs/revenue*100):null,sxLaborPct=revenue>0&&sxLabor!=null&&wagesPresent?round(sxLabor/revenue*100):null;
   return { from,to,revenue,received,recoveryExpense,otherSalesExpense,operating,sxLabor,foodCostPct,sxLaborPct,policy:ACCOUNTING_POLICY,produced:prod.length?produced:null,cogs,profit,profitBasis:'Provisional; recovery support is a separate expense once; excludes depreciation; interest uses posted interest cash vouchers. Confirm remaining accounting rules before live.',
-    totalProduced:prod.length?totalProduced:null,rejected:prod.length?rejected:null,
+    totalProduced:prod.length?totalProduced:null,rejected:prod.length?rejected:null,productionCoverageComplete,productionHoursComplete,costAllocationPending,
     sxHours:attend.some(a=>a.department==='SX')?sxHours:null, productivity:prod.length&&productionHoursComplete&&sxHours>0?round(totalProduced/sxHours):null,
     goodProductivity:prod.length&&productionHoursComplete&&sxHours>0?round(produced/sxHours):null,productivityBasis:'total-produced-per-SX-hour',
     payroll:wages, cash: {cash:round(cash.cash),bank:round(cash.bank)}, coverage:covered+'/'+days,
-    completeness: completeSales && covered===days && costs.length && costs.every(c=>c!=null) && wagesPresent ? 'complete-inputs' : 'incomplete',
+    completeness:completeSales&&covered===days&&cogs!=null&&wagesPresent&&productionHoursComplete?'complete-inputs':'incomplete',
     source:'Google Sheets / dữ liệu người dùng được cấp quyền', accountingRule:money[0]?.accountingRule || 'Chưa có dữ liệu doanh thu' };
 }
 function scenario(price, variableCost, fixedCost, quantity) {

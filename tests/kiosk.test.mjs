@@ -63,3 +63,11 @@ test('Kiosk screen loads from server and prevents double submit while approval i
   assert.equal(c.run("calls.find(c=>c.a==='kiosk').args.sourceHash"),'hash');c.run('release({})');
   for(let i=0;i<6;i++)await Promise.resolve();assert.match(c.document.querySelector('.toast-success').textContent,/Đã ghi nhận/);
 });
+test('Kiosk revenue remains visible but financial cost/profit stay unknown until lot valuation is approved',()=>{
+  const {g,rpc,put,approve,report}=fixture();approve();const id=report().rows[0].approvalId;
+  rpc('kiosk',{kind:'receive',id,date:'2026-11-02',note:'Received checked'});assert.equal(rpc('kiosk',{kind:'sell',id,date:'2026-11-02',note:'Sale checked',quantity:4,storeId:'kiosk',price:25,cash:100,bank:0}).ok,true);
+  put('production',{recordId:'p',date:'2026-11-02',dishId:'dish',planned:100,produced:100,extra:0,rejected:0,note:''});
+  g.ctx.writeRow_('_Workflows',g.ctx.workflowMarker_({email:'admin@example.com'},'production','p','2026-11-02',{snapshot:{total:200,raw:{},recipes:[]},effects:[]}).after);
+  put('employees',{recordId:'e',name:'Employee',department:'SX',hourlyRate:10,allowance:0});put('attendance',{recordId:'a',date:'2026-11-02',employeeId:'e',start:'08:00',end:'09:00',breakMinutes:0,hourlyRate:10,department:'SX',defaultAllowance:0,dailyAllowance:0,support:0,advance:0,deduction:0});
+  const result=rpc('summary',{from:'2026-11-02',to:'2026-11-02'});assert.equal(result.ok,true,JSON.stringify(result));assert.equal(result.data.report.revenue,2530);assert.equal(result.data.report.productionCoverageComplete,true);assert.equal(result.data.report.costAllocationPending,true);assert.equal(result.data.report.cogs,null);assert.equal(result.data.report.profit,null);assert.equal(result.data.report.foodCostPct,null);
+});

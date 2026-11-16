@@ -28,7 +28,7 @@ export function gas(){
   const validation={requireValueInList(){return this;},requireNumberGreaterThanOrEqualTo(){return this;},setAllowInvalid(){return this;},build(){return{};}};
   const context=vm.createContext({console:{log(){},warn(){}},Date,JSON,Set,Map,Object,Array,Number,String,Math,RegExp,Error,encodeURIComponent,
     HtmlService:{createHtmlOutput:html=>({html,setTitle(){return this;},addMetaTag(){return this;}}),createHtmlOutputFromFile:file=>({file,getContent:()=> 'PUBLIC_EXCEL_TEST_SOURCE',setTitle(){return this;},addMetaTag(){return this;}})},
-    PropertiesService:{getScriptProperties:()=>({getProperty:k=>properties.get(k)||null,setProperty:(k,v)=>properties.set(k,v),deleteProperty:k=>properties.delete(k)})},
+    PropertiesService:{getScriptProperties:()=>({getProperty:k=>properties.get(k)||null,getProperties:()=>Object.fromEntries(properties),setProperty:(k,v)=>properties.set(k,v),deleteProperty:k=>properties.delete(k)})},
     SpreadsheetApp:{openById:id=>{metrics.open++;if(!books.has(id))throw Error('Workbook not found');return books.get(id);},create:name=>makeBook(crypto.randomUUID(),name),flush(){metrics.flush++;},ProtectionType:{RANGE:'range'},newDataValidation:()=>validation},
     DriveApp:{Access:{PRIVATE:'PRIVATE'},getFileById:file,getFolderById:folder,createFolder:()=>folder(crypto.randomUUID())},ScriptApp:{getProjectTriggers:()=>triggers,newTrigger:triggerBuilder,deleteTrigger:t=>{const i=triggers.indexOf(t);if(i>=0)triggers.splice(i,1);}},
     Session:{getEffectiveUser:()=>({getEmail:()=> 'owner@example.com'})},

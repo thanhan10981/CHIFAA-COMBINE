@@ -22,3 +22,11 @@ test('Positive stocktake adjustment does not masquerade as an incoming physical 
   const data={counts:[{date:'2026-11-01',materialId:'m',opening:100,closing:110,otherOut:0}],stock:[{date:'2026-11-01',materialId:'m',type:'dieu-chinh-tang',quantity:10}],production:[]};
   const row=variance(data,'2026-11-01','2026-11-01')[0];assert.equal(row.actual,-10);assert.equal(row.status,'red');
 });
+test('Plan-only/insufficient production or missing SX attendance cannot manufacture zero-cost profit',()=>{
+  const date='2026-11-01',sale={recordId:'s',date,storeId:'s',dishId:'d',delivered:100,sold:80,returned:10,creditQty:10,price:30,discount:0,recoveryPrice:0,cash:2700,bank:0,oldDebtPaid:0,otherCost:0};
+  const attendance={date,employeeId:'e',department:'SX',start:'08:00',end:'09:00',breakMinutes:0,hourlyRate:10,defaultAllowance:0,dailyAllowance:0,support:0,advance:0,deduction:0};
+  const data={sales:[sale],production:[{recordId:'p',date,dishId:'d',planned:100,produced:0,extra:0,rejected:0,costSnapshot:{total:0}}],attendance:[attendance]};
+  for(const qty of [0,80]){data.production[0].produced=qty;const r=report(data,date,date);assert.equal(r.revenue,2700);assert.equal(r.productionCoverageComplete,false);assert.equal(r.cogs,null);assert.equal(r.profit,null);assert.equal(r.foodCostPct,null);}
+  data.production[0].produced=100;data.production[0].costSnapshot.total=200;data.attendance[0].department='VP';let r=report(data,date,date);assert.equal(r.cogs,200);assert.equal(r.productionHoursComplete,false);assert.equal(r.profit,null);
+  data.attendance[0].department='SX';data.production[0].costSnapshot.total=0;r=report(data,date,date);assert.equal(r.cogs,0);assert.equal(r.profit,2690);
+});

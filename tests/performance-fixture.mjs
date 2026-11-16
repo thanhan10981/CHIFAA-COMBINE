@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import {gas} from './gas-mock.mjs';
+import {send} from './auth-helpers.mjs';
 export function fixture(n){
  const g=gas(),meta={version:1,updatedAt:'2026-11-01T00:00:00Z',updatedBy:'fixture',source:'APP',deleted:false,reverses:''};
  const put=(m,r)=>g.tables.get(m).appendRow(g.ctx.cells_(m,{...meta,...r}));
@@ -15,4 +16,12 @@ export function fixture(n){
  }
  const token=g.ctx.issueSession_('admin@example.com','fixture-sub').token;
  return {g,token};
+}
+export function propertyScenario(action='sync',raw=false){
+  const {g,token}=fixture(10),factory=g.ctx.PropertiesService.getScriptProperties,calls={singleReads:0,batchReads:0,writes:0,deletes:0};
+  const counted=()=>{const p=factory();return {getProperty:key=>{calls.singleReads++;return p.getProperty(key);},getProperties:()=>{calls.batchReads++;return p.getProperties();},setProperty:(key,value)=>{calls.writes++;return p.setProperty(key,value);},deleteProperty:key=>{calls.deletes++;return p.deleteProperty(key);}};};
+  g.ctx.PropertiesService.getScriptProperties=counted;if(raw)g.ctx.props_=counted;
+  const args=action==='sync'?{token}:action==='summary'?{token,from:'2026-11-16',to:'2026-11-16'}:{token,module:'materials',operation:'create',key:crypto.randomUUID(),record:{name:'Counter fixture',purchaseUnit:'kg',unit:'kg',conversion:1,purchasePrice:10,minimum:0}};
+  const before=g.metrics.getValues,at=performance.now(),result=send(g,action,args);if(!result.ok)throw Error(JSON.stringify(result.error));
+  return {action,rawConfigurationMode:raw,ms:+(performance.now()-at).toFixed(2),properties:calls,propertyCalls:Object.values(calls).reduce((n,x)=>n+x,0),sheetsGetValues:g.metrics.getValues-before};
 }

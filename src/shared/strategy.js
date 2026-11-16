@@ -23,7 +23,7 @@ function strategyAggregate(data,from,to){
   for(const row of sales){
     const qty=row.sold+row.creditQty,recipes=effective(data.recipes||[]).filter(r=>r.dishId===row.dishId),parts=recipes.map(r=>costRecipe(r.recordId,qty,data,row.date));
     const dailyProduction=prod.filter(p=>p.date===row.date&&p.dishId===row.dishId),snapshotQty=dailyProduction.reduce((n,p)=>n+p.produced+p.extra,0),snapshotCost=dailyProduction.length&&dailyProduction.every(p=>p.costSnapshot&&Number.isFinite(p.costSnapshot.total))&&snapshotQty>0?dailyProduction.reduce((n,p)=>n+p.costSnapshot.total,0)/snapshotQty*qty:null;
-    const cost=qty===0?0:snapshotCost??(recipes.length&&parts.every(p=>p.total!=null)?sum(parts,'total'):null);
+    const cost=row.costAllocationPending?null:qty===0?0:snapshotCost??(recipes.length&&parts.every(p=>p.total!=null)?sum(parts,'total'):null);
     for(const [map,id,module]of [[stores,row.storeId,'stores'],[dishes,row.dishId,'dishes']]){
       if(!map.has(id))map.set(id,{id,name:name(module,id),sold:0,returned:0,delivered:0,revenue:0,cost:0,expenses:0});
       const a=map.get(id),m=salesMetrics(row);a.sold+=qty;a.returned+=row.returned;a.delivered+=row.delivered;a.revenue=a.revenue==null||m.netRevenue==null?null:a.revenue+m.netRevenue;a.expenses=a.expenses==null||!m.complete?null:a.expenses+m.recoveryExpense+m.otherExpense;a.cost=a.cost==null||cost==null?null:a.cost+cost;
@@ -33,7 +33,7 @@ function strategyAggregate(data,from,to){
   const issues=[];
   if(!sales.length)issues.push('Chưa có phiếu doanh thu trong kỳ.');
   else if(raw.revenue==null)issues.push('Phiếu doanh thu thiếu hoặc có dữ liệu không hợp lệ.');
-  if(raw.cogs==null)issues.push('Thiếu sản xuất, công thức hoặc giá nhập theo ngày.');
+  if(raw.cogs==null)issues.push('Chưa đủ nguồn sản xuất/công thức/giá vốn; hàng ki-ốt cần căn cứ phân bổ giá vốn riêng.');
   if([...days].some(date=>!attendance.some(r=>r.date===date)))issues.push('Chưa có chấm công cho tất cả ngày có doanh thu.');
   if(sales.some(s=>!prod.some(p=>p.date===s.date&&p.dishId===s.dishId)))issues.push('Thiếu phiếu sản xuất cùng ngày/món với doanh thu.');
   if(!Object.hasOwn(data,'cash'))issues.push('Chưa được cấp nguồn sổ thu chi.');

@@ -405,6 +405,8 @@ function renderReport(kind,summary){
   for(const [label,value,unit]of [['Doanh thu thuần · tạm tính',r.revenue,'đ'],['Tiền thực thu tại điểm bán',r.received,'đ'],['Sản lượng đạt',r.produced,'phần'],['Năng suất sản xuất',r.productivity,'tổng sản xuất / giờ SX']]){
     const s=el('div',null,'stat');s.append(el('label',label),el('strong',display(value)),el('small',value==null?'Chưa đủ dữ liệu':unit));stats.append(s);
   }view.append(stats);
+  if(r.productionCoverageComplete===false||r.costAllocationPending)view.append(el('p','Chưa đủ căn cứ sản xuất / giá vốn cho hàng đã bán. Kế hoạch chưa sản xuất và hàng ki-ốt chưa phân bổ giá vốn không được coi là chi phí bằng 0.','notice'));
+  if(r.productionHoursComplete===false)view.append(el('p','Thiếu chấm công SX cho ngày đã sản xuất; chưa hiển thị lợi nhuận.','notice'));
   const grid=el('div',null,'grid-two'),chartCard=el('div',null,'card'),ch=el('div',null,'card-header');ch.append(el('h3','Doanh thu trong kỳ'),el('small',state.from+' → '+state.to));chartCard.append(ch);chartCard.append(revenueChart(summary?.series));
   const detail=el('div',null,'card pad');detail.append(el('h3','Độ đầy đủ & dòng tiền'));const list=el('div',null,'metric-list');
   for(const [label,value]of [['Ngày có doanh thu',r.coverage],['Tổng sản xuất (gồm sản xuất thêm)',display(r.totalProduced)],['Lỗi / hủy sản xuất',display(r.rejected)],['Giờ sản xuất',display(r.sxHours)],['Năng suất đạt / giờ SX',display(r.goodProductivity)],['Giá nguyên liệu đã dùng',display(r.cogs)],['Tiền mặt theo sổ',display(r.cash.cash)],['Chuyển khoản theo sổ',display(r.cash.bank)],['Kết quả tạm tính trước khấu hao',display(r.profit)]]){const line=el('div',null,'metric-line');line.append(el('span',label),el('strong',value));list.append(line);}detail.append(list);grid.append(chartCard,detail);view.append(grid);
@@ -466,15 +468,16 @@ async function refresh(force=true){if(state.busy||$('editor').open){if(force)toa
 function localLogout(){document.querySelectorAll("[data-private-dialog]").forEach(n=>n.remove());state.entryPending=null;state.orderPlanPending=null;state.kioskPending=null;state.lookups={};state.lookupVersions={};state.lookupPending=new Map();state.refMaps={};state.pendingWorkflow=null;state.saving=false;state.uncertain=null;state.actionRetries=new Map();state.pageCache=new Map();state.summaryCache=new Map();state.viewCache=new Map();state.strategyCache=new Map();state.strategyDom=new Map();state.strategyRenderedKey=null;state.grantKey=null;state.moduleVersions={};clearToasts();clearRpcSession();state.disconnected=false;state.token=null;state.data={};state.permissions={};state.user=null;state.issues=[];state.loginAttempt=null;if($('editor').open)$('editor').close();$('form-fields').replaceChildren();$('view').replaceChildren();$('navigation').replaceChildren();$('workspace').hidden=true;$('login').hidden=false;$('login-status').textContent='Đã đăng xuất.';if(!state.demo)prepareLogin();}
 $('logout').onclick=async()=>{try{if(!state.demo)await call('logout');localLogout();toast('Đã đăng xuất.','info');}catch(e){errorText(e);}};
 $('refresh').onclick=()=>refresh(true);$('menu-toggle').onclick=()=>$('workspace').classList.toggle('menu-open');$('backdrop').onclick=()=>$('workspace').classList.remove('menu-open');window.addEventListener('hashchange',()=>{if(state.user)route();});
-let syncInFlight=false;
+let syncInFlight=false,lastSyncAttempt=0;
 async function checkSync(){
   if(!state.token||document.hidden||state.busy||syncInFlight||rpcPending.size)return;
-  syncInFlight=true;
+  syncInFlight=true;lastSyncAttempt=Date.now();
   try{const result=await call('sync');if(state.disconnected){state.disconnected=false;toast('Đã kết nối lại máy chủ.','info');}if(result.permissionVersion!==state.permissionVersion||result.grants&&result.grants!==state.grants){if($('editor').open)$('editor').close();$('form-fields').replaceChildren();await refresh(false);}else if(result.stamp!==state.stamp)await refresh(false);}
   catch(e){if(e.code==='AUTH'){localLogout();toast('Phiên đã hết hiệu lực. Vui lòng đăng nhập lại.','warning');}else{$('connection').textContent='Mất kết nối · chưa đồng bộ';if(!state.disconnected){state.disconnected=true;toast('Mất kết nối máy chủ. Dữ liệu đang hiển thị có thể chưa mới nhất.','warning');}}}
   finally{syncInFlight=false;}
 }
-setInterval(checkSync,15000);
+setInterval(checkSync,60000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-lastSyncAttempt>=15000)checkSync();});
 async function start(){
   if(state.demo){state.user={email:'Bản xem thử trên máy',role:'admin'};for(const m of Object.keys(SCHEMA)){state.data[m]=[];state.permissions[m]=ACTIONS;}mount();return;}
   if(!globalThis.google?.script?.run){showLogin();$('login-status').textContent='Bản cài đặt cục bộ. Chưa kết nối Google Apps Script.';$('preview-links').hidden=false;return;}

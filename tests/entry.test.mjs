@@ -47,3 +47,7 @@ test('Entry UI requires preview then confirmation; changed fields invalidate pre
   dialog.querySelector('input').dispatchEvent(new c.context.window.Event('input',{bubbles:true}));assert.equal(submit.textContent,'Xem trước');
   c.run('localLogout()');assert.equal(c.document.querySelector('[data-private-dialog="entry"]'),null);
 });
+test('Checked stock form leaves optional unit cost blank instead of silently assuming a free receipt',async()=>{
+  const c=await client();c.run(`state.demo=false;state.data.materials=[{recordId:'m',name:'Rice'}];state.partialModules={};openEntryCommand('stock');`);for(let i=0;i<6;i++)await Promise.resolve();
+  const dialog=c.document.querySelector('[data-private-dialog="entry"]'),label=[...dialog.querySelectorAll('label')].find(l=>l.textContent.startsWith('Giá / đơn vị sử dụng'));assert.equal(label.querySelector('input').value,'');assert.equal(label.querySelector('input').required,false);
+});

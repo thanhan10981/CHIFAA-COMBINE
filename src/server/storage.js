@@ -1,5 +1,16 @@
 /* Apps Script V8. All helper names end in _ and cannot be called through google.script.run. */
-function props_() { return PropertiesService.getScriptProperties(); }
+const REQUEST_CONFIG_KEYS=new Set(['SPREADSHEET_ID','AUTH_DEV_SPREADSHEET_ID','AUTH_ENV','APP_MODE','GOOGLE_CLIENT_ID','GOOGLE_CLIENT_SECRET','WEB_APP_URL','WORKSPACE_DOMAIN','ADMIN_EMAIL','PERF_DIAGNOSTICS','BACKUP_FOLDER_ID','PORTAL_SPREADSHEET_ID','PORTAL_WEB_APP_URL','PORTAL_SIGNING_SECRET','ACCOUNTING_APPROVED','OAUTH_STARTS_PER_MINUTE']);
+let requestConfig_=null,requestPropertyHandle_=null;
+function props_(){
+  if(!requestConfig_)return PropertiesService.getScriptProperties();if(requestPropertyHandle_)return requestPropertyHandle_;
+  const store=PropertiesService.getScriptProperties();let loaded=false;
+  const handle={getProperty(name){
+    if(!REQUEST_CONFIG_KEYS.has(name))return store.getProperty(name);
+    if(!loaded){const values=store.getProperties();for(const key of REQUEST_CONFIG_KEYS)requestConfig_.set(key,values[key]??null);loaded=true;}
+    return requestConfig_.get(name)??null;
+  },setProperty(name,value){store.setProperty(name,value);if(loaded&&REQUEST_CONFIG_KEYS.has(name))requestConfig_.set(name,value);return handle;},deleteProperty(name){store.deleteProperty(name);if(loaded&&REQUEST_CONFIG_KEYS.has(name))requestConfig_.delete(name);return handle;},getProperties(){return store.getProperties();}};
+  requestPropertyHandle_=handle;return handle;
+}
 function config_(name) { const v=props_().getProperty(name); if(!v) throw new Error('CONFIG: Thiếu Script Property '+name); return v; }
 let requestBooks_=null;
 let requestRows_=null,requestTables_=null,requestProfile_=null;
@@ -49,7 +60,7 @@ function decodeRows_(module,cellsAll,firstRow){
     return row;
   }).filter(Boolean);
 }
-function data_(modules=Object.keys(SCHEMA)) { const data={};for(const m of new Set(modules))data[m]=rawRows_(m);if(data.debts)data.debts=attachDebtAllocations_(data.debts);if(data.production)data.production=attachProductionCosts_(data.production,{role:'admin',permissions:{}});return data; }
+function data_(modules=Object.keys(SCHEMA)) { const data={};for(const m of new Set(modules))data[m]=rawRows_(m);if(data.debts)data.debts=attachDebtAllocations_(data.debts);if(data.production)data.production=attachProductionCosts_(data.production,{role:'admin',permissions:{}});if(data.sales&&data.production)data.sales=attachKioskCostPending_(data.sales);return data; }
 function mutationModules_(module,action){
   if(action==='reverse')return Object.keys(SCHEMA); // Dynamic linked effects must retain complete source checks.
   const needed=new Set([module,...({discounts:['stores','dishes'],recipes:['materials','dishes'],stock:['materials','counts'],counts:['stock','materials'],production:['recipes','materials','stock','counts','dishes'],sales:['stores','dishes'],attendance:['employees'],cash:['debts','loans'],debts:['cash'],loans:['cash'],orders:['stores','dishes']}[module]||[])]);
