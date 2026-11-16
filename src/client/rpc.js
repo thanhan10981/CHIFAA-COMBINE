@@ -2,6 +2,9 @@ import { requestMessage } from '../shared/auth-protocol.js';
 import {sessionStore,validStoredSession} from './session-store.js';
 let rpcSession=null;
 let rpcScope=null;
+const clientTimings=[];
+const clientNow=()=>globalThis.performance?.now?.()??Date.now();
+function noteTiming(name,start,status='ok'){clientTimings.push({name,ms:Math.round((clientNow()-start)*100)/100,status});if(clientTimings.length>100)clientTimings.shift();globalThis.CHIFAA_PERFORMANCE=clientTimings;}
 function setRpcScope(scope){rpcScope=scope;}
 async function restoreRpcSession(){
   const saved=await sessionStore(rpcScope,'get');
@@ -26,9 +29,10 @@ async function rpcCall(action,args={},options={}){
   const task=rpcPerform(action,args,options);if(key){rpcReads.set(key,task);task.finally(()=>{if(rpcReads.get(key)===task)rpcReads.delete(key);}).catch(()=>{});}return task;
 }
 async function rpcPerform(action,args,options){
+  const started=clientNow();let ok=false;
   const labels={oauthStart:'Đang chuẩn bị đăng nhập…',bootstrap:'Đang tải dữ liệu…',list:'Đang tải trang dữ liệu…',summary:'Đang tải báo cáo tổng hợp…',settlements:'Đang tải đối soát…',workflow:'Đang đối chiếu nghiệp vụ…',workflowReports:'Đang tải bản đã chốt…',workflowStatus:'Đang tải trạng thái vận hành…',financialSummary:'Đang đối chiếu số dư…',maintenance:'Đang xử lý bảo trì…',mutate:'Đang lưu dữ liệu…',admin:'Đang tải quản trị…',health:'Đang tải nhật ký…',export:'Đang xuất dữ liệu…',logout:'Đang đăng xuất…',portalCatalog:'Đang tải thực đơn…',portalOrder:'Đang gửi đơn hàng…',portalStatus:'Đang tra cứu đơn…'};
   const id=Symbol();if(labels[action]){rpcPending.set(id,labels[action]);rpcLoading();}
-  try{return await rpcTransport(action,args,options);}finally{rpcPending.delete(id);rpcLoading();}
+  try{const value=await rpcTransport(action,args,options);ok=true;return value;}finally{noteTiming('rpc:'+action,started,ok?'ok':'error');rpcPending.delete(id);rpcLoading();}
 }
 async function setRpcSession(login){
   rpcSession={token:login.token,expires:login.expires,key:await crypto.subtle.importKey('raw',new TextEncoder().encode(login.signingKey),{name:'HMAC',hash:'SHA-256'},false,['sign'])};
@@ -54,4 +58,4 @@ async function rpcTransport(action, args = {}, { timeout = action==='maintenance
     }).withFailureHandler(error=>{if(settled)return;settled=true;clearTimeout(timer);const e=new Error(error?.message||(reading||connecting?'Mất kết nối với máy chủ. Thử kết nối lại.':'Mất kết nối. Kết quả ghi chưa rõ.'));e.code='NETWORK';reject(e);}).rpc(action,args);
   });
 }
-export { rpcCall, setRpcSession, clearRpcSession, setRpcScope, restoreRpcSession };
+export { rpcCall, setRpcSession, clearRpcSession, setRpcScope, restoreRpcSession,clientNow,noteTiming };

@@ -1,7 +1,7 @@
 import {ensureExcelRuntime,createModuleWorkbook,downloadExcel} from './excel.js';
 import { SCHEMA, ROUTES, ACTIONS } from '../shared/schema.js';
 import { cleanRecord, sourceIssues, effective, flattenRecipe, costRecipe, salesMetrics, payroll, inventory, demand, report, scenario, variance, validDate, finance, targets, compareWeeks } from '../shared/domain.js';
-import { rpcCall, setRpcSession, clearRpcSession, setRpcScope, restoreRpcSession } from './rpc.js';
+import { rpcCall, setRpcSession, clearRpcSession, setRpcScope, restoreRpcSession,clientNow,noteTiming } from './rpc.js';
 import { NAV_SECTIONS, NAV_ICONS } from './navigation.js';
 import {createPermissionPicker} from './permissions.js';
 import {canAccessPage,routeReadModules} from '../shared/access.js';
@@ -100,6 +100,7 @@ function mount(){
 let viewGeneration=0;
 function pageLoading(){const n=el('div',null,'loading-panel');n.setAttribute('role','status');n.append(el('span',null,'spinner'),el('span','Đang tải dữ liệu…'),el('div',null,'skeleton'));$('view').append(n);return n;}
 function route(){
+  const routeStarted=clientNow();
   if(state.route==='strategy'&&state.strategyRenderedKey&&$('view').classList.contains('strategy-page')){state.strategyDom||=new Map();rememberView(state.strategyDom,state.strategyRenderedKey,{nodes:[...$('view').childNodes],until:state.strategyRenderedUntil},4);state.strategyRenderedKey=null;}
   viewGeneration++;
   state.route=location.hash.slice(1)||ROUTES.find(([id])=>canAccessPage(state.user,state.permissions,id))?.[0]||'dashboard';const r=ROUTES.find(r=>r[0]===state.route)||ROUTES[0];state.route=r[0];
@@ -121,7 +122,7 @@ function route(){
     else if(m==='admin')renderAdmin();
     else if(m==='health')renderHealth();
     else renderReport(m);
-  }catch(e){errorText(e);}
+  }catch(e){errorText(e);}finally{noteTiming('route:'+state.route+':shell',routeStarted);}
 }
 async function ensureReadModules(modules,generation=viewGeneration){
   const stamp=state.stamp,token=state.token;
@@ -162,6 +163,7 @@ function renderRecords(module,head){
   };
   const container=el('div');view.append(container);let offset=0,drawId=0,searchTimer;const generation=viewGeneration;
   const draw=async()=>{
+    const drawStarted=clientNow();
     const drawVersion=++drawId;let rows,total,next;
     if(state.demo){const all=filterRows();total=all.length;rows=all.slice(offset,offset+50);next=offset+50<total?offset+50:null;}
     else{const args={module,offset,limit:50,from:schema.fields.date?state.from:'',to:schema.fields.date?state.to:'',search:search.value,kind:module==='recipes'?{recipes:'mon',batches:'nhan-sot',rice:'com',packaging:'bao-bi'}[state.route]:undefined,stamp:state.stamp},key=pageCacheKey(module,args);state.pageCache||=new Map();const cached=state.pageCache.get(key);let page=cached?.until>Date.now()&&!state.forceModules?.has(module)?cached.value:null;
@@ -182,7 +184,7 @@ function renderRecords(module,head){
       actions.append(button('In phiếu',()=>printRecord(module,row)));
       if(['production','counts'].includes(module)&&!row.reverses&&can(module,'approve')&&can('stock','create'))actions.append(button('Liên kết kho',async()=>{if(state.demo){toast('Liên kết kho cần máy chủ Apps Script.','info');return;}if(!confirm('Chỉ dùng cho phiếu cũ chưa liên kết. Xác nhận đối chiếu tránh xuất kho hai lần?'))return;try{await call('workflow',{kind:module==='production'?'production':'count',id:row.recordId,key:crypto.randomUUID()});await load(true);route();toast('Đã liên kết kho.');}catch(e){errorText(e);}}));
       return [id,...values,actions];
-    }));const pager=el('div',null,'toolbar pagination'),prev=button('‹ Trang trước',()=>{offset=Math.max(0,offset-50);draw();}),more=button('Trang sau ›',()=>{offset=next;draw();});prev.disabled=offset===0;more.disabled=next==null;pager.append(prev,el('span',total?(offset+1)+'–'+(offset+rows.length)+' / '+total:'0 bản ghi','muted'),more);container.replaceChildren(grid,pager);
+    }));const pager=el('div',null,'toolbar pagination'),prev=button('‹ Trang trước',()=>{offset=Math.max(0,offset-50);draw();}),more=button('Trang sau ›',()=>{offset=next;draw();});prev.disabled=offset===0;more.disabled=next==null;pager.append(prev,el('span',total?(offset+1)+'–'+(offset+rows.length)+' / '+total:'0 bản ghi','muted'),more);container.replaceChildren(grid,pager);noteTiming('ui:module:'+module,drawStarted);
   };search.addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{offset=0;draw();},250);});draw();
 }
 function refValue(field,value){if(field.ref)return (state.data[field.ref]||[]).find(r=>r.recordId===value)?.name||value;return display(value);}
@@ -287,10 +289,11 @@ function requireData(modules){const missing=modules.filter(m=>!Object.hasOwn(sta
 function rememberView(cache,key,value,limit=12){cache.delete(key);cache.set(key,value);while(cache.size>limit)cache.delete(cache.keys().next().value);}
 function strategyViewCacheKey(selection=strategySelection()){return JSON.stringify([state.grantKey,state.moduleVersions,state.dataEpoch,selection]);}
 async function renderStrategyRemote(){
+  const renderStarted=clientNow();
   const selection=strategySelection(),generation=viewGeneration,token=state.token,stamp=state.stamp,request=(state.strategyRequest||0)+1;state.strategyRequest=request;state.strategyCache||=new Map();
   const view=$('view'),domKey=strategyViewCacheKey(selection),dom=state.strategyDom?.get(domKey),key=JSON.stringify([state.grantKey,state.moduleVersions,state.dataEpoch,selection.period,selection.anchor]),entry=state.strategyCache.get(key);
-  const paint=value=>{renderStrategy(value);state.strategyRenderedKey=domKey;state.strategyRenderedUntil=Date.now()+20000;};
-  if(dom?.until>Date.now()&&!state.forceSummary){view.replaceChildren(...dom.nodes);view.classList.add('strategy-page');state.strategyRenderedKey=domKey;state.strategyRenderedUntil=dom.until;return;}
+  const paint=value=>{renderStrategy(value);state.strategyRenderedKey=domKey;state.strategyRenderedUntil=Date.now()+20000;noteTiming('ui:strategy-ready',renderStarted);};
+  if(dom?.until>Date.now()&&!state.forceSummary){view.replaceChildren(...dom.nodes);view.classList.add('strategy-page');state.strategyRenderedKey=domKey;state.strategyRenderedUntil=dom.until;noteTiming('ui:strategy-dom',renderStarted);return;}
   if(entry){paint(entry.value);if(entry.until>Date.now()&&!state.forceSummary){state.strategyRenderedUntil=entry.until;return;}}
   const loading=pageLoading();
   try{const value=await call('strategySummary',{period:selection.period,anchor:selection.anchor,force:state.forceSummary===true});if(generation!==viewGeneration||token!==state.token||stamp!==state.stamp||request!==state.strategyRequest)return;rememberView(state.strategyCache,key,{value,until:Date.now()+20000});state.forceSummary=false;paint(value);}
@@ -305,9 +308,10 @@ function prefetchCatalog(generation){
   if(window.requestIdleCallback)window.requestIdleCallback(run,{timeout:2000});else setTimeout(run,500);
 }
 async function renderDashboard(){
+  const renderStarted=clientNow();
   const view=$('view'),generation=viewGeneration,token=state.token,stamp=state.stamp,from=state.from,to=state.to,compare=state.route==='opsdashboard';
   state.summaryCache||=new Map();const key=JSON.stringify([state.grantKey,state.moduleVersions,from,to,compare,state.dataEpoch]),entry=state.summaryCache.get(key);
-  const paint=summary=>{while(view.children.length>1)view.lastElementChild.remove();renderReport('report',summary);};
+  const paint=summary=>{while(view.children.length>1)view.lastElementChild.remove();renderReport('report',summary);noteTiming('ui:dashboard-ready',renderStarted);};
   if(entry){paint(entry.value);if(entry.until>Date.now()&&!state.forceSummary){prefetchCatalog(generation);return;}}
   const loading=entry?el('p','Đang cập nhật dữ liệu…','muted is-loading'):pageLoading();if(entry)view.append(loading);
   try{const value=await call('summary',{from,to,compare,force:state.forceSummary===true});if(generation!==viewGeneration||token!==state.token||stamp!==state.stamp)return;

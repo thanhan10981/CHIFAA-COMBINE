@@ -16,7 +16,7 @@ function table_(name) { const key=config_('SPREADSHEET_ID')+':'+name;if(requestT
 function append_(name,row) { table_(name).appendRow(row); }
 function stamp_() { return props_().getProperty('SYNC_VERSION') || '0'; }
 function moduleVersions_(){try{const saved=JSON.parse(props_().getProperty('MODULE_VERSIONS')||'{}');return Object.fromEntries(Object.keys(SCHEMA).map(m=>[m,saved[m]||stamp_()]));}catch(_){return Object.fromEntries(Object.keys(SCHEMA).map(m=>[m,stamp_()]));}}
-function bump_(modules) { const version=uid_(),values=moduleVersions_();for(const m of modules||Object.keys(SCHEMA))if(SCHEMA[m])values[m]=version;props_().setProperty('MODULE_VERSIONS',JSON.stringify(values));props_().setProperty('SYNC_VERSION',version); }
+function bump_(modules) { const version=uid_(),values=moduleVersions_(),affected=new Set(modules||Object.keys(SCHEMA));if(affected.has('_Workflows')||affected.has('_JournalChunks'))for(const m of ['production','debts','loans'])affected.add(m);for(const m of affected)if(SCHEMA[m])values[m]=version;props_().setProperty('MODULE_VERSIONS',JSON.stringify(values));props_().setProperty('SYNC_VERSION',version); }
 function invalidateRows_(module,book=db_()){requestRows_?.delete(book.getId()+':'+module);}
 function rawRows_(module,book=db_()){
   const key=book.getId()+':'+module;if(requestRows_?.has(key))return requestRows_.get(key);

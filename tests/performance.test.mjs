@@ -72,3 +72,15 @@ test('single-cell edit processes only that row and never treats unseen rows as d
  const g=gas(),sheet=g.tables.get('materials');for(let i=0;i<1001;i++)sheet.appendRow(g.ctx.cells_('materials',{recordId:'m'+i,version:1,...material}));g.ctx.scanSheets_();const others=g.ctx.rowsPlain_('_Sync').filter(r=>r[1]!=='m0').map(r=>r.join('|'));
  sheet.rows[1][11]=99;const before=g.metrics.cellsRead;g.ctx.sheetEdited_({source:g.ctx.db_(),range:{getSheet:()=>({getName:()=> 'materials'}),getRow:()=>2,getNumRows:()=>1,getColumn:()=>12}});assert.ok(g.metrics.cellsRead-before<4200);assert.deepEqual(g.ctx.rowsPlain_('_Sync').filter(r=>r[1]!=='m0').map(r=>r.join('|')),others);assert.equal(sheet.rows[1][1],2);assert.equal(sheet.rows[2][1],1);
 });
+test('workflow-only debt allocations invalidate augmented loan/debt/production module caches',()=>{
+ const g=gas(),token=g.ctx.issueSession_('admin@example.com','admin').token;g.ctx.writeRow_('debts',{recordId:'d',version:1,name:'Customer',type:'phai-thu',amount:100,date:'2026-11-01',dueDate:'2026-12-01'});
+ const before=g.ctx.moduleVersions_();assert.equal(send(g,'list',{token,module:'debts'}).data.rows[0].allocations.length,0);
+ g.ctx.transact_('fixture',crypto.randomUUID(),{action:'WORKFLOW'},[{module:'_Workflows',before:null,after:{recordId:'allocation',version:1,date:'2026-11-16',kind:'debt',referenceId:'legacy-sale',details:JSON.stringify({saleId:'legacy-sale',allocations:[{id:'d',amount:30}]})}}]);
+ const after=g.ctx.moduleVersions_();for(const m of ['production','debts','loans'])assert.notEqual(after[m],before[m]);assert.equal(after.materials,before.materials);assert.equal(send(g,'list',{token,module:'debts'}).data.rows[0].allocations[0].amount,30);
+});
+test('eight isolated users cannot reuse another users cached page or replay proof',()=>{
+ const g=gas();g.ctx.writeRow_('materials',{recordId:'m',version:1,...material});
+ const tokens=[];for(let i=0;i<8;i++){g.ctx.append_('_Users',['staff'+i,'staff'+i+'@example.com','staff',i%2?'{}':'{"materials":["read"]}',true,1]);tokens.push(g.ctx.issueSession_('staff'+i+'@example.com','subject'+i).token);}
+ for(let turn=0;turn<3;turn++)for(const [i,token]of tokens.entries()){const response=send(g,'list',{token,module:'materials'});if(i%2)assert.equal(response.error.code,'FORBIDDEN');else assert.equal(response.data.rows[0].name,'Rice');}
+ assert.equal(g.ctx.rowsPlain_('_AuthRequests').length,24);
+});

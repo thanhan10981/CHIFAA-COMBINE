@@ -66,6 +66,10 @@ Excel downloads: LOCAL_TESTED185, all prior CSV output buttons replaced with .xl
 
 Excel DEPLOYED_DEV26 after exact4file readback, no setup required; local185tests pass; hosted/desktop download UAT pending.
 
+## Performance final local checkpoint — 2026-11-17
+
+PERF01–05 LOCAL_TESTED210; PERF06 local benchmarks complete, Google/browser/concurrency UAT pending. Syntax58/build/bundled syntax/SHA/logo/offline Excel verified. Final measured mock and 40-sample client CPU benchmarks: docs/PERFORMANCE_2026-11-17.md. Added submitted-snapshot/ACK regression tests, 8-account permission isolation and derived workflow cache invalidation. No guaranteed Google latency. DEV rollout pending this entry; see HANDOFF for final version. Required after rollout: Admin → Nhật ký & đồng bộ → Cài lịch scan, backup và Portal. No setup/schema reset.
+
 ## Performance PERF01/02 checkpoint - 2026-11-17
 
 User requested full-system measured optimization. Added service counters and reproducible synthetic benchmark100/1000/5000, source dependency reads per mutation, request-only raw/table memoization excluding auth, contiguous batch writes/audit, module versions, timing logs and partial-write read guard. 190tests pass. Mock5000-row material save getValues59->11, cells470345->65052, time362.79->54.93ms (single run, NOT Google P50/P95). Reversal stays complete; delete includes all referring modules. Docs/PERFORMANCE_2026-11-17.md lists phases and remaining work. Baseline output/performance-before.json retained. No deployment yet; DEV remains26, no Sheets data/triggers/ACL changed. Next PERF03 shell/module cache/Dashboard, PERF04 scoped scanner, PERF05 RAM router/dedupe, PERF06 benchmarks/UAT. Preserve unrelated files.

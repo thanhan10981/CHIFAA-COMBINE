@@ -11,7 +11,7 @@ async function ensureExcelRuntime(){
     const url='https://script.google.com/chifaa-public-assets/excel-'+EXCEL_ASSET_HASH+'.js';let cache,source;
     const valid=async text=>{const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));return Array.from(new Uint8Array(hash),b=>b.toString(16).padStart(2,'0')).join('')===EXCEL_ASSET_HASH;};
     try{cache=await globalThis.caches?.open('chifaa-public-assets-v1');source=await (await cache?.match(url))?.text();if(source&&!await valid(source)){source=null;await cache.delete(url);}}catch(_){source=null;}
-    if(!source){source=(await rpcCall('publicAsset',{id:'exceljs-4.4.0'})).source;if(typeof source!=='string'||!await valid(source))throw new Error('Thư viện Excel không đúng phiên bản. Tải lại trang rồi thử lại.');try{await cache?.put(url,new Response(source,{headers:{'Content-Type':'application/javascript'}}));}catch(_){/* Public-asset storage is optional. */}}
+    if(!source){const preview=globalThis.document?.getElementById?.('excel-preview-runtime');source=preview?JSON.parse(preview.textContent):(await rpcCall('publicAsset',{id:'exceljs-4.4.0'})).source;if(typeof source!=='string'||!await valid(source))throw new Error('Thư viện Excel không đúng phiên bản. Tải lại trang rồi thử lại.');try{await cache?.put(url,new Response(source,{headers:{'Content-Type':'application/javascript'}}));}catch(_){/* Public-asset storage is optional. */}}
     const script=document.createElement('script');script.textContent=source;document.head.append(script);script.remove();
     if(!globalThis.ExcelJS)throw new Error('Không thể khởi động Excel trên trình duyệt này.');return globalThis.ExcelJS;
   })();try{return await excelLoading;}finally{excelLoading=null;}

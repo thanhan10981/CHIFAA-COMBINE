@@ -12,10 +12,11 @@ const excelRuntime='/*\n'+await read('assets/licenses/ExcelJS-LICENSE.txt')+'\n*
 const client=(await Promise.all(['src/shared/schema.js','src/shared/access.js','src/shared/domain.js','src/shared/auth-protocol.js','src/client/navigation.js','src/client/permissions.js','src/client/session-store.js','src/client/rpc.js','src/client/notifications.js','src/shared/strategy.js','src/client/strategy-view.js','src/client/import-csv.js','src/client/excel.js','src/client/operations-view.js','src/client/app.js'].map(read))).map(plain).join('\n').replaceAll('__EXCEL_ASSET_HASH__',excelHash);
 const brandAsset='<script id="brand-asset" type="application/json">'+JSON.stringify(logo)+'</script><script>document.querySelectorAll("[data-chifaa-logo]").forEach(function(n){n.src=JSON.parse(document.getElementById("brand-asset").textContent);});</script>';
 const index=(await read('src/client/index.html')).replace('<!--STYLE-->','<style>'+css+'</style>').replace('<!--APP-->',()=>brandAsset+'<script type="module">'+client.replace(/<\/script/gi,'<\\/script')+'</script>').replaceAll('src="__LOGO__"','data-chifaa-logo');
+const previewIndex=index.replace('</body>',()=>'<script id="excel-preview-runtime" type="application/json">'+JSON.stringify(excelRuntime).replace(/</g,'\\u003c')+'</script></body>');
 const portalCode=(await Promise.all(['src/shared/auth-protocol.js','src/client/session-store.js','src/client/rpc.js','src/client/notifications.js','src/client/portal.js'].map(read))).map(plain).join('\n');
 const portal=(await read('src/client/portal.html')).replace('<!--STYLE-->','<style>'+css+'</style>').replace('<!--PORTAL-->','<script type="module">'+portalCode+'</script>').replaceAll('__LOGO__',logo);
 const server=(await Promise.all(['src/shared/schema.js','src/shared/access.js','src/shared/domain.js','src/shared/strategy.js','src/shared/auth-protocol.js','src/server/storage.js','src/server/auth.js','src/server/oauth.js','src/server/workflows.js','src/server/financial-workflows.js','src/server/maintenance.js','src/server/performance.js','src/server/api.js','src/server/scanner.js','src/server/operations.js'].map(read))).map(plain).join('\n');
-await Promise.all([fs.writeFile(path.join(root,'dist/Index.html'),index),fs.writeFile(path.join(root,'dist/Portal.html'),portal),fs.writeFile(path.join(root,'dist/Code.gs'),server),fs.writeFile(path.join(root,'dist/ExcelRuntime.html'),excelRuntime),fs.copyFile(path.join(root,'src/server/appsscript.json'),path.join(root,'dist/appsscript.json')),fs.writeFile(path.join(root,'output/CHIFAA_APP.html'),index)]);
+await Promise.all([fs.writeFile(path.join(root,'dist/Index.html'),index),fs.writeFile(path.join(root,'dist/Portal.html'),portal),fs.writeFile(path.join(root,'dist/Code.gs'),server),fs.writeFile(path.join(root,'dist/ExcelRuntime.html'),excelRuntime),fs.copyFile(path.join(root,'src/server/appsscript.json'),path.join(root,'dist/appsscript.json')),fs.writeFile(path.join(root,'output/CHIFAA_APP.html'),previewIndex)]);
 let original=await read('source/CHIFAA_COMBINE_PHAT_THAO.html');
 const scripts=[...original.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(m=>m[1]);
 original=original.replace(/(<img\b[^>]*class="brand-photo"[^>]*src=")[^"]*(")/,(_,a,b)=>a+logo+b);
@@ -23,5 +24,5 @@ original=original.replace('</head>','<style id="chifaa-logo-refinement">.brand-p
 if(JSON.stringify(scripts)!==JSON.stringify([...original.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(m=>m[1])))throw new Error('Source scripts changed');
 await fs.writeFile(path.join(root,'output/CHIFAA_PHAT_THAO_LOGO_MOI.html'),original);
 await fs.writeFile(path.join(root,'output/demo.html'),original);
-await fs.writeFile(path.join(root,'output/index.html'),index);
+await fs.writeFile(path.join(root,'output/index.html'),previewIndex);
 console.log('Built Apps Script package dist/ and local preview output/. Original demo scripts unchanged.');

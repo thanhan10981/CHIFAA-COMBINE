@@ -2,18 +2,7 @@ import test from 'node:test';import assert from 'node:assert/strict';import fs f
 import {gas} from './gas-mock.mjs';
 import {send} from './auth-helpers.mjs';
 const strip=s=>s.replace(/^import .*?;\r?\n/gm,'').replace(/^export \{[^}]*\};?\r?\n?/gm,'');
-async function client(demo=true,google,store){
-  const {window,document}=parseHTML(fs.readFileSync('src/client/index.html','utf8'));
-  // Linkedom exposes select.value as getter-only; emulate the browser setter.
-  Object.defineProperty(Object.getPrototypeOf(document.createElement('select')),'value',{configurable:true,get(){return this.querySelector('option[selected]')?.value??this.options[0]?.value??'';},set(value){for(const option of this.options)option.removeAttribute('selected');const chosen=Array.from(this.options).find(option=>option.value===String(value));if(chosen)chosen.setAttribute('selected','');}});
-  const dialog=document.getElementById('editor');dialog.showModal=()=>{dialog.open=true;};dialog.close=()=>{dialog.open=false;};
-  const location={search:demo?'?demo=1':'',hash:'',pathname:'/',href:'http://localhost/'};
-  const context=vm.createContext({window,document,Node:window.Node,location,URL,URLSearchParams,crypto,TextEncoder,Uint8Array,google,console,Date,Intl,Promise,Set,Map,Object,Array,Number,String,Math,Error,Blob,
-    confirm:()=>true,setInterval:()=>0,setTimeout:()=>0,clearTimeout(){}});
-  for(const p of ['src/shared/schema.js','src/shared/access.js','src/shared/domain.js','src/shared/auth-protocol.js','src/client/navigation.js','src/client/permissions.js','src/client/session-store.js','src/client/rpc.js','src/client/notifications.js','src/shared/strategy.js','src/client/strategy-view.js','src/client/import-csv.js','src/client/excel.js','src/client/operations-view.js','src/client/app.js'])vm.runInContext(strip(fs.readFileSync(p,'utf8')).replace(/^start\(\);$/m,''),context,{filename:p});
-  if(store)context.sessionStore=store;
-  await context.start();return {context,document,dialog,location,run:code=>vm.runInContext(code,context)};
-}
+import {client} from './client-fixture.mjs';
 test('local shell does not preload user data or financial records',async()=>{const c=await client(false);assert.equal(c.document.getElementById('workspace').hidden,true);assert.equal(c.document.getElementById('login').hidden,false);assert.match(c.document.getElementById('login-status').textContent,/Chưa kết nối/);assert.equal(c.run('Object.keys(state.data).length'),0);});
 test('explicit demo opens application with all 36 routes and no invented data',async()=>{const c=await client();assert.equal(c.document.getElementById('workspace').hidden,false);assert.equal(c.document.querySelectorAll('#navigation a').length,36);assert.match(c.document.getElementById('view').textContent,/Chưa có dữ liệu doanh thu/);assert.equal(c.run('state.data.sales.length'),0);});
 
@@ -308,6 +297,16 @@ test('Strategy revisits reuse the existing chart DOM and cached aggregate',async
 test('concurrent identical read calls deduplicate, mutations never share an RPC',async()=>{
  const c=await client();c.run(`globalThis.transportCalls=0;globalThis.readRelease=null;rpcTransport=()=>{transportCalls++;return new Promise(resolve=>{readRelease=resolve;});};globalThis.r1=rpcCall('list',{module:'materials'});globalThis.r2=rpcCall('list',{module:'materials'});`);
  assert.equal(c.run('transportCalls'),1);c.run('readRelease({rows:[]})');await c.run('Promise.all([r1,r2])');c.run("rpcTransport=async()=>{transportCalls++;return {};};");await c.run("Promise.all([rpcCall('mutate',{key:'a'}),rpcCall('mutate',{key:'a'})])");assert.equal(c.run('transportCalls'),3);
+});
+test('record save remains pending until ACK, preserves exact unknown request and resumes it after closing',async()=>{
+ const c=await client();c.run(`state.demo=false;state.token='fixture';openEditor('materials');globalThis.submitted=null;globalThis.rejectSave=null;formRecord=()=>({name:'Original',purchaseUnit:'kg',unit:'kg',conversion:1,purchasePrice:10,minimum:0});call=async(action,args)=>{submitted=args;return new Promise((resolve,reject)=>{rejectSave=reject;});};document.getElementById('record-form').dispatchEvent(new window.Event('submit',{cancelable:true}));`);
+ assert.equal(c.run('state.saving'),true);assert.equal(c.document.getElementById('submit-record').textContent,'Đang lưu…');assert.equal(c.document.querySelector('.toast-success'),null);
+ const key=c.run('submitted.key');c.run("formRecord=()=>({name:'Changed while waiting'});rejectSave(Object.assign(new Error('timeout'),{code:'TIMEOUT'}));");for(let i=0;i<8;i++)await Promise.resolve();assert.equal(c.run('state.uncertain.record.name'),'Original');assert.equal(c.run('state.uncertain.key'),key);
+ c.run("closeEditor();showDetails({recordId:'other'},'materials');openEditor('stores');");assert.equal(c.run('state.editor.module'),'materials');assert.equal(c.run('state.formKey'),key);assert.equal(c.document.querySelector('[name=name]').value,'Original');
+});
+test('ACK followed by refresh failure reports saved, never an uncertain or failed write',async()=>{
+ const c=await client();c.run(`state.demo=false;state.token='fixture';openEditor('materials');formRecord=()=>({name:'Saved',purchaseUnit:'kg',unit:'kg',conversion:1,purchasePrice:10,minimum:0});call=async()=>({ids:['saved']});load=async()=>{throw Object.assign(new Error('network read failure'),{code:'NETWORK'});};document.getElementById('record-form').dispatchEvent(new window.Event('submit',{cancelable:true}));`);
+ for(let i=0;i<12;i++)await Promise.resolve();assert.equal(c.run('state.uncertain'),null);assert.equal(c.dialog.open,false);assert.match(c.document.getElementById('error').textContent,/đã lưu thành công/);assert.match(c.document.querySelector('.toast-success').textContent,/xác nhận lưu phiếu/);
 });
 
 test('draft sidebar groups toggle accessibly, preserve expansion and open the active branch',async()=>{

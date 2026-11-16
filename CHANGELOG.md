@@ -144,6 +144,12 @@ Khởi tạo từ đầu vào được cung cấp, giữ phác thảo và logo g
 - Auth haiGmail/ACL và legacy import vẫn blocked theo gate; checkpoint, matrix và93caacceptance không được đánh dấu nghiệm thu bằng testmock.
 
 
+## 2026-11-17 — Performance final local validation
+
+- 210tests, syntax58/build và bundle/runtime hash/logo/offline preview checks đạt. Thêm benchmark client40lượt/cỡ, trạng thái lưu/ACK và cách ly8tài khoản; sửa invalidation cache khi chỉ thay workflow.
+- Mock lớn: lưu vật tư59→11getValues; sửa ô trực tiếp95→3; Index3,58→1,03MB. Không coi thời gian mock là Google SLA. Báo cáo đầy đủ, rủi ro đồng bộ và hướng dẫn deploy5file tại docs/PERFORMANCE_2026-11-17.md.
+- Google/browser/concurrent UAT và cài trigger mới chưa thực hiện. Theo dõi phiên bản DEV cuối tại HANDOFF.md.
+
 ## 2026-11-17 - Performance PERF01/02 (local)
 
 Scoped mutation dependencies, request-only reads, batch effects/audit/journal, module versions and safe read guard. 190tests pass; measured mock evidence and next phases in docs/PERFORMANCE_2026-11-17.md. Not deployed.
