@@ -17,7 +17,9 @@ function summary_(user,args){
   return scopedCache_(user,'summary',Object.fromEntries(modules.map(m=>[m,versions[m]])),{from:args.from,to:args.to,compare:args.compare===true},args.force===true,()=>{
     const data=data_(modules);requireValidSources_(data);
     const days={};for(const s of effective(data.sales).filter(s=>s.date>=args.from&&s.date<=args.to))days[s.date]=(days[s.date]||0)+salesMetrics(s).netRevenue;
-    return {report:timed_('report',()=>report(data,args.from,args.to)),target:data.plans?targets(data,args.from,args.to):null,weeks:args.compare===true?compareWeeks(data,args.to):[],series:Object.entries(days).sort().slice(-31),settlements:settlementPage_(data,args.from,args.to)};
+    const raw=timed_('report',()=>report(data,args.from,args.to)),{payroll,...aggregate}=raw,departments=new Map();
+    for(const row of payroll){if(!departments.has(row.department))departments.set(row.department,{department:row.department,hours:0,base:0,allowances:0,advance:0,deduction:0,net:0});const group=departments.get(row.department);for(const key of ['hours','base','allowances','advance','deduction','net'])group[key]+=row[key];}
+    return {report:{...aggregate,payrollSummary:[...departments.values()].map(g=>({...g,...Object.fromEntries(['hours','base','allowances','advance','deduction','net'].map(k=>[k,round(g[k])]))}))},target:data.plans?targets(data,args.from,args.to):null,weeks:args.compare===true?compareWeeks(data,args.to):[],series:Object.entries(days).sort().slice(-31),settlements:settlementPage_(data,args.from,args.to)};
   });
 }
 function settlements_(user,args){

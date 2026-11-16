@@ -55,3 +55,9 @@ test('cost, demand and variance read models match shared calculations without ex
  const demand=send(g,'periodSummary',{...args,kind:'demand'});assert.equal(demand.ok,true);assert.equal(demand.data.note,g.ctx.demand(data,args.from,args.to).note);
  const variance=send(g,'periodSummary',{...args,kind:'variance'});assert.equal(variance.ok,true);assert.equal(variance.data.total,g.ctx.variance(data,args.from,args.to).length);
 });
+test('Dashboard returns department totals instead of the entire employee payroll',()=>{
+  const {g,token}=fixture(150),result=send(g,'summary',{token,from:'2026-11-01',to:'2026-11-30'});assert.equal(result.ok,true,JSON.stringify(result));
+  assert.equal(Object.hasOwn(result.data.report,'payroll'),false);assert.equal(result.data.report.payrollSummary.length,1);
+  assert.equal(result.data.report.payrollSummary[0].hours,150);assert.equal(result.data.report.payrollSummary[0].base,1500);
+  assert.equal(JSON.stringify(result.data.report).includes('employeeId'),false);assert.equal(result.data.report.revenue,4500);
+});
