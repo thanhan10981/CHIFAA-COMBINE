@@ -19,10 +19,13 @@ function rpc(action,args){
       const user=timed_('auth',()=>locked_(()=>verifyRequest_(action,args)));
       actor=user.email;
       const readStamp=stamp_();
-      if(['bootstrap','list','export','summary','strategySummary','settlements','financialSummary','workflowReports'].includes(action))assertReadable_();
+      if(['bootstrap','list','lookup','record','export','summary','strategySummary','periodSummary','settlements','financialSummary','workflowReports'].includes(action))assertReadable_();
       if(action==='bootstrap')result=bootstrap_(user,args.force===true,args);
       else if(action==='list')result=listPage_(user,args);
+      else if(action==='lookup')result=lookupData_(user,args);
+      else if(action==='record')result=recordData_(user,args);
       else if(action==='summary')result=summary_(user,args);
+      else if(action==='periodSummary')result=periodSummary_(user,args);
       else if(action==='strategySummary')result=strategySummary_(user,args);
       else if(action==='settlements')result=settlements_(user,args);
       else if(action==='sync')result={stamp:stamp_(),moduleVersions:permittedVersions_(user),permissionVersion:user.permissionVersion,grants:hash_({role:user.role,permissions:user.permissions})};
@@ -37,11 +40,13 @@ function rpc(action,args){
       else if(action==='health'){requireAdmin_(user);result={stamp:stamp_(),audit:rowsPlain_('_Audit').slice(-100).map(r=>({id:r[0],at:r[1],user:r[2],action:r[3],module:r[4],recordId:r[5]})),pending:rowsPlain_('_Requests').filter(r=>r[3]==='PREPARED').map(r=>({key:r[0],state:r[3],createdAt:r[6]})),lastScan:props_().getProperty('LAST_SCAN'),lastBackup:props_().getProperty('LAST_BACKUP')};}
       else if(action==='export'){require_(user,args.module,'export');result=listPage_(user,{...args,mode:'snapshot'});}
       else throw new Error('NOT_FOUND: Endpoint không tồn tại');
-      if(['bootstrap','list','export','summary','strategySummary','settlements','financialSummary','workflowReports'].includes(action))assertReadable_();
-      if(['bootstrap','list','export','summary','strategySummary','settlements','financialSummary','workflowReports'].includes(action)&&readStamp!==stamp_())throw new Error('CONFLICT: Dữ liệu đổi trong lúc đọc. Đồng bộ rồi thử lại.');
-      if(['bootstrap','list','export','summary','strategySummary','settlements','health','financialSummary','workflowReports','workflowStatus'].includes(action))audit_(user.email,'READ','rpc',action,null,{module:args.module||args.kind||''});
+      if(['bootstrap','list','lookup','record','export','summary','strategySummary','periodSummary','settlements','financialSummary','workflowReports'].includes(action))assertReadable_();
+      if(['bootstrap','list','lookup','record','export','summary','strategySummary','periodSummary','settlements','financialSummary','workflowReports'].includes(action)&&readStamp!==stamp_())throw new Error('CONFLICT: Dữ liệu đổi trong lúc đọc. Đồng bộ rồi thử lại.');
+      if(['bootstrap','list','lookup','record','export','summary','strategySummary','periodSummary','settlements','health','financialSummary','workflowReports','workflowStatus'].includes(action))audit_(user.email,'READ','rpc',action,null,{module:args.module||args.kind||''});
     }
-    console.log(JSON.stringify({event:'rpc',action,ms:Date.now()-started,ok:true}));return {ok:true,data:result};
+    const response={ok:true,data:result};
+    if(props_().getProperty('PERF_DIAGNOSTICS')==='true'){const at=Date.now(),json=JSON.stringify(result);response.meta={serverMs:Date.now()-started,serializeMs:Date.now()-at,payloadChars:json.length};console.log(JSON.stringify({event:'rpc_payload',action,...response.meta}));}
+    console.log(JSON.stringify({event:'rpc',action,ms:Date.now()-started,ok:true}));return response;
   }catch(error){
     const message=String(error.message||error),code=message.includes(':')?message.split(':')[0]:'ERROR';
     if(actor&&['AUTH','FORBIDDEN'].includes(code)){try{audit_(actor,'RPC_DENIED','rpc',action,null,{code});}catch(_){/* Preserve fail-closed response if audit storage is unavailable. */}}
@@ -81,11 +86,13 @@ function listPage_(user,args){
   if(args.stamp&&args.stamp!==stamp)throw new Error('CONFLICT: Dữ liệu đổi trong lúc phân trang. Đồng bộ rồi thử lại.');
   for(const key of ['from','to'])if(args[key]&&!validDate(args[key]))throw new Error('VALIDATION: Ngày lọc không hợp lệ');
   if(args.search&&(typeof args.search!=='string'||args.search.length>200))throw new Error('VALIDATION: Tìm kiếm tối đa 200 ký tự');
-  const selection={module:args.module,offset,limit,from:args.from||'',to:args.to||'',kind:args.kind||'',search:args.search||'',mode:args.mode||'',window:args.window===true};
+  for(const k of ['kind','department','dishId','materialId','search'])if(args[k]!=null&&(typeof args[k]!=='string'||args[k].length>2000))throw new Error('VALIDATION: Bộ lọc không hợp lệ');
+  const selection={module:args.module,offset,limit,from:args.from||'',to:args.to||'',kind:args.kind||'',department:args.department||'',dishId:args.dishId||'',materialId:args.materialId||'',compact:args.compact===true,search:args.search||'',mode:args.mode||'',window:args.window===true};
   const result=scopedCache_(user,'list',moduleVersions_()[args.module],selection,args.force===true,()=>listPageData_(user,args,offset,limit,stamp));return {...result,stamp};
 }
 function listPageData_(user,args,offset,limit,stamp){
   if(args.mode==='snapshot'&&args.window===true){const window=rawRowsRange_(args.module,offset,limit);let rows=window.rows.map(publicRow_);if(args.module==='production')rows=attachProductionCosts_(rows,user);if(args.module==='debts')rows=attachDebtAllocations_(rows);if(args.module==='loans')rows=attachLoanPeriods_(rows);return {...window,rows,offset,stamp};}
+  const indexed=args.mode!=='snapshot'?indexedPage_(args.module,args,offset,limit):null;if(indexed){let rows=indexed.rows.map(publicRow_);if(args.module==='production')rows=attachProductionCosts_(rows,user);if(args.module==='debts')rows=attachDebtAllocations_(rows);if(args.module==='loans')rows=attachLoanPeriods_(rows);if(args.module==='recipes'&&args.compact===true)rows=rows.map(r=>{const {lines,...rest}=r;return {...rest,_detailDeferred:true,lineCount:Array.isArray(lines)?lines.length:null};});return {...indexed,rows,stamp};}
   let rows=rawRows_(args.module);if(args.mode!=='snapshot')rows=rows.filter(r=>!r.deleted&&(!args.from||!r.date||r.date>=args.from)&&(!args.to||!r.date||r.date<=args.to)&&(!args.kind||r.kind===args.kind)&&(!args.search||Object.values(r).some(v=>String(v).toLowerCase().includes(args.search.toLowerCase()))));
   let page=rows.slice(offset,offset+limit).map(publicRow_);if(args.module==='production')page=attachProductionCosts_(page,user);if(args.module==='debts')page=attachDebtAllocations_(page);if(args.module==='loans')page=attachLoanPeriods_(page);
   if(stamp!==stamp_())throw new Error('CONFLICT: Dữ liệu vừa đổi. Đồng bộ rồi thử lại.');return {rows:page,total:rows.length,offset,next:offset+limit<rows.length?offset+limit:null,stamp};

@@ -12,9 +12,9 @@ export function gas(){
     protect(){const p={setDescription(){return p;},setWarningOnly(){return p;},addEditor(){},getEditors(){return[];},removeEditors(){},canDomainEdit(){return false;}};return p;}
   }
   class Sheet{
-    constructor(name){this.name=name;this.rows=[];}
+    constructor(name){this.name=name;this.rows=[];this.maxRows=1000;}
     getRange(...args){return new Range(this,...args);}getLastRow(){metrics.lastRow++;let n=this.rows.length;while(n&&this.rows[n-1].every(v=>v===''))n--;return n;}
-    getLastColumn(){return Math.max(0,...this.rows.map(r=>r.length));}getMaxRows(){return 1000;}getProtections(){return[];}setFrozenRows(){}
+    getLastColumn(){return Math.max(0,...this.rows.map(r=>r.length));}getMaxRows(){return this.maxRows;}insertRowsAfter(at,n){this.maxRows+=n;return this;}getProtections(){return[];}setFrozenRows(){}
     appendRow(row){metrics.append++;metrics.cellsWritten+=row.length;this.rows.push([...row]);if(failTable===this.name){failTable=null;throw new Error('Injected write failure');}}
     deleteRow(i){this.rows.splice(i-1,1);}
     deleteRows(i,n){this.rows.splice(i-1,n);}
@@ -32,13 +32,13 @@ export function gas(){
     SpreadsheetApp:{openById:id=>{metrics.open++;if(!books.has(id))throw Error('Workbook not found');return books.get(id);},create:name=>makeBook(crypto.randomUUID(),name),flush(){metrics.flush++;},ProtectionType:{RANGE:'range'},newDataValidation:()=>validation},
     DriveApp:{Access:{PRIVATE:'PRIVATE'},getFileById:file,getFolderById:folder,createFolder:()=>folder(crypto.randomUUID())},ScriptApp:{getProjectTriggers:()=>triggers,newTrigger:triggerBuilder,deleteTrigger:t=>{const i=triggers.indexOf(t);if(i>=0)triggers.splice(i,1);}},
     Session:{getEffectiveUser:()=>({getEmail:()=> 'owner@example.com'})},
-    LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock(){}})},CacheService:{getScriptCache:()=>({get:k=>cache.get(k),put:(k,v)=>cache.set(k,v),remove:k=>cache.delete(k)})},
+    LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock(){}})},CacheService:{getScriptCache:()=>({get:k=>cache.get(k),getAll:keys=>Object.fromEntries(keys.filter(k=>cache.has(k)).map(k=>[k,cache.get(k)])),putAll:values=>{for(const [k,v]of Object.entries(values))cache.set(k,v);},put:(k,v)=>cache.set(k,v),remove:k=>cache.delete(k)})},
     UrlFetchApp:{fetch:(url,options)=>{context.fetches.push({url,options});const body=context.fetchResponse?context.fetchResponse(url,options):url.endsWith('/token')?{access_token:'google-access-mock',token_type:'Bearer',expires_in:3600}:context.claims;return {getResponseCode:()=>body.status||200,getContentText:()=>JSON.stringify(body)};}},
     Utilities:{getUuid:()=>crypto.randomUUID(),DigestAlgorithm:{SHA_256:'sha256'},computeDigest:(_,v)=>[...crypto.createHash('sha256').update(v).digest()],
       formatDate:d=>d.toISOString().slice(0,10),computeHmacSha256Signature:(p,k)=>[...crypto.createHmac('sha256',k).update(p).digest()],
       base64EncodeWebSafe:v=>Buffer.from(typeof v==='string'?v:Uint8Array.from(v)).toString('base64url'),base64DecodeWebSafe:v=>[...Buffer.from(v,'base64url')],newBlob:v=>({getDataAsString:()=>Buffer.from(v).toString('utf8')})}
   });
   context.fetches=[];
-  for(const file of ['src/shared/schema.js','src/shared/access.js','src/shared/domain.js','src/shared/strategy.js','src/shared/auth-protocol.js','src/server/storage.js','src/server/auth.js','src/server/oauth.js','src/server/workflows.js','src/server/financial-workflows.js','src/server/maintenance.js','src/server/performance.js','src/server/api.js','src/server/scanner.js','src/server/operations.js'])vm.runInContext(fs.readFileSync(file,'utf8').replace(/^import .*?;\r?\n/gm,'').replace(/^export \{[^}]*\};?\r?\n?/gm,''),context,{filename:file});
+  for(const file of ['src/shared/schema.js','src/shared/access.js','src/shared/domain.js','src/shared/strategy.js','src/shared/auth-protocol.js','src/server/storage.js','src/server/auth.js','src/server/oauth.js','src/server/workflows.js','src/server/financial-workflows.js','src/server/maintenance.js','src/server/read-model.js','src/server/performance.js','src/server/api.js','src/server/scanner.js','src/server/operations.js'])vm.runInContext(fs.readFileSync(file,'utf8').replace(/^import .*?;\r?\n/gm,'').replace(/^export \{[^}]*\};?\r?\n?/gm,''),context,{filename:file});
   context.setup_();return {ctx:context,tables,properties,cache,books,makeBook,triggers,folders,metrics,failNext:name=>{failTable=name;},evaluate:code=>vm.runInContext(code,context)};
 }

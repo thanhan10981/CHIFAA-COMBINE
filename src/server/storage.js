@@ -4,7 +4,8 @@ function config_(name) { const v=props_().getProperty(name); if(!v) throw new Er
 let requestBooks_=null;
 let requestRows_=null,requestTables_=null,requestProfile_=null;
 function timed_(name,fn){const start=Date.now();try{return fn();}finally{if(requestProfile_){const p=requestProfile_[name]||{calls:0,ms:0};p.calls++;p.ms+=Date.now()-start;requestProfile_[name]=p;}}}
-function db_() { const id=config_('SPREADSHEET_ID');if(!requestBooks_)return SpreadsheetApp.openById(id);if(!requestBooks_.has(id))requestBooks_.set(id,SpreadsheetApp.openById(id));return requestBooks_.get(id); }
+function db_() { const id=config_('SPREADSHEET_ID');if(!requestBooks_)return timed_('sheets:open',()=>SpreadsheetApp.openById(id));if(!requestBooks_.has(id))requestBooks_.set(id,timed_('sheets:open',()=>SpreadsheetApp.openById(id)));return requestBooks_.get(id); }
+function profileValues_(module,range){return timed_('sheets:values:'+module,()=>range.getValues());}
 function hash_(value) { return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,typeof value==='string'?value:JSON.stringify(value)).map(b=>('0'+(b&255).toString(16)).slice(-2)).join(''); }
 function now_() { return new Date().toISOString(); }
 function uid_() { return Utilities.getUuid(); }
@@ -24,10 +25,10 @@ function rawRows_(module,book=db_()){
 }
 function readRows_(module,book) {
   const s=book.getSheetByName(module),headers=headers_(module);if(!s)throw new Error('CONFIG: Chưa setup bảng '+module);
-  if(JSON.stringify(s.getRange(1,1,1,headers.length).getValues()[0])!==JSON.stringify(headers)) throw new Error('SCHEMA: Sai cột bảng '+module);
+  if(JSON.stringify(profileValues_(module,s.getRange(1,1,1,headers.length))[0])!==JSON.stringify(headers)) throw new Error('SCHEMA: Sai cột bảng '+module);
   const last=s.getLastRow();if(last<2) return [];
-  const cellsAll=[];for(let offset=2;offset<=last;offset+=1000)cellsAll.push(...s.getRange(offset,1,Math.min(1000,last-offset+1),headers.length).getValues());
-  return decodeRows_(module,cellsAll,2);
+  const cellsAll=[];for(let offset=2;offset<=last;offset+=1000)cellsAll.push(...profileValues_(module,s.getRange(offset,1,Math.min(1000,last-offset+1),headers.length)));
+  return timed_('decode:'+module,()=>decodeRows_(module,cellsAll,2));
 }
 function rawRowsRange_(module,offset,limit){
   return timed_('window:'+module,()=>{const s=table_(module),headers=headers_(module);if(JSON.stringify(s.getRange(1,1,1,headers.length).getValues()[0])!==JSON.stringify(headers))throw new Error('SCHEMA: Sai cột bảng '+module);const total=Math.max(0,s.getLastRow()-1),count=Math.max(0,Math.min(limit,total-offset));return {rows:count?decodeRows_(module,s.getRange(offset+2,1,count,headers.length).getValues(),offset+2):[],total,next:offset+limit<total?offset+limit:null};});
@@ -70,7 +71,7 @@ function auditCells_(user,action,module,id,before,after) {
 }
 function audit_(user,action,module,id,before,after){append_('_Audit',auditCells_(user,action,module,id,before,after));}
 function assertReadable_(){if(props_().getProperty('WRITE_IN_PROGRESS'))throw new Error('BUSY: Đang ghi hoặc cần phục hồi giao dịch. Thử đồng bộ lại sau.');}
-function rowsPlain_(name) { const s=table_(name);return s.getLastRow()>1?s.getRange(2,1,s.getLastRow()-1,s.getLastColumn()).getValues():[]; }
+function rowsPlain_(name) { const s=table_(name),last=s.getLastRow();return last>1?profileValues_(name,s.getRange(2,1,last-1,s.getLastColumn())):[]; }
 function transact_(actor,key,request,effects) {
   if(typeof key!=='string'||!/^[\w-]{16,100}$/.test(key))throw new Error('VALIDATION: Cần idempotencyKey');
   const fingerprint=hash_(request),existing=rowsPlain_('_Requests').find(r=>r[0]===key);

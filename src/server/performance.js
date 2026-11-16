@@ -1,9 +1,9 @@
 function publicAsset_(args){if(args.id!=='exceljs-4.4.0')throw new Error('NOT_FOUND: Tài nguyên không tồn tại');return {source:HtmlService.createHtmlOutputFromFile('ExcelRuntime').getContent()};}
 function scopedCache_(user,kind,versions,args,force,build,seconds=20){
-  const key='read:v2:'+hash_({book:config_('SPREADSHEET_ID'),kind,versions,args,email:user.email,role:user.role,permissions:user.permissions,permissionVersion:user.permissionVersion}),cache=CacheService.getScriptCache();
-  if(!force)try{const entry=JSON.parse(cache.get(key)||'null');if(entry?.until>Date.now())return entry.value;}catch(_){/* Optional cache. */}
+  const key='read:v3:'+hash_({book:config_('SPREADSHEET_ID'),model:READ_MODEL_VERSION,kind,versions,args,email:user.email,role:user.role,permissions:user.permissions,permissionVersion:user.permissionVersion}),snapshot=['summary','strategy','payroll','inventory'].includes(kind);
+  if(!force){const cached=cachePartsGet_(key);if(cached)return cached;const saved=snapshot?snapshotGet_(key):null;if(saved){cachePartsPut_(key,saved,seconds);return {...saved,readModel:{...saved.readModel,source:'snapshot'}};}}
   const stamp=stamp_(),value=build();assertReadable_();if(stamp!==stamp_())throw new Error('CONFLICT: Dữ liệu đổi trong lúc đọc. Thử đồng bộ lại.');
-  try{const text=JSON.stringify({until:Date.now()+seconds*1000,value});if(text.length*3<90000)cache.put(key,text,seconds);}catch(_){/* Oversized/evicted cache falls back to Sheets. */}return value;
+  if(snapshot){value.readModel={updatedAt:now_(),versions,source:'sheets'};snapshotPut_(user,key,value,versions,stamp);}cachePartsPut_(key,value,seconds);return value;
 }
 function permittedVersions_(user){const all=moduleVersions_();return Object.fromEntries(Object.keys(SCHEMA).filter(m=>allowed_(user,m,'read')).map(m=>[m,all[m]]));}
 function settlementPage_(data,from,to,offset=0){
@@ -31,4 +31,13 @@ function strategySummary_(user,args){
     const data=data_(modules);requireValidSources_(data);const priorEnd=strategyShift('day',range.start,-1),priorStart=strategyShift('day',range.start,-(Math.round((Date.parse(to)-Date.parse(range.start))/86400000)+1));
     return timed_('strategy',()=>({aggregate:strategyAggregate(data,range.start,to),prior:strategyAggregate(data,priorStart,priorEnd),series:strategySeries(data,args.period,args.anchor),profitSeries:strategySeries(data,'month',args.anchor,12)}));
   });
+}
+function periodSummary_(user,args){
+  const modules={payroll:['attendance','employees'],inventory:['materials','stock']}[args.kind];if(!modules||!validDate(args.from)||!validDate(args.to)||args.from>args.to||typeof(args.department||'')!=='string')throw new Error('VALIDATION: Báo cáo/kỳ không hợp lệ');for(const m of modules)require_(user,m,'read');const offset=args.offset??0;if(!Number.isInteger(offset)||offset<0)throw new Error('VALIDATION: Trang báo cáo không hợp lệ');
+  const versions=moduleVersions_(),value=scopedCache_(user,args.kind,Object.fromEntries(modules.map(m=>[m,versions[m]])),{from:args.from,to:args.to,department:args.department||''},args.force===true,()=>{
+    const data=data_(modules);requireValidSources_(data);
+    if(args.kind==='inventory')return {rows:inventory(data,args.to)};
+    const names=new Map(data.employees.map(r=>[r.recordId,r.name])),rows=payroll(effective(data.attendance).filter(r=>r.date>=args.from&&r.date<=args.to&&(!args.department||r.department===args.department))).map(r=>({...r,name:names.get(r.employeeId)||r.employeeId}));return {rows};
+  });
+  const rows=args.kind==='inventory'&&args.reorder===true?value.rows.filter(r=>r.replenish>0||r.status==='gray'):value.rows;return {...value,rows:rows.slice(offset,offset+100),total:rows.length,next:offset+100<rows.length?offset+100:null};
 }

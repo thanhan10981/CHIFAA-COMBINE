@@ -21,7 +21,7 @@ function renderFinancialOperations(kind){
   const account=operationSelect(fields,'Sổ tiền',[['bank','Chuyển khoản'],['cash','Tiền mặt']]);
   if(kind==='payroll'){
     const from=operationField(fields,'Từ ngày','date',state.from),to=operationField(fields,'Đến ngày','date',state.to),bonuses=el('div',null,'field full'),inputs=[];bonuses.append(el('strong','Thưởng thêm theo nhân viên (0 nếu không có)'));
-    for(const e of effective(state.data.employees||[])){const input=operationField(bonuses,e.name,'number',0);input.min=0;input.disabled=!can('plans','read');inputs.push([e.recordId,input]);}fields.append(bonuses);read=()=>({kind,from:from.value,to:to.value,account:account.value,bonuses:inputs.filter(([,i])=>Number(i.value)>0).map(([id,i])=>({id,amount:Number(i.value)}))});
+    for(const e of effective(referenceRows('employees'))){const input=operationField(bonuses,e.name,'number',0);input.min=0;input.disabled=!can('plans','read');inputs.push([e.recordId,input]);}fields.append(bonuses);read=()=>({kind,from:from.value,to:to.value,account:account.value,bonuses:inputs.filter(([,i])=>Number(i.value)>0).map(([id,i])=>({id,amount:Number(i.value)}))});
     card.append(el('p','Xem trước tiền giờ, phụ cấp, ứng/trừ và thưởng trong trần trước khi lập phiếu chi. Chốt sẽ khóa thay đổi chấm công trong kỳ; Admin có thể hoàn tác cả lô tại Nhật ký & đồng bộ.','notice'));
   }else if(kind==='interest'){
     const loan=operationSelect(fields,'Khoản vay',effective(state.data.loans||[]).map(l=>[l.recordId,l.name])),from=operationField(fields,'Kỳ lãi từ ngày','date',state.from),to=operationField(fields,'Đến ngày / ngày ghi chi','date',state.to),amount=operationField(fields,'Số tiền lãi tự nhập (đ)','number','');amount.min='.01';amount.step='.01';amount.required=true;
