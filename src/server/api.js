@@ -1,50 +1,100 @@
-function doGet(){const name=config_('APP_MODE')==='portal'?'Portal':'Index';return HtmlService.createHtmlOutputFromFile(name).setTitle('CHIFAA COMBINE').addMetaTag('viewport','width=device-width, initial-scale=1');}
+function doGet(event){
+  const p=event?.parameter||{};
+  if(config_('APP_MODE')==='internal'&&(Object.hasOwn(p,'state')||Object.hasOwn(p,'code')||Object.hasOwn(p,'error')))return oauthPage_(p);
+  const name=config_('APP_MODE')==='portal'?'Portal':'Index';return HtmlService.createHtmlOutputFromFile(name).setTitle('CHIFAA COMBINE').addMetaTag('viewport','width=device-width, initial-scale=1');
+}
 function rpc(action,args){
-  const started=Date.now();args=args||{};
+  requestBooks_=new Map();
+  const started=Date.now();args=args||{};let actor=null;
   try{
     let result;
-    if(action==='challenge')result=challenge_();
-    else if(action==='login')result=login_(args);
+    if(action==='oauthStart')result=oauthStart_(args);
+    else if(action==='oauthFinish')result=oauthFinish_(args);
+    else if(action==='challenge'||action==='login')throw new Error('AUTH: Luồng đăng nhập cũ đã tắt. Tải lại ứng dụng');
     else if(action==='portalCatalog')result=portalCatalog_(args);
     else if(action==='portalOrder')result=locked_(()=>portalOrder_(args));
+    else if(action==='portalStatus')result=portalStatus_(args);
     else{
-      const user=authenticate_(args.token);
-      if(action==='bootstrap')result=bootstrap_(user);
+      const user=locked_(()=>verifyRequest_(action,args));
+      actor=user.email;
+      if(action==='bootstrap')result=bootstrap_(user,args.force===true);
+      else if(action==='list')result=listPage_(user,args);
       else if(action==='sync')result={stamp:stamp_(),permissionVersion:user.permissionVersion};
       else if(action==='logout')result=locked_(()=>logout_(user,args.token));
       else if(action==='mutate')result=locked_(()=>mutate_(authenticate_(args.token),args));
+      else if(action==='workflow')result=locked_(()=>workflow_(authenticate_(args.token),args));
+      else if(action==='workflowReports')result=workflowReports_(user,args);
+      else if(action==='workflowStatus'){requireAdmin_(user);result={ready:operationalReady_(),periods:periodRows_().map(publicRow_),history:effective(workflowRows_()).filter(w=>['payroll','interest','debt'].includes(w.kind)).slice(-100).map(w=>({recordId:w.recordId,date:w.date,kind:w.kind,referenceId:w.referenceId})),portalConfigured:!!props_().getProperty('PORTAL_SPREADSHEET_ID'),backupConfigured:!!props_().getProperty('BACKUP_FOLDER_ID'),backupFolderId:props_().getProperty('BACKUP_FOLDER_ID')||'',portalSpreadsheetId:props_().getProperty('PORTAL_SPREADSHEET_ID')||'',portalUrl:props_().getProperty('PORTAL_WEB_APP_URL')||''};}
+      else if(action==='financialSummary'){if(!['assets','debts','loans'].includes(args.module)||!validDate(args.to))throw new Error('VALIDATION: Bảng/ngày không hợp lệ');require_(user,args.module,'read');const data={[args.module]:rawRows_(args.module),cash:args.module==='assets'?[]:rawRows_('cash')};if(args.module==='debts')data.debts=attachDebtAllocations_(data.debts);result={rows:finance(data,args.to)[args.module==='assets'?'depreciation':args.module]};}
+      else if(action==='maintenance')result=maintenance_(user,args);
       else if(action==='admin')result=locked_(()=>admin_(authenticate_(args.token),args));
       else if(action==='health'){requireAdmin_(user);result={stamp:stamp_(),audit:rowsPlain_('_Audit').slice(-100).map(r=>({id:r[0],at:r[1],user:r[2],action:r[3],module:r[4],recordId:r[5]})),pending:rowsPlain_('_Requests').filter(r=>r[3]==='PREPARED').map(r=>({key:r[0],state:r[3],createdAt:r[6]})),lastScan:props_().getProperty('LAST_SCAN'),lastBackup:props_().getProperty('LAST_BACKUP')};}
-      else if(action==='export'){require_(user,args.module,'export');require_(user,args.module,'read');result={rows:rawRows_(args.module).map(publicRow_)};}
+      else if(action==='export'){require_(user,args.module,'export');result=listPage_(user,{...args,mode:'snapshot'});}
       else throw new Error('NOT_FOUND: Endpoint không tồn tại');
+      if(['bootstrap','list','export','health','financialSummary','workflowReports','workflowStatus'].includes(action))audit_(user.email,'READ','rpc',action,null,{module:args.module||args.kind||''});
     }
     console.log(JSON.stringify({event:'rpc',action,ms:Date.now()-started,ok:true}));return {ok:true,data:result};
   }catch(error){
     const message=String(error.message||error),code=message.includes(':')?message.split(':')[0]:'ERROR';
+    if(actor&&['AUTH','FORBIDDEN'].includes(code)){try{audit_(actor,'RPC_DENIED','rpc',action,null,{code});}catch(_){/* Preserve fail-closed response if audit storage is unavailable. */}}
     console.warn(JSON.stringify({event:'rpc',action,ms:Date.now()-started,ok:false,code}));
     return {ok:false,error:{code,message:code==='ERROR'?'Không thể xử lý. Kiểm tra nhật ký Apps Script.':message}};
-  }
+  }finally{requestBooks_=null;}
 }
-function bootstrap_(user){
-  const data={},permissions={};
+function bootstrap_(user,force=false){
+  // Called only after fresh session, signature, replay and _Users checks.
+  const stamp=stamp_(),approved=props_().getProperty('ACCOUNTING_APPROVED')==='true';
+  const key='bootstrap:v1:'+hash_({book:config_('SPREADSHEET_ID'),stamp,approved,email:user.email,role:user.role,permissions:user.permissions,version:user.permissionVersion});
+  let cache;
+  try{
+    cache=CacheService.getScriptCache();
+    const saved=force?null:cache.get(key);
+    if(saved){const entry=JSON.parse(saved);if(entry.until>Date.now()&&entry.value?.user?.email===user.email)return entry.value;}
+  }catch(_){/* Cache is optional; eviction or corruption must fall back to Sheets. */}
+  const data={},permissions={},partialModules={};
+  if(Array.isArray(user.permissions?._routes))permissions._routes=[...user.permissions._routes];
   for(const module of Object.keys(SCHEMA)){
     permissions[module]=ACTIONS.filter(a=>allowed_(user,module,a));
-    if(allowed_(user,module,'read'))data[module]=rawRows_(module).map(publicRow_);
+    if(allowed_(user,module,'read')){const rows=rawRows_(module);if(rows.length>200)partialModules[module]={total:rows.length,next:200};const page=rows.slice(0,200).map(publicRow_);data[module]=module==='production'?attachProductionCosts_(page,user):module==='debts'?attachDebtAllocations_(page):module==='loans'?attachLoanPeriods_(page):page;}
   }
-  return {data,permissions,user:{email:user.email,role:user.role},permissionVersion:user.permissionVersion,stamp:stamp_(),accountingApproved:props_().getProperty('ACCOUNTING_APPROVED')==='true'};
+  const result={data,partialModules,permissions,user:{email:user.email,role:user.role},permissionVersion:user.permissionVersion,stamp,accountingApproved:approved};
+  // Never publish a snapshot assembled across a concurrent write.
+  if(stamp===stamp_())try{
+    const value=JSON.stringify({until:Date.now()+30000,value:result});
+    // Worst-case UTF-8 uses at most 3 bytes per UTF-16 code unit.
+    if(value.length*3<90000)cache?.put(key,value,30);
+  }catch(_){/* Oversized/unavailable caches do not block the application. */}
+  return result;
+}
+function listPage_(user,args){
+  if(!Object.hasOwn(SCHEMA,args.module))throw new Error('VALIDATION: Bảng không hợp lệ');require_(user,args.module,'read');
+  const offset=args.offset??0,limit=args.limit??50,stamp=stamp_();if(!Number.isInteger(offset)||offset<0||!Number.isInteger(limit)||limit<1||limit>200)throw new Error('VALIDATION: Trang dữ liệu không hợp lệ');
+  if(args.stamp&&args.stamp!==stamp)throw new Error('CONFLICT: Dữ liệu đổi trong lúc phân trang. Đồng bộ rồi thử lại.');
+  for(const key of ['from','to'])if(args[key]&&!validDate(args[key]))throw new Error('VALIDATION: Ngày lọc không hợp lệ');
+  if(args.search&&(typeof args.search!=='string'||args.search.length>200))throw new Error('VALIDATION: Tìm kiếm tối đa 200 ký tự');
+  let rows=rawRows_(args.module);if(args.mode!=='snapshot')rows=rows.filter(r=>!r.deleted&&(!args.from||!r.date||r.date>=args.from)&&(!args.to||!r.date||r.date<=args.to)&&(!args.kind||r.kind===args.kind)&&(!args.search||Object.values(r).some(v=>String(v).toLowerCase().includes(args.search.toLowerCase()))));
+  let page=rows.slice(offset,offset+limit).map(publicRow_);if(args.module==='production')page=attachProductionCosts_(page,user);if(args.module==='debts')page=attachDebtAllocations_(page);if(args.module==='loans')page=attachLoanPeriods_(page);
+  if(stamp!==stamp_())throw new Error('CONFLICT: Dữ liệu vừa đổi. Đồng bộ rồi thử lại.');return {rows:page,total:rows.length,offset,next:offset+limit<rows.length?offset+limit:null,stamp};
 }
 function mutate_(user,args){
   const module=args.module,action=args.operation;
   require_(user,module,['reverse','reject'].includes(action)?'approve':action);
+  if(user.role!=='admin'&&Array.isArray(user.permissions?._routes)&&!ROUTES.some(r=>r[2]===module&&user.permissions._routes.includes(r[0])))throw new Error('FORBIDDEN: Quyền phiếu liên kết chỉ dùng qua nghiệp vụ nguồn, không được ghi trực tiếp sổ này');
   if(!['create','update','delete','approve','reject','reverse'].includes(action))throw new Error('VALIDATION: Thao tác không hợp lệ');
   const request={action,module,operation:action,id:args.id||'',record:args.record||null,expectedVersion:args.expectedVersion??null,expectedHash:args.expectedHash||''};
   const previous=replay_(user.email,args.key,request);if(previous)return previous;
   const data=data_(),before=data[module].find(r=>r.recordId===args.id);
+  periodGuard_([args.record?.date,before?.date]);
+  if(module==='stock'&&[before,args.record].filter(Boolean).some(s=>effective(data.counts).some(c=>c.materialId===s.materialId&&c.date>=s.date)))throw new Error('CLOSED: Hoàn tác kiểm kê liên quan trước khi đổi phiếu kho hồi tố');
+  if(module==='cash'&&action==='reverse'&&before?.category==='tra-vay'&&effective(workflowRows_()).some(w=>w.kind==='interest'&&w.referenceId===before.linkedId&&workflowDetails_(w).to>before.date))throw new Error('CLOSED: Hoàn tác kỳ lãi liên quan trước khi đảo phiếu trả gốc');
+  if(module==='attendance'&&effective(workflowRows_()).some(w=>w.kind==='payroll'&&[args.record?.date,before?.date].filter(Boolean).some(d=>{const p=workflowDetails_(w);return d>=p.from&&d<=p.to;})))throw new Error('CLOSED: Kỳ chấm công đã chốt lương; hoàn tác bảng lương trước khi thay đổi');
+  if(['loans','debts'].includes(module)&&before&&['update','delete'].includes(action)&&(effective(data.cash).some(c=>c.linkedId===before.recordId)||(before.allocations||[]).length||module==='loans'&&effective(workflowRows_()).some(w=>w.kind==='interest'&&w.referenceId===before.recordId)))throw new Error('LINKED: Đã có thanh toán liên kết; không sửa/xóa giá trị gốc, hãy hoàn tác thanh toán trước');
   if(action!=='create'){
     if(!before||before.deleted)throw new Error('NOT_FOUND: Phiếu không còn tồn tại');
     if(before.version!==args.expectedVersion||before._hash!==args.expectedHash)throw new Error('CONFLICT: Dữ liệu đã thay đổi. Tải lại và đối chiếu trước khi lưu.');
   }
   if(SCHEMA[module].immutable&&['update','delete'].includes(action))throw new Error('IMMUTABLE: Dùng bút toán đảo rồi lập phiếu mới');
+  if(module==='orders'&&before?.source==='PORTAL'&&['update','delete'].includes(action))throw new Error('IMMUTABLE: Đơn Portal giữ nguyên nội dung; từ chối rồi yêu cầu khách lập đơn thay thế');
   if(['approve','reject'].includes(action)&&module!=='orders')throw new Error('VALIDATION: Chỉ đơn đặt hàng có bước duyệt');
   if(action==='reverse'&&!SCHEMA[module].immutable)throw new Error('VALIDATION: Bảng này không có bút toán đảo');
   let after;
@@ -71,7 +121,7 @@ function mutate_(user,args){
       for(const r of effective(recipes))flattenRecipe(r.recordId,1,recipes);
     }
     if(module==='discounts'&&effective(data.discounts).some(r=>r.recordId!==after.recordId&&r.storeId===after.storeId&&r.dishId===after.dishId))throw new Error('CONFLICT: Trùng điểm bán và món');
-    if(module==='attendance'&&effective(data.attendance).some(r=>r.recordId!==after.recordId&&r.date===after.date&&r.employeeId===after.employeeId&&r.start===after.start))throw new Error('CONFLICT: Trùng ca chấm công');
+    if(module==='attendance'&&attendanceOverlap_(after,data.attendance))throw new Error('CONFLICT: Ca chấm công giao nhau, kể cả ca qua đêm');
     if(module==='attendance'&&(after.defaultAllowance>0||after.dailyAllowance>0||after.support>0)&&effective(data.attendance).some(r=>r.recordId!==after.recordId&&r.date===after.date&&r.employeeId===after.employeeId&&(r.defaultAllowance>0||r.dailyAllowance>0||r.support>0)))throw new Error('CONFLICT: Phụ cấp / hỗ trợ ngày chỉ ghi một lần cho mỗi nhân viên trong ngày; ca bổ sung nhập các khoản này bằng 0');
     if(module==='cash'){
       const debt=['thu-no','tra-no'].includes(after.category),loan=['vay','tra-vay'].includes(after.category);
@@ -82,8 +132,13 @@ function mutate_(user,args){
         if(after.direction!==expected)throw new Error('VALIDATION: Thu / chi không khớp nhóm liên kết');
         if(debt&&related.type!==(after.category==='thu-no'?'phai-thu':'phai-tra'))throw new Error('VALIDATION: Sai loại công nợ');
       }else if(after.linkedId)throw new Error('VALIDATION: Chỉ liên kết công nợ / khoản vay cho nhóm phù hợp');
+      validatePayment_(after,data);
     }
   }
-  after.updatedAt=now_();after.updatedBy=user.email;after.source='APP';delete after._hash;delete after._row;
-  return transact_(user.email,args.key,request,[{module,before:before||null,after}]);
+  after.updatedAt=now_();after.updatedBy=user.email;after.source=module==='orders'&&before?.source==='PORTAL'?'PORTAL':'APP';delete after._hash;delete after._row;
+  const effects=[{module,before:action==='reverse'?null:before||null,after}];
+  if(action==='reverse')effects.push(...reverseLinkedEffects_(user,module,before,data));
+  if(action==='create'&&['production','counts'].includes(module))effects.push(...stockLinkEffects_(user,module==='production'?'production':'count',after,data));
+  if(module==='sales'&&action==='create'&&after.oldDebtPaid>0)throw new Error('VALIDATION: Thu nợ cũ dùng chức năng Phân bổ thu nợ theo khoản, không nhập gộp trên phiếu doanh thu mới');
+  return transact_(user.email,args.key,request,effects);
 }

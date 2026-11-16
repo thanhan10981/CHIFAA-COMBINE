@@ -1,16 +1,39 @@
 <!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CHIFAA COMBINE</title><!--STYLE--></head>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>CHIFAA COMBINE</title><!--STYLE--></head>
 <body>
-<section id="login" class="login-screen">
-  <div class="brand-intro"><img src="__LOGO__" alt="Chifaa — ngọn lửa và hộp thức ăn" width="260" height="260"><span class="eyebrow">CHIFAA COMBINE</span><h1>Gọn vận hành.<br>Rõ từng con số.</h1><p>Sản xuất, điểm bán và dòng tiền trong một không gian làm việc. Google Sheets là nguồn dữ liệu chính.</p><div class="intro-bottom">SẢN XUẤT &nbsp; / &nbsp; KINH DOANH &nbsp; / &nbsp; ĐIỀU HÀNH</div></div>
-  <div class="login-panel"><div class="login-card"><span class="eyebrow">KHÔNG GIAN NỘI BỘ</span><h2>Chào bạn trở lại</h2><p>Đăng nhập bằng tài khoản Google đã được quản trị cấp quyền.</p><div id="google-button"></div><p id="login-status" role="status">Đang kiểm tra kết nối Apps Script…</p><div id="preview-links" hidden><a class="button primary" href="?demo=1">Xem thử ứng dụng</a><a class="button" href="demo.html" target="_blank" rel="noopener">Mở phác thảo gốc đã thay logo</a><p class="muted">Bản xem thử chỉ lưu trong RAM, không ghi vào Google Sheets.</p></div><div class="login-note">Quyền truy cập do quản trị cấp theo phân hệ. Dữ liệu nội bộ chỉ tải sau khi xác thực.</div></div><small>CHIFAA COMBINE · Không gian vận hành</small></div>
+<section id="boot" class="boot-screen" aria-busy="true">
+  <div class="boot-content">
+    <div class="boot-logo"><img src="__LOGO__" alt="Chifaa" width="124" height="124"></div>
+    <span class="boot-brand">CHIFAA COMBINE</span>
+    <h1>Không gian vận hành<br>đang sẵn sàng.</h1>
+    <div class="boot-progress" aria-hidden="true"><span></span></div>
+    <p id="boot-status" role="status" aria-live="polite">Đang mở CHIFAA…</p>
+    <button id="boot-retry" type="button" class="button primary" hidden>Thử kết nối lại</button>
+  </div>
+  <small class="boot-footer">SẢN XUẤT &nbsp; / &nbsp; KINH DOANH &nbsp; / &nbsp; ĐIỀU HÀNH</small>
+</section>
+<section id="login" class="login-screen" hidden>
+  <div class="brand-intro">
+    <div class="login-brand"><img src="__LOGO__" alt="Chifaa" width="64" height="64"><div><strong>CHIFAA <span>COMBINE</span></strong><small>HỆ THỐNG QUẢN TRỊ VẬN HÀNH</small></div></div>
+    <div class="login-story"><span class="eyebrow">MỘT KHÔNG GIAN LÀM VIỆC</span><h1>Vận hành nhất quán.<br>Quyết định rõ ràng.</h1><p>Kết nối sản xuất, kinh doanh và tài chính trong cùng một hệ thống.</p>
+      <div class="login-capabilities"><div><span aria-hidden="true">01</span><p><strong>Theo dõi vận hành</strong><small>Sản xuất, nguyên liệu và tồn kho</small></p></div><div><span aria-hidden="true">02</span><p><strong>Kiểm soát kinh doanh</strong><small>Điểm bán, doanh thu và công nợ</small></p></div><div><span aria-hidden="true">03</span><p><strong>Quản lý có trách nhiệm</strong><small>Phân quyền và nhật ký hoạt động</small></p></div></div>
+    </div><div class="intro-bottom">CHIFAA COMBINE <span>Không gian làm việc nội bộ</span></div>
+  </div>
+  <div class="login-panel"><div class="login-card">
+    <span class="login-badge">TRUY CẬP HỆ THỐNG</span>
+    <h2>Đăng nhập CHIFAA</h2><p>Chào bạn trở lại. Sử dụng tài khoản Google<br class="login-break"> được cấp quyền để tiếp tục công việc.</p>
+    <div class="login-divider"><span>TÀI KHOẢN LÀM VIỆC</span></div>
+    <div id="google-button"></div><p id="login-status" role="status">Đang chuẩn bị đăng nhập…</p>
+    <div id="preview-links" hidden><a class="button primary" href="?demo=1">Xem thử ứng dụng</a><a class="button" href="demo.html" target="_blank" rel="noopener">Mở phác thảo gốc đã thay logo</a><p class="muted">Bản xem thử chỉ lưu trong RAM, không ghi vào Google Sheets.</p></div>
+    <div class="login-note"><span class="login-lock" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg></span><div><strong>Quyền truy cập theo tài khoản</strong><p>Chỉ hiển thị dữ liệu trong phạm vi được cấp. Phiên làm việc được duy trì khi tải lại trang, tối đa 2 giờ.</p></div></div>
+  </div><small>CHIFAA COMBINE <span>·</span> Quản trị vận hành</small></div>
 </section>
 <div id="workspace" class="app" hidden>
-  <div id="backdrop" class="backdrop"></div><aside id="sidebar"><a class="brand" href="#dashboard"><img src="__LOGO__" alt="Chifaa" width="76" height="76"><div><strong>CHIFAA<br><span>COMBINE</span></strong><small>VẬN HÀNH & BÁO CÁO</small></div></a><nav id="navigation" aria-label="Phân hệ"></nav><div class="side-footer"><span class="live-dot"></span><span id="connection">Đang kết nối</span><small id="identity"></small></div></aside>
+  <div id="backdrop" class="backdrop"></div><aside id="sidebar"><a class="brand" href="#dashboard"><img src="__LOGO__" alt="Chifaa" width="76" height="76"><div><strong>CHIFAA<br><span>COMBINE</span></strong><small>VẬN HÀNH & BÁO CÁO</small></div></a><nav id="navigation" aria-label="Phân hệ"></nav><div class="side-footer"><span class="live-dot"></span><span id="connection">Đang kết nối</span><strong>CHIFAA COMBINE</strong><small id="identity"></small></div></aside>
   <main><header class="topbar"><div class="top-left"><button id="menu-toggle" class="icon-button" aria-label="Mở menu">☰</button><span>Không gian làm việc <b>/</b> <strong id="breadcrumb">Tổng quan</strong></span></div><div class="top-actions"><button id="refresh" class="button">↻ Đồng bộ</button><button id="logout" class="button">Đăng xuất</button></div></header>
   <div class="content"><div id="mode-banner" class="notice" hidden></div><div id="error" class="error" role="alert" hidden></div><section id="view" aria-live="polite"></section></div></main>
 </div>
 <dialog id="editor"><form id="record-form"><header><div><span class="eyebrow">PHIẾU DỮ LIỆU</span><h2 id="form-title"></h2></div><button type="button" id="close-editor" class="icon-button" aria-label="Đóng">✕</button></header><div id="form-fields" class="form-grid"></div><div id="form-error" class="error" hidden></div><footer><button type="button" id="cancel-editor" class="button">Hủy</button><button id="submit-record" class="button primary" type="submit">Lưu phiếu</button></footer></form></dialog>
-<div id="toast" role="status" hidden></div>
+<div id="toast" aria-label="Thông báo" hidden></div>
 <!--APP-->
-</body></html>
+<div id="network-status" class="network-status is-loading" role="status" aria-live="polite" hidden></div></body></html>

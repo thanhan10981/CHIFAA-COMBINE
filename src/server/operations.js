@@ -11,12 +11,14 @@ function createNewDev_(){
 function setup_(){
   const db=db_(),definitions={};
   for(const module of Object.keys(SCHEMA))definitions[module]=headers_(module);
+  for(const name of Object.keys(SYSTEM_FIELDS))definitions[name]=headers_(name);
   Object.assign(definitions,{
     _Users:['recordId','email','role','permissions','enabled','permissionVersion'],
     _Sessions:['recordId','email','tokenHash','expires','status','createdAt'],
     _Audit:['recordId','at','user','action','module','subjectId','before','after'],
     _Requests:['key','actor','fingerprint','state','effects','result','createdAt'],
-    _Sync:['module','recordId','hash','seenAt']
+    _Sync:['module','recordId','hash','seenAt'],
+    _AuthRequests:['sessionHash','requestId','expires']
   });
   // Preflight first. Never overwrite unknown data or rename existing columns silently.
   for(const [name,headers]of Object.entries(definitions)){
@@ -50,11 +52,31 @@ function setup_(){
   if(!props_().getProperty('APP_MODE'))props_().setProperty('APP_MODE','internal');
   bump_();return {sheets:Object.keys(definitions),version:1};
 }
+// Called only after verified identity/allowlist, under the session issuance lock.
+function ensureAuthRequests_(user){
+  authConfig_();
+  const db=db_(),headers=['sessionHash','requestId','expires'];
+  let sheet=db.getSheetByName('_AuthRequests');
+  if(sheet){
+    if(JSON.stringify(sheet.getRange(1,1,1,Math.max(sheet.getLastColumn(),headers.length)).getValues()[0])!==JSON.stringify(headers))throw new Error('SCHEMA: Sai cột bảng _AuthRequests; cần chủ sở hữu kiểm tra');
+    return;
+  }
+  requireAdmin_(user);
+  sheet=db.insertSheet('_AuthRequests');sheet.getRange(1,1,1,headers.length).setValues([headers]);sheet.setFrozenRows(1);
+  sheet.getRange(1,1,1,headers.length).setBackground('#17283d').setFontColor('#ffffff').setFontWeight('bold');
+  const protection=sheet.getRange(1,1,sheet.getMaxRows(),headers.length).protect().setDescription('CHIFAA immutable _AuthRequests');
+  protection.setWarningOnly(false);const owner=Session.getEffectiveUser();protection.addEditor(owner);
+  protection.removeEditors(protection.getEditors().filter(u=>u.getEmail()!==owner.getEmail()));if(protection.canDomainEdit())protection.setDomainEdit(false);
+  // Sessions issued before the nonce ledger existed cannot have bootstrapped safely.
+  rowsPlain_('_Sessions').forEach((r,i)=>{if(r[4]==='active')table_('_Sessions').getRange(i+2,5).setValue('revoked');});
+  audit_(user.email,'AUTH_SCHEMA_MIGRATION','sessions','',null,{created:'_AuthRequests',priorSessionsRevoked:true});
+}
 function installTriggers_(){
   const id=config_('SPREADSHEET_ID'),triggers=ScriptApp.getProjectTriggers();
   if(!triggers.some(t=>t.getHandlerFunction()==='sheetEdited_'))ScriptApp.newTrigger('sheetEdited_').forSpreadsheet(id).onEdit().create();
   if(!triggers.some(t=>t.getHandlerFunction()==='scanSheets_'))ScriptApp.newTrigger('scanSheets_').timeBased().everyMinutes(5).create();
   if(props_().getProperty('BACKUP_FOLDER_ID')&&!triggers.some(t=>t.getHandlerFunction()==='backup_'))ScriptApp.newTrigger('backup_').timeBased().everyDays(1).atHour(2).inTimezone('Asia/Ho_Chi_Minh').create();
+  if(props_().getProperty('PORTAL_SPREADSHEET_ID')&&props_().getProperty('PORTAL_WEB_APP_URL')&&!triggers.some(t=>t.getHandlerFunction()==='portalSync_'))ScriptApp.newTrigger('portalSync_').timeBased().everyMinutes(5).create();
 }
 function sheetEdited_(event){if(event?.source?.getId()!==config_('SPREADSHEET_ID'))return;scanSheets_();}
 function scanSheets_(){
@@ -94,17 +116,18 @@ function scanSheets_(){
 }
 function backup_(){
   return locked_(()=>{
-    const folder=DriveApp.getFolderById(config_('BACKUP_FOLDER_ID'));
+    const folder=privateBackupFolder_(config_('BACKUP_FOLDER_ID'));
     const file=DriveApp.getFileById(config_('SPREADSHEET_ID')).makeCopy('CHIFAA-backup-'+now_().replace(/[:.]/g,'-'),folder);
     props_().setProperty('LAST_BACKUP',now_());audit_('SYSTEM','BACKUP','backup',file.getId(),null,null);return {fileId:file.getId()};
   });
 }
+function privateBackupFolder_(id){const folder=DriveApp.getFolderById(id),owner=Session.getEffectiveUser().getEmail();if(folder.getSharingAccess()!==DriveApp.Access.PRIVATE||[...folder.getEditors(),...folder.getViewers()].some(u=>u.getEmail()!==owner))throw new Error('FORBIDDEN: Backup chứa toàn bộ dữ liệu; chọn thư mục riêng tư chỉ chủ sở hữu truy cập');return folder;}
 function recoverPrepared_(){
   return locked_(()=>{
     const journal=table_('_Requests'),rows=rowsPlain_('_Requests');
     rows.forEach((r,index)=>{
       if(r[3]!=='PREPARED')return;
-      const effects=JSON.parse(r[4]);
+      const effects=journalEffects_(r[4]);
       for(const e of [...effects].reverse()){
         if(e.before)writeRow_(e.module,e.before);
         else{const row=rawRows_(e.module).find(x=>x.recordId===e.after.recordId);if(row)table_(e.module).deleteRow(row._row);}
@@ -119,34 +142,42 @@ function restoreToNewWorkbook_(){
   audit_('OWNER','RESTORE_COPY','backup',copy.getId(),null,{backupId:backup.getId()});
   return {reviewSpreadsheetId:copy.getId(),note:'Bản mới chưa được kích hoạt. Kiểm tra số dòng / số dư trước khi đổi SPREADSHEET_ID.'};
 }
-function previewImport_(bundle){
+function previewImport_(bundle,actor='OWNER'){
   if(!bundle||!Array.isArray(bundle.records)||bundle.records.length>500)throw new Error('VALIDATION: Bundle cần records, tối đa 500 bản ghi / lô');
-  const data=data_(),effects=[],errors=[],seen=new Set();
+  const data=data_(),stateHash=hash_({stamp:stamp_(),rows:Object.fromEntries(Object.entries(data).map(([m,rows])=>[m,rows.map(r=>r._hash)]))}),effects=[],errors=[],seen=new Set();
   for(const [index,item]of bundle.records.entries()){
     try{
       if(!item||!Object.hasOwn(SCHEMA,item.module)||typeof item.recordId!=='string'||!/^[\w-]{1,100}$/.test(item.recordId))throw new Error('Mã / phân hệ không hợp lệ');
       const unique=item.module+':'+item.recordId;if(seen.has(unique))throw new Error('Trùng mã trong lô');seen.add(unique);
       if(data[item.module].some(r=>r.recordId===item.recordId))throw new Error('Mã đã tồn tại; importer chỉ thêm, không ghi đè');
       const record=cleanRecord(item.module,item.record,data);
-      const after={...record,recordId:item.recordId,version:1,updatedAt:'IMPORT_PREVIEW',updatedBy:'OWNER',source:'MIGRATION',deleted:false,reverses:''};
+      if(record.date)periodGuard_([record.date]);
+      if(item.module==='attendance'&&attendanceOverlap_(record,data.attendance))throw new Error('Ca chấm công giao nhau');
+      if(item.module==='attendance'&&effective(workflowRows_()).some(w=>w.kind==='payroll'&&workflowDetails_(w).from<=record.date&&workflowDetails_(w).to>=record.date))throw new Error('Kỳ đã chốt lương; hoàn tác bảng lương trước khi nhập thêm');
+      if(item.module==='cash')validatePayment_(record,data);
+      if(['production','counts'].includes(item.module)&&bundle.linkStock!==true)throw new Error('Cần chọn Tự liên kết kho và đối chiếu phiếu xuất để tránh ghi trùng');
+      const after={...record,recordId:item.recordId,version:1,updatedAt:'IMPORT_PREVIEW',updatedBy:actor,source:'MIGRATION',deleted:false,reverses:''};
       data[item.module].push(after);effects.push({module:item.module,before:null,after});
+      if(['production','counts'].includes(item.module)){const linked=stockLinkEffects_({email:actor,role:'admin'},item.module==='production'?'production':'count',after,data);for(const e of linked){effects.push(e);if(data[e.module])data[e.module].push(e.after);}}
     }catch(e){errors.push({index,message:e.message});}
   }
   try{for(const r of effective(data.recipes))flattenRecipe(r.recordId,1,data.recipes);}catch(e){errors.push({module:'recipes',message:e.message});}
-  return {digest:hash_(bundle),count:effects.length,errors,effects,note:'Thứ tự nhập: danh mục → công thức con → công thức cha → phiếu. Không thay đổi Sheets trong bước preview.'};
+  if(effects.length>1000||JSON.stringify(effects).length>1500000)errors.push({message:'Lô phát sinh quá lớn; chia nhỏ trước khi nhập'});
+  return {digest:hash_({bundle,stateHash}),count:effects.length,errors,effects,note:'Thứ tự nhập: danh mục → công thức con → công thức cha → phiếu theo ngày tăng dần. Xem cả phiếu tự động để tránh nhập lại kho. Không thay đổi Sheets trong bước preview.'};
 }
-function applyImport_(bundle,expectedDigest,key){
+function applyImport_(bundle,expectedDigest,key,actor='OWNER'){
   return locked_(()=>{
-    const request={action:'IMPORT',digest:hash_(bundle)},actor='OWNER';const prior=replay_(actor,key,request);if(prior)return prior;
-    const preview=previewImport_(bundle);if(preview.digest!==expectedDigest||preview.errors.length)throw new Error('VALIDATION: Preview thay đổi hoặc còn lỗi');
+    const request={action:'IMPORT',digest:hash_(bundle),preview:expectedDigest};const prior=replay_(actor,key,request);if(prior)return prior;
+    const preview=previewImport_(bundle,actor);if(preview.digest!==expectedDigest||preview.errors.length)throw new Error('VALIDATION: Preview thay đổi hoặc còn lỗi; xem trước lại');
     for(const e of preview.effects)e.after.updatedAt=now_();
     return transact_(actor,key,request,preview.effects);
   });
 }
 function recoverAdminSessions_(){
-  return locked_(()=>{const email=config_('ADMIN_EMAIL').toLowerCase();rowsPlain_('_Sessions').forEach((r,i)=>{if(r[1]===email&&r[4]==='active')table_('_Sessions').getRange(i+2,5).setValue('revoked');});audit_('OWNER','ADMIN_SESSION_RECOVERY','sessions',email,null,null);});
+  return locked_(()=>{const emails=new Set(users_().filter(u=>u.role==='admin').map(u=>u.email));emails.add(config_('ADMIN_EMAIL').toLowerCase());rowsPlain_('_Sessions').forEach((r,i)=>{if(emails.has(r[1])&&r[4]==='active')table_('_Sessions').getRange(i+2,5).setValue('revoked');});audit_('OWNER','ADMIN_SESSION_RECOVERY','sessions','admins',null,null);});
 }
 function invite_(storeId,customer,days){
+  if(typeof customer!=='string'||customer.length>200)throw new Error('VALIDATION: Tên khách tối đa 200 ký tự');
   if(!Number.isInteger(days)||days<1||days>30)throw new Error('Thời hạn 1–30 ngày');
   if(!rawRows_('stores').some(r=>r.recordId===storeId&&!r.deleted))throw new Error('Điểm bán không tồn tại');
   const payload=Utilities.base64EncodeWebSafe(JSON.stringify({storeId,customer,expires:Date.now()+days*86400000,nonce:uid_()}));
@@ -184,21 +215,37 @@ function publishCatalog_(){
   if(target.getId()===config_('SPREADSHEET_ID'))throw new Error('CONFIG: Cổng khách phải dùng bảng riêng');
   for(const module of ['dishes','stores']){
     const s=target.getSheetByName(module);if(!s)throw new Error('Cần setup_ dự án portal trước');
+    if(JSON.stringify(s.getRange(1,1,1,headers_(module).length).getValues()[0])!==JSON.stringify(headers_(module)))throw new Error('SCHEMA: Sai cột catalog Portal');
     const rows=effective(rawRows_(module)).filter(r=>module!=='dishes'||r.published);
+    if(s.getMaxRows()<rows.length+1)s.insertRowsAfter(s.getMaxRows(),rows.length+1-s.getMaxRows());
     if(s.getLastRow()>1)s.getRange(2,1,s.getLastRow()-1,headers_(module).length).clearContent();
     if(rows.length)s.getRange(2,1,rows.length,headers_(module).length).setValues(rows.map(r=>cells_(module,r)));
   }
 }
 function importPortalOrders_(){
   return locked_(()=>{
-    const source=SpreadsheetApp.openById(config_('PORTAL_SPREADSHEET_ID')).getSheetByName('orders');
-    if(!source||source.getLastRow()<2)return {imported:0};
-    const headers=headers_('orders'),existing=new Set(rawRows_('orders').map(r=>r.recordId));let count=0;
-    for(const cells of source.getRange(2,1,source.getLastRow()-1,headers.length).getValues()){
-      const row={};headers.forEach((h,i)=>row[h]=cells[i]);if(existing.has(row.recordId))continue;
-      const input={};for(const k of Object.keys(SCHEMA.orders.fields))input[k]=row[k];
-      cleanRecord('orders',input,data_());if(input.status!=='pending')throw new Error('Chỉ nhập đơn đang chờ');
-      writeRow_('orders',row);audit_('SYSTEM','IMPORT_PORTAL','orders',row.recordId,null,row);existing.add(row.recordId);count++;
-    }if(count)bump_();return {imported:count};
+    const portal=SpreadsheetApp.openById(config_('PORTAL_SPREADSHEET_ID'));if(portal.getId()===db_().getId())throw new Error('CONFIG: Portal phải dùng workbook riêng');
+    const source=effective(rawRows_('orders',portal)),existing=rawRows_('orders'),data=data_(),errors=[];let imported=0,updated=0;
+    for(const row of source)try{
+      if(!/^[\w-]{1,100}$/.test(row.recordId)||row.source!=='PORTAL'||!String(row.updatedBy).startsWith('INVITE:'))throw new Error('VALIDATION: Metadata đơn Portal không hợp lệ');
+      const local=existing.find(r=>r.recordId===row.recordId);
+      if(local){
+        if(local.source!=='PORTAL'||Object.keys(SCHEMA.orders.fields).filter(k=>k!=='status').some(k=>local[k]!==row[k]))throw new Error('CONFLICT: Nội dung đơn đã thay đổi, cần đối chiếu');
+        if(['approved','rejected'].includes(local.status)&&row.status!==local.status){writeRow_('orders',{...row,status:local.status,version:row.version+1,updatedAt:now_()},portal);updated++;}
+        continue;
+      }
+      if(imported>=50)continue;const input={};for(const k of Object.keys(SCHEMA.orders.fields))input[k]=row[k];cleanRecord('orders',input,data);periodGuard_([row.date]);if(row.status!=='pending')throw new Error('VALIDATION: Chỉ nhập đơn đang chờ');
+      const request={action:'IMPORT_PORTAL',id:row.recordId,record:input},key='portal-import-'+hash_(row.recordId).slice(0,48);transact_('SYSTEM',key,request,[newEffect_('orders',{...row,version:1})]);existing.push(row);imported++;
+    }catch(e){errors.push({id:row.recordId,message:e.message});}
+    return {imported,updated,errors};
   });
+}
+function portalSync_(){
+  if(config_('APP_MODE')!=='internal')throw new Error('FORBIDDEN: Chạy đồng bộ tại dự án nội bộ');
+  publishCatalog_();const result=importPortalOrders_();props_().setProperty('LAST_PORTAL_SYNC',now_());audit_('SYSTEM','PORTAL_SYNC','orders','',null,result);return result;
+}
+function portalStatus_(args){
+  if(config_('APP_MODE')!=='portal')throw new Error('FORBIDDEN: Cổng khách triển khai riêng');const invite=invitation_(args.invite);
+  const row=effective(rawRows_('orders')).find(r=>r.recordId===args.id&&r.storeId===invite.storeId&&r.updatedBy==='INVITE:'+hash_(args.invite).slice(0,20));
+  if(!row)throw new Error('NOT_FOUND: Không tìm thấy đơn trong phạm vi thư mời');return {id:row.recordId,date:row.date,quantity:row.quantity,status:row.status,updatedAt:row.updatedAt};
 }

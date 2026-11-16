@@ -5,7 +5,7 @@
 | Gap | Mức | Thực trạng và bước xử lý |
 | --- | --- | --- |
 | G01 | P0 / BLOCKED_GOOGLE | OAuth đã Code/PKCE/UserInfo, có mock Admin/kế toán/deny; chưa chạy hai Gmail thật, unknown/disabled/export/ACL. Không thể nghiệm thu auth bằng snapshot người dùng hoặc clasp. Không bypass auth/share workbook. |
-| G02 | P0 / IMPLEMENTATION | D01/D02/D03 vừa được người dùng chốt. salesMetrics cũ còn trừ recoverySupport và otherCost vào net. Sửa shared model và báo cáo để chi phí riêng, cùng base net cho tỷ lệ, không trừ hai lần; regression cross-report. |
+| G02 | P0 / LOCAL_FIXED_PARTIAL | Đã sửa shared net/expense/ratios/bonus theo D01/D02/D03, có tests cross-report/Strategy; trần labor không trừ COGS. Còn source return/AR, giảm trừ doanh thu ngoài discount, COGS/bonus cam kết và Google UAT; không đánh dấu toàn bộ tài chính DONE. |
 | G03 | P0 / MISSING | Giao→thu hồi có returnId→nhận kiosk→bán lại chưa có ledger/location/lifecycle. Dựng lượng trước, giữ policy tài chính/lô D16 riêng; test100/80/10/10 và nhận10 đúng một lần. |
 | G04 | P0 / PARTIAL | scanSheets phát hiện hash nhưng chưa cách ly invalid rows đầy đủ; actor SHEET_EDITOR chưa ghi rõ chưa xác minh; onEdit quét toàn bộ, chưa onChange/cursor/quarantine/lag đo thật. Không coi raw #REF là nguồn đủ cho KPI. |
 | G05 | P0 / BLOCKED_SOURCE | Hai workbook legacy chưa có trong source. Không import hoặc chốt số dư/catalog chính thức khi chưa backup read-only, mapping và đối chiếu. |

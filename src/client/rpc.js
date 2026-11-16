@@ -1,12 +1,51 @@
-function rpcCall(action, args = {}, { timeout = 25000 } = {}) {
+import { requestMessage } from '../shared/auth-protocol.js';
+import {sessionStore,validStoredSession} from './session-store.js';
+let rpcSession=null;
+let rpcScope=null;
+function setRpcScope(scope){rpcScope=scope;}
+async function restoreRpcSession(){
+  const saved=await sessionStore(rpcScope,'get');
+  if(!validStoredSession(saved)){if(saved)await sessionStore(rpcScope,'delete');return null;}
+  try{await crypto.subtle.sign('HMAC',saved.key,new TextEncoder().encode('CHIFAA session restore check'));}
+  catch(_){await sessionStore(rpcScope,'delete');return null;}
+  rpcSession=saved;return {token:saved.token,expires:saved.expires};
+}
+const rpcPending=new Map();
+function rpcLoading(){
+  const node=globalThis.document?.getElementById('network-status');
+  if(!node)return;
+  if(globalThis.document.getElementById('boot')?.hidden===false){node.hidden=true;return;}
+  const active=Array.from(rpcPending.values());node.hidden=!active.length;
+  node.textContent=active.at(-1)||'';
+  globalThis.document.getElementById('record-form')?.setAttribute('aria-busy',String(active.includes('Đang lưu dữ liệu…')));
+}
+async function rpcCall(action,args={},options={}){
+  const labels={oauthStart:'Đang chuẩn bị đăng nhập…',bootstrap:'Đang tải dữ liệu…',list:'Đang tải trang dữ liệu…',workflow:'Đang đối chiếu nghiệp vụ…',workflowReports:'Đang tải bản đã chốt…',workflowStatus:'Đang tải trạng thái vận hành…',financialSummary:'Đang đối chiếu số dư…',maintenance:'Đang xử lý bảo trì…',mutate:'Đang lưu dữ liệu…',admin:'Đang tải quản trị…',health:'Đang tải nhật ký…',export:'Đang xuất dữ liệu…',logout:'Đang đăng xuất…',portalCatalog:'Đang tải thực đơn…',portalOrder:'Đang gửi đơn hàng…',portalStatus:'Đang tra cứu đơn…'};
+  const id=Symbol();if(labels[action]){rpcPending.set(id,labels[action]);rpcLoading();}
+  try{return await rpcTransport(action,args,options);}finally{rpcPending.delete(id);rpcLoading();}
+}
+async function setRpcSession(login){
+  rpcSession={token:login.token,expires:login.expires,key:await crypto.subtle.importKey('raw',new TextEncoder().encode(login.signingKey),{name:'HMAC',hash:'SHA-256'},false,['sign'])};
+  delete login.signingKey;
+  return await sessionStore(rpcScope,'put',rpcSession)===true;
+}
+function clearRpcSession({forget=true}={}){rpcSession=null;return forget?sessionStore(rpcScope,'delete'):Promise.resolve(null);}
+async function rpcTransport(action, args = {}, { timeout = action==='maintenance'?180000:['bootstrap','workflow','mutate','oauthFinish'].includes(action)?90000:60000 } = {}) {
+  args=JSON.parse(JSON.stringify(args));
+  if(args.token&&rpcSession?.token===args.token){
+    args.proof={requestId:crypto.randomUUID(),at:Date.now()};
+    const signature=await crypto.subtle.sign('HMAC',rpcSession.key,new TextEncoder().encode(requestMessage(action,args)));
+    args.proof.signature=Array.from(new Uint8Array(signature),b=>b.toString(16).padStart(2,'0')).join('');
+  }
   return new Promise((resolve,reject)=>{
     let settled=false;
-    const timer=setTimeout(()=>{settled=true;const e=new Error('Chưa nhận được xác nhận từ máy chủ. Kết quả ghi chưa rõ; thử lại cùng phiếu để kiểm tra.');e.code='TIMEOUT';reject(e);},timeout);
+    const reading=['bootstrap','list','sync','health','financialSummary','workflowReports','workflowStatus','export','portalCatalog','portalStatus'].includes(action),connecting=['oauthStart','oauthFinish'].includes(action);
+    const timer=setTimeout(()=>{settled=true;const e=new Error(reading?'Máy chủ đang phản hồi chậm khi tải dữ liệu. Phiên đăng nhập vẫn được giữ; bấm thử kết nối lại.':connecting?'Máy chủ chưa phản hồi bước xác thực. Thử kết nối lại để tiếp tục.':'Chưa nhận được xác nhận từ máy chủ. Kết quả ghi chưa rõ; thử lại cùng phiếu để kiểm tra.');e.code='TIMEOUT';reject(e);},timeout);
     if(!globalThis.google?.script?.run){clearTimeout(timer);reject(new Error('Trang này cần chạy trong Google Apps Script để kết nối Sheets.'));return;}
     google.script.run.withSuccessHandler(result=>{
       if(settled)return;settled=true;clearTimeout(timer);
       if(result?.ok)resolve(result.data);else{const e=new Error(result?.error?.message||'Không thể xử lý yêu cầu');e.code=result?.error?.code;reject(e);}
-    }).withFailureHandler(error=>{if(settled)return;settled=true;clearTimeout(timer);const e=new Error(error?.message||'Mất kết nối. Kết quả ghi chưa rõ.');e.code='NETWORK';reject(e);}).rpc(action,args);
+    }).withFailureHandler(error=>{if(settled)return;settled=true;clearTimeout(timer);const e=new Error(error?.message||(reading||connecting?'Mất kết nối với máy chủ. Thử kết nối lại.':'Mất kết nối. Kết quả ghi chưa rõ.'));e.code='NETWORK';reject(e);}).rpc(action,args);
   });
 }
-export { rpcCall };
+export { rpcCall, setRpcSession, clearRpcSession, setRpcScope, restoreRpcSession };

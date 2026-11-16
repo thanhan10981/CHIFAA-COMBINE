@@ -2,6 +2,8 @@ import { SCHEMA } from './schema.js';
 const round = n => Math.round((n + Number.EPSILON) * 100) / 100;
 const fail = message => { throw new Error(message); };
 const finite = n => typeof n === 'number' && Number.isFinite(n);
+// Confirmed by owner 2026-11-16: D01/D02/D03. Cash receipts are never the ratio base.
+const ACCOUNTING_POLICY=Object.freeze({version:'net-sales-2026-11-16',foodCostMax:0.322,productionLaborMax:0.15});
 function validDate(value) {
   return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) &&
     Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
@@ -82,14 +84,16 @@ function costRecipe(id, quantity, data, asOf) {
   return { total: missing.length ? null : round(total), missing, raw, asOf, basis: 'last-receipt-price' };
 }
 function salesMetrics(row) {
+  const complete=['sold','price','discount','returned','recoveryPrice','creditQty','otherCost','cash','bank','oldDebtPaid','delivered'].every(k=>finite(row[k])&&row[k]>=0)&&row.discount<=1&&row.sold+row.returned+row.creditQty<=row.delivered;
+  if(!complete)return {saleRevenue:null,creditRevenue:null,recoverySupport:null,recoveryExpense:null,otherExpense:null,netRevenue:null,received:null,expectedCurrentCollection:null,collectionDifference:null,unsold:null,complete:false,accountingRule:ACCOUNTING_POLICY.version};
   const saleRevenue = row.sold * row.price * (1 - row.discount);
   const recoverySupport = row.returned * row.recoveryPrice;
   const creditRevenue = row.creditQty * row.price * (1 - row.discount);
-  const netRevenue = saleRevenue + creditRevenue - recoverySupport - row.otherCost;
+  const netRevenue = saleRevenue + creditRevenue;
   const received = row.cash + row.bank;
-  return { saleRevenue: round(saleRevenue), creditRevenue: round(creditRevenue), recoverySupport: round(recoverySupport), netRevenue: round(netRevenue), received: round(received), expectedCurrentCollection: round(netRevenue - creditRevenue),
-    collectionDifference: round(received - row.oldDebtPaid - (netRevenue - creditRevenue)), unsold: row.delivered - row.sold - row.returned - row.creditQty,
-    accountingRule: 'PROVISIONAL: sold + credit less discount, return support and otherCost; old debt excluded from revenue' };
+  return { saleRevenue: round(saleRevenue), creditRevenue: round(creditRevenue), recoverySupport: round(recoverySupport), recoveryExpense:round(recoverySupport),otherExpense:round(row.otherCost),netRevenue: round(netRevenue), received: round(received), expectedCurrentCollection: round(netRevenue),
+    collectionDifference: round(received - row.oldDebtPaid - netRevenue), unsold: row.delivered - row.sold - row.returned - row.creditQty,complete:true,
+    accountingRule: ACCOUNTING_POLICY.version+'; sold + store-borne after discount; recovery/other expenses separate; old debt and cash excluded from net sales' };
 }
 function payroll(rows) {
   const grouped = {};
@@ -141,23 +145,30 @@ function report(data, from, to) {
   // Sales receipts have one source. Cash book does not accept duplicate sales receipts.
   for (const r of effective(data.sales || []).filter(r=>r.date<=to)) { cash.cash+=r.cash;cash.bank+=r.bank; }
   for (const r of effective(data.cash || []).filter(r=>r.date<=to)) cash[r.account]+=(r.direction==='thu'?1:-1)*r.amount;
-  const revenue = sales.length ? round(money.reduce((n,r)=>n+r.netRevenue,0)) : null;
-  const received = sales.length ? round(money.reduce((n,r)=>n+r.received,0)) : null;
+  const completeSales=sales.length>0&&money.every(m=>m.complete);
+  const revenue = completeSales ? round(money.reduce((n,r)=>n+r.netRevenue,0)) : null;
+  const received = completeSales ? round(money.reduce((n,r)=>n+r.received,0)) : null;
+  const recoveryExpense=completeSales?round(money.reduce((n,r)=>n+r.recoveryExpense,0)):null,otherSalesExpense=completeSales?round(money.reduce((n,r)=>n+r.otherExpense,0)):null;
   const costs = prod.map(p=>{
+    if(p.costSnapshot&&finite(p.costSnapshot.total))return p.costSnapshot.total;
     const recipes = effective(data.recipes || []).filter(r=>r.dishId===p.dishId);
     if (!recipes.length) return null;
     const parts=recipes.map(r=>costRecipe(r.recordId,p.produced+p.extra,data,p.date));
     return parts.some(c=>c.total==null)?null:parts.reduce((n,c)=>n+c.total,0);
   });
   const cogs = costs.length && costs.every(c=>c!=null) ? round(costs.reduce((a,b)=>a+b,0)) : null;
-  const operating = select('cash').filter(r=>r.direction==='chi' && ['co-dinh','quan-ly','marketing','khac'].includes(r.category)).reduce((n,r)=>n+r.amount,0);
-  const profit = revenue==null || cogs==null ? null : round(revenue-cogs-wages.reduce((n,r)=>n+r.base+r.allowances,0)-operating);
+  const operating = select('cash').filter(r=>r.direction==='chi' && ['co-dinh','quan-ly','marketing','khac','lai-vay'].includes(r.category)).reduce((n,r)=>n+r.amount,0)+(recoveryExpense??0)+(otherSalesExpense??0);
+  const wagesPresent=sales.every(s=>attend.some(a=>a.date===s.date));
+  const profit = revenue==null || cogs==null || !wagesPresent ? null : round(revenue-cogs-wages.reduce((n,r)=>n+r.base+r.allowances,0)-operating);
   const days = Math.round((Date.parse(to)-Date.parse(from))/86400000)+1;
   const covered = new Set(sales.map(r=>r.date)).size;
-  return { from,to,revenue,received,produced:prod.length?produced:null,cogs,profit,profitBasis:'Provisional; excludes depreciation and interest. Confirm accounting rules before live.',
+  const sxWagesPresent=sales.length>0&&sales.every(s=>attend.some(a=>a.date===s.date&&a.department==='SX'));
+  const sxLabor=sxWagesPresent?round(wages.filter(r=>r.department==='SX').reduce((n,r)=>n+r.base+r.allowances,0)):null;
+  const foodCostPct=revenue>0&&cogs!=null?round(cogs/revenue*100):null,sxLaborPct=revenue>0&&sxLabor!=null&&wagesPresent?round(sxLabor/revenue*100):null;
+  return { from,to,revenue,received,recoveryExpense,otherSalesExpense,operating,sxLabor,foodCostPct,sxLaborPct,policy:ACCOUNTING_POLICY,produced:prod.length?produced:null,cogs,profit,profitBasis:'Provisional; recovery support is a separate expense once; excludes depreciation; interest uses posted interest cash vouchers. Confirm remaining accounting rules before live.',
     sxHours:attend.length?sxHours:null, productivity:prod.length && sxHours>0?round(produced/sxHours):null,
     payroll:wages, cash: {cash:round(cash.cash),bank:round(cash.bank)}, coverage:covered+'/'+days,
-    completeness: covered===days && costs.length && costs.every(c=>c!=null) ? 'complete-inputs' : 'incomplete',
+    completeness: completeSales && covered===days && costs.length && costs.every(c=>c!=null) && wagesPresent ? 'complete-inputs' : 'incomplete',
     source:'Google Sheets / dữ liệu người dùng được cấp quyền', accountingRule:money[0]?.accountingRule || 'Chưa có dữ liệu doanh thu' };
 }
 function scenario(price, variableCost, fixedCost, quantity) {
@@ -181,7 +192,7 @@ function variance(data, from, to) {
 function finance(data, to) {
   const cash=effective(data.cash||[]).filter(r=>r.date<=to);
   const debts=effective(data.debts||[]).filter(r=>r.date<=to).map(r=>{
-    const paid=cash.filter(c=>c.linkedId===r.recordId&&c.category===(r.type==='phai-thu'?'thu-no':'tra-no')).reduce((n,c)=>n+c.amount,0);
+    const paid=cash.filter(c=>c.linkedId===r.recordId&&c.category===(r.type==='phai-thu'?'thu-no':'tra-no')).reduce((n,c)=>n+c.amount,0)+(r.allocations||[]).filter(a=>a.date<=to).reduce((n,a)=>n+a.amount,0);
     return {id:r.recordId,name:r.name,type:r.type,amount:r.amount,paid:round(paid),remaining:round(r.amount-paid),overdue:r.dueDate<to&&r.amount>paid};
   });
   const loans=effective(data.loans||[]).filter(r=>r.date<=to).map(r=>{
@@ -197,11 +208,12 @@ function finance(data, to) {
 function targets(data,from,to){
   const actual=report(data,from,to),plans=effective(data.plans||[]).filter(r=>r.date>=from&&r.date<=to);
   const sum=k=>plans.length?plans.reduce((n,r)=>n+r[k],0):null;
-  const revenueTarget=sum('revenue'),productionTarget=sum('production'),cap=sum('productionCostCap'),bonusCap=sum('bonusCap');
-  const payrollSX=actual.payroll.filter(r=>r.department==='SX').reduce((n,r)=>n+r.base+r.allowances,0);
-  const available=cap==null||actual.cogs==null||actual.sxHours==null?null:Math.max(0,cap-actual.cogs-payrollSX);
+  const revenueTarget=sum('revenue'),productionTarget=sum('production'),bonusCap=sum('bonusCap');
+  const laborCap=actual.revenue>0?round(ACCOUNTING_POLICY.productionLaborMax*actual.revenue):null;
+  const ready=actual.completeness==='complete-inputs'&&actual.sxLabor!=null&&productionTarget>0&&actual.produced>=productionTarget&&laborCap!=null&&finite(bonusCap);
+  const available=ready?Math.max(0,laborCap-actual.sxLabor):null;
   const ratio=(value,target)=>value==null||target==null||target===0?null:round(value/target*100);
-  return {revenueTarget,productionTarget,revenuePercent:ratio(actual.revenue,revenueTarget),productionPercent:ratio(actual.produced,productionTarget),bonusAvailable:available==null||bonusCap==null?null:round(Math.min(bonusCap,available)),bonusRule:'Không chi thưởng tự động. Trần = min(trần thưởng, phần còn lại của trần chi phí SX sau nguyên liệu và lương SX).'};
+  return {revenueTarget,productionTarget,fixedCostTarget:sum('fixedCost'),revenuePercent:ratio(actual.revenue,revenueTarget),productionPercent:ratio(actual.produced,productionTarget),foodCostPct:actual.foodCostPct,sxLaborPct:actual.sxLaborPct,laborCap,foodCostMaxPct:ACCOUNTING_POLICY.foodCostMax*100,sxLaborMaxPct:ACCOUNTING_POLICY.productionLaborMax*100,policy:ACCOUNTING_POLICY,bonusAvailable:available==null?null:round(Math.min(bonusCap,available)),bonusRule:'Dư địa tham khảo = min(trần thưởng, 15% doanh thu thuần − lương và phụ cấp SX); không trừ food cost. Chỉ hiển thị khi đủ dữ liệu và sản lượng đạt kế hoạch; chưa tự chi thưởng.'};
 }
 function compareWeeks(data,anchor){
   if(!validDate(anchor))fail('Ngày không hợp lệ');
@@ -213,4 +225,4 @@ function compareWeeks(data,anchor){
     rows.push({date:iso(current),previousDate:iso(previous),revenue:a.revenue,previousRevenue:b.revenue,difference:a.revenue==null||b.revenue==null?null:round(a.revenue-b.revenue)});
   }return rows;
 }
-export { round, cleanRecord, effective, validDate, shiftHours, flattenRecipe, costRecipe, salesMetrics, payroll, inventory, demand, report, scenario, variance, finance, targets, compareWeeks };
+export { ACCOUNTING_POLICY, round, cleanRecord, effective, validDate, shiftHours, flattenRecipe, costRecipe, salesMetrics, payroll, inventory, demand, report, scenario, variance, finance, targets, compareWeeks };

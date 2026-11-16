@@ -37,13 +37,13 @@ const SCHEMA = {
     date: DAY, employeeId: REF('Nhân viên', 'employees'), start: FIELD('Bắt đầu (HH:mm)', 'time'), end: FIELD('Kết thúc (HH:mm)', 'time'), breakMinutes: QTY('Nghỉ (phút)'),
     hourlyRate: QTY('Lương giờ tại thời điểm'), department: CHOICE('Bộ phận tại thời điểm', ['SX', 'VP', 'BH']), defaultAllowance: QTY('Phụ cấp mặc định'), dailyAllowance: QTY('Phụ cấp thêm'), support: QTY('Hỗ trợ ngày'), advance: QTY('Tạm ứng'), deduction: QTY('Khấu trừ') } },
   plans: { title: 'Kế hoạch & mục tiêu', group: 'Quản trị', fields: {
-    date: DAY, revenue: QTY('Doanh thu mục tiêu'), production: QTY('Sản lượng mục tiêu'), fixedCost: QTY('Chi phí cố định'), productionCostCap: QTY('Trần chi phí SX'), bonusCap: QTY('Trần thưởng') } },
+    date: DAY, revenue: QTY('Doanh thu mục tiêu'), production: QTY('Sản lượng mục tiêu'), fixedCost: QTY('Chi phí cố định'), productionCostCap: QTY('Ngân sách sản xuất (đ)'), bonusCap: QTY('Trần thưởng') } },
   loans: { title: 'Khoản vay', group: 'Tài chính', sensitive: true, fields: {
     name: FIELD('Bên cho vay'), principal: QTY('Tiền gốc'), annualRate: QTY('Lãi suất năm (0–1)'), date: DAY, dueDate: FIELD('Ngày đến hạn', 'date'), note: FIELD('Ghi chú', 'text', false) } },
   debts: { title: 'Công nợ', group: 'Tài chính', sensitive: true, fields: {
     name: FIELD('Đối tác'), type: CHOICE('Loại', ['phai-thu', 'phai-tra']), amount: QTY('Giá trị gốc'), date: DAY, dueDate: FIELD('Ngày đến hạn', 'date'), note: FIELD('Ghi chú', 'text', false) } },
   cash: { title: 'Sổ quỹ thu – chi', group: 'Tài chính', immutable: true, sensitive: true, fields: {
-    date: DAY, direction: CHOICE('Thu / chi', ['thu', 'chi']), account: CHOICE('Tài khoản', ['cash', 'bank']), amount: QTY('Số tiền'), category: CHOICE('Nhóm', ['von-dau', 'thu-no', 'tra-no', 'vay', 'tra-vay', 'co-dinh', 'quan-ly', 'marketing', 'khac']),
+    date: DAY, direction: CHOICE('Thu / chi', ['thu', 'chi']), account: CHOICE('Tài khoản', ['cash', 'bank']), amount: QTY('Số tiền'), category: CHOICE('Nhóm', ['von-dau', 'thu-no', 'tra-no', 'vay', 'tra-vay', 'lai-vay', 'luong-thuong', 'co-dinh', 'quan-ly', 'marketing', 'khac']),
     linkedId: FIELD('ID công nợ / khoản vay liên kết', 'text', false), note: FIELD('Ghi chú', 'text', false) } },
   assets: { title: 'Tài sản & khấu hao', group: 'Tài chính', sensitive: true, fields: {
     name: FIELD('Tên tài sản'), date: DAY, cost: QTY('Nguyên giá'), salvage: QTY('Giá trị còn lại'), months: FIELD('Thời gian khấu hao (tháng)', 'number', true, { min: 1 }) } },

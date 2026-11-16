@@ -2,7 +2,7 @@
 
 Đã đọc đầy đủ ba file người dùng gửi. Bản byte gốc và SHA256 ở docs/requirements/received và RECEIVED_MANIFEST.json; tách13 tài liệu chuyên đề từ consolidated, không thay source ứng dụng bằng HTML phác thảo. Yêu cầu có78REQ và93ca acceptance. Script kiểm tra không thiếu/trùng REQ: scripts/requirement-audit.mjs; 36route được liệt kê riêng trong ROUTE_INVENTORY.md.
 
-Git baseline HEAD90f7925, lịch sử ba commit. Working tree trước audit đã có nhiều thay đổi chưa commit từ các lượt trước; verifier/ có các file bị xóa sẵn, không khôi phục/xóa/stage các thay đổi đó. Log baseline local:166pass/0fail, syntax47, build đạt; kết quả thuộc working tree, không gán cho HEAD90f7925. Báo cáo audit không tuyên bố clean checkout ở HEAD có166test.
+Git baseline HEAD90f7925, lịch sử ba commit. Working tree trước audit đã có nhiều thay đổi chưa commit từ các lượt trước; verifier/ có các file bị xóa sẵn, được giữ ngoài commit T00. Log baseline local:166pass/0fail, syntax47, build đạt; kết quả thuộc working tree, không gán cho HEAD90f7925. Báo cáo audit không tuyên bố clean checkout ở HEAD có166test. Checkpoint source G02 sau đó cần lưu toàn bộ phụ thuộc source/tests/build đã kiểm thử, gồm trạng thái bỏ verifier cũ theo Apps Script-only và test source hiện có, để không tạo commit thiếu module. Không reset hoặc sửa nội dung verifier cũ.
 
 | Vùng | Nội dung kiểm kê | Kết quả |
 | --- | --- | --- |

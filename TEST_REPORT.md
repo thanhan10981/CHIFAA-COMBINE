@@ -1,6 +1,6 @@
 # Báo cáo kiểm thử theo bộ yêu cầu
 
-Thời điểm UTC: 2026-11-16T14:54:08.335Z; ngày Việt Nam 2026-11-16. HEAD: 90f7925; working tree dirty, không gán kết quả cho riêng HEAD. Baseline Node/DOM/GAS-mock: **166 pass / 0 fail / 166 tests**. Log: output/requirements-baseline-tests.txt (local, không commit dữ liệu nhạy cảm). Syntax47 và build đã chạy đạt cùng phiên.
+Thời điểm UTC: 2026-11-16T15:02:29.244Z; ngày Việt Nam 2026-11-16. HEAD: ba0ad6c; working tree dirty, không gán kết quả cho riêng HEAD. Baseline Node/DOM/GAS-mock: **166 pass / 0 fail / 166 tests**. Log: output/requirements-baseline-tests.txt (local, không commit dữ liệu nhạy cảm). Syntax47 và build đã chạy đạt cùng phiên.
 
 Mock Sheets/Drive/OAuth đều là fixture RAM, không gọi Google. Local tests không chứng minh Gmail/ACL/trigger/quota hay số liệu thật. Chưa chạy Google/browser/UAT/10-user load/legacy import. Không có latency Google P50/P95; không bịa số. Mã IDs tài nguyên thực tế không đưa vào báo cáo này.
 
@@ -103,3 +103,7 @@ Bộ acceptance gốc có 93 ca. Bảng dưới là **trạng thái toàn bộ t
 | T-145 | LOCAL_REVIEW / NOT_ACCEPTED | Sau rebuild V17 logo / Logo là ảnh gốc, không có asset thay thế và sidebar hiển thị đúng / |
 
 Auth local: tests/oauth.test.mjs, session-security.test.mjs, client.test.mjs: code/PKCE/state/UserInfo/browser proof, allowlist, disabled/unknown user, revoke, Admin concurrency, signed-request replay và thiếu quyền. Gate Google thật vẫn BLOCKED_GOOGLE. Xem docs/AUTH_FEASIBILITY.md.
+
+## G02 — Sau cập nhật D01/D02/D03
+
+170 pass / 0 fail; log output/requirements-policy-tests.txt. Suite tests/accounting-policy.test.mjs kiểm tra net/expense/received, phần điểm bán chịu, base Food cost/SX, labor headroom không trừ COGS, thiếu SX/nguồn không ra0/bonus và cross-report/Strategy. Đây là local/mock, không thay 93ca acceptance Google. Xem docs/ACCOUNTING_POLICY.md.
