@@ -1,0 +1,17 @@
+[
+  {
+    "file": "docs/requirements/received/PROMPT_GIAO_CHO_CODEX.md",
+    "sha256": "34af9e4049d1fe8bf33488a1bc9a8452580b0d25d7b8bc7a6f93fe26b9383dc8",
+    "bytes": 9987
+  },
+  {
+    "file": "docs/requirements/received/PROMPT_TIEP_TUC (1).md",
+    "sha256": "ef4ac97618d59f29a21ee7c2a8a41ebff6cf0f832b387884974057f6ced2d2a3",
+    "bytes": 1460
+  },
+  {
+    "file": "docs/requirements/received/CHIFAA_COMBINE_DAC_TA_TONG_HOP_CHO_CODEX.md",
+    "sha256": "665bddf0fdf28c6d5458d3416917d9547a738caf505c2de18ef0bcfa84188685",
+    "bytes": 133858
+  }
+]
