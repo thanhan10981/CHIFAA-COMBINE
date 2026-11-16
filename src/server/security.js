@@ -1,4 +1,20 @@
 // Security controls use server time. Client device names are informational only.
+function storeSessionCredentials_(token,credentials){
+  credentials={...credentials,durable:true};
+  const h=hash_(token),now=Date.now();let index;try{index=JSON.parse(props_().getProperty('SESSION_KEY_INDEX')||'[]');}catch(_){throw new Error('CONFIG: Cần chủ sở hữu kiểm tra chỉ mục khóa phiên');}
+  if(!Array.isArray(index)||index.some(r=>!r||!/^[a-f0-9]{64}$/.test(r.h)||!Number.isFinite(r.until)))throw new Error('CONFIG: Chỉ mục khóa phiên không hợp lệ');
+  index=index.filter(r=>{if(r.until>now&&props_().getProperty('session-key:'+r.h))return r.h!==h;props_().deleteProperty('session-key:'+r.h);try{CacheService.getScriptCache().remove('session-key:'+r.h);}catch(_){}return false;});
+  if(index.length>=80)throw new Error('SESSION: Đã đạt giới hạn khóa phiên; cần thu hồi phiên cũ hoặc chờ hết hạn');
+  props_().setProperty('session-key:'+h,JSON.stringify(credentials));index.push({h,until:Date.parse(credentials.expires)});props_().setProperty('SESSION_KEY_INDEX',JSON.stringify(index));
+  try{CacheService.getScriptCache().put('session-key:'+h,JSON.stringify(credentials),Math.max(1,Math.ceil((Date.parse(credentials.expires)-now)/1000)));}catch(_){/* Durable, owner-only credentials survive optional cache failure. */}
+}
+function sessionCredentials_(token){
+  const key=sessionKey_(token);let raw;try{raw=CacheService.getScriptCache().get(key);}catch(_){}
+  const parse=value=>{try{const c=JSON.parse(value||'null');return c&&/^[a-f0-9]{64}$/.test(c.signingKey)&&Number.isFinite(Date.parse(c.expires))&&typeof c.fingerprint==='string'?c:null;}catch(_){return null;}};
+  let credentials=parse(raw);if(!credentials){credentials=parse(props_().getProperty(key));if(credentials&&Date.parse(credentials.expires)>Date.now())try{CacheService.getScriptCache().put(key,JSON.stringify(credentials),Math.max(1,Math.ceil((Date.parse(credentials.expires)-Date.now())/1000)));}catch(_){}}
+  return credentials;
+}
+function clearSessionCredentials_(hash){props_().deleteProperty('session-key:'+hash);try{CacheService.getScriptCache().remove('session-key:'+hash);}catch(_){}}
 function oauthStartRate_(){
   const limit=Number(props_().getProperty('OAUTH_STARTS_PER_MINUTE')||30);if(!Number.isInteger(limit)||limit<10||limit>120)throw new Error('CONFIG: OAUTH_STARTS_PER_MINUTE phải từ10đến120');
   const lock=LockService.getScriptLock();if(!lock.tryLock(100))throw new Error('BUSY: Đang xử lý đăng nhập. Thử lại sau ít giây');

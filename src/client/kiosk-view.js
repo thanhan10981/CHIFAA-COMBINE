@@ -13,9 +13,9 @@ function renderKiosk(){
     const submit=async()=>{if(inFlight)return;inFlight=true;try{await call('kiosk',args);pending=null;toast('Đã ghi nhận nghiệp vụ ki-ốt.');await refresh();}catch(e){if(['TIMEOUT','NETWORK','BUSY','RECOVERY'].includes(e.code)){pending=args;const retry=button('Kiểm tra lại cùng lần ghi',submit);content.prepend(el('p','Chưa rõ kết quả; dùng lại đúng yêu cầu để tránh ghi hai lần.','notice'),retry);}else pending=null;errorText(e);}finally{inFlight=false;}};
     await submit();
   };
-  const refresh=async(offset=0,inventoryOffset=0)=>{
+  const refresh=async(offset=0,inventoryOffset=0,force=false)=>{
     const loading=el('div',null,'skeleton');content.replaceChildren(loading);
-    try{const data=await call('kioskReport',{from:from.value,to:to.value,offset,inventoryOffset});if(generation!==viewGeneration)return;loading.remove();
+    try{const data=await call('kioskReport',{from:from.value,to:to.value,offset,inventoryOffset,force});if(generation!==viewGeneration)return;loading.remove();if(data.checkedAt)content.append(el('p','Dữ liệu kiểm tra lúc '+data.checkedAt+'. Bấm Tải lại để kiểm tra mới.','report-note'));
       const status={pending:'Chờ duyệt',approved:'Chờ thực nhận',received:'Đã nhận',rejected:'Từ chối nhận'};
       content.append(el('h3','Hàng thu hồi từ điểm bán'),makeTable(['Ngày nguồn','Điểm bán','Món','Thu hồi','Trạng thái','Thao tác'],data.rows.map(r=>{
         const actions=el('div',null,'actions');if(can('sales','approve')&&!pending){if(r.status==='pending')actions.append(button('Duyệt',()=>write('approve',r)));if(r.status==='approved')actions.append(button('Đã thực nhận',()=>write('receive',r)),button('Từ chối',()=>write('reject',r)));}
@@ -35,7 +35,7 @@ function renderKiosk(){
       if(state.user.role==='admin')content.append(el('h3','Nhật ký lô thu hồi gần nhất'),makeTable(['Ngày','Loại','Mã','Thao tác'],data.history.map(r=>[r.date,r.kind,r.id.slice(0,8),button('Hoàn tác',()=>write('undo',r))])));
     }catch(e){if(generation===viewGeneration){loading.remove();content.append(el('p','Chưa tải được dữ liệu ki-ốt. Bấm Tải lại để thử lại.','notice'));errorText(e);}}
   };
-  fields.append(button('Tải lại',()=>{if(!pending)refresh();}));refresh();
+  fields.append(button('Tải lại',()=>{if(!pending)refresh(0,0,true);}));refresh();
 }
 
 export {renderKiosk};

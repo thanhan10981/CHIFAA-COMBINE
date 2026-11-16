@@ -18,3 +18,7 @@ test('Remote variance report headers match cells and show the percentage column'
   const c=await client();c.run(`state.demo=false;call=async()=>({rows:[{date:'2026-11-01',name:'Rice',actual:100,theoretical:90,difference:10,percentage:11.11,status:'orange'}],total:1,next:null});location.hash='#variance';route();`);
   for(let i=0;i<6;i++)await Promise.resolve();const table=c.document.querySelector('#view table');assert.equal(table.querySelectorAll('th').length,7);assert.equal(table.querySelector('tbody tr').children.length,7);assert.match(table.textContent,/11,11|11.11/);
 });
+test('Positive stocktake adjustment does not masquerade as an incoming physical receipt',()=>{
+  const data={counts:[{date:'2026-11-01',materialId:'m',opening:100,closing:110,otherOut:0}],stock:[{date:'2026-11-01',materialId:'m',type:'dieu-chinh-tang',quantity:10}],production:[]};
+  const row=variance(data,'2026-11-01','2026-11-01')[0];assert.equal(row.actual,-10);assert.equal(row.status,'red');
+});

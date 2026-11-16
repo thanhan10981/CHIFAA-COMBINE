@@ -3,31 +3,37 @@
 function kioskAccess_(user,write=false){for(const m of ['sales','stores','dishes'])require_(user,m,'read');if(write)require_(user,'sales','approve');}
 function kioskState_(data,to){
   const markers=effective(workflowRows_()).filter(w=>['return-approved','return-received','return-rejected','kiosk-sale'].includes(w.kind));
+  const index=new Map(),details=new Map();for(const marker of markers){const key=JSON.stringify([marker.kind,marker.referenceId]);if(!index.has(key))index.set(key,[]);index.get(key).push(marker);details.set(marker.recordId,workflowDetails_(marker));}
+  const find=(kind,id)=>index.get(JSON.stringify([kind,id]))||[];
   const sales=new Map(effective(data.sales).map(s=>[s.recordId,s])),returns=markers.filter(w=>w.kind==='return-approved').map(w=>{
-    const d=workflowDetails_(w),source=sales.get(w.referenceId);
+    const d=details.get(w.recordId),source=sales.get(w.referenceId);
     if(!source||source._hash!==d.sourceHash)throw new Error('CONFLICT: Phiếu doanh thu của hàng thu hồi đã đổi; cần đối soát trước khi tiếp tục');
-    if(!validDate(w.date)||!finite(d.quantity)||d.quantity<=0||d.quantity!==source.returned||d.dishId!==source.dishId||d.storeId!==source.storeId||markers.filter(r=>r.kind==='return-approved'&&r.referenceId===w.referenceId).length!==1)throw new Error('CONFLICT: Nhật ký lô thu hồi không hợp lệ; cần đối soát');
-    const receipt=markers.find(r=>r.kind==='return-received'&&r.referenceId===w.recordId),rejected=markers.find(r=>r.kind==='return-rejected'&&r.referenceId===w.recordId);
-    const sold=markers.filter(r=>r.kind==='kiosk-sale'&&r.referenceId===w.recordId).map(r=>({row:r,details:workflowDetails_(r)}));
-    if(receipt&&(workflowDetails_(receipt).quantity!==d.quantity||receipt.date<w.date)||receipt&&rejected||markers.filter(r=>r.kind==='return-received'&&r.referenceId===w.recordId).length>1)throw new Error('CONFLICT: Nhật ký nhận hàng không hợp lệ');
+    if(!validDate(w.date)||!finite(d.quantity)||d.quantity<=0||d.quantity!==source.returned||d.dishId!==source.dishId||d.storeId!==source.storeId||find('return-approved',w.referenceId).length!==1)throw new Error('CONFLICT: Nhật ký lô thu hồi không hợp lệ; cần đối soát');
+    const receipts=find('return-received',w.recordId),receipt=receipts[0],rejected=find('return-rejected',w.recordId)[0];
+    const sold=find('kiosk-sale',w.recordId).map(r=>({row:r,details:details.get(r.recordId)}));
+    if(receipt&&(details.get(receipt.recordId).quantity!==d.quantity||receipt.date<w.date)||receipt&&rejected||receipts.length>1)throw new Error('CONFLICT: Nhật ký nhận hàng không hợp lệ');
     for(const item of sold){const sale=sales.get(item.details.saleId);if(!sale||sale._hash!==item.details.saleHash||!finite(item.details.quantity)||item.details.quantity<=0||!receipt||item.row.date<receipt.date)throw new Error('CONFLICT: Phiếu bán tại ki-ốt đã đổi hoặc không còn hiệu lực; cần đối soát');}
     if(sold.reduce((n,s)=>n+s.details.quantity,0)>d.quantity)throw new Error('CONFLICT: Nhật ký ki-ốt vượt số lượng thực nhận');
     const used=sold.filter(s=>s.row.date<=to).reduce((n,s)=>n+s.details.quantity,0);
-    return {id:w.recordId,saleId:source.recordId,sourceDate:source.date,date:w.date,dishId:d.dishId,storeId:d.storeId,quantity:d.quantity,status:receipt?'received':rejected?'rejected':'approved',receivedAt:receipt?.date||'',sold:used,balance:receipt&&receipt.date<=to?round(d.quantity-used):0,sourceHash:d.sourceHash};
+    return {id:w.recordId,saleId:source.recordId,sourceDate:source.date,date:w.date,dishId:d.dishId,storeId:d.storeId,quantity:d.quantity,status:receipt?'received':rejected?'rejected':'approved',receivedAt:receipt?.date||'',sold:used,balance:receipt&&receipt.date<=to?quantityValue(d.quantity-used,d.quantity):0,sourceHash:d.sourceHash};
   });
   return {markers,returns};
 }
 function kioskReport_(user,args){
+  kioskAccess_(user);const versions=moduleVersions_();
+  return scopedCache_(user,'kiosk',Object.fromEntries(['sales','stores','dishes'].map(m=>[m,versions[m]])),{from:args.from,to:args.to,offset:args.offset??0,inventoryOffset:args.inventoryOffset??0},args.force===true,()=>kioskReportBuild_(user,args));
+}
+function kioskReportBuild_(user,args){
   kioskAccess_(user);assertReadable_();
   if(!validDate(args.from)||!validDate(args.to)||args.from>args.to)throw new Error('VALIDATION: Chọn khoảng ngày hợp lệ');
   const offset=args.offset??0;if(!Number.isInteger(offset)||offset<0)throw new Error('VALIDATION: Trang không hợp lệ');
-  const data=data_(['sales','stores','dishes']);requireValidSources_(data);const state=kioskState_(data,args.to),names=(module,id)=>data[module].find(r=>r.recordId===id)?.name||id;
+  const data=data_(['sales','stores','dishes']);requireValidSources_(data);const state=kioskState_(data,args.to),catalogs=Object.fromEntries(['stores','dishes'].map(m=>[m,new Map(data[m].map(r=>[r.recordId,r.name]))])),names=(module,id)=>catalogs[module].get(id)||id,bySale=new Map(state.returns.map(r=>[r.saleId,r]));
   const rows=effective(data.sales).filter(s=>s.returned>0&&s.date>=args.from&&s.date<=args.to).map(s=>{
-    const r=state.returns.find(r=>r.saleId===s.recordId);return {id:s.recordId,hash:s._hash,date:s.date,store:names('stores',s.storeId),dish:names('dishes',s.dishId),quantity:s.returned,approvalId:r?.id||'',status:r?.status||'pending',receivedAt:r?.receivedAt||'',balance:r?.balance||0};
+    const r=bySale.get(s.recordId);return {id:s.recordId,hash:s._hash,date:s.date,store:names('stores',s.storeId),dish:names('dishes',s.dishId),quantity:s.returned,approvalId:r?.id||'',status:r?.status||'pending',receivedAt:r?.receivedAt||'',balance:r?.balance||0};
   });
   const inventory=state.returns.filter(r=>r.status==='received'&&r.receivedAt<=args.to&&r.balance>0).map(r=>({...r,store:names('stores',r.storeId),dish:names('dishes',r.dishId)}));
   const inventoryOffset=args.inventoryOffset??0;if(!Number.isInteger(inventoryOffset)||inventoryOffset<0)throw new Error('VALIDATION: Trang tồn không hợp lệ');
-  return {rows:rows.slice(offset,offset+100),total:rows.length,next:offset+100<rows.length?offset+100:null,inventory:inventory.slice(inventoryOffset,inventoryOffset+100),inventoryTotal:inventory.length,inventoryNext:inventoryOffset+100<inventory.length?inventoryOffset+100:null,history:state.markers.slice(-100).reverse().map(w=>({id:w.recordId,date:w.date,kind:w.kind,referenceId:w.referenceId})),valuation:'pending',stamp:stamp_()};
+  return {rows:rows.slice(offset,offset+100),total:rows.length,next:offset+100<rows.length?offset+100:null,inventory:inventory.slice(inventoryOffset,inventoryOffset+100),inventoryTotal:inventory.length,inventoryNext:inventoryOffset+100<inventory.length?inventoryOffset+100:null,history:state.markers.slice(-100).reverse().map(w=>({id:w.recordId,date:w.date,kind:w.kind,referenceId:w.referenceId})),valuation:'pending',checkedAt:now_(),stamp:stamp_()};
 }
 function kioskWorkflow_(user,args){
   kioskAccess_(user,true);requireOperational_();

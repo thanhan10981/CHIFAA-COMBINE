@@ -7,7 +7,7 @@ function fixture(){const g=gas(),token=g.ctx.issueSession_('admin@example.com','
   put('sales',{recordId:'sale',date:'2026-11-02',storeId:'shop',dishId:'dish',delivered:100,sold:80,returned:10,creditQty:10,price:30,discount:.1,recoveryPrice:2,cash:2430,bank:0,oldDebtPaid:0,otherCost:0,note:''});
   const rpc=(a,args={})=>send(g,a,{token,key:crypto.randomUUID(),...args});
   const approve=()=>{const sale=g.ctx.rawRows_('sales')[0];return rpc('kiosk',{kind:'approve',id:sale.recordId,sourceHash:sale._hash,date:'2026-11-02',note:'Return checked'});};
-  const report=()=>rpc('kioskReport',{from:'2026-11-01',to:'2026-11-30'}).data;
+  const report=()=>rpc('kioskReport',{from:'2026-11-01',to:'2026-11-30',force:true}).data;
   return {g,rpc,approve,report,put};
 }
 test('100/80/10/10: approval has no stock or revenue; actual receipt adds10 once; kiosk sale consumes only actual stock',()=>{
@@ -27,11 +27,11 @@ test('Kiosk rejects stale source, unauthorized writes, closed periods, repeat ap
   assert.equal(approve().ok,true);assert.equal(approve().error.code,'CONFLICT');const sale=g.ctx.rawRows_('sales')[0];
   assert.equal(rpc('mutate',{module:'sales',operation:'reverse',id:sale.recordId,expectedVersion:sale.version,expectedHash:sale._hash}).error.code,'LINKED');
   g.ctx.append_('_Users',['staff','staff@example.com','staff',JSON.stringify({sales:['read'],stores:['read'],dishes:['read']}),true,1]);const token=g.ctx.issueSession_('staff@example.com','staff').token;
-  assert.equal(send(g,'kioskReport',{token,from:'2026-11-01',to:'2026-11-30'}).ok,true);
+  assert.equal(send(g,'kioskReport',{token,from:'2026-11-01',to:'2026-11-30',force:true}).ok,true);
   assert.equal(send(g,'kiosk',{token,kind:'receive',id:report().rows[0].approvalId,date:'2026-11-03',note:'Checked',key:crypto.randomUUID()}).error.code,'FORBIDDEN');
   assert.equal(rpc('workflow',{kind:'close',from:'2026-11-03',to:'2026-11-03',note:'Period reviewed'}).ok,true);
   assert.equal(rpc('kiosk',{kind:'receive',id:report().rows[0].approvalId,date:'2026-11-03',note:'Checked'}).error.code,'CLOSED');
-  g.ctx.writeRow_('sales',{...sale,returned:9});assert.equal(rpc('kioskReport',{from:'2026-11-01',to:'2026-11-30'}).error.code,'CONFLICT');
+  g.ctx.writeRow_('sales',{...sale,returned:9});assert.equal(rpc('kioskReport',{from:'2026-11-01',to:'2026-11-30',force:true}).error.code,'CONFLICT');
 });
 test('Kiosk receipt rollback preserves approved state, rejection never adds stock',()=>{
   const {g,rpc,approve,report}=fixture();approve();const id=report().rows[0].approvalId;

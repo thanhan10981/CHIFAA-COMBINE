@@ -5,6 +5,22 @@ import {gas} from './gas-mock.mjs';
 import {send} from './auth-helpers.mjs';
 import {sourceIssues} from '../src/shared/domain.js';
 const material={recordId:'m',version:1,name:'Rice',purchaseUnit:'kg',unit:'kg',conversion:1,purchasePrice:10,minimum:0};
+test('Direct Sheets allowance duplicates cannot enter payroll; correcting source unblocks preview without rewriting history',()=>{
+  const g=gas(),token=g.ctx.issueSession_('admin@example.com','admin').token,put=(m,r)=>g.ctx.writeRow_(m,{version:1,deleted:false,reverses:'',...r});
+  put('employees',{recordId:'e',name:'Employee',department:'SX',hourlyRate:10,allowance:5});
+  const a={date:'2026-11-01',employeeId:'e',start:'08:00',end:'10:00',breakMinutes:0,hourlyRate:10,department:'SX',defaultAllowance:5,dailyAllowance:0,support:0,advance:0,deduction:0};
+  put('attendance',{...a,recordId:'a'});put('attendance',{...a,recordId:'b',start:'11:00',end:'12:00'});
+  const request={token,kind:'payroll',from:a.date,to:a.date,account:'bank',bonuses:[],preview:true,key:crypto.randomUUID()};
+  assert.equal(send(g,'workflow',request).error.code,'DATA_INVALID');assert.equal(g.ctx.rawRows_('cash').length,0);
+  put('attendance',{...a,recordId:'b',start:'11:00',end:'12:00',defaultAllowance:0});
+  const preview=send(g,'workflow',{...request,key:crypto.randomUUID()});assert.equal(preview.ok,true,JSON.stringify(preview));assert.equal(preview.data.preview.total,35);
+  assert.equal(g.ctx.rawRows_('attendance').length,2);assert.equal(g.ctx.rawRows_('cash').length,0);
+});
+test('Source validation catches direct overnight overlap and excludes reversed shifts',()=>{
+  const a={recordId:'a',version:1,date:'2026-11-01',employeeId:'e',start:'23:00',end:'07:00',breakMinutes:0,hourlyRate:10,department:'SX',defaultAllowance:0,dailyAllowance:0,support:0,advance:0,deduction:0},b={...a,recordId:'b',date:'2026-11-02',start:'06:00',end:'08:00'};
+  assert.equal(sourceIssues({attendance:[a,b]}).length,2);
+  assert.equal(sourceIssues({attendance:[a,b,{...b,recordId:'reverse-b',reverses:'b'}]}).length,0);
+});
 function fixture(){const g=gas(),token=g.ctx.issueSession_('admin@example.com','admin-sub').token;return {g,token};}
 test('source validation checks scalars with unavailable reference permissions, duplicate IDs and recipe cycles',()=>{
  const sale={recordId:'s',version:1,date:'2026-11-01',storeId:'private-store',dishId:'private-dish',delivered:1,sold:1,returned:0,creditQty:0,price:10,discount:0,recoveryPrice:0,otherCost:0,cash:10,bank:0,oldDebtPaid:0};

@@ -40,7 +40,8 @@ test('lookup returns only allowed compact catalog fields; record details retain 
 });
 test('payroll summary filters month/department after resolving reversals and cached inventory paginates',()=>{
  const {g,token}=fixture(110),attendance=g.tables.get('attendance'),headers=g.ctx.headers_('attendance'),copy=[...attendance.rows[1]];copy[0]='reversal';copy[headers.indexOf('reverses')]='a0';copy[headers.indexOf('date')]='2026-12-01';attendance.appendRow(copy);
- let r=send(g,'periodSummary',{token,kind:'payroll',from:'2026-11-01',to:'2026-11-30',department:'SX'});assert.equal(r.ok,true);assert.equal(r.data.rows[0].hours,109);assert.equal(r.data.rows[0].name,'Employee');assert.equal(r.data.total,1);
+ let r=send(g,'periodSummary',{token,kind:'payroll',from:'2026-11-01',to:'2026-11-30',department:'SX'});assert.equal(r.ok,true);assert.equal(r.data.rows[0].hours,1);assert.equal(r.data.rows[0].name,'Employee 1');assert.equal(r.data.total,109);assert.equal(r.data.next,100);
+ const payrollNext=send(g,'periodSummary',{token,kind:'payroll',from:'2026-11-01',to:'2026-11-30',department:'SX',offset:100});assert.equal(payrollNext.data.rows.length,9);
  assert.equal(send(g,'periodSummary',{token,kind:'payroll',from:'2026-11-01',to:'2026-11-30',department:'VP'}).data.total,0);
  r=send(g,'periodSummary',{token,kind:'inventory',from:'2026-11-01',to:'2026-11-30'});assert.equal(r.data.rows.length,100);assert.equal(r.data.total,110);assert.equal(r.data.next,100);
  const next=send(g,'periodSummary',{token,kind:'inventory',from:'2026-11-01',to:'2026-11-30',offset:100});assert.equal(next.data.rows.length,10);

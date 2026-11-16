@@ -19,8 +19,18 @@ test('changing action or request payload invalidates signature',()=>{
   const g=gas(),token=admin(g),request=signed(g,'export',{token,module:'sales'});
   assert.equal(g.ctx.rpc('bootstrap',request).error.code,'AUTH');assert.equal(g.ctx.rpc('export',{...request,module:'employees'}).error.code,'AUTH');
 });
-test('loss of signing-key cache fails closed and legacy bearer sessions cannot access',()=>{
-  const g=gas(),token=admin(g),request=signed(g,'sync',{token});g.cache.clear();assert.equal(g.ctx.rpc('sync',request).error.code,'AUTH');
+test('Signing cache eviction preserves signed session via owner-only storage; loss of both stores fails closed',()=>{
+  const g=gas(),token=admin(g),request=signed(g,'sync',{token});g.cache.clear();assert.equal(g.ctx.rpc('sync',request).ok,true);
+  assert.equal(g.ctx.rpc('sync',request).error.code,'AUTH');
+  const next=signed(g,'sync',{token});g.cache.clear();g.properties.delete(g.ctx.sessionKey_(token));assert.equal(g.ctx.rpc('sync',next).error.code,'AUTH');
+});
+test('Durable app-session keys respect expiry/configuration and are removed by revoke, disable and owner recovery',()=>{
+  const g=gas(),token=admin(g),acct=accountant(g),request=signed(g,'sync',{token:acct});
+  assert.equal(g.properties.has(g.ctx.sessionKey_(acct)),true);
+  assert.equal(send(g,'admin',{token,operation:'saveUser',email:'accountant@example.com',role:'accountant',enabled:false,permissions:{sales:['read']}}).ok,true);
+  assert.equal(g.properties.has(g.ctx.sessionKey_(acct)),false);g.cache.clear();assert.equal(g.ctx.rpc('sync',request).error.code,'AUTH');
+  g.ctx.recoverAdminSessions_();assert.equal(g.properties.has(g.ctx.sessionKey_(token)),false);
+  const h=gas(),current=admin(h),proof=signed(h,'sync',{token:current}),key=h.ctx.sessionKey_(current),credentials=JSON.parse(h.properties.get(key));credentials.expires=new Date(Date.now()-1).toISOString();h.properties.set(key,JSON.stringify(credentials));h.cache.clear();assert.equal(h.ctx.rpc('sync',proof).error.code,'AUTH');
 });
 test('logout and Admin revocation immediately block old signed requests',()=>{
   const g=gas(),token=admin(g),acct=accountant(g),row=g.ctx.rowsPlain_('_Sessions').find(r=>r[1]==='accountant@example.com');

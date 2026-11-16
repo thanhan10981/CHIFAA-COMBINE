@@ -77,13 +77,17 @@ function sheetEdited_(event){
 }
 function scanSheets_(){return scanModules_(Object.keys(SCHEMA));}
 function backup_(){
-  return locked_(()=>{
-    const folder=privateBackupFolder_(config_('BACKUP_FOLDER_ID'));
-    assertReadable_();const manifest=backupManifest_(db_());
+  const claim=locked_(()=>{assertReadable_();let lease;try{lease=JSON.parse(props_().getProperty('BACKUP_LEASE')||'null');}catch(_){}if(lease?.until>Date.now())throw new Error('BUSY: Đang tạo bản sao lưu khác');const value={id:uid_(),stamp:stamp_(),until:Date.now()+300000};props_().setProperty('BACKUP_LEASE',JSON.stringify(value));return value;});
+  try{
+    const folder=privateBackupFolder_(config_('BACKUP_FOLDER_ID')),before=backupManifest_(db_());
     const file=DriveApp.getFileById(config_('SPREADSHEET_ID')).makeCopy('CHIFAA-backup-'+now_().replace(/[:.]/g,'-'),folder);
-    const copied=backupManifest_(SpreadsheetApp.openById(file.getId())),after=backupManifest_(db_()),verified=JSON.stringify(manifest)===JSON.stringify(copied)&&JSON.stringify(manifest)===JSON.stringify(after);
-    if(verified)props_().setProperty('LAST_BACKUP',now_());audit_('SYSTEM','BACKUP','backup',file.getId(),null,{manifest,verified});return {fileId:file.getId(),verified,scope:'Nghiệp vụ và nhật ký đã biết; không gồm Script Properties hoặc bảng ngoài schema.'};
-  });
+    const manifest=backupManifest_(SpreadsheetApp.openById(file.getId())),after=backupManifest_(db_());
+    // Read audits, replay nonces and session hints may advance during a backup.
+    // The actual copy's full known-table manifest is retained for later verification.
+    const core=value=>Object.fromEntries(Object.entries(value).filter(([name])=>!['_Audit','_AuthRequests','_Sessions','_Sync'].includes(name)));
+    const same=JSON.stringify(core(before))===JSON.stringify(core(manifest))&&JSON.stringify(core(before))===JSON.stringify(core(after));
+    return locked_(()=>{const current=JSON.parse(props_().getProperty('BACKUP_LEASE')||'null');if(current?.id!==claim.id)throw new Error('CONFLICT: Lần sao lưu đã hết quyền xác nhận');const verified=same&&claim.stamp===stamp_()&&!props_().getProperty('WRITE_IN_PROGRESS');if(verified)props_().setProperty('LAST_BACKUP',now_());audit_('SYSTEM','BACKUP','backup',file.getId(),null,{manifest,verified,coreConsistent:verified});return {fileId:file.getId(),verified,scope:'Nghiệp vụ/nhật ký giao dịch khớp trước-sau; dấu của các bảng đã biết lấy từ bản sao. Không gồm Script Properties/bảng ngoài schema.'};});
+  }finally{locked_(()=>{let current;try{current=JSON.parse(props_().getProperty('BACKUP_LEASE')||'null');}catch(_){}if(current?.id===claim.id)props_().deleteProperty('BACKUP_LEASE');});}
 }
 function privateBackupFolder_(id){const folder=DriveApp.getFolderById(id),owner=Session.getEffectiveUser().getEmail();if(folder.getSharingAccess()!==DriveApp.Access.PRIVATE||[...folder.getEditors(),...folder.getViewers()].some(u=>u.getEmail()!==owner))throw new Error('FORBIDDEN: Backup chứa toàn bộ dữ liệu; chọn thư mục riêng tư chỉ chủ sở hữu truy cập');return folder;}
 function recoverPrepared_(){
@@ -138,7 +142,7 @@ function applyImport_(bundle,expectedDigest,key,actor='OWNER'){
   });
 }
 function recoverAdminSessions_(){
-  return locked_(()=>{const emails=new Set(users_().filter(u=>u.role==='admin').map(u=>u.email));emails.add(config_('ADMIN_EMAIL').toLowerCase());rowsPlain_('_Sessions').forEach((r,i)=>{if(emails.has(r[1])&&r[4]==='active')table_('_Sessions').getRange(i+2,5).setValue('revoked');});audit_('OWNER','ADMIN_SESSION_RECOVERY','sessions','admins',null,null);});
+  return locked_(()=>{const emails=new Set(users_().filter(u=>u.role==='admin').map(u=>u.email));emails.add(config_('ADMIN_EMAIL').toLowerCase());rowsPlain_('_Sessions').forEach((r,i)=>{if(emails.has(r[1])&&r[4]==='active'){table_('_Sessions').getRange(i+2,5).setValue('revoked');if(r[2])clearSessionCredentials_(r[2]);clearSessionDevice_(r[0]);}});audit_('OWNER','ADMIN_SESSION_RECOVERY','sessions','admins',null,null);});
 }
 function invite_(storeId,customer,days){
   if(typeof customer!=='string'||customer.length>200)throw new Error('VALIDATION: Tên khách tối đa 200 ký tự');

@@ -19,10 +19,10 @@ function backupManifest_(book){
 function verifyBackup_(id){
   if(typeof id!=='string'||!/^[\w-]{10,200}$/.test(id))throw new Error('VALIDATION: Mã backup không hợp lệ');
   const audit=rowsPlain_('_Audit').find(r=>r[3]==='BACKUP'&&r[5]===id);if(!audit)throw new Error('FORBIDDEN: Chỉ kiểm tra backup trong nhật ký hệ thống');
-  let expected;try{expected=JSON.parse(audit[7]||'null')?.manifest;}catch(_){}
+  let expected,metadata;try{metadata=JSON.parse(audit[7]||'null');expected=metadata?.manifest;}catch(_){}
   if(!expected)return {verified:false,reason:'Bản cũ chưa có dấu kiểm tra; không thể xác nhận chỉ từ ID.',tables:[]};
   const actual=backupManifest_(SpreadsheetApp.openById(id)),tables=Object.keys(expected).map(name=>({name,rows:actual[name]?.rows??0,matches:JSON.stringify(actual[name])===JSON.stringify(expected[name])}));
-  return {verified:tables.every(t=>t.matches),tables,scope:'Các bảng nghiệp vụ và nhật ký đã biết; không gồm cache, Script Properties hoặc bảng ngoài schema.'};
+  return {verified:metadata.verified===true&&tables.every(t=>t.matches),tables,...(metadata.verified!==true?{reason:'Nguồn thay đổi hoặc lần tạo chưa xác nhận nhất quán. Không dùng bản này để phục hồi.'}:{}),scope:'Các bảng nghiệp vụ và nhật ký đã biết; không gồm cache, Script Properties hoặc bảng ngoài schema.'};
 }
 function inspectSources_(args){
   assertReadable_();const stamp=stamp_(),modules=args.module?[args.module]:Object.keys(SCHEMA);if(modules.some(m=>!Object.hasOwn(SCHEMA,m)))throw new Error('VALIDATION: Phân hệ không hợp lệ');

@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {cleanRecord,unitConversion,flattenRecipe,costRecipe} from '../src/shared/domain.js';import {gas} from './gas-mock.mjs';import {send} from './auth-helpers.mjs';
+import {cleanRecord,unitConversion,flattenRecipe,costRecipe,inventory} from '../src/shared/domain.js';import {gas} from './gas-mock.mjs';import {send} from './auth-helpers.mjs';
 test('Known mass/volume units use physical ratios; package yield is explicit and cooking yield is separate',()=>{
   const material={name:'Rice',purchaseUnit:' kg ',unit:'gam',conversion:1000,purchasePrice:20000,minimum:0};
   assert.equal(cleanRecord('materials',material).conversion,1000);assert.throws(()=>cleanRecord('materials',{...material,conversion:2.5}),/Sai quy đổi/);
@@ -17,4 +17,13 @@ test('Schema inspection reports missing/wrong headers without touching cells and
   const inspect=()=>send(g,'maintenance',{token,operation:'inspectSchema'});assert.equal(inspect().data.ready,true);
   g.tables.get('sales').rows[0][7]='legacy-date';const before=JSON.stringify(g.tables.get('sales').rows),result=inspect();assert.equal(result.data.ready,false);assert.equal(result.data.rows.find(r=>r.name==='sales').status,'mismatch');
   assert.throws(()=>g.ctx.setup_(),/SCHEMA/);assert.equal(JSON.stringify(g.tables.get('sales').rows),before);
+});
+test('Stock and stocktake retain sub-cent quantities; 1gram in kg never becomes zero',()=>{
+  const g=gas(),token=g.ctx.issueSession_('admin@example.com','admin').token;
+  const put=(m,r)=>g.ctx.writeRow_(m,{version:1,deleted:false,reverses:'',...r});
+  put('materials',{recordId:'m',name:'Rice',purchaseUnit:'kg',unit:'kg',conversion:1,purchasePrice:20000,minimum:.002});
+  put('stock',{recordId:'stock',date:'2026-11-01',materialId:'m',type:'nhap',quantity:.001,unitCost:20000,note:''});
+  const balance=inventory(g.ctx.data_(),'2026-11-01')[0];assert.equal(balance.balance,.001);assert.equal(balance.replenish,.001);
+  const result=send(g,'mutate',{token,module:'counts',operation:'create',key:'stocktake-gram-fixture',record:{date:'2026-11-02',materialId:'m',opening:.001,closing:.002,otherOut:0,note:''}});assert.equal(result.ok,true,JSON.stringify(result));
+  assert.equal(g.ctx.rawRows_('stock')[1].quantity,.001);assert.equal(g.ctx.inventory(g.ctx.data_(),'2026-11-02')[0].balance,.002);
 });

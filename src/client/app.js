@@ -16,7 +16,7 @@ const el=(tag,text,className)=>{const n=document.createElement(tag);if(text!=nul
 const button=(text,fn,style='button')=>{const b=el('button',text,style);b.type='button';b.addEventListener('click',fn);return b;};
 const dateToday=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 function browserDeviceLabel(){const ua=globalThis.navigator?.userAgent||'',browser=/Edg\//.test(ua)?'Edge':/Firefox\//.test(ua)?'Firefox':/Chrome\//.test(ua)?'Chrome':/Safari\//.test(ua)?'Safari':'Trình duyệt',os=/Android/.test(ua)?'Android':/iPhone|iPad/.test(ua)?'iOS':/Windows/.test(ua)?'Windows':/Macintosh/.test(ua)?'macOS':/Linux/.test(ua)?'Linux':'Web';return browser+' · '+os;}
-const display=v=>v==null||v===''?'—':typeof v==='number'?v.toLocaleString('vi-VN',{maximumFractionDigits:2}):typeof v==='boolean'?(v?'Có':'Không'):Array.isArray(v)?v.length+' thành phần':String(v);
+const display=v=>v==null||v===''?'—':typeof v==='number'?v.toLocaleString('vi-VN',{maximumFractionDigits:6}):typeof v==='boolean'?(v?'Có':'Không'):Array.isArray(v)?v.length+' thành phần':String(v);
 const state={token:null,data:{},permissions:{},user:null,stamp:'',permissionVersion:null,demo:!globalThis.google?.script?.run&&new URLSearchParams(location.search).get('demo')==='1',from:dateToday(),to:dateToday(),route:'dashboard',search:'',busy:false,editor:null,uncertain:null,formKey:null};
 const can=(m,a)=>state.permissions[m]?.includes(a);
 function errorText(error){$('error').textContent=error.message||String(error);$('error').hidden=false;notifyError(error);}

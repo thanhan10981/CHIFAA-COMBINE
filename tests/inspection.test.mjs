@@ -25,3 +25,12 @@ test('Source inspection reports invalid records with physical row and never chan
   assert.equal(result.ok,true,JSON.stringify(result));assert.equal(result.data.total,1);assert.equal(result.data.rows[0].id,'bad');assert.equal(result.data.rows[0].row,2);assert.equal(result.data.readOnly,true);
   assert.equal(JSON.stringify(g.tables.get('materials').rows),before);
 });
+test('Backup verification and Drive copy never hold the global write lock; concurrent source changes refuse restore',()=>{
+  const g=gas();g.properties.set('BACKUP_FOLDER_ID','private-backup-folder');let held=false;
+  g.ctx.LockService.getScriptLock=()=>({tryLock(){assert.equal(held,false);held=true;return true;},releaseLock(){held=false;}});
+  const values=g.ctx.profileValues_;g.ctx.profileValues_=(name,range)=>{assert.equal(held,false);return values(name,range);};
+  const getFile=g.ctx.DriveApp.getFileById;g.ctx.DriveApp.getFileById=id=>{const file=getFile(id);return {...file,makeCopy(...args){assert.equal(held,false);const result=file.makeCopy(...args);g.tables.get('_Users').rows[1][2]='staff';return result;}};};
+  const result=g.ctx.backup_();assert.equal(result.verified,false);assert.equal(g.properties.has('LAST_BACKUP'),false);assert.equal(g.properties.has('BACKUP_LEASE'),false);
+  // The copy's checksum alone cannot override a failed consistency check at creation.
+  g.ctx.profileValues_=values;assert.equal(g.ctx.verifyBackup_(result.fileId).verified,false);
+});

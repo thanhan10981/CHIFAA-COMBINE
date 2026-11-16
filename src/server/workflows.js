@@ -28,7 +28,7 @@ function stockLinkEffects_(user,kind,row,data){
   }else if(kind==='count'){
     if(effective(data.counts).some(r=>r.materialId===row.materialId&&r.date>row.date))throw new Error('CONFLICT: Đã có kiểm kê sau ngày này; không thêm điều chỉnh hồi tố');
     if(effective(data.counts).some(r=>r.recordId!==row.recordId&&r.materialId===row.materialId&&r.date===row.date))throw new Error('CONFLICT: Một lần kiểm kê cuối ngày/vật tư; đảo phiếu cũ trước khi thay thế');
-    const balance=inventory(data,row.date).find(r=>r.materialId===row.materialId)?.balance||0,difference=round(row.closing-balance);snapshot.before=balance;snapshot.closing=row.closing;snapshot.difference=difference;
+    const balance=inventory(data,row.date).find(r=>r.materialId===row.materialId)?.balance||0,difference=quantityValue(row.closing-balance,balance);snapshot.before=balance;snapshot.closing=row.closing;snapshot.difference=difference;
     if(difference!==0)effects.push(newEffect_('stock',appRow_(user,{date:row.date,materialId:row.materialId,type:difference>0?'dieu-chinh-tang':'dieu-chinh-giam',quantity:Math.abs(difference),unitCost:'',note:'Điều chỉnh theo kiểm kê '+row.recordId})));
   }else throw new Error('VALIDATION: Loại liên kết không hợp lệ');
   effects.push(workflowMarker_(user,kind,row.recordId,row.date,{snapshot,effects:effects.map(e=>({module:e.module,id:e.after.recordId}))}));return effects;
@@ -48,7 +48,7 @@ function reverseLinkedEffects_(user,module,row,data){
 function attachProductionCosts_(rows,user){
   if(!rows.length)return rows;
   if(!allowed_(user,'stock','read')||!allowed_(user,'recipes','read'))return rows;
-  const markers=effective(workflowRows_()).filter(w=>w.kind==='production');return rows.map(row=>{const w=markers.find(w=>w.referenceId===row.recordId);return w?{...row,costSnapshot:workflowDetails_(w).snapshot}:row;});
+  const markers=new Map(effective(workflowRows_()).filter(w=>w.kind==='production').map(w=>[w.referenceId,w]));return rows.map(row=>{const w=markers.get(row.recordId);return w?{...row,costSnapshot:workflowDetails_(w).snapshot}:row;});
 }
 function attendanceOverlap_(row,rows){
   const span=r=>{const minute=t=>Number(t.slice(0,2))*60+Number(t.slice(3)),start=Date.parse(r.date)/60000+minute(r.start);let end=Date.parse(r.date)/60000+minute(r.end);if(end<=start)end+=1440;return {start,end};},a=span(row);
