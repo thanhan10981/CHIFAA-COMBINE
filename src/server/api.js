@@ -20,7 +20,8 @@ function rpc(action,args){
       actor=user.email;
       const readStamp=stamp_();
       if(['bootstrap','list','lookup','record','export','summary','strategySummary','periodSummary','settlements','financialSummary','workflowReports','kioskReport','orderPlans'].includes(action))assertReadable_();
-      if(action==='bootstrap')result=bootstrap_(user,args.force===true,args);
+      if(action==='requestStatus')result=locked_(()=>{const current=authenticate_(args.token),status=requestStatus_(current,args.key);audit_(current.email,'READ','rpc','requestStatus',null,{state:status.state});return status;});
+      else if(action==='bootstrap')result=bootstrap_(user,args.force===true,args);
       else if(action==='list')result=listPage_(user,args);
       else if(action==='lookup')result=lookupData_(user,args);
       else if(action==='record')result=recordData_(user,args);

@@ -1,3 +1,7 @@
+## 2026-11-17 — Master DEV30,260kiểm thử local
+
+Thêm chuỗi thu hồi→thực nhận→bán/hoàn tác ki-ốt; nhập mới/bù/bổ sung/điều chỉnh có preview/diff và giao dịch nguyên tử; liên kết đơn duyệt với kế hoạch hiện có. Bổ sung bảo mật phiên bền qua cache eviction, cảnh báo/quản lý phiên, ngân sách OAuth, bỏ lock lúc Google HTTP; kiểm tra nguồn/schema và backup có dấu kiểm tra. Sửa năng suất tổng/đạt, cột báo cáo, tỷ lệ hao hụt, chính xác tồn nhỏ và phụ cấp/ca trùng từ Sheets. Tối ưu index/cache API mới và tổng hợp lương Dashboard. Hai deployment DEV30/readback5file khớp; Google/ACL/visual/concurrency UAT còn chờ. Chi tiết docs/MASTER_RESULT_2026-11-17.md; không thay workbook gốc hoặc dữ liệu nghiệp vụ.
+
 ## 2026-11-16 — Styled Excel downloads
 
 - Replace CSV output with real .xlsx, Vietnamese headers, CHIFAA title/source, frozen headers, filters and typed dates/numbers.
@@ -232,3 +236,8 @@ Added shared mass/volume unit ratio validation and editor hints:kg->g1000,l/lit-
 ## MASTER final Dashboard payload follow-up - 2026-11-17
 
 Removed unused employee-level payroll array from Dashboard RPC; now at most three department aggregates, while payroll details stay behind paged payroll API. Backend shared report/targets/strategy calculations unchanged. Bumped read-model version.260/260tests,syntax80/build pass. Final valid distinct-employee fixtures output/data-loading-master-final.json:5000cold Dashboard42reads405246cells/8877bytes; durable snapshot5reads205cells/8879bytes. Cold payroll18reads150255cells/10875bytes,hot3reads84cells. Single Node/mock run, not Google SLA; old overlapping-worker benchmark fixture is historical and not a valid payroll-comparison baseline. Intermediate DEV29 deployed/readback verified; final small code change pending versioned rollout.
+
+
+## MASTER recovery QA follow-up - 2026-11-17
+
+Added authenticated owner-scoped requestStatus returning only journal state (no effects/records). Unknown kiosk key now survives SPA navigation; retries keep same operation/key. Entry/kiosk/order-link and legacy editor only unlock a replacement after confirmed ROLLED_BACK, never from NOT_FOUND/PREPARED/timeout. Late responses fenced by session/grant scope; logout/permission change clears private pending dialogs. Pending state is RAM, not a durable business outbox: hard reload/closing an unconfirmed write still requires checking source/journal before starting a new voucher.267/267 tests,syntax81/build pass, including cross-account/grant-change callback races. Live DEV30 until verified rollout of this source.

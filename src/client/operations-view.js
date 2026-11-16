@@ -67,6 +67,7 @@ async function renderMaintenance(){
     const history=make('Các lần chốt tài chính gần nhất'),reason=operationField(history,'Lý do hoàn tác (tối thiểu 5 ký tự)');history.append(makeTable(['Ngày','Loại','Nguồn','Thao tác'],(status.history||[]).map(w=>[w.date,w.kind,w.referenceId,button('Hoàn tác cả lô',async()=>{if(!confirm('Đảo toàn bộ phiếu đi kèm?'))return;try{await call('workflow',{kind:'undo',id:w.recordId,note:reason.value,key:crypto.randomUUID()});toast('Đã hoàn tác cả lô.');await load(true);route();}catch(e){errorText(e);}},'button danger')])));
   }catch(e){if(generation===viewGeneration)errorText(e);}
 }
+async function confirmedRollback(key){try{return (await call('requestStatus',{key})).state==='ROLLED_BACK';}catch(_){return false;}}
 function printBusinessDocument(title,content){
   document.getElementById('business-print')?.remove();const paper=el('section',null,'business-print');paper.id='business-print';const head=el('header'),logo=document.querySelector('.brand img')?.cloneNode(true);if(logo)head.append(logo);head.append(el('strong','CHIFAA COMBINE'),el('span','Vận hành & báo cáo'));paper.append(head,el('h1',title),el('p',(content?.dataset.period||state.from+' → '+state.to)+' · Người lập: '+state.user.email));if(content)paper.append(content.cloneNode(true));paper.append(el('footer','Người lập __________________    Người kiểm tra __________________    Người duyệt __________________'));document.body.append(paper);document.body.classList.add('printing-business');const clear=()=>{paper.remove();document.body.classList.remove('printing-business');};window.addEventListener('afterprint',clear,{once:true});try{window.print();}catch(e){clear();errorText(e);}
 }
@@ -82,4 +83,4 @@ function printRecord(module,row){
   if(row.costSnapshot)content.append(el('p','Giá vốn đã chốt: '+display(row.costSnapshot.total)+' đ'),makeTable(['Vật tư','Xuất theo định mức'],Object.entries(row.costSnapshot.raw||{}).map(([id,q])=>[refValue({ref:'materials'},id),q])));
   printBusinessDocument(module==='cash'?(row.direction==='thu'?'Phiếu thu':'Phiếu chi'):SCHEMA[module].title,content);
 }
-export {renderFinancialOperations,renderMaintenance,printBusinessDocument,printRecord};
+export {renderFinancialOperations,renderMaintenance,printBusinessDocument,printRecord,confirmedRollback};

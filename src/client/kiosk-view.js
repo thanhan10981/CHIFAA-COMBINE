@@ -1,17 +1,29 @@
+import {confirmedRollback} from './operations-view.js';
 function renderKiosk(){
   if(state.demo){$('view').append(el('p','Ki-ốt cần dữ liệu thực và xác thực máy chủ.','notice'));return;}
-  const generation=viewGeneration,host=el('section',null,'card pad'),fields=el('div',null,'toolbar'),content=el('div');
+  const generation=viewGeneration,token=state.token,scope=state.grantKey,host=el('section',null,'card pad'),fields=el('div',null,'toolbar'),content=el('div');
   const from=operationField(fields,'Từ ngày','date',state.from),to=operationField(fields,'Đến ngày','date',state.to);
   const date=operationField(fields,'Ngày xử lý','date',state.to),note=operationField(fields,'Lý do / xác nhận kiểm tra');
   host.append(el('p','Duyệt hàng thu hồi trước, xác nhận thực nhận sau. Chỉ ghi doanh thu ki-ốt khi đã bán. Giá vốn, lô và hạn dùng chưa được nghiệm thu; tồn ở đây chỉ là số lượng.','notice'),fields,content);$('view').append(host);
-  let pending=null;
+  let pending=state.kioskPending||null,inFlight=false;
+  const retry=button('Kiểm tra lại cùng lần ghi',()=>submit(state.kioskPending||pending));retry.hidden=!pending;fields.append(retry);
+  const clearPending=args=>{if(state.kioskPending?.key===args.key)state.kioskPending=null;pending=state.kioskPending||null;retry.hidden=!pending;};
+  const submit=async args=>{
+    if(inFlight||!args)return;if(state.kioskPending&&state.kioskPending.key!==args.key){toast('Cần kiểm tra yêu cầu hiện đang chờ trước.','warning');return;}inFlight=true;
+    try{await call('kiosk',args);if(token!==state.token||scope!==state.grantKey)return;clearPending(args);toast('Đã ghi nhận nghiệp vụ ki-ốt.');if(generation===viewGeneration)await refresh();}
+    catch(e){if(token!==state.token||scope!==state.grantKey)return;
+      if(['TIMEOUT','NETWORK','BUSY','RECOVERY'].includes(e.code)){
+        const rolledBack=await confirmedRollback(args.key);if(token!==state.token||scope!==state.grantKey)return;
+        if(rolledBack){clearPending(args);toast('Máy chủ xác nhận đã hoàn tác. Đối chiếu rồi lập lại nếu cần.','warning');if(generation===viewGeneration)await refresh(0,0,true);return;}
+        pending=state.kioskPending=args;retry.hidden=false;content.prepend(el('p','Chưa rõ kết quả; dùng lại đúng yêu cầu để tránh ghi hai lần.','notice'));
+      }else clearPending(args);errorText(e);
+    }finally{inFlight=false;}
+  };
   const write=async(kind,row,extra={})=>{
     if(pending){toast('Có lần ghi chưa rõ kết quả. Kiểm tra lại cùng yêu cầu trước.','warning');return;}
-    if(!confirm('Xác nhận '+kind+' lô hàng này?'))return;
+    if(!confirm('Xác nhận '+({approve:'duyệt thu hồi',receive:'thực nhận',reject:'từ chối nhận',sell:'lập phiếu bán',undo:'hoàn tác'})[kind]+' lô hàng này?'))return;
     const args={kind,id:kind==='approve'?row.id:row.approvalId||row.id,sourceHash:row.hash,date:date.value,note:note.value,...extra,key:crypto.randomUUID()};
-    pending=args;let inFlight=false;
-    const submit=async()=>{if(inFlight)return;inFlight=true;try{await call('kiosk',args);pending=null;toast('Đã ghi nhận nghiệp vụ ki-ốt.');await refresh();}catch(e){if(['TIMEOUT','NETWORK','BUSY','RECOVERY'].includes(e.code)){pending=args;const retry=button('Kiểm tra lại cùng lần ghi',submit);content.prepend(el('p','Chưa rõ kết quả; dùng lại đúng yêu cầu để tránh ghi hai lần.','notice'),retry);}else pending=null;errorText(e);}finally{inFlight=false;}};
-    await submit();
+    pending=state.kioskPending=args;retry.hidden=false;await submit(args);
   };
   const refresh=async(offset=0,inventoryOffset=0,force=false)=>{
     const loading=el('div',null,'skeleton');content.replaceChildren(loading);

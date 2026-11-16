@@ -5,7 +5,7 @@ import { rpcCall, setRpcSession, clearRpcSession, setRpcScope, restoreRpcSession
 import { NAV_SECTIONS, NAV_ICONS } from './navigation.js';
 import {createPermissionPicker} from './permissions.js';
 import {canAccessPage,routeReadModules} from '../shared/access.js';
-import {renderFinancialOperations,renderMaintenance,printBusinessDocument,printRecord} from './operations-view.js';
+import {renderFinancialOperations,renderMaintenance,printBusinessDocument,printRecord,confirmedRollback} from './operations-view.js';
 import {renderKiosk} from './kiosk-view.js';
 import {openEntryCommand} from './entry-view.js';
 import {openOrderPlan} from './order-planning-view.js';
@@ -51,7 +51,7 @@ async function load(force=false){
   const token=state.token,b=await call('bootstrap',{force,shell:true});
   if(token!==state.token)throw Object.assign(new Error('Phiên đăng nhập đã thay đổi.'),{code:'AUTH'});
   const grantKey=JSON.stringify([b.user,b.permissions,b.permissionVersion]),same=state.grantKey===grantKey;
-  if(!same&&state.grantKey){document.querySelectorAll("[data-private-dialog]").forEach(n=>n.remove());state.entryPending=null;state.orderPlanPending=null;state.uncertain=null;state.actionRetries=new Map();state.editor=null;if($('editor').open)$('editor').close();$('form-fields').replaceChildren();}
+  if(!same&&state.grantKey){state.saving=false;state.pendingWorkflow=null;document.querySelectorAll("[data-private-dialog]").forEach(n=>n.remove());state.entryPending=null;state.orderPlanPending=null;state.kioskPending=null;state.uncertain=null;state.actionRetries=new Map();state.editor=null;if($('editor').open)$('editor').close();$('form-fields').replaceChildren();}
   const previous=state.data,previousPartial=state.partialModules||{},previousVersions=state.moduleVersions||{};
   if(!same||force){state.refMaps={};state.lookups={};state.lookupVersions={};state.lookupPending=new Map();state.pageRefresh=new Map();state.pageCache=new Map();state.summaryCache=new Map();state.strategyCache=new Map();state.strategyDom=new Map();state.strategyRenderedKey=null;state.dataEpoch=(state.dataEpoch||0)+1;}
   state.data=b.data;state.permissions=b.permissions;state.user=b.user;state.stamp=b.stamp;state.permissionVersion=b.permissionVersion;state.accountingApproved=b.accountingApproved;
@@ -305,23 +305,27 @@ function formRecord(module){
   }return result;
 }
 $('record-form').addEventListener('submit',async event=>{
-  event.preventDefault();if(!state.editor||state.saving)return;const {module,row}=state.editor,token=state.token,fields=[...$('form-fields').querySelectorAll('input,select,button')].map(input=>[input,input.disabled]);let submitted,confirmed=false;
+  event.preventDefault();if(!state.editor||state.saving)return;const {module,row}=state.editor,token=state.token,scope=state.grantKey,fields=[...$('form-fields').querySelectorAll('input,select,button')].map(input=>[input,input.disabled]);let submitted,confirmed=false;
   state.saving=true;$('submit-record').disabled=true;$('submit-record').textContent='Đang lưu…';$('submit-record').classList.add('is-loading');$('form-error').hidden=true;
   try{
     const record=state.uncertain?.record||formRecord(module);
     const request=state.uncertain||{module,operation:row?'update':'create',id:row?.recordId,expectedVersion:row?.version,expectedHash:row?._hash,record,key:state.formKey};
     submitted=JSON.parse(JSON.stringify(request));for(const [input]of fields)input.disabled=true;
-    await call('mutate',submitted);confirmed=true;if(token!==state.token)return;state.uncertain=null;$('editor').close();toast(state.demo?'Đã lưu trong RAM bản xem thử.':'Máy chủ đã xác nhận lưu phiếu.');await load();validateData();route();
+    await call('mutate',submitted);confirmed=true;if(token!==state.token||scope!==state.grantKey)return;state.uncertain=null;$('editor').close();toast(state.demo?'Đã lưu trong RAM bản xem thử.':'Máy chủ đã xác nhận lưu phiếu.');await load();validateData();route();
   }catch(e){
-    if(token!==state.token)return;
+    if(token!==state.token||scope!==state.grantKey)return;
     if(confirmed){errorText(new Error('Phiếu đã lưu thành công; chưa tải được dữ liệu mới. Bấm Đồng bộ để cập nhật.'));return;}
     $('form-error').textContent=e.message;$('form-error').hidden=false;
+    const rolledBack=e.code==='RECOVERY'&&submitted&&await confirmedRollback(submitted.key);if(token!==state.token||scope!==state.grantKey)return;
+    if(rolledBack){
+      state.uncertain=null;state.formKey=crypto.randomUUID();for(const pair of fields)pair[1]=module==='orders'&&pair[0].name==='status';$('submit-record').textContent='Kiểm tra và lưu lại';$('form-error').textContent='Máy chủ xác nhận đã hoàn tác lần ghi. Nội dung nhập vẫn giữ; kiểm tra rồi bấm lưu nếu cần.';toast('Lần ghi trước đã được hoàn tác, chưa có phiếu mới.','warning');return;
+    }
     notifyError(e);
     if(['TIMEOUT','NETWORK'].includes(e.code)){
       state.uncertain ||= submitted;
       $('submit-record').textContent='Kiểm tra lại cùng phiếu';for(const input of $('form-fields').querySelectorAll('input,select,button'))input.disabled=true;
     }else{state.formKey=crypto.randomUUID();$('submit-record').textContent='Lưu lại phiếu';}
-  }finally{if(token===state.token){state.saving=false;$('submit-record').disabled=false;$('submit-record').classList.remove('is-loading');if(!state.uncertain)for(const [input,disabled]of fields)input.disabled=disabled;}}
+  }finally{if(token===state.token&&scope===state.grantKey){state.saving=false;$('submit-record').disabled=false;$('submit-record').classList.remove('is-loading');if(!state.uncertain)for(const [input,disabled]of fields)input.disabled=disabled;}}
 });
 async function changeRecord(module,row,operation){
   const title=operation==='reverse'?'Đảo phiếu này? Phiếu gốc vẫn được lưu trong nhật ký.':operation==='delete'?'Xóa bản ghi này?':operation==='reject'?'Từ chối đơn này?':'Duyệt đơn này để đưa vào nhu cầu nguyên liệu?';
@@ -459,7 +463,7 @@ async function exportModule(module,control){
   }catch(e){errorText(e);}finally{state.exporting=false;if(control){control.disabled=false;control.classList.remove('is-loading');}}
 }
 async function refresh(force=true){if(state.busy||$('editor').open){if(force)toast('Hãy hoàn tất phiếu đang mở hoặc đợi thao tác hiện tại.','info');return;}state.busy=true;$('refresh').disabled=true;$('refresh').classList.add('is-loading');try{await load(force);nav();route();$('connection').textContent=state.demo?'Xem thử · lưu trong RAM':'Đã đồng bộ '+new Date().toLocaleTimeString('vi-VN');if(force)toast(state.demo?'Đã làm mới bản xem thử trên máy.':'Đã tải dữ liệu mới nhất từ Sheets.');}catch(e){if(e.code==='AUTH'){localLogout();toast('Phiên đã hết hiệu lực. Vui lòng đăng nhập lại.','warning');}else errorText(e);}finally{state.busy=false;$('refresh').disabled=false;$('refresh').classList.remove('is-loading');}}
-function localLogout(){document.querySelectorAll("[data-private-dialog]").forEach(n=>n.remove());state.entryPending=null;state.orderPlanPending=null;state.lookups={};state.lookupVersions={};state.lookupPending=new Map();state.refMaps={};state.pendingWorkflow=null;state.saving=false;state.uncertain=null;state.actionRetries=new Map();state.pageCache=new Map();state.summaryCache=new Map();state.viewCache=new Map();state.strategyCache=new Map();state.strategyDom=new Map();state.strategyRenderedKey=null;state.grantKey=null;state.moduleVersions={};clearToasts();clearRpcSession();state.disconnected=false;state.token=null;state.data={};state.permissions={};state.user=null;state.issues=[];state.loginAttempt=null;if($('editor').open)$('editor').close();$('form-fields').replaceChildren();$('view').replaceChildren();$('navigation').replaceChildren();$('workspace').hidden=true;$('login').hidden=false;$('login-status').textContent='Đã đăng xuất.';if(!state.demo)prepareLogin();}
+function localLogout(){document.querySelectorAll("[data-private-dialog]").forEach(n=>n.remove());state.entryPending=null;state.orderPlanPending=null;state.kioskPending=null;state.lookups={};state.lookupVersions={};state.lookupPending=new Map();state.refMaps={};state.pendingWorkflow=null;state.saving=false;state.uncertain=null;state.actionRetries=new Map();state.pageCache=new Map();state.summaryCache=new Map();state.viewCache=new Map();state.strategyCache=new Map();state.strategyDom=new Map();state.strategyRenderedKey=null;state.grantKey=null;state.moduleVersions={};clearToasts();clearRpcSession();state.disconnected=false;state.token=null;state.data={};state.permissions={};state.user=null;state.issues=[];state.loginAttempt=null;if($('editor').open)$('editor').close();$('form-fields').replaceChildren();$('view').replaceChildren();$('navigation').replaceChildren();$('workspace').hidden=true;$('login').hidden=false;$('login-status').textContent='Đã đăng xuất.';if(!state.demo)prepareLogin();}
 $('logout').onclick=async()=>{try{if(!state.demo)await call('logout');localLogout();toast('Đã đăng xuất.','info');}catch(e){errorText(e);}};
 $('refresh').onclick=()=>refresh(true);$('menu-toggle').onclick=()=>$('workspace').classList.toggle('menu-open');$('backdrop').onclick=()=>$('workspace').classList.remove('menu-open');window.addEventListener('hashchange',()=>{if(state.user)route();});
 let syncInFlight=false;

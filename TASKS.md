@@ -1,5 +1,12 @@
 # Theo dõi công việc
 
+## Checkpoint master hiện tại — DEV30 — 17/11/2026
+
+- M01 bảo mật/phiên, M02 thu hồi ki-ốt, M03 bốn chế độ nhập, M04 KPI, M05 nguồn/backup, M06 liên kết đơn, M07 UOM/schema: đã có mã và kiểm thử local theo phạm vi ghi tại docs/MASTER_AUDIT_2026-11-17.md.
+- M08 tích hợp:260tests/syntax80/build/bundle đạt; hai DEV@30 và readback5file đã xác minh. Không đổi dữ liệu/ACL/trigger hoặc phát hành Portal riêng.
+- Chưa hoàn tất Google/visual/ACL/2–5–8user UAT, migration nguồn gốc, giá trị/lô/hạn ki-ốt, chính sách còn chờ. Matrix vẫn PARTIAL cho tiêu chí chưa đủ bằng chứng; không gán PASS tự động.
+- Bàn giao và bước tiếp theo: docs/MASTER_RESULT_2026-11-17.md, HANDOFF.md, DECISIONS_REQUIRED.md. Các mục cũ bên dưới là lịch sử tiến độ.
+
 Danh sách T00–T19 dưới đây được lập lại từ 3 prompt vì người dùng chưa cung cấp TASKS.md gốc. DONE_LOCAL chỉ nghĩa đã viết/kiểm tra tại máy; chưa thay cho nghiệm thu Google hoặc khách hàng.
 
 | Task | Nội dung | Trạng thái |
@@ -152,3 +159,8 @@ Added shared mass/volume unit ratio validation and editor hints:kg->g1000,l/lit-
 ## MASTER final Dashboard payload follow-up - 2026-11-17
 
 Removed unused employee-level payroll array from Dashboard RPC; now at most three department aggregates, while payroll details stay behind paged payroll API. Backend shared report/targets/strategy calculations unchanged. Bumped read-model version.260/260tests,syntax80/build pass. Final valid distinct-employee fixtures output/data-loading-master-final.json:5000cold Dashboard42reads405246cells/8877bytes; durable snapshot5reads205cells/8879bytes. Cold payroll18reads150255cells/10875bytes,hot3reads84cells. Single Node/mock run, not Google SLA; old overlapping-worker benchmark fixture is historical and not a valid payroll-comparison baseline. Intermediate DEV29 deployed/readback verified; final small code change pending versioned rollout.
+
+
+## MASTER recovery QA follow-up - 2026-11-17
+
+Added authenticated owner-scoped requestStatus returning only journal state (no effects/records). Unknown kiosk key now survives SPA navigation; retries keep same operation/key. Entry/kiosk/order-link and legacy editor only unlock a replacement after confirmed ROLLED_BACK, never from NOT_FOUND/PREPARED/timeout. Late responses fenced by session/grant scope; logout/permission change clears private pending dialogs. Pending state is RAM, not a durable business outbox: hard reload/closing an unconfirmed write still requires checking source/journal before starting a new voucher.267/267 tests,syntax81/build pass, including cross-account/grant-change callback races. Live DEV30 until verified rollout of this source.

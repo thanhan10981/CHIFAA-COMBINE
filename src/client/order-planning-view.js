@@ -1,11 +1,15 @@
+import {confirmedRollback} from './operations-view.js';
 async function openOrderPlan(row){
   const generation=viewGeneration,token=state.token,scope=state.grantKey,dialog=el('dialog'),grid=el('div',null,'form-grid'),result=el('div',null,'pad');dialog.dataset.privateDialog='order-plan';
   const from=operationField(grid,'Kế hoạch từ ngày','date',row.date),to=operationField(grid,'Đến ngày','date',row.date),note=operationField(grid,'Lý do liên kết / gỡ liên kết');let busy=false;
   dialog.append(el('header','Liên kết đơn đã duyệt với kế hoạch'),el('p','Liên kết phân bổ số đơn vào kế hoạch đã nhập; không tăng sản lượng, không ghi doanh thu hoặc xuất kho. Một đơn liên kết một phiếu kế hoạch; cần tách đơn phải đối soát riêng.','notice'),grid,result);document.body.append(dialog);
   const write=async args=>{
     if(busy||!args)return;if(state.orderPlanPending&&args!==state.orderPlanPending){toast('Kiểm tra lại lần liên kết chưa rõ kết quả trước.','warning');return;}busy=true;state.orderPlanPending=args;
-    try{await call('linkOrderPlan',args);if(token!==state.token||scope!==state.grantKey)return;state.orderPlanPending=null;toast('Đã ghi nhận liên kết kế hoạch.');await refresh();}
-    catch(e){if(token!==state.token||scope!==state.grantKey)return;if(!['TIMEOUT','NETWORK','BUSY','RECOVERY'].includes(e.code))state.orderPlanPending=null;notifyError(e);if(state.orderPlanPending)result.prepend(button('Kiểm tra lại cùng liên kết',()=>write(state.orderPlanPending)));}
+    try{await call('linkOrderPlan',args);if(token!==state.token||scope!==state.grantKey)return;if(state.orderPlanPending?.key===args.key)state.orderPlanPending=null;toast('Đã ghi nhận liên kết kế hoạch.');await refresh();}
+    catch(e){if(token!==state.token||scope!==state.grantKey)return;
+      const rolledBack=['TIMEOUT','NETWORK','BUSY','RECOVERY'].includes(e.code)&&await confirmedRollback(args.key);if(token!==state.token||scope!==state.grantKey)return;
+      if(rolledBack){if(state.orderPlanPending?.key===args.key)state.orderPlanPending=null;toast('Máy chủ xác nhận đã hoàn tác. Có thể kiểm tra và liên kết lại.','warning');await refresh(0,true);return;}
+      if(!['TIMEOUT','NETWORK','BUSY','RECOVERY'].includes(e.code)&&state.orderPlanPending?.key===args.key)state.orderPlanPending=null;notifyError(e);if(state.orderPlanPending)result.prepend(button('Kiểm tra lại cùng liên kết',()=>write(state.orderPlanPending)));}
     finally{busy=false;}
   };
   const refresh=async(offset=0,force=false)=>{

@@ -1,3 +1,4 @@
+import {confirmedRollback} from './operations-view.js';
 async function openEntryCommand(module,row){
   if(state.demo){toast('Nhập có kiểm tra cần máy chủ Apps Script.','info');return;}
   if(state.entryPending){module=state.entryPending.module;row=state.entryPending.source;}
@@ -32,8 +33,12 @@ async function openEntryCommand(module,row){
         const response=await call('entry',{...args,preview:true});if(token!==state.token||scope!==state.grantKey)return;prepared={...args,digest:response.digest,key:crypto.randomUUID()};
         result.replaceChildren(el('p','Phạm vi: '+({ 'replace-one-voucher':'thay đúng một phiếu gốc','additional-voucher':'thêm phiếu bổ sung riêng','new-voucher':'tạo phiếu mới'})[response.preview.scope],'notice'),makeTable(['Trường','Trước','Sau'],response.preview.diff.map(d=>[SCHEMA[module].fields[d.field]?.label||d.field,d.before,d.after])),el('p','Chưa ghi dữ liệu. Kiểm tra bảng rồi bấm Xác nhận ghi.','muted'));submit.textContent='Xác nhận ghi';return;
       }
-      const request=prepared;state.entryPending={module,source:row,request};await call('entry',request);confirmed=true;if(token!==state.token||scope!==state.grantKey)return;state.entryPending=null;dialog.remove();toast('Máy chủ đã xác nhận ghi phiếu và nhật ký.');await load();route();
+      const request=prepared;state.entryPending={module,source:row,request};await call('entry',request);confirmed=true;if(token!==state.token||scope!==state.grantKey)return;if(state.entryPending?.request.key===request.key)state.entryPending=null;dialog.remove();toast('Máy chủ đã xác nhận ghi phiếu và nhật ký.');await load();route();
     }catch(e){if(token!==state.token||scope!==state.grantKey)return;if(confirmed){toast('Phiếu đã ghi; bấm Đồng bộ để tải lại.','warning');return;}
+      const rolledBack=prepared&&state.entryPending&&['TIMEOUT','NETWORK','BUSY','RECOVERY'].includes(e.code)&&await confirmedRollback(prepared.key);if(token!==state.token||scope!==state.grantKey)return;
+      if(rolledBack){
+        if(state.entryPending?.request.key===prepared.key)state.entryPending=null;prepared=null;submit.textContent='Xem trước';result.replaceChildren(el('p','Máy chủ xác nhận đã hoàn tác lần ghi. Kiểm tra lại rồi Xem trước để lập yêu cầu mới; chưa có phiếu mới được ghi.','notice'));return;
+      }
       if(state.entryPending&&['TIMEOUT','NETWORK','BUSY','RECOVERY'].includes(e.code)){submit.textContent='Kiểm tra lại cùng lần ghi';result.prepend(el('p','Chưa rõ kết quả. Giữ nguyên yêu cầu và kiểm tra lại.','notice'));}
       else{state.entryPending=null;prepared=null;submit.textContent='Xem trước';}notifyError(e);
     }finally{busy=false;freeze(!!state.entryPending);}

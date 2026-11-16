@@ -1,3 +1,17 @@
+# HANDOFF hiện tại — 17/11/2026 — DEV30
+
+Đã tiếp tục master M00–M08, không viết lại ứng dụng. Hai deployment DEV hiện có@30; readback đủ5file khớp, lịch sử@2 không đổi. Source ứng dụng chốt tại53a90f3; các commit M01–M08 trước đó giữ từng checkpoint.
+
+260/260 kiểm thử local, syntax80, build và bundle parse đạt. Xem [bàn giao hiện tại](docs/MASTER_RESULT_2026-11-17.md), [ma trận](REQUIREMENT_MATRIX.md), [cổng còn chờ](DECISIONS_REQUIRED.md). Kiosk, entry preview/correction, liên kết đơn, kiểm tra nguồn/schema/backup và bảo mật phiên đã có backend/UI/tests. Không thay dữ liệu/ACL/trigger/tài nguyên Google nghiệp vụ hoặc hai workbook gốc.
+
+Google UAT chưa đạt: CUA trả không có browser/app; thử kết nối Web App nhận `No browser is available`. Không tự báo đã thử Admin/kế toán thật, popup, ACL, Drive restore hay tải đồng thời. Bước tiếp theo cần browser/tài khoản Google và nguồn/policy ở DECISIONS_REQUIRED; không bật kế toán chính thức.
+
+Evidence local: output/master-m08-tests.txt; output/master-benchmark-final.json; output/data-loading-master-final.json; output/performance-client.json. Evidence deploy: output/chifaa-dev/master-version30-readback.json, master-final-deployments.txt. Bảo toàn mọi file dirty/untracked có sẵn ngoài task.
+
+Rollback có điều kiện: đọc DEPLOYMENT_GUIDE; code28 chưa hiểu đầy đủ ledger29/30 nên phải dừng ghi và đối soát tương thích trước, không xóa lịch sử.
+
+## Lịch sử các phiên trước (các số version dưới đây là lịch sử)
+
 ## Logic completeness audit - no deployment - 2026-11-16
 
 User asked to inspect remaining missing logic. Audited current v14 source, shared domain/schema, all36 routes, sidebar access mapping, mutation journal, maintenance/Portal wiring and existing draft-parity/tasks docs. No application business logic changes, live Google reads/writes, account changes or new deployment in this turn; live DEV stays14.
@@ -378,3 +392,8 @@ Added shared mass/volume unit ratio validation and editor hints:kg->g1000,l/lit-
 ## MASTER final Dashboard payload follow-up - 2026-11-17
 
 Removed unused employee-level payroll array from Dashboard RPC; now at most three department aggregates, while payroll details stay behind paged payroll API. Backend shared report/targets/strategy calculations unchanged. Bumped read-model version.260/260tests,syntax80/build pass. Final valid distinct-employee fixtures output/data-loading-master-final.json:5000cold Dashboard42reads405246cells/8877bytes; durable snapshot5reads205cells/8879bytes. Cold payroll18reads150255cells/10875bytes,hot3reads84cells. Single Node/mock run, not Google SLA; old overlapping-worker benchmark fixture is historical and not a valid payroll-comparison baseline. Intermediate DEV29 deployed/readback verified; final small code change pending versioned rollout.
+
+
+## MASTER recovery QA follow-up - 2026-11-17
+
+Added authenticated owner-scoped requestStatus returning only journal state (no effects/records). Unknown kiosk key now survives SPA navigation; retries keep same operation/key. Entry/kiosk/order-link and legacy editor only unlock a replacement after confirmed ROLLED_BACK, never from NOT_FOUND/PREPARED/timeout. Late responses fenced by session/grant scope; logout/permission change clears private pending dialogs. Pending state is RAM, not a durable business outbox: hard reload/closing an unconfirmed write still requires checking source/journal before starting a new voucher.267/267 tests,syntax81/build pass, including cross-account/grant-change callback races. Live DEV30 until verified rollout of this source.

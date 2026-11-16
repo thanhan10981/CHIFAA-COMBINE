@@ -1,5 +1,9 @@
 # Kết quả kiểm thử master session
 
+## Hiện tại — DEV30
+
+260/260 local tests,0fail; syntax80/build/bundle parse đạt. Readback30 khớp5file; CLI xác nhận haiDEV@30, lịch sử@2 giữ nguyên. Chỉ xác minh mã triển khai, không xác minh vận hành Google. Kết nối browser thất bại `No browser is available`; hai Gmail/ACL/popup/Drive/trigger/concurrency chưa chạy. Case mới và evidence: docs/MASTER_RESULT_2026-11-17.md; các checkpoint bên dưới giữ kết quả tại thời điểm chạy.
+
 Baseline17/11/2026: **224pass/0fail**, `npm test`, log output/master-baseline-tests.txt. DEV28 đã đọc lại5file ở checkpoint trước. Unit/DOM/GAS mock dùng fixture, không gọi Google OAuth/Sheets thật.
 
 Google auth hai Gmail, ACL, trigger lag, concurrency2/5/8/10, mobile/browser visual và restore thật vẫn NOT_VERIFIED. Không gán PASS cho25tiêu chí master chỉ vì có224test local. Các nhóm mới sẽ cập nhật sau từng task; TEST_REPORT.md giữ lịch sử acceptance93ca riêng.
@@ -48,3 +52,8 @@ Added shared mass/volume unit ratio validation and editor hints:kg->g1000,l/lit-
 ## MASTER final Dashboard payload follow-up - 2026-11-17
 
 Removed unused employee-level payroll array from Dashboard RPC; now at most three department aggregates, while payroll details stay behind paged payroll API. Backend shared report/targets/strategy calculations unchanged. Bumped read-model version.260/260tests,syntax80/build pass. Final valid distinct-employee fixtures output/data-loading-master-final.json:5000cold Dashboard42reads405246cells/8877bytes; durable snapshot5reads205cells/8879bytes. Cold payroll18reads150255cells/10875bytes,hot3reads84cells. Single Node/mock run, not Google SLA; old overlapping-worker benchmark fixture is historical and not a valid payroll-comparison baseline. Intermediate DEV29 deployed/readback verified; final small code change pending versioned rollout.
+
+
+## MASTER recovery QA follow-up - 2026-11-17
+
+Added authenticated owner-scoped requestStatus returning only journal state (no effects/records). Unknown kiosk key now survives SPA navigation; retries keep same operation/key. Entry/kiosk/order-link and legacy editor only unlock a replacement after confirmed ROLLED_BACK, never from NOT_FOUND/PREPARED/timeout. Late responses fenced by session/grant scope; logout/permission change clears private pending dialogs. Pending state is RAM, not a durable business outbox: hard reload/closing an unconfirmed write still requires checking source/journal before starting a new voucher.267/267 tests,syntax81/build pass, including cross-account/grant-change callback races. Live DEV30 until verified rollout of this source.

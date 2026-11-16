@@ -15,6 +15,12 @@ function sessionCredentials_(token){
   return credentials;
 }
 function clearSessionCredentials_(hash){props_().deleteProperty('session-key:'+hash);try{CacheService.getScriptCache().remove('session-key:'+hash);}catch(_){}}
+function requestStatus_(user,key){
+  if(typeof key!=='string'||!/^[\w-]{16,100}$/.test(key))throw new Error('VALIDATION: Mã yêu cầu không hợp lệ');
+  const sheet=table_('_Requests'),last=sheet.getLastRow(),rows=last>1?profileValues_('request-status',sheet.getRange(2,1,last-1,2)):[],index=rows.findIndex(r=>r[0]===key);
+  if(index<0)return {state:'NOT_FOUND'};if(rows[index][1]!==user.email&&user.role!=='admin')throw new Error('FORBIDDEN: Không được xem yêu cầu của tài khoản khác');
+  const state=profileValues_('request-status',sheet.getRange(index+2,4,1,1))[0][0];return {state:['APPLIED','PREPARED','ROLLED_BACK'].includes(state)?state:'RECOVERY_REQUIRED'};
+}
 function oauthStartRate_(){
   const limit=Number(props_().getProperty('OAUTH_STARTS_PER_MINUTE')||30);if(!Number.isInteger(limit)||limit<10||limit>120)throw new Error('CONFIG: OAUTH_STARTS_PER_MINUTE phải từ10đến120');
   const lock=LockService.getScriptLock();if(!lock.tryLock(100))throw new Error('BUSY: Đang xử lý đăng nhập. Thử lại sau ít giây');

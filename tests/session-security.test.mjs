@@ -32,6 +32,13 @@ test('Durable app-session keys respect expiry/configuration and are removed by r
   g.ctx.recoverAdminSessions_();assert.equal(g.properties.has(g.ctx.sessionKey_(token)),false);
   const h=gas(),current=admin(h),proof=signed(h,'sync',{token:current}),key=h.ctx.sessionKey_(current),credentials=JSON.parse(h.properties.get(key));credentials.expires=new Date(Date.now()-1).toISOString();h.properties.set(key,JSON.stringify(credentials));h.cache.clear();assert.equal(h.ctx.rpc('sync',proof).error.code,'AUTH');
 });
+test('An existing verified cached session migrates once without extending expiry; bounded key index fits property limit',()=>{
+  const g=gas(),token=admin(g),key=g.ctx.sessionKey_(token),legacy=JSON.parse(g.cache.get(key)),request=signed(g,'sync',{token});delete legacy.durable;g.cache.set(key,JSON.stringify(legacy));g.properties.delete(key);
+  assert.equal(g.ctx.rpc('sync',request).ok,true);const migrated=JSON.parse(g.properties.get(key));assert.equal(migrated.durable,true);assert.equal(migrated.expires,legacy.expires);
+  for(let i=0;i<79;i++)g.ctx.storeSessionCredentials_('fixture-token-'+i,migrated);
+  assert.ok(Buffer.byteLength(g.properties.get('SESSION_KEY_INDEX'))<9000);assert.throws(()=>g.ctx.storeSessionCredentials_('overflow-token',migrated),/SESSION/);
+  assert.throws(()=>g.ctx.authenticate_('fixture-token-0'.repeat(3)),/AUTH/);assert.equal(g.ctx.authenticate_(token).email,'admin@example.com');
+});
 test('logout and Admin revocation immediately block old signed requests',()=>{
   const g=gas(),token=admin(g),acct=accountant(g),row=g.ctx.rowsPlain_('_Sessions').find(r=>r[1]==='accountant@example.com');
   const pending=signed(g,'bootstrap',{token:acct});assert.equal(send(g,'admin',{token,operation:'revoke',id:row[0]}).ok,true);
