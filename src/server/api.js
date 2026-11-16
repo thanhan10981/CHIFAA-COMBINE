@@ -31,6 +31,7 @@ function rpc(action,args){
       else if(action==='sync')result={stamp:stamp_(),moduleVersions:permittedVersions_(user),permissionVersion:user.permissionVersion,grants:hash_({role:user.role,permissions:user.permissions})};
       else if(action==='logout')result=locked_(()=>logout_(user,args.token));
       else if(action==='mutate')result=timed_('mutate',()=>locked_(()=>mutate_(authenticate_(args.token),args)));
+      else if(action==='entry')result=locked_(()=>entry_(authenticate_(args.token),args));
       else if(action==='kioskReport')result=kioskReport_(user,args);
       else if(action==='kiosk')result=locked_(()=>kioskWorkflow_(authenticate_(args.token),args));
       else if(action==='workflow')result=locked_(()=>workflow_(authenticate_(args.token),args));
@@ -99,14 +100,15 @@ function listPageData_(user,args,offset,limit,stamp){
   let page=rows.slice(offset,offset+limit).map(publicRow_);if(args.module==='production')page=attachProductionCosts_(page,user);if(args.module==='debts')page=attachDebtAllocations_(page);if(args.module==='loans')page=attachLoanPeriods_(page);
   if(stamp!==stamp_())throw new Error('CONFLICT: Dữ liệu vừa đổi. Đồng bộ rồi thử lại.');return {rows:page,total:rows.length,offset,next:offset+limit<rows.length?offset+limit:null,stamp};
 }
-function mutate_(user,args){
-  const module=args.module,action=args.operation;
+function mutationAccess_(user,module,action){
   require_(user,module,['reverse','reject'].includes(action)?'approve':action);
   if(user.role!=='admin'&&Array.isArray(user.permissions?._routes)&&!ROUTES.some(r=>r[2]===module&&user.permissions._routes.includes(r[0])))throw new Error('FORBIDDEN: Quyền phiếu liên kết chỉ dùng qua nghiệp vụ nguồn, không được ghi trực tiếp sổ này');
+}
+function mutationEffects_(user,args,providedData){
+  const module=args.module,action=args.operation;mutationAccess_(user,module,action);
   if(!['create','update','delete','approve','reject','reverse'].includes(action))throw new Error('VALIDATION: Thao tác không hợp lệ');
   const request={action,module,operation:action,id:args.id||'',record:args.record||null,expectedVersion:args.expectedVersion??null,expectedHash:args.expectedHash||''};
-  const previous=replay_(user.email,args.key,request);if(previous)return previous;
-  const data=data_(mutationModules_(module,action)),before=data[module].find(r=>r.recordId===args.id);
+  const data=providedData||data_(mutationModules_(module,action)),before=data[module].find(r=>r.recordId===args.id);
   if(action==='create'){
     const sources={production:['production','recipes','materials','stock','counts','dishes'],counts:['counts','stock','materials'],attendance:['attendance','employees'],sales:['sales','stores','dishes'],cash:['cash','debts','loans']}[module];
     if(sources)requireValidSources_(Object.fromEntries(sources.map(m=>[m,data[m]])));
@@ -167,5 +169,11 @@ function mutate_(user,args){
   if(action==='reverse')effects.push(...reverseLinkedEffects_(user,module,before,data));
   if(action==='create'&&['production','counts'].includes(module))effects.push(...stockLinkEffects_(user,module==='production'?'production':'count',after,data));
   if(module==='sales'&&action==='create'&&after.oldDebtPaid>0)throw new Error('VALIDATION: Thu nợ cũ dùng chức năng Phân bổ thu nợ theo khoản, không nhập gộp trên phiếu doanh thu mới');
-  return transact_(user.email,args.key,request,effects);
+  return effects;
+}
+function mutate_(user,args){
+  const module=args.module,action=args.operation;mutationAccess_(user,module,action);
+  const request={action,module,operation:action,id:args.id||'',record:args.record||null,expectedVersion:args.expectedVersion??null,expectedHash:args.expectedHash||''};
+  const previous=replay_(user.email,args.key,request);if(previous)return previous;
+  return transact_(user.email,args.key,request,mutationEffects_(user,args));
 }

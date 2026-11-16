@@ -24,7 +24,7 @@ function renderKiosk(){
       const pages=el('div',null,'toolbar');if(offset)pages.append(button('Trang trước',()=>refresh(Math.max(0,offset-100),inventoryOffset)));if(data.next!=null)pages.append(button('Trang sau',()=>refresh(data.next,inventoryOffset)));content.append(pages);
       content.append(el('h3','Tồn thực nhận tại ki-ốt đến '+to.value),makeTable(['Lô','Ngày nhận','Món','Đã bán','Còn lại','Ghi bán'],data.inventory.map(r=>{
         const actions=el('div');if(can('sales','approve')&&can('sales','create')&&!pending)actions.append(button('Lập phiếu bán',async()=>{
-          const dialog=document.createElement('dialog'),grid=el('div',null,'form-grid');dialog.append(el('header','Bán từ lô thực nhận · '+r.dish),grid);document.body.append(dialog);
+          const dialog=document.createElement('dialog'),grid=el('div',null,'form-grid');dialog.dataset.privateDialog='kiosk';dialog.append(el('header','Bán từ lô thực nhận · '+r.dish),grid);document.body.append(dialog);
           try{if(!await ensureLookupModules(['stores'],generation)){dialog.remove();return;}}catch(e){dialog.remove();errorText(e);return;}
           const store=operationSelect(grid,'Điểm ki-ốt bán',effective(referenceRows('stores')).filter(s=>s.recordId!==r.storeId).map(s=>[s.recordId,s.name]));
           const quantity=operationField(grid,'Số lượng (còn '+r.balance+')','number',''),price=operationField(grid,'Giá bán / phần','number',''),cash=operationField(grid,'Thực thu tiền mặt','number',0),bank=operationField(grid,'Thực thu chuyển khoản','number',0);
