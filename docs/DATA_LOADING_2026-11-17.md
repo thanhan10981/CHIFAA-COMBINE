@@ -94,3 +94,10 @@ Same synthetic5.000 fixture, single CPU/mock run; cold source still reads full d
 | cost | 167.65 / 22 | 0.33 / 3 | 385 |
 | demand | 80.42 / 20 | 0.52 / 3 | 524 |
 | variance | 210.97 / 24 | 0.33 / 3 | 431 |
+
+
+## Triển khai DEV28
+
+Source28604a7/ef30f54. Backup remote-before-data-loading/source khớp verified27 trước push. Tạo28 rồi đọc lại remote-data-loading-version28/source: đủ5file khớp Code/Index/Portal/ExcelRuntime byte-for-byte, manifest tương đương. CLI xác nhận cả callback/app DEV hiện có@28; giữURL, deployment lịch sử@2 không đổi. Không chỉnh hai workbook gốc, dữ liệu nghiệp vụ, ACL hoặc tự chạy trigger/setup. _ReportSnapshots chưa được tạo trực tiếp bởi agent; ứng dụng có thể tự tạo cache phụ DEV sau báo cáo Admin như mô tả trên. Không cần chạy setup lại. Rollback gán cả2deployment về27, giữ nguyên nguồn lịch sử.
+
+Local224tests/syntax63/build/bundle/runtime hash/offline preview đạt. Task1–7 đã triển khai phần mã; Task8 mới local/mock, Google UAT và độ trễ thực tế chưa nghiệm thu. Không khẳng định200ms hay8người Google đã đạt. Người dùng mở lại link DEV; nếu chưa cài lịch incremental ở27 thì cài một lần qua Nhật ký & đồng bộ. ĐoGoogle theo checklist trước khi dùng làm sổ chính thức.
