@@ -7,11 +7,11 @@ Phạm vi: Apps Script + Sheets, dưới 10 người dùng. Giữ giao diện/ng
 | Task | Nội dung | Trạng thái |
 | --- | --- | --- |
 | PERF01 | Đếm dịch vụ + benchmark 100/1.000/5.000 dòng mỗi bảng lớn | LOCAL_TESTED |
-| PERF02 | Đọc theo phụ thuộc, cache trong request, ghi/audit theo lô | LOCAL_TESTED190 |
-| PERF03 | Shell bootstrap, cache trang theo quyền/version, dữ liệu Dashboard riêng | LOCAL_TESTED206 |
-| PERF04 | onEdit theo dòng/bảng, sync hash chỉ ghi thay đổi, kiểm tra cấu trúc | LOCAL_TESTED206 |
-| PERF05 | Cache RAM khi đổi tab, dedupe, lazy/prefetch và trạng thái lưu | LOCAL_TESTED206; đang bổ sung benchmark |
-| PERF06 | So sánh benchmark, trình duyệt/Google/concurrent users, rollout | Chưa nghiệm thu Google |
+| PERF02 | Đọc theo phụ thuộc, cache trong request, ghi/audit theo lô | LOCAL_TESTED210 |
+| PERF03 | Shell bootstrap, cache trang theo quyền/version, dữ liệu Dashboard riêng | LOCAL_TESTED210 |
+| PERF04 | onEdit theo dòng/bảng, sync hash chỉ ghi thay đổi, kiểm tra cấu trúc | LOCAL_TESTED210 |
+| PERF05 | Cache RAM khi đổi tab, dedupe, lazy/prefetch và trạng thái lưu | LOCAL_TESTED210 |
+| PERF06 | So sánh benchmark, trình duyệt/Google/concurrent users, rollout | Local đo đủ3cỡ; chưa nghiệm thu Google |
 
 ## Bottleneck đã xác nhận
 
@@ -92,3 +92,14 @@ Index3.575.997→1.031.063 bytes chưa nén (~71% giảm). ExcelRuntime948.793 b
 - onEdit/onChange cần trigger đúng workbook. Sửa qua API hoặc công thức không luôn có onEdit; slice/full manual reconciliation là đường dự phòng. Không cam kết độ trễ phát hiện khi chưa đo trigger/quota thực tế. Trong scan từng phần chỉ kiểm tra nguồn phạm vi; backend ghi/báo cáo vẫn kiểm tra đầy đủ.
 - CacheStorage chỉ lưu mã Excel công khai, không dữ liệu nghiệp vụ. Trình duyệt không hỗ trợ/chặn cache thì tải runtime lại; HTML Apps Script vẫn cần mạng, chưa có offline app shell/service worker.
 - Chưa nghiệm thu OAuth, download Excel, giao diện, thời gian Google hoặc nhiều người dùng đồng thời vì inventory CUA không có app/browser. Không đánh dấu toàn bộ task đạt chỉ dựa trên mock.
+
+## File và checkpoint bàn giao
+
+- Backend: src/server/storage.js, api.js, workflows.js, financial-workflows.js, operations.js; mới performance.js và scanner.js. Shared: domain.js (index validation), strategy.js (cùng công thức server/client, cú pháp tương thích Apps Script).
+- Frontend: app.js, rpc.js, strategy-view.js, operations-view.js, excel.js, theme.css. Build/check: scripts/build.mjs, scripts/check.mjs. Dist sinh lại5file, output preview giữ Excel offline.
+- Đo/kiểm thử: scripts/benchmark-performance.mjs, benchmark-client-performance.mjs; tests/gas-mock.mjs, performance.test.mjs, cache.test.mjs, client.test.mjs, client-fixture.mjs, excel.test.mjs và operations-integration.test.mjs.
+- Tài liệu: TASKS.md, CHANGELOG.md, HANDOFF.md, tài liệu này và EXCEL_EXPORT.md. Không gộp các thay đổi tài liệu/generator có sẵn ngoài task.
+
+Source checkpoints7e93fa9,662ec7d,d3e45e8,7cff3c6. Google từ chối push đầu vì `??=` trong shared Strategy mới đưa vào server; đã thay bằng conditional tương đương và thêm guard vào check.mjs. Chạy lại210tests/syntax58/build đạt rồi push thành công5file.
+
+**Đã triển khai DEV27**: backup remote-before-performance/source khớp26 trước push; đọc lại remote-performance-version27/source khớp Code/Index/Portal/ExcelRuntime byte-for-byte, manifest tương đương. Hai deployment app/callback hiện có đều được CLI xác nhận@27; deployment lịch sử@2 không đổi. Không đổi schema, dữ liệu Sheets, ACL hoặc tự cài trigger. Chưa đo thời gian Google hay UAT2tài khoản. Bước tiếp theo bắt buộc để kích hoạt lịch tối ưu: Admin bấm **Cài lịch scan, backup và Portal** như hướng dẫn trên; sau đó đo UAT theo mục5.
