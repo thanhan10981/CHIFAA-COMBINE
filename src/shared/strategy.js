@@ -42,7 +42,7 @@ function strategyAggregate(data,from,to){
   const interest=cash.filter(r=>r.category==='lai-vay').reduce((n,r)=>n+r.amount,0);
   const sold=sum(sales,'sold')+sum(sales,'creditQty'),delivered=sum(sales,'delivered'),returned=sum(sales,'returned');
   const profit=issues.length?null:raw.profit,variable=profit!=null&&sold>0?(raw.cogs+wages+other+recovery)/sold:null;
-  return {from,to,days:days.size,revenue:raw.revenue,received:raw.received,foodCostPct:raw.foodCostPct,sxLaborPct:raw.sxLaborPct,policy:raw.policy,sold,returned,delivered,average:days.size?sold/days.size:null,returnRate:delivered?returned/delivered*100:null,profit,food:raw.cogs,wages,fixed,other,recovery,interest,variable,issues,stores:rows(stores),dishes:rows(dishes)};
+  return {from,to,days:days.size,revenue:raw.revenue,received:raw.received,foodCostPct:raw.foodCostPct,sxLaborPct:raw.sxLaborPct,policy:raw.policy,totalProduced:raw.totalProduced,goodProduced:raw.produced,productivity:raw.productivity,goodProductivity:raw.goodProductivity,productivityBasis:raw.productivityBasis,sold,returned,delivered,average:days.size?sold/days.size:null,returnRate:delivered?returned/delivered*100:null,profit,food:raw.cogs,wages,fixed,other,recovery,interest,variable,issues,stores:rows(stores),dishes:rows(dishes)};
 }
 function strategySeries(data,period,anchor,count){
   if(count==null)count=({day:14,week:12,month:12,quarter:8,year:5}[period]);const out=[];

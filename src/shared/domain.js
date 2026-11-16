@@ -167,6 +167,8 @@ function report(data, from, to) {
   const sales = select('sales'), prod = select('production'), attend = select('attendance');
   const money = sales.map(salesMetrics), wages = payroll(attend);
   const produced = prod.reduce((n,r)=>n+r.produced+r.extra-r.rejected,0);
+  const totalProduced=prod.reduce((n,r)=>n+r.produced+r.extra,0),rejected=prod.reduce((n,r)=>n+r.rejected,0);
+  const productionHoursComplete=prod.every(p=>attend.some(a=>a.date===p.date&&a.department==='SX'));
   const sxHours = wages.filter(r=>r.department==='SX').reduce((n,r)=>n+r.hours,0);
   const cash = { cash: 0, bank: 0 };
   // Sales receipts have one source. Cash book does not accept duplicate sales receipts.
@@ -193,7 +195,9 @@ function report(data, from, to) {
   const sxLabor=sxWagesPresent?round(wages.filter(r=>r.department==='SX').reduce((n,r)=>n+r.base+r.allowances,0)):null;
   const foodCostPct=revenue>0&&cogs!=null?round(cogs/revenue*100):null,sxLaborPct=revenue>0&&sxLabor!=null&&wagesPresent?round(sxLabor/revenue*100):null;
   return { from,to,revenue,received,recoveryExpense,otherSalesExpense,operating,sxLabor,foodCostPct,sxLaborPct,policy:ACCOUNTING_POLICY,produced:prod.length?produced:null,cogs,profit,profitBasis:'Provisional; recovery support is a separate expense once; excludes depreciation; interest uses posted interest cash vouchers. Confirm remaining accounting rules before live.',
-    sxHours:attend.length?sxHours:null, productivity:prod.length && sxHours>0?round(produced/sxHours):null,
+    totalProduced:prod.length?totalProduced:null,rejected:prod.length?rejected:null,
+    sxHours:attend.some(a=>a.department==='SX')?sxHours:null, productivity:prod.length&&productionHoursComplete&&sxHours>0?round(totalProduced/sxHours):null,
+    goodProductivity:prod.length&&productionHoursComplete&&sxHours>0?round(produced/sxHours):null,productivityBasis:'total-produced-per-SX-hour',
     payroll:wages, cash: {cash:round(cash.cash),bank:round(cash.bank)}, coverage:covered+'/'+days,
     completeness: completeSales && covered===days && costs.length && costs.every(c=>c!=null) && wagesPresent ? 'complete-inputs' : 'incomplete',
     source:'Google Sheets / dữ liệu người dùng được cấp quyền', accountingRule:money[0]?.accountingRule || 'Chưa có dữ liệu doanh thu' };
@@ -213,7 +217,7 @@ function variance(data, from, to) {
       for(const r of recipes) theoretical+=flattenRecipe(r.recordId,p.produced+p.extra,data.recipes)[c.materialId]||0;
     }
     const actual=c.opening+receipts-c.otherOut-c.closing;
-    return {date:c.date,materialId:c.materialId,actual:round(actual),theoretical:complete?round(theoretical):null,difference:complete?round(actual-theoretical):null,status:!complete?'gray':actual<0?'red':Math.abs(actual-theoretical)>0.01?'orange':'green'};
+    return {date:c.date,materialId:c.materialId,actual:round(actual),theoretical:complete?round(theoretical):null,difference:complete?round(actual-theoretical):null,percentage:complete&&theoretical>0?round((actual-theoretical)/theoretical*100):null,status:!complete?'gray':actual<0?'red':Math.abs(actual-theoretical)>0.01?'orange':'green'};
   });
 }
 function finance(data, to) {
