@@ -1,5 +1,7 @@
 function maintenance_(user,args){
   requireAdmin_(user);authConfig_();
+  if(args.operation==='verifyBackup')return verifyBackup_(args.backupId);
+  if(args.operation==='inspectSources')return inspectSources_(args);
   if(args.operation==='initialize')return locked_(()=>{const result=setup_();audit_(user.email,'WORKFLOW_SETUP','system','',null,result);return result;});
   if(args.operation==='backup')return backup_();
   if(args.operation==='createBackupFolder'){
@@ -21,7 +23,8 @@ function maintenance_(user,args){
   if(args.operation==='restore'){
     if(typeof args.backupId!=='string'||!/^[\w-]{10,200}$/.test(args.backupId))throw new Error('VALIDATION: Cần ID bản sao lưu');
     if(!rowsPlain_('_Audit').some(r=>r[3]==='BACKUP'&&r[5]===args.backupId))throw new Error('FORBIDDEN: Chỉ phục hồi bản backup trong nhật ký của hệ thống');
-    const backup=DriveApp.getFileById(args.backupId),copy=backup.makeCopy('CHIFAA-RESTORE-REVIEW-'+now_().replace(/[:.]/g,'-'));audit_(user.email,'RESTORE_COPY','backup',copy.getId(),null,{backupId:args.backupId});return {reviewSpreadsheetId:copy.getId(),note:'Chỉ tạo bản kiểm tra, chưa đổi nguồn dữ liệu ứng dụng.'};
+    const verification=verifyBackup_(args.backupId);if(!verification.verified)throw new Error('BACKUP_UNVERIFIED: Backup thiếu dấu kiểm tra hoặc đã bị thay đổi; chưa tạo bản phục hồi');
+    const backup=DriveApp.getFileById(args.backupId),copy=backup.makeCopy('CHIFAA-RESTORE-REVIEW-'+now_().replace(/[:.]/g,'-'));audit_(user.email,'RESTORE_COPY','backup',copy.getId(),null,{backupId:args.backupId,verified:true});return {reviewSpreadsheetId:copy.getId(),verified:true,note:'Chỉ tạo bản kiểm tra, chưa đổi nguồn dữ liệu ứng dụng.'};
   }
   if(args.operation==='configure'){
     const updates={};

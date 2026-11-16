@@ -89,8 +89,10 @@ function scanSheets_(){return scanModules_(Object.keys(SCHEMA));}
 function backup_(){
   return locked_(()=>{
     const folder=privateBackupFolder_(config_('BACKUP_FOLDER_ID'));
+    assertReadable_();const manifest=backupManifest_(db_());
     const file=DriveApp.getFileById(config_('SPREADSHEET_ID')).makeCopy('CHIFAA-backup-'+now_().replace(/[:.]/g,'-'),folder);
-    props_().setProperty('LAST_BACKUP',now_());audit_('SYSTEM','BACKUP','backup',file.getId(),null,null);return {fileId:file.getId()};
+    const copied=backupManifest_(SpreadsheetApp.openById(file.getId())),after=backupManifest_(db_()),verified=JSON.stringify(manifest)===JSON.stringify(copied)&&JSON.stringify(manifest)===JSON.stringify(after);
+    if(verified)props_().setProperty('LAST_BACKUP',now_());audit_('SYSTEM','BACKUP','backup',file.getId(),null,{manifest,verified});return {fileId:file.getId(),verified,scope:'Nghiệp vụ và nhật ký đã biết; không gồm Script Properties hoặc bảng ngoài schema.'};
   });
 }
 function privateBackupFolder_(id){const folder=DriveApp.getFolderById(id),owner=Session.getEffectiveUser().getEmail();if(folder.getSharingAccess()!==DriveApp.Access.PRIVATE||[...folder.getEditors(),...folder.getViewers()].some(u=>u.getEmail()!==owner))throw new Error('FORBIDDEN: Backup chứa toàn bộ dữ liệu; chọn thư mục riêng tư chỉ chủ sở hữu truy cập');return folder;}
