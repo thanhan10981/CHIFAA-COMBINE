@@ -245,7 +245,7 @@ test('two client tabs: Admin and accountant receive separate signed sessions and
   await assert.rejects(acct.run("call('export',{module:'employees'})"),/FORBIDDEN/);
 });
 
-test('Google popup requests compact dimensions, detaches opener and closes after signed bootstrap succeeds',async()=>{
+test('Google popup requests compact dimensions, detaches opener and closes before slow Sheets bootstrap',async()=>{
   const g=gas(),c=await client(false,bridge(g));let closed=0,opener='attached',destination,features;
   const popup={set opener(value){opener=value;},location:{replace(url){assert.equal(opener,null);destination=url;}},close(){closed++;}};
   c.context.window.open=(url,target,options)=>{assert.equal(url,'about:blank');assert.equal(target,'_blank');features=options;return popup;};
@@ -254,6 +254,8 @@ test('Google popup requests compact dimensions, detaches opener and closes after
   assert.equal(event.defaultPrevented,true);assert.match(destination,/accounts.google.com/);
   assert.match(features,/popup=yes/);assert.match(features,/width=520/);assert.match(features,/height=680/);assert.match(features,/resizable=yes/);
   assert.equal(closed,0);
+  c.context.checkPopupClosed=()=>assert.equal(closed,1);
+  c.run('const popupOriginalLoad=load;load=async()=>{checkPopupClosed();return popupOriginalLoad();};');
   g.ctx.claims={email:'admin@example.com',email_verified:true,sub:'admin',hd:'example.com'};
   g.ctx.oauthCallback_({state:c.run('state.loginAttempt.flow'),code:'code'});
   await c.run('pollLogin(state.loginAttempt)');assert.equal(closed,1);

@@ -417,11 +417,13 @@ async function pollLogin(attempt){
       const login=await rpcCall('oauthFinish',{flow:attempt.flow,browserSecret:attempt.browserSecret});
       if(state.loginAttempt!==attempt)return;
       if(!login.pending){
+        // Close as soon as identity/session is confirmed. Sheets bootstrap and
+        // browser session persistence can be slow and must not hold this window.
+        try{attempt.popup?.close();}catch(_){/* Google navigation may sever the handle. */}
         const remembered=await setRpcSession(login);state.token=login.token;state.loginAttempt=null;$('google-button').replaceChildren();
         showBoot('Đã xác minh Google. Đang tải dữ liệu…');await load();mount();
         toast('Đăng nhập thành công.');
         if(!remembered)toast('Trình duyệt không cho lưu phiên. Tải lại trang sẽ cần đăng nhập lại.','warning');
-        try{attempt.popup?.close();}catch(_){/* Browser may sever the handle during Google navigation. */}
         return;
       }
       await new Promise(resolve=>setTimeout(resolve,2500));
