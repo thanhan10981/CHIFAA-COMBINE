@@ -34,6 +34,7 @@ function stockLinkEffects_(user,kind,row,data){
   effects.push(workflowMarker_(user,kind,row.recordId,row.date,{snapshot,effects:effects.map(e=>({module:e.module,id:e.after.recordId}))}));return effects;
 }
 function reverseLinkedEffects_(user,module,row,data){
+  kioskReverseGuard_(module,row);
   const linked=effective(workflowRows_()).filter(w=>{try{return workflowDetails_(w).effects?.some(e=>e.module===module&&e.id===row.recordId);}catch(_){return false;}});
   if(linked.length)throw new Error('LINKED: Phiếu tự động; đảo/chấm hủy tại nghiệp vụ nguồn để hoàn tác đồng bộ');
   const kind={production:'production',counts:'count',sales:'debt'}[module],marker=kind&&workflowFind_(kind,row.recordId);if(!marker)return [];

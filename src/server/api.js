@@ -31,6 +31,8 @@ function rpc(action,args){
       else if(action==='sync')result={stamp:stamp_(),moduleVersions:permittedVersions_(user),permissionVersion:user.permissionVersion,grants:hash_({role:user.role,permissions:user.permissions})};
       else if(action==='logout')result=locked_(()=>logout_(user,args.token));
       else if(action==='mutate')result=timed_('mutate',()=>locked_(()=>mutate_(authenticate_(args.token),args)));
+      else if(action==='kioskReport')result=kioskReport_(user,args);
+      else if(action==='kiosk')result=locked_(()=>kioskWorkflow_(authenticate_(args.token),args));
       else if(action==='workflow')result=locked_(()=>workflow_(authenticate_(args.token),args));
       else if(action==='workflowReports')result=workflowReports_(user,args);
       else if(action==='workflowStatus'){requireAdmin_(user);result={ready:operationalReady_(),periods:periodRows_().map(publicRow_),history:effective(workflowRows_()).filter(w=>['payroll','interest','debt'].includes(w.kind)).slice(-100).map(w=>({recordId:w.recordId,date:w.date,kind:w.kind,referenceId:w.referenceId})),portalConfigured:!!props_().getProperty('PORTAL_SPREADSHEET_ID'),backupConfigured:!!props_().getProperty('BACKUP_FOLDER_ID'),backupFolderId:props_().getProperty('BACKUP_FOLDER_ID')||'',portalSpreadsheetId:props_().getProperty('PORTAL_SPREADSHEET_ID')||'',portalUrl:props_().getProperty('PORTAL_WEB_APP_URL')||''};}

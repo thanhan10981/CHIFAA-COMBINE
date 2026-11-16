@@ -20,6 +20,7 @@ const NAV_SECTIONS = [
       "inventory",
       "stockmovements",
       "stockhistory",
+      "kiosk",
       "reorder"
     ]
   ],

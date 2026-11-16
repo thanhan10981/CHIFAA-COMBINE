@@ -2,6 +2,7 @@ import {SCHEMA,ROUTES,ACTIONS} from './schema.js';
 // Page visibility is explicit for newly configured accounts. Data authorization
 // remains module/action based and is always enforced by the server.
 function routeReadModules(id){
+  if(id==='kiosk')return ['sales','stores','dishes'];
   const target=ROUTES.find(r=>r[0]===id)?.[2];
   const reports={inventory:['materials','stock'],cost:['materials','recipes','stock','dishes'],demand:['materials','recipes','production','orders','stores','dishes'],variance:['materials','counts','stock','production','recipes','dishes'],payroll:['attendance','employees'],report:['sales','production','attendance','cash','recipes','materials','stock','stores','dishes']};
   if(reports[target])return reports[target];
@@ -20,10 +21,12 @@ function canAccessPage(user,permissions,id){
   const route=ROUTES.find(r=>r[0]===id);if(!route)return false;
   if(user?.role==='admin')return true;
   if(['admin','health'].includes(id))return false;
+  if(id==='kiosk'&&!['sales','stores','dishes'].every(m=>permissions?.[m]?.includes('read')))return false;
   if(Array.isArray(permissions?._routes)&&!permissions._routes.includes(id))return false;
   return !SCHEMA[route[2]]||permissions?.[route[2]]?.includes('read')===true;
 }
 function linkedWriteActions(id){
+  if(id==='kiosk')return {sales:['create','approve']};
   if(['production','entry-production','audit','entry-stock'].includes(id))return {stock:['create','approve']};
   if(id==='entry-payroll')return {attendance:['approve'],cash:['create']};
   if(id==='entry-loans')return {loans:['approve'],cash:['create']};

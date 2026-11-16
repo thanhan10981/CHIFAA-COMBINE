@@ -5,7 +5,7 @@ const mat={recordId:'m',name:'Bột',purchaseUnit:'kg',unit:'g',conversion:1000,
 const recipe={recordId:'r',name:'Mẻ',kind:'mon',dishId:'d',yield:10,lines:[{type:'material',id:'m',quantity:500}]};
 const empty=()=>Object.fromEntries(Object.keys(SCHEMA).map(m=>[m,[]]));
 const sales={date:'2026-11-15',storeId:'s',dishId:'d',delivered:100,sold:70,returned:10,creditQty:15,price:20000,discount:.1,recoveryPrice:2000,cash:1000000,bank:300000,oldDebtPaid:40000,otherCost:10000,note:''};
-test('all 32 original routes retained, plus admin and customer',()=>{assert.equal(ROUTES.length,36);assert.equal(new Set(ROUTES.map(r=>r[0])).size,36);});
+test('all 32 original routes retained, plus admin and customer',()=>{assert.equal(ROUTES.length,37);assert.equal(new Set(ROUTES.map(r=>r[0])).size,37);});
 test('valid dates reject impossible dates',()=>{assert.equal(validDate('2026-02-30'),false);assert.equal(validDate('2024-02-29'),true);});
 for(const [end,hours]of [['07:00',8],['08:00',9],['09:00',10]])test('night shift 23:00–'+end,()=>assert.equal(shiftHours('23:00',end),hours));
 test('breaks deducted without rounding hours',()=>assert.equal(shiftHours('23:00','07:00',30),7.5));

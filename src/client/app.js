@@ -6,6 +6,7 @@ import { NAV_SECTIONS, NAV_ICONS } from './navigation.js';
 import {createPermissionPicker} from './permissions.js';
 import {canAccessPage,routeReadModules} from '../shared/access.js';
 import {renderFinancialOperations,renderMaintenance,printBusinessDocument,printRecord} from './operations-view.js';
+import {renderKiosk} from './kiosk-view.js';
 import {renderStrategy,strategySelection} from './strategy-view.js';
 import {toast,notifyError,clearToasts} from './notifications.js';
 const $=id=>document.getElementById(id);
@@ -111,6 +112,7 @@ function route(){
   const m=r[2];
   try{
     if(!canAccessPage(state.user,state.permissions,r[0]))throw new Error('Bạn chưa được cấp quyền truy cập mục này.');
+    if(state.route==='kiosk'){renderKiosk();return;}
     if(state.route==='strategy'&&!state.demo){renderStrategyRemote();return;}
     if(m==='report'&&state.route!=='strategy'&&!state.demo){head.append(button('In báo cáo',()=>printBusinessDocument(r[1],$('view'))));renderDashboard();return;}
     if(['inventory','payroll','cost','demand','variance'].includes(m)&&!state.demo){if(m==='payroll'&&!state.payrollVisited){state.payrollVisited=true;const day=dateToday();state.from=day.slice(0,7)+'-01';state.to=new Date(Date.UTC(Number(day.slice(0,4)),Number(day.slice(5,7)),0)).toISOString().slice(0,10);}head.append(button('In báo cáo',()=>printBusinessDocument(r[1],$('view'))));renderPeriodSummary(m);return;}

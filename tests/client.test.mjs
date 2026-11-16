@@ -4,7 +4,7 @@ import {send} from './auth-helpers.mjs';
 const strip=s=>s.replace(/^import .*?;\r?\n/gm,'').replace(/^export \{[^}]*\};?\r?\n?/gm,'');
 import {client} from './client-fixture.mjs';
 test('local shell does not preload user data or financial records',async()=>{const c=await client(false);assert.equal(c.document.getElementById('workspace').hidden,true);assert.equal(c.document.getElementById('login').hidden,false);assert.match(c.document.getElementById('login-status').textContent,/Chưa kết nối/);assert.equal(c.run('Object.keys(state.data).length'),0);});
-test('explicit demo opens application with all 36 routes and no invented data',async()=>{const c=await client();assert.equal(c.document.getElementById('workspace').hidden,false);assert.equal(c.document.querySelectorAll('#navigation a').length,36);assert.match(c.document.getElementById('view').textContent,/Chưa có dữ liệu doanh thu/);assert.equal(c.run('state.data.sales.length'),0);});
+test('explicit demo opens application with all 37 routes and no invented data',async()=>{const c=await client();assert.equal(c.document.getElementById('workspace').hidden,false);assert.equal(c.document.querySelectorAll('#navigation a').length,37);assert.match(c.document.getElementById('view').textContent,/Chưa có dữ liệu doanh thu/);assert.equal(c.run('state.data.sales.length'),0);});
 
 test('manual refresh and validation errors notify; logout clears previous private notices',async()=>{
   const c=await client();await c.run('refresh(true)');assert.match(c.document.querySelector('.toast-success').textContent,/Đã làm mới/);
@@ -80,7 +80,7 @@ function tick(c,selector,checked=true){const input=c.document.querySelector(sele
 test('account permission checkboxes save typed grants and expose only chosen sidebar pages',async()=>{
   const g=gas(),c=await rememberedLogin(g,browserSessions());c.location.hash='#admin';c.run("state.route='admin';document.getElementById('view').replaceChildren()");await c.run('renderAdmin()');
   assert.equal(c.document.querySelectorAll('#account-form textarea').length,0);
-  assert.equal(c.document.querySelectorAll('[data-permission-route]').length,36);
+  assert.equal(c.document.querySelectorAll('[data-permission-route]').length,37);
   const email=c.document.querySelector('[name=account-email]'),role=c.document.querySelector('[name=account-role]');email.value='acct@example.com';role.value='accountant';role.dispatchEvent(new c.context.window.Event('change'));
   tick(c,'[data-page="entry-sales"][data-action=read]');tick(c,'[data-page="entry-sales"][data-action=create]');
   await c.document.getElementById('account-form').onsubmit({preventDefault(){}});

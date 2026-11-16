@@ -56,6 +56,7 @@ const ROUTES = [
   ['dashboard','Tổng quan điều hành','report'], ['opsdashboard','Dashboard vận hành','report'], ['strategy','Chiến lược kinh doanh','report'],
   ['catalog','Danh mục vật tư','materials'], ['stores','Danh mục điểm bán','stores'], ['dishes','Danh mục món bán','dishes'], ['employees','Danh mục nhân viên','employees'], ['discounts','Bảng chiết khấu','discounts'],
   ['inventory','Tồn kho hiện tại','inventory'], ['stockmovements','Nhập / xuất / kiểm kê','stock'], ['stockhistory','Lịch sử kho','stock'], ['reorder','Cảnh báo & bổ sung hàng','inventory'],
+  ['kiosk','Thu hồi & ki-ốt','kiosk'],
   ['recipes','Công thức món ăn','recipes'], ['batches','Công thức nhân / sốt','recipes'], ['rice','Công thức cơm chín','recipes'], ['packaging','Định mức bao bì','recipes'], ['cost','Tổng hợp giá vốn','cost'],
   ['production','Kế hoạch & chốt sản xuất','production'], ['demand','Nhu cầu nguyên liệu','demand'], ['audit','Kiểm kê thực tế','counts'], ['variance','Đối chiếu hao hụt','variance'], ['consumption','Tiêu hao & kiểm tra chênh lệch','variance'],
   ['entry','Tổng quan nhập liệu','entry'], ['entry-stock','01 · Kiểm kho','counts'], ['entry-sales','02 · Doanh thu hằng ngày','sales'], ['entry-attendance','03 · Chấm công','attendance'], ['entry-production','04 · Sản xuất – Lỗi – Hủy','production'], ['entry-plans','05 · Kế hoạch & mục tiêu','plans'], ['entry-loans','06 · Khoản vay','loans'], ['entry-debts','07 · Công nợ','debts'], ['entry-cash','08 · Sổ quỹ thu – chi','cash'], ['entry-payroll','09 · Bảng lương tháng','payroll'],
