@@ -57,3 +57,5 @@ G02 đã DEPLOYED_DEV22 sau readback4file; source3896256 được xuất archive
 ### G04 / T07 checkpoint
 
 LOCAL_TESTED_PARTIAL: shared source validation, paging coverage, financial/linked-write gates, repeated scan quality and unverified editor audit. 177test, syntax50/build pass. No header migration. Remaining quarantine UI/journal integrity/import/Portal/onChange/cursor/Google UAT in docs/SOURCE_QUALITY.md. Deployment tracked in HANDOFF.
+
+G04 checkpoint1e293cf ?? DEPLOYED_DEV23, readback4files kh?p v? hai DEV URL x?c nh?n@23; kh?ng setup l?i. Google UAT v?n pending.
