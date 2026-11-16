@@ -1,12 +1,12 @@
 # Báo cáo hiệu năng hiện tại
 
-## Bản hiện tại DEV30 —260kiểm thử local
+## Bản hiện tại DEV32 —273kiểm thử local
 
 Đã xác minh mã trên hai deployment, chưa đo latency Google. Bỏ tra cứu lồng nhật ký, thêm cache theo quyền/phiên bản cho ki-ốt/liên kết đơn; các ghi luôn đọc lại nguồn. Dashboard trả tổng bộ phận, không gửi toàn bộ lương nhân viên. Kiểm tra backup/Google HTTP không giữ khóa ghi toàn cục trong lúc chờ dịch vụ.
 
 Benchmark hiện tại dùng fixture nhân viên riêng biệt, hợp lệ về giao ca. Các số cũ dùng fixture lặp ca chỉ là lịch sử hiệu năng, không là bằng chứng nghiệp vụ lương và không so sánh trực tiếp với fixture mới. Số liệu cập nhật được ghi ở cuối file; nguồn `output/master-benchmark-final.json`, `output/data-loading-master-final.json`, `output/performance-client.json`.
 
-Chuyển tab nóng trong LinkeDOM có p95 dưới200ms nhưng vẫn có một outlier241,29ms. Đây không đo layout/paint/browser/mạng/Google; mục tiêu dưới200ms trên máy thông thường chưa được nghiệm thu. Cold read còn đọc đủ nguồn cần thiết; sửa Sheets được phát hiện theo trigger/lát quét đã thiết kế, lịch và độ trễ thực tế chưa xác minh.
+Chuyển tab nóng trong LinkeDOM có p95 dưới200ms nhưng vẫn có một outlier251,28ms. Đây không đo layout/paint/browser/mạng/Google; mục tiêu dưới200ms trên máy thông thường chưa được nghiệm thu. Cold read còn đọc đủ nguồn cần thiết; sửa Sheets được phát hiện theo trigger/lát quét đã thiết kế, lịch và độ trễ thực tế chưa xác minh.
 
 ## Lịch sử các checkpoint trước
 
@@ -67,3 +67,48 @@ No browser layout/paint, actual network, Google service load, multi-account ACL 
 ## MASTER M09 checkpoint - 2026-11-17
 
 273/273 local tests; syntax83/build pass. Financial completeness guards, request-local static configuration batching, visible-page sync60s/focus refresh and backup verification feedback. See docs/MASTER_M09_2026-11-17.md. Candidate built; verified DEV31 remains live until final source readback and rollout.
+
+
+## Final verified source32 — latest rerun
+
+Source7f3bf88;273tests/syntax83/build pass. Node/GAS mock CPU and service-call counts only; not Google transport, OAuth latency, browser layout/paint, Google quota, or 2/5/8 simultaneous users. Older tables above are historical runs.
+
+| Rows | API | Before CPU ms | Final cold CPU ms | Cold getValues before/final | Final hot CPU ms | Hot getValues/cells |
+| --- | --- | --- | --- | --- | --- | --- |
+| 100 | kioskReport | 14.31 | 15.69 | 10/10 | 0.99 | 3/15 |
+| 100 | orderPlans | 12.66 | 11.34 | 11/11 | 0.7 | 3/21 |
+| 1000 | kioskReport | 190.33 | 85.36 | 12/12 | 0.99 | 3/15 |
+| 1000 | orderPlans | 208.65 | 86.12 | 13/13 | 0.63 | 3/21 |
+| 5000 | kioskReport | 3069.21 | 370.44 | 28/28 | 0.78 | 3/15 |
+| 5000 | orderPlans | 3164.73 | 388.57 | 33/33 | 0.67 | 3/21 |
+
+| Rows | API | CPU ms | getValues | Cells read | Response bytes |
+| --- | --- | --- | --- | --- | --- |
+| 100 | dashboard:cold | 19.92 | 23 | 8357 | 3802 |
+| 100 | dashboard:cache-evicted | 0.69 | 5 | 205 | 3804 |
+| 100 | payroll:summary-cold | 5.5 | 10 | 3255 | 2299 |
+| 100 | payroll:summary-hot | 0.46 | 3 | 84 | 2299 |
+| 1000 | dashboard:cold | 120.56 | 23 | 81257 | 3803 |
+| 1000 | dashboard:cache-evicted | 0.48 | 5 | 205 | 3805 |
+| 1000 | payroll:summary-cold | 49.57 | 10 | 30255 | 2299 |
+| 1000 | payroll:summary-hot | 0.44 | 3 | 84 | 2299 |
+| 5000 | dashboard:cold | 560.57 | 43 | 405257 | 8973 |
+| 5000 | dashboard:cache-evicted | 0.57 | 5 | 205 | 8975 |
+| 5000 | payroll:summary-cold | 198.82 | 18 | 150255 | 10875 |
+| 5000 | payroll:summary-hot | 0.49 | 3 | 84 | 10875 |
+
+| RPC | Properties calls before/after | Sheets getValues before/after |
+| --- | --- | --- |
+| sync | 31/5 | 2/2 |
+| summary | 59/12 | 22/22 |
+| mutate | 64/9 | 6/6 |
+
+Static config batching only; live versions, lease/write flags, session credentials and replay state remain fresh. Cross-RPC configuration edits are reloaded. Foreground polling60s instead of15s (fourfold reduction in scheduled polls), focus refresh after minimum15s, hidden-page skip. Direct Sheets visibility requires actual trigger/scanner execution; fallback5minutes is a designed cadence, not a verified guarantee. No Google quota/SLA claim.
+
+| Rows | Warm module CPU P50/P95/max ms (40 samples) | Warm strategy DOM P95 ms |
+| --- | --- | --- |
+| 100 | 10.29/18.93/29.93 | 2.47 |
+| 1000 | 9.84/15.91/39.05 | 2.19 |
+| 5000 | 9.9/10.91/251.28 | 2.48 |
+
+The5000row warm run still has a251.28ms outlier. Under200ms real-computer navigation target remains unverified. Large cold reads still scan relevant history for consistent source validation. Sources: output/master-benchmark-before.json, output/master-benchmark-final.json, output/data-loading-master-final.json, output/performance-client.json, output/master-properties-benchmark.json. Financial readiness adds one _Workflows header read in the5000row Dashboard fixture (42→43); this is intentional validation rather than dropped data. No benchmark change justifies skipping authorization or source checks.

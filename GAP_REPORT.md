@@ -1,3 +1,28 @@
+# Current checkpoint: MASTER DEV32 - 2026-11-17
+
+273 local tests pass; both existing DEV deployments32 verified by exact5file readback. See docs/MASTER_RESULT_2026-11-17.md and REQUIREMENT_MATRIX.md for current evidence. The older audit below is historical, not a current missing-function list.
+
+| Gap | Current evidence and remaining gate |
+| --- | --- |
+| G01 | OAuth/session/RBAC local implemented; two-Gmail/ACL/device UAT pending |
+| G02 | Confirmed net/expense/ratio rules shared; full COGS/source accounting UAT pending |
+| G03 | Return approval/receipt/kiosk sale/undo implemented; valuation/batch/expiry pending |
+| G04 | Scoped scanner and source/schema workbench; direct-Sheets payroll checks; Google trigger lag/quota pending |
+| G05 | Original two workbooks unavailable; no guessed import/opening balances |
+| G06 | Standard mass/volume checks; normalized recipe DB/effectivity migration requires source/UOM approval |
+| G07 | Four entry commands, preview/diff and atomic single-voucher correction; durable drafts/group correction remain separate scope |
+| G08 | Daily allowance and overlap gates implemented; monthly/overnight policy still pending |
+| G09 | Shared total/good productivity and variance percentage; calendar/threshold/bonus and Google data gates remain |
+| G10 | Finished-goods costing/depreciation allocation not approved; profit stays provisional |
+| G11 | Explicit approved-order to existing-plan link implemented; Portal resources/Google/auto merge policy pending |
+| G12 | OAuth budget/no HTTP lock/session alerts/durable signing keys implemented; real quota/concurrency pending |
+| G13 | Index/cache/snapshots/queues/local100-1000-5000 benchmarks; browser visual/Google P50-P95 pending |
+| G14 | Backup manifest/core consistency/restore review implemented; Drive drill/retention/disaster recovery source pending |
+
+---
+
+## Historical baseline (superseded above)
+
 # Khoảng trống theo bộ yêu cầu mới
 
 Đối chiếu 78 REQ, baseline166 test local đạt, DEV21. Nguồn đầy đủ ở docs/requirements; matrix có tham chiếu theo từng REQ. Đọc các nhận xét audit cũ như lịch sử, không coi mô tả v14 là trạng thái mới nhất.

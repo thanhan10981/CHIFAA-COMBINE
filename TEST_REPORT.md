@@ -1,10 +1,10 @@
 # Báo cáo kiểm thử theo bộ yêu cầu
 
-Thời điểm UTC: 2026-11-16T16:24:28.917Z; ngày Việt Nam 2026-11-16. HEAD: e4204da; working tree dirty, không gán kết quả cho riêng HEAD. Baseline Node/DOM/GAS-mock: **166 pass / 0 fail / 166 tests**. Log: output/requirements-baseline-tests.txt (local, không commit dữ liệu nhạy cảm). Syntax47 và build đã chạy đạt cùng phiên.
+Thời điểm UTC: 2026-11-16T19:52:51.319Z; ngày Việt Nam 2026-11-17. HEAD: 7f3bf88; working tree dirty, không gán kết quả cho riêng HEAD. Baseline Node/DOM/GAS-mock: **273 pass / 0 fail / 273 tests**. Log: output/master-m08-tests.txt (local, không commit dữ liệu nhạy cảm). Syntax83 và build đã chạy đạt cùng phiên.
 
 Mock Sheets/Drive/OAuth đều là fixture RAM, không gọi Google. Local tests không chứng minh Gmail/ACL/trigger/quota hay số liệu thật. Chưa chạy Google/browser/UAT/10-user load/legacy import. Không có latency Google P50/P95; không bịa số. Mã IDs tài nguyên thực tế không đưa vào báo cáo này.
 
-Bộ acceptance gốc có 93 ca. Bảng dưới là **trạng thái toàn bộ tiêu chí của ca**, không đổi tên 166 test local thành 166 ca Google. LOCAL_REVIEW nghĩa đã có một phần unit/mock liên quan nhưng cần test exact/luồng đầy đủ; không phải PASS. BLOCKED_DECISION phải cập nhật sau khi policy đã triển khai và có test.
+Bộ acceptance gốc có 93 ca. Bảng dưới là **trạng thái toàn bộ tiêu chí của ca**, không đổi tên 273 test local thành 93 ca Google. LOCAL_REVIEW nghĩa đã có một phần unit/mock liên quan nhưng cần test exact/luồng đầy đủ; không phải PASS. BLOCKED_DECISION phải cập nhật sau khi policy đã triển khai và có test.
 
 | TEST_ID | Toàn tiêu chí | Tiêu chí nguồn |
 | --- | --- | --- |
@@ -111,15 +111,3 @@ Auth local: tests/oauth.test.mjs, session-security.test.mjs, client.test.mjs: co
 ## G04 — Source validation
 
 177 pass / 0 fail local/mock; syntax50/build pass. Log output/g04-tests.txt, tests/source-quality.test.mjs. Checks full-page source quality, scoped privacy, finance/payroll/count gates and repair, unchanged invalid scan and boolean metadata. No Google trigger/ACL/two-Gmail or full quarantine acceptance. See docs/SOURCE_QUALITY.md.
-
-## G04 verified DEV23 rollout ? 2026-11-16
-
-Source checkpoint1e293cf; fresh remote-before-quality backup matched verified22 before push. Created23, exact pull remote-quality-version23/source matches Code.gs/Index.html/Portal.html byte-for-byte and manifest semantically. Callback and app existing DEV deployments each confirmed@23 by clasp. Historical separate@2 unchanged. deployment.json records23/177tests/readbacktrue/GoogleUATfalse. No setup/header migration, no workbook business/ACL/trigger/Production writes.
-
-177 local/mock tests pass, syntax50/build pass; hosted Google trigger/ACL/two-Gmail/visual UAT still pending. G04 remains PARTIAL with exact gaps in docs/SOURCE_QUALITY.md. Cache bootstrap remains30seconds unless force sync. Scan behavior for malformed/missing metadata still needs incremental cursor/row-key handling; no claim of complete quarantine. Next independent task G04 incremental/onChange and G03 returns/kiosk; keep Gate1 real auth and missing legacy workbook gates explicit.
-
-## Excel export/import
-
-185 local/mock tests pass; syntax52/build pass. Log output/excel-tests.txt. Real XLSX save/reload, 5101rows, Unicode/types/null-vs-zero, template roundtrip, formula/link/ZIP rejection and client export paging/session change tested. Embedded runtime exact match and bundled JS syntax verified. No hosted Google download or desktop Excel visual UAT. See docs/EXCEL_EXPORT.md.
-
-Excel deployed BOTH existing DEV URLs@26, CLI confirmed each. Fresh remote-before-excel backup matched24; candidate25 was never assigned, final26 includes numeric-error text preservation. Exact version26 readback matched all4tested dist files (manifest semantic). Source commits c200827/e83d68c; 185tests/syntax52/build pass, local embedded payload byte match and bundled syntax verified. No schema/setup/Sheets data/ACL/trigger/Production changes; historical@2 unchanged. Microsoft Excel desktop and actual hosted Google file download remain unverified. deployment.json records26/readbacktrue/UATfalse.

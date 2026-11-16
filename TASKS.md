@@ -1,9 +1,10 @@
 # Theo dõi công việc
 
-## Checkpoint master hiện tại — DEV30 — 17/11/2026
+## Checkpoint master hiện tại — DEV32 — 17/11/2026
 
 - M01 bảo mật/phiên, M02 thu hồi ki-ốt, M03 bốn chế độ nhập, M04 KPI, M05 nguồn/backup, M06 liên kết đơn, M07 UOM/schema: đã có mã và kiểm thử local theo phạm vi ghi tại docs/MASTER_AUDIT_2026-11-17.md.
-- M08 tích hợp:260tests/syntax80/build/bundle đạt; hai DEV@30 và readback5file đã xác minh. Không đổi dữ liệu/ACL/trigger hoặc phát hành Portal riêng.
+- M08 tích hợp:273tests/syntax83/build/bundle đạt; hai DEV@32 và readback5file đã xác minh. Không đổi dữ liệu/ACL/trigger hoặc phát hành Portal riêng.
+- M09: độ đầy đủ giá vốn/lợi nhuận, batch cấu hình tĩnh theo RPC, poll60s/focus và phản hồi kiểm chứng backup; xem docs/MASTER_M09_2026-11-17.md. Trạng thái pending RAM chưa thay durable draft/outbox.
 - Chưa hoàn tất Google/visual/ACL/2–5–8user UAT, migration nguồn gốc, giá trị/lô/hạn ki-ốt, chính sách còn chờ. Matrix vẫn PARTIAL cho tiêu chí chưa đủ bằng chứng; không gán PASS tự động.
 - Bàn giao và bước tiếp theo: docs/MASTER_RESULT_2026-11-17.md, HANDOFF.md, DECISIONS_REQUIRED.md. Các mục cũ bên dưới là lịch sử tiến độ.
 

@@ -1,8 +1,8 @@
 # Kết quả kiểm thử master session
 
-## Hiện tại — DEV30
+## Hiện tại — DEV32
 
-260/260 local tests,0fail; syntax80/build/bundle parse đạt. Readback30 khớp5file; CLI xác nhận haiDEV@30, lịch sử@2 giữ nguyên. Chỉ xác minh mã triển khai, không xác minh vận hành Google. Kết nối browser thất bại `No browser is available`; hai Gmail/ACL/popup/Drive/trigger/concurrency chưa chạy. Case mới và evidence: docs/MASTER_RESULT_2026-11-17.md; các checkpoint bên dưới giữ kết quả tại thời điểm chạy.
+273/273 local tests,0fail; syntax83/build/bundle parse đạt. Readback32 khớp5file; CLI xác nhận haiDEV@32, lịch sử@2 giữ nguyên. Chỉ xác minh mã triển khai, không xác minh vận hành Google. Kết nối browser thất bại `No browser is available`; hai Gmail/ACL/popup/Drive/trigger/concurrency chưa chạy. Case mới và evidence: docs/MASTER_RESULT_2026-11-17.md; các checkpoint bên dưới giữ kết quả tại thời điểm chạy.
 
 Baseline17/11/2026: **224pass/0fail**, `npm test`, log output/master-baseline-tests.txt. DEV28 đã đọc lại5file ở checkpoint trước. Unit/DOM/GAS mock dùng fixture, không gọi Google OAuth/Sheets thật.
 
@@ -62,3 +62,8 @@ Added authenticated owner-scoped requestStatus returning only journal state (no 
 ## MASTER M09 checkpoint - 2026-11-17
 
 273/273 local tests; syntax83/build pass. Financial completeness guards, request-local static configuration batching, visible-page sync60s/focus refresh and backup verification feedback. See docs/MASTER_M09_2026-11-17.md. Candidate built; verified DEV31 remains live until final source readback and rollout.
+
+
+## Final32 verification
+
+273/273pass,0fail; syntax83/build and compiled server/3inline bundles parse. Source7f3bf88; exact5file readback32 (manifest semantic), both existing DEV@32, historical@2 unchanged. New cases cover financial unknown vs explicit zero, kiosk cost pending, blank optional cost, request config batching/live stamps/auth config change, visibility poll burst protection. Evidence: output/master-m08-tests.txt; output/chifaa-dev/master-version32-readback.json; output/chifaa-dev/master-final-deployments.txt. Google/ACL/Drive/popup/concurrency/visual UAT not performed.

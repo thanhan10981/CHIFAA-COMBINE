@@ -1,12 +1,14 @@
-# HANDOFF hiện tại — 17/11/2026 — DEV30
+# HANDOFF hiện tại — 17/11/2026 — DEV32
 
-Đã tiếp tục master M00–M08, không viết lại ứng dụng. Hai deployment DEV hiện có@30; readback đủ5file khớp, lịch sử@2 không đổi. Source ứng dụng chốt tại53a90f3; các commit M01–M08 trước đó giữ từng checkpoint.
+Đã tiếp tục master M00–M09, không viết lại ứng dụng. Hai deployment DEV hiện có@32; readback đủ5file khớp, lịch sử@2 không đổi. Source ứng dụng chốt tại7f3bf88; các commit M01–M09 trước đó giữ từng checkpoint.
 
-260/260 kiểm thử local, syntax80, build và bundle parse đạt. Xem [bàn giao hiện tại](docs/MASTER_RESULT_2026-11-17.md), [ma trận](REQUIREMENT_MATRIX.md), [cổng còn chờ](DECISIONS_REQUIRED.md). Kiosk, entry preview/correction, liên kết đơn, kiểm tra nguồn/schema/backup và bảo mật phiên đã có backend/UI/tests. Không thay dữ liệu/ACL/trigger/tài nguyên Google nghiệp vụ hoặc hai workbook gốc.
+273/273 kiểm thử local, syntax83, build và bundle parse đạt. Xem [bàn giao hiện tại](docs/MASTER_RESULT_2026-11-17.md), [ma trận](REQUIREMENT_MATRIX.md), [cổng còn chờ](DECISIONS_REQUIRED.md). Kiosk, entry preview/correction, liên kết đơn, kiểm tra nguồn/schema/backup và bảo mật phiên đã có backend/UI/tests. Không thay dữ liệu/ACL/trigger/tài nguyên Google nghiệp vụ hoặc hai workbook gốc.
 
 Google UAT chưa đạt: CUA trả không có browser/app; thử kết nối Web App nhận `No browser is available`. Không tự báo đã thử Admin/kế toán thật, popup, ACL, Drive restore hay tải đồng thời. Bước tiếp theo cần browser/tài khoản Google và nguồn/policy ở DECISIONS_REQUIRED; không bật kế toán chính thức.
 
-Evidence local: output/master-m08-tests.txt; output/master-benchmark-final.json; output/data-loading-master-final.json; output/performance-client.json. Evidence deploy: output/chifaa-dev/master-version30-readback.json, master-final-deployments.txt. Bảo toàn mọi file dirty/untracked có sẵn ngoài task.
+Evidence local: output/master-m08-tests.txt; output/master-benchmark-final.json; output/data-loading-master-final.json; output/performance-client.json. Evidence deploy: output/chifaa-dev/master-version32-readback.json, master-final-deployments.txt. Bảo toàn mọi file dirty/untracked có sẵn ngoài task.
+
+M09: chặn suy giá vốn/lợi nhuận thiếu nguồn thành0, batch cấu hình theo RPC; poll60giây khi trang hiện và kiểm tra khi quay lại sau15giây. Phiên/nonce/khóa ghi/phiên bản vẫn đọc mới. Chi tiết docs/MASTER_M09_2026-11-17.md. Pending write còn trong RAM; hard reload trước ACK cần đối soát request/journal, chưa có durable business outbox.
 
 Rollback có điều kiện: đọc DEPLOYMENT_GUIDE; code28 chưa hiểu đầy đủ ledger29/30 nên phải dừng ghi và đối soát tương thích trước, không xóa lịch sử.
 

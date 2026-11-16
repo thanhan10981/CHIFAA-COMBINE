@@ -1,6 +1,8 @@
-## 2026-11-17 — Master DEV30,260kiểm thử local
+## 2026-11-17 — Master DEV32,273kiểm thử local
 
-Thêm chuỗi thu hồi→thực nhận→bán/hoàn tác ki-ốt; nhập mới/bù/bổ sung/điều chỉnh có preview/diff và giao dịch nguyên tử; liên kết đơn duyệt với kế hoạch hiện có. Bổ sung bảo mật phiên bền qua cache eviction, cảnh báo/quản lý phiên, ngân sách OAuth, bỏ lock lúc Google HTTP; kiểm tra nguồn/schema và backup có dấu kiểm tra. Sửa năng suất tổng/đạt, cột báo cáo, tỷ lệ hao hụt, chính xác tồn nhỏ và phụ cấp/ca trùng từ Sheets. Tối ưu index/cache API mới và tổng hợp lương Dashboard. Hai deployment DEV30/readback5file khớp; Google/ACL/visual/concurrency UAT còn chờ. Chi tiết docs/MASTER_RESULT_2026-11-17.md; không thay workbook gốc hoặc dữ liệu nghiệp vụ.
+M09 bổ sung: giữ trạng thái Chưa đủ dữ liệu cho giá vốn/lợi nhuận thiếu nguồn hoặc giá vốn ki-ốt chưa chốt; đơn giá nhập tùy chọn để trống. Batch cấu hình theo RPC, poll60s/focus, giữ fresh phiên/nonce/version; Properties calls mẫu31→5/59→12/64→9 trong mock. Backup hiện rõ trạng thái kiểm chứng. Source7f3bf88, chưa Google UAT.
+
+Thêm chuỗi thu hồi→thực nhận→bán/hoàn tác ki-ốt; nhập mới/bù/bổ sung/điều chỉnh có preview/diff và giao dịch nguyên tử; liên kết đơn duyệt với kế hoạch hiện có. Bổ sung bảo mật phiên bền qua cache eviction, cảnh báo/quản lý phiên, ngân sách OAuth, bỏ lock lúc Google HTTP; kiểm tra nguồn/schema và backup có dấu kiểm tra. Sửa năng suất tổng/đạt, cột báo cáo, tỷ lệ hao hụt, chính xác tồn nhỏ và phụ cấp/ca trùng từ Sheets. Tối ưu index/cache API mới và tổng hợp lương Dashboard. Hai deployment DEV32/readback5file khớp; Google/ACL/visual/concurrency UAT còn chờ. Chi tiết docs/MASTER_RESULT_2026-11-17.md; không thay workbook gốc hoặc dữ liệu nghiệp vụ.
 
 ## 2026-11-16 — Styled Excel downloads
 
