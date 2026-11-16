@@ -277,3 +277,5 @@ Source checkpoint1e293cf; fresh remote-before-quality backup matched verified22 
 ## Popup close timing ? 2026-11-16
 
 User screenshot: verified Google popup remains open. Confirmed main client closes only AFTER session storage + Sheets bootstrap; moved close attempt immediately after oauthFinish confirms issued session, before either slow task. Existing popup test now asserts close occurred when bootstrap starts. 177tests/syntax50/build pass. No auth/policy/header changes. Callback top.close remains best effort; Google iframe/COOP can still prevent automatic close, actual hosted browser result unverified. Deployment pending this entry.
+
+Popup timing deployed BOTH existing DEV deployments@24, clasp confirmed individually; exact version24 pull matches all4tested dist files (manifest semantic). Fresh backup matched23 before push. Source747896f. No schema/Sheets/ACL/trigger writes, historical@2 unchanged. Automatic close is best-effort, not yet verified in hosted browser; do not claim guarantee.

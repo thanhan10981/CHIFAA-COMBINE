@@ -1,3 +1,8 @@
+## 2026-11-16 ? Close verified login popup sooner
+
+- Main window attempts popup.close immediately when oauthFinish issues a verified session, before session persistence and Sheets bootstrap.
+- 177tests pass; popup test verifies close-before-bootstrap order. Browser sandbox/COOP may still block closing; hosted result not yet verified.
+
 ## 2026-11-16 ? G04 source validation
 
 - Detect invalid permitted source rows beyond bootstrap page200; block reports and selected linked financial/stock writes without replacing raw errors with0.
