@@ -15,9 +15,10 @@ function verifyBackup_(id){
   return {verified:tables.every(t=>t.matches),tables,scope:'Các bảng nghiệp vụ và nhật ký đã biết; không gồm cache, Script Properties hoặc bảng ngoài schema.'};
 }
 function inspectSources_(args){
-  assertReadable_();const modules=args.module?[args.module]:Object.keys(SCHEMA);if(modules.some(m=>!Object.hasOwn(SCHEMA,m)))throw new Error('VALIDATION: Phân hệ không hợp lệ');
+  assertReadable_();const stamp=stamp_(),modules=args.module?[args.module]:Object.keys(SCHEMA);if(modules.some(m=>!Object.hasOwn(SCHEMA,m)))throw new Error('VALIDATION: Phân hệ không hợp lệ');
   const offset=args.offset??0;if(!Number.isInteger(offset)||offset<0)throw new Error('VALIDATION: Trang không hợp lệ');
   const dependencies=[...new Set(modules.flatMap(m=>mutationModules_(m,'create')))];
   const issues=sourceIssues(data_(dependencies)).filter(i=>modules.includes(i.module));
-  return {rows:issues.slice(offset,offset+100),total:issues.length,next:offset+100<issues.length?offset+100:null,modules,checkedAt:now_(),stamp:stamp_(),readOnly:true};
+  assertReadable_();if(stamp!==stamp_())throw new Error('CONFLICT: Dữ liệu đổi trong lúc kiểm tra; thử lại');
+  return {rows:issues.slice(offset,offset+100),total:issues.length,next:offset+100<issues.length?offset+100:null,modules,checkedAt:now_(),stamp,readOnly:true};
 }

@@ -105,7 +105,7 @@ function transact_(actor,key,request,effects) {
     for(const [module,rows]of groups)timed_('write:'+module,()=>writeRows_(module,rows));
     const auditRows=effects.map(e=>auditCells_(actor,request.action,e.module,e.after.recordId,e.before,e.after)),audit=table_('_Audit');
     if(auditRows.length)audit.getRange(audit.getLastRow()+1,1,auditRows.length,8).setValues(auditRows);
-    SpreadsheetApp.flush();bump_([...groups.keys()]);
+    SpreadsheetApp.flush();bump_([...groups.keys(),...(effects.some(e=>e.module==='_Workflows'&&e.after.kind.startsWith('order-plan-'))?['orders']:[])]);
     const result={ids:effects.map(e=>e.after.recordId),stamp:stamp_()};
     journal.getRange(index,4,1,3).setValues([['APPLIED',serialized,JSON.stringify(result)]]);props_().deleteProperty('WRITE_IN_PROGRESS');
     return result;

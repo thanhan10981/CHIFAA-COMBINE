@@ -8,7 +8,7 @@ export async function client(demo=true,google,store){
   const location={search:demo?'?demo=1':'',hash:'',pathname:'/',href:'http://localhost/'};
   const context=vm.createContext({window,document,Node:window.Node,location,URL,URLSearchParams,crypto,TextEncoder,Uint8Array,google,console,Date,Intl,Promise,Set,Map,Object,Array,Number,String,Math,Error,Blob,
     confirm:()=>true,setInterval:()=>0,setTimeout:()=>0,clearTimeout(){}});
-  for(const p of ['src/shared/schema.js','src/shared/access.js','src/shared/domain.js','src/shared/auth-protocol.js','src/client/navigation.js','src/client/permissions.js','src/client/session-store.js','src/client/rpc.js','src/client/notifications.js','src/shared/strategy.js','src/client/strategy-view.js','src/client/import-csv.js','src/client/excel.js','src/client/operations-view.js','src/client/kiosk-view.js','src/client/entry-view.js','src/client/app.js'])vm.runInContext(strip(fs.readFileSync(p,'utf8')).replace(/^start\(\);$/m,''),context,{filename:p});
+  for(const p of ['src/shared/schema.js','src/shared/access.js','src/shared/domain.js','src/shared/auth-protocol.js','src/client/navigation.js','src/client/permissions.js','src/client/session-store.js','src/client/rpc.js','src/client/notifications.js','src/shared/strategy.js','src/client/strategy-view.js','src/client/import-csv.js','src/client/excel.js','src/client/operations-view.js','src/client/kiosk-view.js','src/client/entry-view.js','src/client/order-planning-view.js','src/client/app.js'])vm.runInContext(strip(fs.readFileSync(p,'utf8')).replace(/^start\(\);$/m,''),context,{filename:p});
   if(store)context.sessionStore=store;
   await context.start();return {context,document,dialog,location,run:code=>vm.runInContext(code,context)};
 }

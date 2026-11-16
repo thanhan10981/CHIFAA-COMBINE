@@ -19,7 +19,7 @@ function rpc(action,args){
       const user=timed_('auth',()=>locked_(()=>verifyRequest_(action,args)));
       actor=user.email;
       const readStamp=stamp_();
-      if(['bootstrap','list','lookup','record','export','summary','strategySummary','periodSummary','settlements','financialSummary','workflowReports'].includes(action))assertReadable_();
+      if(['bootstrap','list','lookup','record','export','summary','strategySummary','periodSummary','settlements','financialSummary','workflowReports','kioskReport','orderPlans'].includes(action))assertReadable_();
       if(action==='bootstrap')result=bootstrap_(user,args.force===true,args);
       else if(action==='list')result=listPage_(user,args);
       else if(action==='lookup')result=lookupData_(user,args);
@@ -31,6 +31,8 @@ function rpc(action,args){
       else if(action==='sync')result={stamp:stamp_(),moduleVersions:permittedVersions_(user),permissionVersion:user.permissionVersion,grants:hash_({role:user.role,permissions:user.permissions})};
       else if(action==='logout')result=locked_(()=>logout_(user,args.token));
       else if(action==='mutate')result=timed_('mutate',()=>locked_(()=>mutate_(authenticate_(args.token),args)));
+      else if(action==='orderPlans')result=orderPlans_(user,args);
+      else if(action==='linkOrderPlan')result=locked_(()=>linkOrderPlan_(authenticate_(args.token),args));
       else if(action==='entry')result=locked_(()=>entry_(authenticate_(args.token),args));
       else if(action==='kioskReport')result=kioskReport_(user,args);
       else if(action==='kiosk')result=locked_(()=>kioskWorkflow_(authenticate_(args.token),args));
@@ -43,9 +45,9 @@ function rpc(action,args){
       else if(action==='health'){requireAdmin_(user);result={stamp:stamp_(),audit:rowsPlain_('_Audit').slice(-100).map(r=>({id:r[0],at:r[1],user:r[2],action:r[3],module:r[4],recordId:r[5]})),pending:rowsPlain_('_Requests').filter(r=>r[3]==='PREPARED').map(r=>({key:r[0],state:r[3],createdAt:r[6]})),lastScan:props_().getProperty('LAST_SCAN'),lastBackup:props_().getProperty('LAST_BACKUP')};}
       else if(action==='export'){require_(user,args.module,'export');result=listPage_(user,{...args,mode:'snapshot'});}
       else throw new Error('NOT_FOUND: Endpoint không tồn tại');
-      if(['bootstrap','list','lookup','record','export','summary','strategySummary','periodSummary','settlements','financialSummary','workflowReports'].includes(action))assertReadable_();
-      if(['bootstrap','list','lookup','record','export','summary','strategySummary','periodSummary','settlements','financialSummary','workflowReports'].includes(action)&&readStamp!==stamp_())throw new Error('CONFLICT: Dữ liệu đổi trong lúc đọc. Đồng bộ rồi thử lại.');
-      if(['bootstrap','list','lookup','record','export','summary','strategySummary','periodSummary','settlements','health','financialSummary','workflowReports','workflowStatus'].includes(action))audit_(user.email,'READ','rpc',action,null,{module:args.module||args.kind||''});
+      if(['bootstrap','list','lookup','record','export','summary','strategySummary','periodSummary','settlements','financialSummary','workflowReports','kioskReport','orderPlans'].includes(action))assertReadable_();
+      if(['bootstrap','list','lookup','record','export','summary','strategySummary','periodSummary','settlements','financialSummary','workflowReports','kioskReport','orderPlans'].includes(action)&&readStamp!==stamp_())throw new Error('CONFLICT: Dữ liệu đổi trong lúc đọc. Đồng bộ rồi thử lại.');
+      if(['bootstrap','list','lookup','record','export','summary','strategySummary','periodSummary','settlements','health','financialSummary','workflowReports','workflowStatus','kioskReport','orderPlans'].includes(action))audit_(user.email,'READ','rpc',action,null,{module:args.module||args.kind||''});
     }
     const response={ok:true,data:result};
     if(props_().getProperty('PERF_DIAGNOSTICS')==='true'){const at=Date.now(),json=JSON.stringify(result);response.meta={serverMs:Date.now()-started,serializeMs:Date.now()-at,payloadChars:json.length};console.log(JSON.stringify({event:'rpc_payload',action,...response.meta}));}

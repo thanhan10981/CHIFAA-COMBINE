@@ -8,6 +8,7 @@ import {canAccessPage,routeReadModules} from '../shared/access.js';
 import {renderFinancialOperations,renderMaintenance,printBusinessDocument,printRecord} from './operations-view.js';
 import {renderKiosk} from './kiosk-view.js';
 import {openEntryCommand} from './entry-view.js';
+import {openOrderPlan} from './order-planning-view.js';
 import {renderStrategy,strategySelection} from './strategy-view.js';
 import {toast,notifyError,clearToasts} from './notifications.js';
 const $=id=>document.getElementById(id);
@@ -50,7 +51,7 @@ async function load(force=false){
   const token=state.token,b=await call('bootstrap',{force,shell:true});
   if(token!==state.token)throw Object.assign(new Error('Phiên đăng nhập đã thay đổi.'),{code:'AUTH'});
   const grantKey=JSON.stringify([b.user,b.permissions,b.permissionVersion]),same=state.grantKey===grantKey;
-  if(!same&&state.grantKey){document.querySelectorAll("[data-private-dialog]").forEach(n=>n.remove());state.entryPending=null;state.uncertain=null;state.actionRetries=new Map();state.editor=null;if($('editor').open)$('editor').close();$('form-fields').replaceChildren();}
+  if(!same&&state.grantKey){document.querySelectorAll("[data-private-dialog]").forEach(n=>n.remove());state.entryPending=null;state.orderPlanPending=null;state.uncertain=null;state.actionRetries=new Map();state.editor=null;if($('editor').open)$('editor').close();$('form-fields').replaceChildren();}
   const previous=state.data,previousPartial=state.partialModules||{},previousVersions=state.moduleVersions||{};
   if(!same||force){state.refMaps={};state.lookups={};state.lookupVersions={};state.lookupPending=new Map();state.pageRefresh=new Map();state.pageCache=new Map();state.summaryCache=new Map();state.strategyCache=new Map();state.strategyDom=new Map();state.strategyRenderedKey=null;state.dataEpoch=(state.dataEpoch||0)+1;}
   state.data=b.data;state.permissions=b.permissions;state.user=b.user;state.stamp=b.stamp;state.permissionVersion=b.permissionVersion;state.accountingApproved=b.accountingApproved;
@@ -192,6 +193,7 @@ function renderRecords(module,head){
       id.dataset.recordId=row.recordId;
       const values=keys.map(k=>schema.fields[k].type==='lines'&&row._detailDeferred?(row.lineCount==null?'Xem chi tiết':row.lineCount+' thành phần'):refValue(schema.fields[k],row[k]));
       const actions=el('div',null,'actions');
+      if(module==='orders'&&row.status==='approved'&&can('orders','approve')&&can('production','read')&&can('production','approve')&&!state.demo)actions.append(button('Liên kết kế hoạch',()=>openOrderPlan(row)));
       if(!row.reverses&&schema.immutable&&can(module,'create')&&(module!=='counts'||can(module,'approve'))&&!state.demo)actions.append(button('Bổ sung / điều chỉnh',()=>openEntryCommand(module,row)));
       if(!row.reverses&&!schema.immutable&&!(module==='orders'&&row.source==='PORTAL')&&can(module,'update'))actions.append(button('Sửa',()=>openEditor(module,row)));
       if(!row.reverses&&schema.immutable&&can(module,'approve'))actions.append(button('Đảo phiếu',()=>changeRecord(module,row,'reverse'),'button danger'));
@@ -453,7 +455,7 @@ async function exportModule(module,control){
   }catch(e){errorText(e);}finally{state.exporting=false;if(control){control.disabled=false;control.classList.remove('is-loading');}}
 }
 async function refresh(force=true){if(state.busy||$('editor').open){if(force)toast('Hãy hoàn tất phiếu đang mở hoặc đợi thao tác hiện tại.','info');return;}state.busy=true;$('refresh').disabled=true;$('refresh').classList.add('is-loading');try{await load(force);nav();route();$('connection').textContent=state.demo?'Xem thử · lưu trong RAM':'Đã đồng bộ '+new Date().toLocaleTimeString('vi-VN');if(force)toast(state.demo?'Đã làm mới bản xem thử trên máy.':'Đã tải dữ liệu mới nhất từ Sheets.');}catch(e){if(e.code==='AUTH'){localLogout();toast('Phiên đã hết hiệu lực. Vui lòng đăng nhập lại.','warning');}else errorText(e);}finally{state.busy=false;$('refresh').disabled=false;$('refresh').classList.remove('is-loading');}}
-function localLogout(){document.querySelectorAll("[data-private-dialog]").forEach(n=>n.remove());state.entryPending=null;state.lookups={};state.lookupVersions={};state.lookupPending=new Map();state.refMaps={};state.pendingWorkflow=null;state.saving=false;state.uncertain=null;state.actionRetries=new Map();state.pageCache=new Map();state.summaryCache=new Map();state.viewCache=new Map();state.strategyCache=new Map();state.strategyDom=new Map();state.strategyRenderedKey=null;state.grantKey=null;state.moduleVersions={};clearToasts();clearRpcSession();state.disconnected=false;state.token=null;state.data={};state.permissions={};state.user=null;state.issues=[];state.loginAttempt=null;if($('editor').open)$('editor').close();$('form-fields').replaceChildren();$('view').replaceChildren();$('navigation').replaceChildren();$('workspace').hidden=true;$('login').hidden=false;$('login-status').textContent='Đã đăng xuất.';if(!state.demo)prepareLogin();}
+function localLogout(){document.querySelectorAll("[data-private-dialog]").forEach(n=>n.remove());state.entryPending=null;state.orderPlanPending=null;state.lookups={};state.lookupVersions={};state.lookupPending=new Map();state.refMaps={};state.pendingWorkflow=null;state.saving=false;state.uncertain=null;state.actionRetries=new Map();state.pageCache=new Map();state.summaryCache=new Map();state.viewCache=new Map();state.strategyCache=new Map();state.strategyDom=new Map();state.strategyRenderedKey=null;state.grantKey=null;state.moduleVersions={};clearToasts();clearRpcSession();state.disconnected=false;state.token=null;state.data={};state.permissions={};state.user=null;state.issues=[];state.loginAttempt=null;if($('editor').open)$('editor').close();$('form-fields').replaceChildren();$('view').replaceChildren();$('navigation').replaceChildren();$('workspace').hidden=true;$('login').hidden=false;$('login-status').textContent='Đã đăng xuất.';if(!state.demo)prepareLogin();}
 $('logout').onclick=async()=>{try{if(!state.demo)await call('logout');localLogout();toast('Đã đăng xuất.','info');}catch(e){errorText(e);}};
 $('refresh').onclick=()=>refresh(true);$('menu-toggle').onclick=()=>$('workspace').classList.toggle('menu-open');$('backdrop').onclick=()=>$('workspace').classList.remove('menu-open');window.addEventListener('hashchange',()=>{if(state.user)route();});
 let syncInFlight=false;
