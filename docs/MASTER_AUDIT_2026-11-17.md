@@ -11,7 +11,7 @@ Yêu cầu đầy đủ lưu MASTER_REQUEST_2026-11-17.md. Inventory/hashes/head
 | M04 | P1 | Năng suất tổng vs đạt, KPI ngày/tháng, targets chưa chốt tách cấu hình | Shared KPI + hao hụt pass 240 tests; ngưỡng/UAT chờ |
 | M05 | P1 | Source issue workbench, backup verify/restore inspection | Local pass 243 tests; Drive restore drill chờ |
 | M06 | P1 | Portal lifecycle/order-plan links và an toàn privacy | Liên kết tường minh local247 pass; Portal Google/D22 chờ |
-| M07 | P1 | Schema/migration/UOM/prices/recipe-line gaps khả thi, không chốt policy tài chính | Chưa làm |
+| M07 | P1 | Schema/migration/UOM/prices/recipe-line gaps khả thi, không chốt policy tài chính | Local250 pass: đơn vị chuẩn/schema diff; migration giá/UOM chờ nguồn và policy |
 | M08 | P0 gate | Integration/E2E fixture, matrix,build/deploy readback; UAT thực tế | Local tiếp tục; Google chờ |
 
 Không tuyên bố toàn dự án hoàn tất từ mock. Mỗi task có code/tests/docs/commit; phần policy/Google chưa có được ghi DECISIONS_REQUIRED, tiếp tục việc độc lập.

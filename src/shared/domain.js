@@ -2,6 +2,13 @@ import { SCHEMA } from './schema.js';
 const round = n => Math.round((n + Number.EPSILON) * 100) / 100;
 const fail = message => { throw new Error(message); };
 const finite = n => typeof n === 'number' && Number.isFinite(n);
+function unitConversion(purchaseUnit,useUnit){
+  const normalize=v=>String(v||'').normalize('NFKC').trim().toLowerCase();
+  const units={kg:['mass',1000],kilogram:['mass',1000],g:['mass',1],gram:['mass',1],gam:['mass',1],l:['volume',1000],lit:['volume',1000],'lít':['volume',1000],ml:['volume',1]};
+  const a=units[normalize(purchaseUnit)],b=units[normalize(useUnit)];
+  if(!a||!b)return {known:false,compatible:null,expected:null};
+  return {known:true,compatible:a[0]===b[0],expected:a[0]===b[0]?a[1]/b[1]:null};
+}
 // Confirmed by owner 2026-11-16: D01/D02/D03. Cash receipts are never the ratio base.
 const ACCOUNTING_POLICY=Object.freeze({version:'net-sales-2026-11-16',foodCostMax:0.322,productionLaborMax:0.15});
 function validDate(value) {
@@ -35,6 +42,11 @@ function cleanRecord(module, input, data = {}) {
     out[key] = v;
   }
   if (module === 'sales' && (out.sold + out.returned + out.creditQty > out.delivered)) fail('Bán + trả + điểm bán chịu vượt số giao');
+  if(module==='materials'){
+    const u=unitConversion(out.purchaseUnit,out.unit);
+    if(u.known&&!u.compatible)fail('Không quy đổi trực tiếp khối lượng sang thể tích khi chưa có quy cách được xác nhận');
+    if(u.expected!=null&&Math.abs(out.conversion-u.expected)>Math.max(1e-9,u.expected*1e-9))fail('Sai quy đổi đơn vị: 1 '+out.purchaseUnit+' = '+u.expected+' '+out.unit+'. Hiệu suất chế biến phải đặt ở công thức, không đặt vào quy đổi mua.');
+  }
   if (module === 'production' && out.rejected > out.produced + out.extra) fail('Lỗi / hủy vượt sản xuất');
   if (module === 'attendance') shiftHours(out.start, out.end, out.breakMinutes);
   if (module === 'assets' && out.salvage > out.cost) fail('Giá trị còn lại vượt nguyên giá');
@@ -256,4 +268,4 @@ function compareWeeks(data,anchor){
     rows.push({date:iso(current),previousDate:iso(previous),revenue:a.revenue,previousRevenue:b.revenue,difference:a.revenue==null||b.revenue==null?null:round(a.revenue-b.revenue)});
   }return rows;
 }
-export { ACCOUNTING_POLICY, round, cleanRecord, sourceIssues, effective, validDate, shiftHours, flattenRecipe, costRecipe, salesMetrics, payroll, inventory, demand, report, scenario, variance, finance, targets, compareWeeks };
+export { ACCOUNTING_POLICY, round, unitConversion, cleanRecord, sourceIssues, effective, validDate, shiftHours, flattenRecipe, costRecipe, salesMetrics, payroll, inventory, demand, report, scenario, variance, finance, targets, compareWeeks };

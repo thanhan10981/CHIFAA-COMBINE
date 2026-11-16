@@ -2,6 +2,7 @@ function maintenance_(user,args){
   requireAdmin_(user);authConfig_();
   if(args.operation==='verifyBackup')return verifyBackup_(args.backupId);
   if(args.operation==='inspectSources')return inspectSources_(args);
+  if(args.operation==='inspectSchema')return inspectSchema_();
   if(args.operation==='initialize')return locked_(()=>{const result=setup_();audit_(user.email,'WORKFLOW_SETUP','system','',null,result);return result;});
   if(args.operation==='backup')return backup_();
   if(args.operation==='createBackupFolder'){

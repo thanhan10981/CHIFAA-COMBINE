@@ -9,17 +9,7 @@ function createNewDev_(){
   setup_();return {spreadsheetUrl:db_().getUrl(),mode:'DEV — private, no sharing performed'};
 }
 function setup_(){
-  const db=db_(),definitions={};
-  for(const module of Object.keys(SCHEMA))definitions[module]=headers_(module);
-  for(const name of Object.keys(SYSTEM_FIELDS))definitions[name]=headers_(name);
-  Object.assign(definitions,{
-    _Users:['recordId','email','role','permissions','enabled','permissionVersion'],
-    _Sessions:['recordId','email','tokenHash','expires','status','createdAt'],
-    _Audit:['recordId','at','user','action','module','subjectId','before','after'],
-    _Requests:['key','actor','fingerprint','state','effects','result','createdAt'],
-    _Sync:['module','recordId','hash','seenAt'],
-    _AuthRequests:['sessionHash','requestId','expires']
-  });
+  const db=db_(),definitions=schemaDefinitions_();
   // Preflight first. Never overwrite unknown data or rename existing columns silently.
   for(const [name,headers]of Object.entries(definitions)){
     const s=db.getSheetByName(name);

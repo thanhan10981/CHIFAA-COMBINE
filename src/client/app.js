@@ -1,6 +1,6 @@
 import {ensureExcelRuntime,createModuleWorkbook,downloadExcel} from './excel.js';
 import { SCHEMA, ROUTES, ACTIONS } from '../shared/schema.js';
-import { cleanRecord, sourceIssues, effective, flattenRecipe, costRecipe, salesMetrics, payroll, inventory, demand, report, scenario, variance, validDate, finance, targets, compareWeeks } from '../shared/domain.js';
+import { unitConversion, cleanRecord, sourceIssues, effective, flattenRecipe, costRecipe, salesMetrics, payroll, inventory, demand, report, scenario, variance, validDate, finance, targets, compareWeeks } from '../shared/domain.js';
 import { rpcCall, setRpcSession, clearRpcSession, setRpcScope, restoreRpcSession,clientNow,noteTiming } from './rpc.js';
 import { NAV_SECTIONS, NAV_ICONS } from './navigation.js';
 import {createPermissionPicker} from './permissions.js';
@@ -266,6 +266,10 @@ function openEditor(module,row){
     label.append(input);$('form-fields').append(label);
   }
   if(!row)wireSnapshotDefaults(module);
+  if(module==='materials'){
+    const input=key=>$('form-fields').querySelector('[name="'+key+'"]'),hint=el('p',null,'notice field full'),update=()=>{const u=unitConversion(input('purchaseUnit').value,input('unit').value);hint.textContent=u.expected!=null?'Quy đổi đơn vị chuẩn: 1 '+input('purchaseUnit').value+' = '+u.expected+' '+input('unit').value+'. Hiệu suất nấu/chế biến đặt ở công thức riêng.':u.known?'Khối lượng và thể tích cần quy cách được xác nhận; không đổi trực tiếp.':'Bao/can/túi/chai: nhập hệ số theo đúng quy cách thực tế. Hệ thống không tự dùng hệ số ví dụ.';};
+    for(const key of ['purchaseUnit','unit','conversion'])input(key).addEventListener('input',update);$('form-fields').append(hint);update();
+  }
   $('editor').showModal();
 }
 function wireSnapshotDefaults(module){
