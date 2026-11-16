@@ -44,6 +44,7 @@ function reverseLinkedEffects_(user,module,row,data){
   effects.push(newEffect_('_Workflows',appRow_(user,{date:marker.date,kind:marker.kind,referenceId:marker.referenceId,details:marker.details,reverses:marker.recordId})));return effects;
 }
 function attachProductionCosts_(rows,user){
+  if(!rows.length)return rows;
   if(!allowed_(user,'stock','read')||!allowed_(user,'recipes','read'))return rows;
   const markers=effective(workflowRows_()).filter(w=>w.kind==='production');return rows.map(row=>{const w=markers.find(w=>w.referenceId===row.recordId);return w?{...row,costSnapshot:workflowDetails_(w).snapshot}:row;});
 }
@@ -61,8 +62,8 @@ function workflow_(user,args){
   else throw new Error('VALIDATION: Nghiệp vụ không tồn tại');
   const request={...args,action:'WORKFLOW'};delete request.token;delete request.proof;delete request.key;
   const previous=replay_(user.email,args.key,request);if(previous)return previous;requireOperational_();
-  const data=data_();let effects=[];
-  const sources={production:['production','recipes','materials','stock','counts'],count:['counts','stock','materials'],payroll:['attendance','employees','cash',...(args.bonuses?.length?['plans','sales','production','recipes','materials','stock']:[])],interest:['loans','cash'],debt:['debts','cash',...(args.saleId?['sales','stores','dishes']:[])],close:Object.keys(SCHEMA)}[args.kind];
+  const sources={production:['production','recipes','materials','stock','counts','dishes'],count:['counts','stock','materials'],payroll:['attendance','employees','cash',...(allowed_(user,'plans','read')?['plans','sales','production','recipes','materials','stock','stores','dishes']:[])],interest:['loans','cash'],debt:['debts','cash',...(args.saleId?['sales','stores','dishes']:[])],close:Object.keys(SCHEMA),reopen:[]}[args.kind];
+  const data=data_(sources||Object.keys(SCHEMA));let effects=[];
   if(sources)requireValidSources_(Object.fromEntries(sources.map(m=>[m,data[m]])));
   if(['production','count'].includes(args.kind)){
     const module=args.kind==='production'?'production':'counts';require_(user,module,'approve');require_(user,module,'read');const row=effective(data[module]).find(r=>r.recordId===args.id);if(!row)throw new Error('NOT_FOUND: Không tìm thấy phiếu nguồn');effects=stockLinkEffects_(user,args.kind,row,data);

@@ -136,7 +136,7 @@ function recoverPrepared_(){
         else{const row=rawRows_(e.module).find(x=>x.recordId===e.after.recordId);if(row)table_(e.module).deleteRow(row._row);}
       }
       audit_('OWNER','RECOVERY_ROLLBACK','requests',r[0],null,null);journal.getRange(index+2,4).setValue('ROLLED_BACK');
-    });bump_();
+    });bump_();props_().deleteProperty('WRITE_IN_PROGRESS');
   });
 }
 function restoreToNewWorkbook_(){

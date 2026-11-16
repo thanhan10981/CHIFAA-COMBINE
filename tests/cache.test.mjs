@@ -47,7 +47,7 @@ test('large snapshots skip cache and concurrent writes cannot publish a mixed sn
   g.ctx.rawRows_=m=>m==='materials'?[{recordId:'large',notes:'x'.repeat(40000)}]:raw(m);
   assert.equal(send(g,'bootstrap',{token}).ok,true);assert.equal(cacheKey(g),undefined);
   g.ctx.rawRows_=m=>{if(m==='materials')g.ctx.bump_();return raw(m);};
-  assert.equal(send(g,'bootstrap',{token}).ok,true);assert.equal(cacheKey(g),undefined);
+  assert.equal(send(g,'bootstrap',{token}).error.code,'CONFLICT');assert.equal(cacheKey(g),undefined);
 });
 test('batched nonce cleanup preserves live entries between expired runs',()=>{
   const {g,token}=fixture(),request=signed(g,'bootstrap',{token});g.ctx.rpc('bootstrap',request);

@@ -1,10 +1,11 @@
 import vm from 'node:vm';import fs from 'node:fs';import crypto from 'node:crypto';
 export function gas(){
+  const metrics={open:0,getValues:0,setValues:0,append:0,flush:0,cellsRead:0,cellsWritten:0,lastRow:0};
   const tables=new Map(),properties=new Map([['SPREADSHEET_ID','test'],['ADMIN_EMAIL','admin@example.com'],['APP_MODE','internal'],['GOOGLE_CLIENT_ID','test-client'],['GOOGLE_CLIENT_SECRET','mock-secret'],['WEB_APP_URL','https://script.google.com/macros/s/DEV_DEPLOYMENT/exec'],['AUTH_ENV','DEV'],['AUTH_DEV_SPREADSHEET_ID','test'],['PORTAL_SIGNING_SECRET','test-secret']]),cache=new Map();let failTable=null;
   class Range{
     constructor(s,r,c,n=1,w=1){Object.assign(this,{s,r,c,n,w});}
-    getValues(){return Array.from({length:this.n},(_,i)=>Array.from({length:this.w},(_,j)=>this.s.rows[this.r-1+i]?.[this.c-1+j]??''));}
-    setValues(values){for(let i=0;i<this.n;i++){this.s.rows[this.r-1+i]||=[];for(let j=0;j<this.w;j++)this.s.rows[this.r-1+i][this.c-1+j]=values[i][j];}if(failTable===this.s.name){failTable=null;throw new Error('Injected write failure');}return this;}
+    getValues(){metrics.getValues++;metrics.cellsRead+=this.n*this.w;return Array.from({length:this.n},(_,i)=>Array.from({length:this.w},(_,j)=>this.s.rows[this.r-1+i]?.[this.c-1+j]??''));}
+    setValues(values){metrics.setValues++;metrics.cellsWritten+=this.n*this.w;for(let i=0;i<this.n;i++){this.s.rows[this.r-1+i]||=[];for(let j=0;j<this.w;j++)this.s.rows[this.r-1+i][this.c-1+j]=values[i][j];}if(failTable===this.s.name){failTable=null;throw new Error('Injected write failure');}return this;}
     setValue(v){return this.setValues([[v]]);}
     clearContent(){return this.setValues(Array.from({length:this.n},()=>Array(this.w).fill('')));}
     setBackground(){return this;}setFontColor(){return this;}setFontWeight(){return this;}setNumberFormat(){return this;}setDataValidation(){return this;}
@@ -12,9 +13,9 @@ export function gas(){
   }
   class Sheet{
     constructor(name){this.name=name;this.rows=[];}
-    getRange(...args){return new Range(this,...args);}getLastRow(){let n=this.rows.length;while(n&&this.rows[n-1].every(v=>v===''))n--;return n;}
+    getRange(...args){return new Range(this,...args);}getLastRow(){metrics.lastRow++;let n=this.rows.length;while(n&&this.rows[n-1].every(v=>v===''))n--;return n;}
     getLastColumn(){return Math.max(0,...this.rows.map(r=>r.length));}getMaxRows(){return 1000;}getProtections(){return[];}setFrozenRows(){}
-    appendRow(row){this.rows.push([...row]);if(failTable===this.name){failTable=null;throw new Error('Injected write failure');}}
+    appendRow(row){metrics.append++;metrics.cellsWritten+=row.length;this.rows.push([...row]);if(failTable===this.name){failTable=null;throw new Error('Injected write failure');}}
     deleteRow(i){this.rows.splice(i-1,1);}
     deleteRows(i,n){this.rows.splice(i-1,n);}
   }
@@ -27,8 +28,8 @@ export function gas(){
   const validation={requireValueInList(){return this;},requireNumberGreaterThanOrEqualTo(){return this;},setAllowInvalid(){return this;},build(){return{};}};
   const context=vm.createContext({console:{log(){},warn(){}},Date,JSON,Set,Map,Object,Array,Number,String,Math,RegExp,Error,encodeURIComponent,
     HtmlService:{createHtmlOutput:html=>({html,setTitle(){return this;},addMetaTag(){return this;}}),createHtmlOutputFromFile:file=>({file,setTitle(){return this;},addMetaTag(){return this;}})},
-    PropertiesService:{getScriptProperties:()=>({getProperty:k=>properties.get(k)||null,setProperty:(k,v)=>properties.set(k,v)})},
-    SpreadsheetApp:{openById:id=>{if(!books.has(id))throw Error('Workbook not found');return books.get(id);},create:name=>makeBook(crypto.randomUUID(),name),flush(){},ProtectionType:{RANGE:'range'},newDataValidation:()=>validation},
+    PropertiesService:{getScriptProperties:()=>({getProperty:k=>properties.get(k)||null,setProperty:(k,v)=>properties.set(k,v),deleteProperty:k=>properties.delete(k)})},
+    SpreadsheetApp:{openById:id=>{metrics.open++;if(!books.has(id))throw Error('Workbook not found');return books.get(id);},create:name=>makeBook(crypto.randomUUID(),name),flush(){metrics.flush++;},ProtectionType:{RANGE:'range'},newDataValidation:()=>validation},
     DriveApp:{Access:{PRIVATE:'PRIVATE'},getFileById:file,getFolderById:folder,createFolder:()=>folder(crypto.randomUUID())},ScriptApp:{getProjectTriggers:()=>triggers,newTrigger:triggerBuilder},
     Session:{getEffectiveUser:()=>({getEmail:()=> 'owner@example.com'})},
     LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock(){}})},CacheService:{getScriptCache:()=>({get:k=>cache.get(k),put:(k,v)=>cache.set(k,v),remove:k=>cache.delete(k)})},
@@ -39,5 +40,5 @@ export function gas(){
   });
   context.fetches=[];
   for(const file of ['src/shared/schema.js','src/shared/access.js','src/shared/domain.js','src/shared/auth-protocol.js','src/server/storage.js','src/server/auth.js','src/server/oauth.js','src/server/workflows.js','src/server/financial-workflows.js','src/server/maintenance.js','src/server/api.js','src/server/operations.js'])vm.runInContext(fs.readFileSync(file,'utf8').replace(/^import .*?;\r?\n/gm,'').replace(/^export \{[^}]*\};?\r?\n?/gm,''),context,{filename:file});
-  context.setup_();return {ctx:context,tables,properties,cache,books,makeBook,triggers,folders,failNext:name=>{failTable=name;},evaluate:code=>vm.runInContext(code,context)};
+  context.setup_();return {ctx:context,tables,properties,cache,books,makeBook,triggers,folders,metrics,failNext:name=>{failTable=name;},evaluate:code=>vm.runInContext(code,context)};
 }

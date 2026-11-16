@@ -1,8 +1,9 @@
 function attachDebtAllocations_(rows){
+  if(!rows.length)return rows;
   const markers=effective(workflowRows_()).filter(w=>w.kind==='debt');
   return rows.map(row=>({...row,allocations:markers.flatMap(w=>{const d=workflowDetails_(w);return d.saleId?(d.allocations||[]).filter(a=>a.id===row.recordId).map(a=>({date:w.date,amount:a.amount})):[];})}));
 }
-function attachLoanPeriods_(rows){const markers=effective(workflowRows_()).filter(w=>w.kind==='interest');return rows.map(row=>({...row,interestPeriods:markers.filter(w=>w.referenceId===row.recordId).map(w=>{const p=workflowDetails_(w);return {from:p.from,to:p.to,basis:p.basis,interest:p.interest};})}));}
+function attachLoanPeriods_(rows){if(!rows.length)return rows;const markers=effective(workflowRows_()).filter(w=>w.kind==='interest');return rows.map(row=>({...row,interestPeriods:markers.filter(w=>w.referenceId===row.recordId).map(w=>{const p=workflowDetails_(w);return {from:p.from,to:p.to,basis:p.basis,interest:p.interest};})}));}
 function validatePayment_(row,data){
   const category=row.category;
   if(['thu-no','tra-no'].includes(category)){

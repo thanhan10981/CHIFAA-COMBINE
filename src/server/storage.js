@@ -2,6 +2,8 @@
 function props_() { return PropertiesService.getScriptProperties(); }
 function config_(name) { const v=props_().getProperty(name); if(!v) throw new Error('CONFIG: Thiếu Script Property '+name); return v; }
 let requestBooks_=null;
+let requestRows_=null,requestTables_=null,requestProfile_=null;
+function timed_(name,fn){const start=Date.now();try{return fn();}finally{if(requestProfile_){const p=requestProfile_[name]||{calls:0,ms:0};p.calls++;p.ms+=Date.now()-start;requestProfile_[name]=p;}}}
 function db_() { const id=config_('SPREADSHEET_ID');if(!requestBooks_)return SpreadsheetApp.openById(id);if(!requestBooks_.has(id))requestBooks_.set(id,SpreadsheetApp.openById(id));return requestBooks_.get(id); }
 function hash_(value) { return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,typeof value==='string'?value:JSON.stringify(value)).map(b=>('0'+(b&255).toString(16)).slice(-2)).join(''); }
 function now_() { return new Date().toISOString(); }
@@ -10,15 +12,21 @@ function locked_(fn) { const l=LockService.getScriptLock(); if(!l.tryLock(15000)
 const SYSTEM_FIELDS={_Workflows:{date:{type:'date'},kind:{type:'text'},referenceId:{type:'text'},details:{type:'text'}},_Periods:{from:{type:'date'},to:{type:'date'},status:{type:'text'},note:{type:'text'}},_JournalChunks:{requestKey:{type:'text'},part:{type:'number'},details:{type:'text'}}};
 function fields_(module){const fields=SCHEMA[module]?.fields||SYSTEM_FIELDS[module];if(!fields)throw new Error('VALIDATION: Bảng không hợp lệ');return fields;}
 function headers_(module) { return [...META,...Object.keys(fields_(module))]; }
-function table_(name) { const s=db_().getSheetByName(name); if(!s) throw new Error('CONFIG: Chưa setup bảng '+name); return s; }
+function table_(name) { const key=config_('SPREADSHEET_ID')+':'+name;if(requestTables_?.has(key))return requestTables_.get(key);const s=db_().getSheetByName(name); if(!s) throw new Error('CONFIG: Chưa setup bảng '+name);requestTables_?.set(key,s);return s; }
 function append_(name,row) { table_(name).appendRow(row); }
 function stamp_() { return props_().getProperty('SYNC_VERSION') || '0'; }
-function bump_() { props_().setProperty('SYNC_VERSION',uid_()); }
-function rawRows_(module,book=db_()) {
+function moduleVersions_(){try{const saved=JSON.parse(props_().getProperty('MODULE_VERSIONS')||'{}');return Object.fromEntries(Object.keys(SCHEMA).map(m=>[m,saved[m]||stamp_()]));}catch(_){return Object.fromEntries(Object.keys(SCHEMA).map(m=>[m,stamp_()]));}}
+function bump_(modules) { const version=uid_(),values=moduleVersions_();for(const m of modules||Object.keys(SCHEMA))if(SCHEMA[m])values[m]=version;props_().setProperty('MODULE_VERSIONS',JSON.stringify(values));props_().setProperty('SYNC_VERSION',version); }
+function invalidateRows_(module,book=db_()){requestRows_?.delete(book.getId()+':'+module);}
+function rawRows_(module,book=db_()){
+  const key=book.getId()+':'+module;if(requestRows_?.has(key))return requestRows_.get(key);
+  const rows=timed_('read:'+module,()=>readRows_(module,book));requestRows_?.set(key,rows);return rows;
+}
+function readRows_(module,book) {
   const s=book.getSheetByName(module),headers=headers_(module);if(!s)throw new Error('CONFIG: Chưa setup bảng '+module);
   if(JSON.stringify(s.getRange(1,1,1,headers.length).getValues()[0])!==JSON.stringify(headers)) throw new Error('SCHEMA: Sai cột bảng '+module);
-  if(s.getLastRow()<2) return [];
-  const cellsAll=[];for(let offset=2;offset<=s.getLastRow();offset+=1000)cellsAll.push(...s.getRange(offset,1,Math.min(1000,s.getLastRow()-offset+1),headers.length).getValues());
+  const last=s.getLastRow();if(last<2) return [];
+  const cellsAll=[];for(let offset=2;offset<=last;offset+=1000)cellsAll.push(...s.getRange(offset,1,Math.min(1000,last-offset+1),headers.length).getValues());
   return cellsAll.map((cells,i)=>{
     if(cells.every(c=>c===''))return null;
     const row={}; headers.forEach((h,j)=>{row[h]=cells[j] instanceof Date?Utilities.formatDate(cells[j],'Asia/Ho_Chi_Minh',fields_(module)[h]?.type==='time'?'HH:mm':'yyyy-MM-dd'):cells[j];});
@@ -32,18 +40,28 @@ function rawRows_(module,book=db_()) {
     return row;
   }).filter(Boolean);
 }
-function data_() { const data={};for(const m of Object.keys(SCHEMA))data[m]=rawRows_(m);data.debts=attachDebtAllocations_(data.debts);data.production=attachProductionCosts_(data.production,{role:'admin',permissions:{}});return data; }
+function data_(modules=Object.keys(SCHEMA)) { const data={};for(const m of new Set(modules))data[m]=rawRows_(m);if(data.debts)data.debts=attachDebtAllocations_(data.debts);if(data.production)data.production=attachProductionCosts_(data.production,{role:'admin',permissions:{}});return data; }
+function mutationModules_(module,action){
+  if(action==='reverse')return Object.keys(SCHEMA); // Dynamic linked effects must retain complete source checks.
+  const needed=new Set([module,...({discounts:['stores','dishes'],recipes:['materials','dishes'],stock:['materials','counts'],counts:['stock','materials'],production:['recipes','materials','stock','counts','dishes'],sales:['stores','dishes'],attendance:['employees'],cash:['debts','loans'],debts:['cash'],loans:['cash'],orders:['stores','dishes']}[module]||[])]);
+  if(action==='delete'){needed.add('recipes');for(const [m,s]of Object.entries(SCHEMA))if(Object.values(s.fields).some(f=>f.ref===module))needed.add(m);}
+  return [...needed];
+}
 function requireValidSources_(data){if(sourceIssues(data).length)throw new Error('DATA_INVALID: Dữ liệu nguồn không hợp lệ. Quản trị viên cần kiểm tra và sửa trên phân hệ nguồn trước khi tính hoặc chốt.');}
 function publicRow_(row) { const copy={...row};delete copy._row;return copy; }
 function cells_(module,row) { return headers_(module).map(k=>{const v=row[k]??'';return Array.isArray(v)?JSON.stringify(v):v;}); }
-function writeRow_(module,row,book=db_()) {
-  const s=book.getSheetByName(module),found=rawRows_(module,book).find(r=>r.recordId===row.recordId),cells=cells_(module,row);
-  if(found)s.getRange(found._row,1,1,cells.length).setValues([cells]);else s.appendRow(cells);
+function writeRow_(module,row,book=db_()) {writeRows_(module,[row],book);}
+function writeRows_(module,rows,book=db_()){
+  if(!rows.length)return;const s=book.getSheetByName(module),existing=new Map(rawRows_(module,book).map(r=>[r.recordId,r._row])),ids=new Set();let next=s.getLastRow()+1;
+  const writes=rows.map(row=>{if(ids.has(row.recordId))throw new Error('CONFLICT: Trùng mã trong lô ghi');ids.add(row.recordId);return {at:existing.get(row.recordId)||next++,cells:cells_(module,row)};}).sort((a,b)=>a.at-b.at);
+  try{for(let i=0;i<writes.length;){let end=i+1;while(end<writes.length&&writes[end].at===writes[end-1].at+1)end++;s.getRange(writes[i].at,1,end-i,writes[i].cells.length).setValues(writes.slice(i,end).map(w=>w.cells));i=end;}}finally{invalidateRows_(module,book);}
 }
-function audit_(user,action,module,id,before,after) {
+function auditCells_(user,action,module,id,before,after) {
   const bounded=value=>{const text=JSON.stringify(value||null);return text.length<=40000?text:JSON.stringify({largePayload:true,hash:hash_(text),recordId:value?.recordId||'',journal:'_Requests / _JournalChunks'});};
-  append_('_Audit',[uid_(),now_(),user,action,module,id,bounded(before),bounded(after)]);
+  return [uid_(),now_(),user,action,module,id,bounded(before),bounded(after)];
 }
+function audit_(user,action,module,id,before,after){append_('_Audit',auditCells_(user,action,module,id,before,after));}
+function assertReadable_(){if(props_().getProperty('WRITE_IN_PROGRESS'))throw new Error('BUSY: Đang ghi hoặc cần phục hồi giao dịch. Thử đồng bộ lại sau.');}
 function rowsPlain_(name) { const s=table_(name);return s.getLastRow()>1?s.getRange(2,1,s.getLastRow()-1,s.getLastColumn()).getValues():[]; }
 function transact_(actor,key,request,effects) {
   if(typeof key!=='string'||!/^[\w-]{16,100}$/.test(key))throw new Error('VALIDATION: Cần idempotencyKey');
@@ -70,13 +88,17 @@ function transact_(actor,key,request,effects) {
   }
   const journal=table_('_Requests');
   journal.appendRow([key,actor,fingerprint,'PREPARED',serialized,'',now_()]);
+  props_().setProperty('WRITE_IN_PROGRESS',key);
   const index=journal.getLastRow();
   SpreadsheetApp.flush();
   try{
-    for(const e of effects){writeRow_(e.module,e.after);audit_(actor,request.action,e.module,e.after.recordId,e.before,e.after);}
-    SpreadsheetApp.flush();bump_();
+    const groups=new Map();for(const e of effects){if(!groups.has(e.module))groups.set(e.module,[]);groups.get(e.module).push(e.after);}
+    for(const [module,rows]of groups)timed_('write:'+module,()=>writeRows_(module,rows));
+    const auditRows=effects.map(e=>auditCells_(actor,request.action,e.module,e.after.recordId,e.before,e.after)),audit=table_('_Audit');
+    if(auditRows.length)audit.getRange(audit.getLastRow()+1,1,auditRows.length,8).setValues(auditRows);
+    SpreadsheetApp.flush();bump_([...groups.keys()]);
     const result={ids:effects.map(e=>e.after.recordId),stamp:stamp_()};
-    journal.getRange(index,6).setValue(JSON.stringify(result));journal.getRange(index,4).setValue('APPLIED');
+    journal.getRange(index,4,1,3).setValues([['APPLIED',serialized,JSON.stringify(result)]]);props_().deleteProperty('WRITE_IN_PROGRESS');
     return result;
   }catch(error){
     try{
@@ -85,7 +107,7 @@ function transact_(actor,key,request,effects) {
         else{const r=rawRows_(e.module).find(r=>r.recordId===e.after.recordId);if(r)table_(e.module).deleteRow(r._row);}
       }
       audit_(actor,'ROLLBACK',request.module||'',key,null,{message:String(error)});
-      journal.getRange(index,4).setValue('ROLLED_BACK');bump_();
+      journal.getRange(index,4).setValue('ROLLED_BACK');bump_(effects.map(e=>e.module));props_().deleteProperty('WRITE_IN_PROGRESS');
     }catch(_){/* PREPARED remains: block all writes until explicit recovery. */}
     throw error;
   }

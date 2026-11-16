@@ -4,7 +4,7 @@ function doGet(event){
   const name=config_('APP_MODE')==='portal'?'Portal':'Index';return HtmlService.createHtmlOutputFromFile(name).setTitle('CHIFAA COMBINE').addMetaTag('viewport','width=device-width, initial-scale=1');
 }
 function rpc(action,args){
-  requestBooks_=new Map();
+  requestBooks_=new Map();requestRows_=new Map();requestTables_=new Map();requestProfile_={};
   const started=Date.now();args=args||{};let actor=null;
   try{
     let result;
@@ -15,13 +15,15 @@ function rpc(action,args){
     else if(action==='portalOrder')result=locked_(()=>portalOrder_(args));
     else if(action==='portalStatus')result=portalStatus_(args);
     else{
-      const user=locked_(()=>verifyRequest_(action,args));
+      const user=timed_('auth',()=>locked_(()=>verifyRequest_(action,args)));
       actor=user.email;
+      const readStamp=stamp_();
+      if(['bootstrap','list','export','financialSummary','workflowReports'].includes(action))assertReadable_();
       if(action==='bootstrap')result=bootstrap_(user,args.force===true);
       else if(action==='list')result=listPage_(user,args);
       else if(action==='sync')result={stamp:stamp_(),permissionVersion:user.permissionVersion};
       else if(action==='logout')result=locked_(()=>logout_(user,args.token));
-      else if(action==='mutate')result=locked_(()=>mutate_(authenticate_(args.token),args));
+      else if(action==='mutate')result=timed_('mutate',()=>locked_(()=>mutate_(authenticate_(args.token),args)));
       else if(action==='workflow')result=locked_(()=>workflow_(authenticate_(args.token),args));
       else if(action==='workflowReports')result=workflowReports_(user,args);
       else if(action==='workflowStatus'){requireAdmin_(user);result={ready:operationalReady_(),periods:periodRows_().map(publicRow_),history:effective(workflowRows_()).filter(w=>['payroll','interest','debt'].includes(w.kind)).slice(-100).map(w=>({recordId:w.recordId,date:w.date,kind:w.kind,referenceId:w.referenceId})),portalConfigured:!!props_().getProperty('PORTAL_SPREADSHEET_ID'),backupConfigured:!!props_().getProperty('BACKUP_FOLDER_ID'),backupFolderId:props_().getProperty('BACKUP_FOLDER_ID')||'',portalSpreadsheetId:props_().getProperty('PORTAL_SPREADSHEET_ID')||'',portalUrl:props_().getProperty('PORTAL_WEB_APP_URL')||''};}
@@ -31,6 +33,8 @@ function rpc(action,args){
       else if(action==='health'){requireAdmin_(user);result={stamp:stamp_(),audit:rowsPlain_('_Audit').slice(-100).map(r=>({id:r[0],at:r[1],user:r[2],action:r[3],module:r[4],recordId:r[5]})),pending:rowsPlain_('_Requests').filter(r=>r[3]==='PREPARED').map(r=>({key:r[0],state:r[3],createdAt:r[6]})),lastScan:props_().getProperty('LAST_SCAN'),lastBackup:props_().getProperty('LAST_BACKUP')};}
       else if(action==='export'){require_(user,args.module,'export');result=listPage_(user,{...args,mode:'snapshot'});}
       else throw new Error('NOT_FOUND: Endpoint không tồn tại');
+      if(['bootstrap','list','export','financialSummary','workflowReports'].includes(action))assertReadable_();
+      if(['bootstrap','list','export','financialSummary','workflowReports'].includes(action)&&readStamp!==stamp_())throw new Error('CONFLICT: Dữ liệu đổi trong lúc đọc. Đồng bộ rồi thử lại.');
       if(['bootstrap','list','export','health','financialSummary','workflowReports','workflowStatus'].includes(action))audit_(user.email,'READ','rpc',action,null,{module:args.module||args.kind||''});
     }
     console.log(JSON.stringify({event:'rpc',action,ms:Date.now()-started,ok:true}));return {ok:true,data:result};
@@ -39,7 +43,7 @@ function rpc(action,args){
     if(actor&&['AUTH','FORBIDDEN'].includes(code)){try{audit_(actor,'RPC_DENIED','rpc',action,null,{code});}catch(_){/* Preserve fail-closed response if audit storage is unavailable. */}}
     console.warn(JSON.stringify({event:'rpc',action,ms:Date.now()-started,ok:false,code}));
     return {ok:false,error:{code,message:code==='ERROR'?'Không thể xử lý. Kiểm tra nhật ký Apps Script.':message}};
-  }finally{requestBooks_=null;}
+  }finally{console.log(JSON.stringify({event:'rpc_profile',action,steps:requestProfile_}));requestBooks_=null;requestRows_=null;requestTables_=null;requestProfile_=null;}
 }
 function bootstrap_(user,force=false){
   // Called only after fresh session, signature, replay and _Users checks.
@@ -83,7 +87,7 @@ function mutate_(user,args){
   if(!['create','update','delete','approve','reject','reverse'].includes(action))throw new Error('VALIDATION: Thao tác không hợp lệ');
   const request={action,module,operation:action,id:args.id||'',record:args.record||null,expectedVersion:args.expectedVersion??null,expectedHash:args.expectedHash||''};
   const previous=replay_(user.email,args.key,request);if(previous)return previous;
-  const data=data_(),before=data[module].find(r=>r.recordId===args.id);
+  const data=data_(mutationModules_(module,action)),before=data[module].find(r=>r.recordId===args.id);
   if(action==='create'){
     const sources={production:['production','recipes','materials','stock','counts','dishes'],counts:['counts','stock','materials'],attendance:['attendance','employees'],sales:['sales','stores','dishes'],cash:['cash','debts','loans']}[module];
     if(sources)requireValidSources_(Object.fromEntries(sources.map(m=>[m,data[m]])));
@@ -108,7 +112,7 @@ function mutate_(user,args){
   }else if(action==='delete'){
     if(module==='orders'&&before.status!=='pending')throw new Error('IMMUTABLE: Không xóa đơn đã xử lý');
     // Reject deleting referenced masters, including references inside recipes.
-    for(const [m,s]of Object.entries(SCHEMA))for(const r of effective(data[m]))for(const [k,f]of Object.entries(s.fields)){
+    for(const [m,s]of Object.entries(SCHEMA))for(const r of effective(data[m]||[]))for(const [k,f]of Object.entries(s.fields)){
       if(f.ref===module&&r[k]===before.recordId)throw new Error('CONFLICT: Dữ liệu đang được tham chiếu');
       if(k==='lines'&&Array.isArray(r.lines)&&r.lines.some(l=>l.id===before.recordId))throw new Error('CONFLICT: Đang nằm trong công thức');
     }
