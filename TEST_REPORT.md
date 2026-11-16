@@ -107,3 +107,5 @@ Auth local: tests/oauth.test.mjs, session-security.test.mjs, client.test.mjs: co
 ## G02 — Sau cập nhật D01/D02/D03
 
 170 pass / 0 fail; log output/requirements-policy-tests.txt. Suite tests/accounting-policy.test.mjs kiểm tra net/expense/received, phần điểm bán chịu, base Food cost/SX, labor headroom không trừ COGS, thiếu SX/nguồn không ra0/bonus và cross-report/Strategy. Đây là local/mock, không thay 93ca acceptance Google. Xem docs/ACCOUNTING_POLICY.md.
+
+Source checkpoint3896256 đã được xuất git archive và chạy lại build +170test đạt trong output/checkpoint-3896256 (dependency dùng node_modules đã cài tại workspace). Exact readback DEV22 khớp đủ4file; haiDEVdeployment cùng22. Không có Googlebrowser/UAT hoặc latency thật; không nâng trạng thái93caacceptance thành PASS.

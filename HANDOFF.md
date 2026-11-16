@@ -252,3 +252,9 @@ T00 checkpoint commit ba0ad6c contains new audit/requirements artifacts; working
 
 No Google data/schema/ACL/trigger touched. Code not deployed at this entry; exact deployment status to be appended after verified readback. Next after G02: auth real-two-Gmail gate requires connected Google browser (fresh cua.getState again returned apps:[], browsers:[]), then G04 sync quarantine and G03 returns/kiosk/source mapping. No production readiness claim.
 
+## Verified DEV22 deployment / requirements checkpoint — 2026-11-16
+
+G02 source commit3896256 reproduced: git archive exported to output/checkpoint-3896256; build +170tests pass from committed source using installed workspace dependencies. Original3requirements archive byte hashes verified against received manifest. ExactGoogleversion22 readback matches all4tested dist files (manifest semantic); BOTH existing callback/appDEVdeployments now@22, CLI confirmed separately. Historical@2 unchanged; noProd/data/schema/ACL/trigger writes. No setup required for this read-model/UI-label change. deployment.json records22/170tests/readbacktrue, GoogleUATfalse.
+
+Durable checkpoint docs/checkpoints/REQUIREMENTS_2026-11-16.md; T00ba0ad6c and source3896256. Source/test/build dependencies and prior verifier removal were captured in source checkpoint because tests require AppsScript-only/no verifier; unrelated previous docs/generator changes remain, do not reset. Matrix remains1DONE/70PARTIAL/4MISSING/3BLOCKED. Auth gate is BLOCKED_GOOGLE_UAT, source import gate BLOCKED_SOURCE. Browser inventory refreshed empty; never claim twoGmail/Cloud/ACL/trigger verified. User question on second accountant Gmail pending. Next: Googlegate then G04sync invalid-row quarantine and G03return/kiosk; do not invent unconfirmed D07–D27 policies. Stop broad external-account release at Gate1; safely completed D01/D02/D03 within existing DEV scope.
+
