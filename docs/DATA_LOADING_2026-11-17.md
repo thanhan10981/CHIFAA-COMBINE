@@ -58,14 +58,14 @@ Task6–8 và số đo sau sẽ bổ sung khi kiểm thử frontend/deploy hoàn
 
 | API cỡ5.000 | Trước getValues / cells / ms | Sau getValues / cells / ms |
 | --- | ---: | ---: |
-| Materials lạnh | 8 / 65.025 / 62,14 | 8 / 65.025 / 33,38 |
-| Stock tuần rỗng, lạnh | 9 / 65.043 / 59,76 | 9 / 65.043 / 29,44 |
-| Sales tuần, lạnh | 9 / 110.061 / 145,87 | 9 / 110.061 / 44,88 |
-| Attendance tuần, lạnh | 9 / 95.061 / 157,67 | 9 / 95.061 / 38,96 |
-| Cash tuần, lạnh | 9 / 70.068 / 77,51 | 9 / 70.068 / 34,31 |
-| Sales tuần khác, index nóng | 9 / 110.085 / 95,96 | 9 / 855 / 17,12 |
-| Dashboard lạnh | 41 / 405.238 / 576,67 | 42 / 405.246 / 526,62 |
-| Dashboard mất readcache, snapshot còn hợp lệ | 41 / 405.241 / 506,78 | 5 / 205 / 0,67 |
+| Materials cold | 8 / 65.025 / 62,14 | 8 / 65.025 / 35,43 |
+| Stock cold empty week | 9 / 65.043 / 59,76 | 9 / 65.043 / 26,46 |
+| Sales cold week | 9 / 110.061 / 145,87 | 9 / 110.061 / 44,34 |
+| Attendance cold week | 9 / 95.061 / 157,67 | 9 / 95.061 / 38,9 |
+| Cash cold week | 9 / 70.068 / 77,51 | 9 / 70.068 / 30,46 |
+| Sales next week warm index | 9 / 110.085 / 95,96 | 9 / 855 / 16,52 |
+| Dashboard cold | 41 / 405.238 / 576,67 | 42 / 405.246 / 544,24 |
+| Dashboard read-cache evicted | 41 / 405.241 / 506,78 | 5 / 205 / 0,66 |
 
 Đây là **một lượt CPU mock**, không phải latencyGoogle/P50/P95. Lần đầu index chưa giảm ô đọc; giảm decode/hash và giữ lại chính cells đã đọc trong request để tránh đọc lại trang. Index sau được encode tuple gọn: cache5.000dòng có test riêng, không giả rằng cache100KB chứa trọn bảng. Chọn dòng rải rác vẫn có thể cần nhiều getValues; ví dụ tuần khác sốcalls9không giảm, chỉ cells giảm99,2%. Không che phần chưa cải thiện. Cold Dashboard vẫn full source validation/cost history để đúng nghiệp vụ.
 
@@ -81,3 +81,16 @@ Benchmark client40lượt/cỡ Node+LinkeDOM: cỡ5.000 bảng nóng P50=9,79ms/
 - Bật Script Property **PERF_DIAGNOSTICS=true** để có rpc_payload (serverMs/serializeMs/payloadChars) và client `CHIFAA_PERFORMANCE` có server/transport-queue/UI. Transport-queue gồm mạng+Google queue/framework; không gọi đó là thời gian mạng thuần. Mặc định không stringify thêm payload, tránh phí đo không cần thiết. Log không ghi dữ liệu/token/secret.
 - TestGoogle còn pending: Admin/kế toán hạn chế,10tab,tuần/tháng,save khi lookup đang chạy,change directSheets,đổi quyền khicachecòn,mấtkết nối/cacheexpiry,2/5/8phiên. Cần30lượt/case, máy/mạng/rowcounts, P50/P95; chưa thể xác nhận bất kỳ SLA Google nào vì không có browser kết nối.
 - Deploy5file giữ nguyên URLcallback/app, backup và readback exactversion trước gán; không setup lại workbook. Dùng trigger incremental DEV27 đã có; nếu chưa cài thì Admin vào Nhật ký & đồng bộ → Cài lịch scan, backup và Portal. Không tự chạy trigger setup trong phiên này.
+
+
+## Aggregate endpoint benchmark extension
+
+Same synthetic5.000 fixture, single CPU/mock run; cold source still reads full dependencies. Hot getValues3 are fresh auth/nonce, not cached identity.
+
+| API | Cold ms / getValues | Hot ms / getValues | Response bytes |
+| --- | ---: | ---: | ---: |
+| inventory | 396.83 / 17 | 5.89 / 3 | 14977 |
+| payroll | 118.72 / 14 | 0.4 / 3 | 366 |
+| cost | 167.65 / 22 | 0.33 / 3 | 385 |
+| demand | 80.42 / 20 | 0.52 / 3 | 524 |
+| variance | 210.97 / 24 | 0.33 / 3 | 431 |

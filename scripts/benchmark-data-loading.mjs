@@ -10,6 +10,7 @@ for(const n of [100,1000,5000]){
  measure('dashboard:cold',()=>send(g,'summary',{token,from:'2026-11-10',to:'2026-11-16'}));
  for(const k of g.cache.keys())if(k.startsWith('read:')||k.startsWith('parts:'))g.cache.delete(k);measure('dashboard:cache-evicted',()=>send(g,'summary',{token,from:'2026-11-10',to:'2026-11-16'}));
  if(g.ctx.lookupData_)measure('lookup:recipes',()=>send(g,'lookup',{token,module:'recipes',limit:200,offset:0}));
+ if(g.ctx.periodSummary_)for(const kind of ['inventory','payroll','cost','demand','variance']){measure(kind+':summary-cold',()=>send(g,'periodSummary',{token,kind,from:'2026-11-01',to:'2026-11-30'}));measure(kind+':summary-hot',()=>send(g,'periodSummary',{token,kind,from:'2026-11-01',to:'2026-11-30'}));}
  runs.push({rowsPerLargeTable:n,results});
 }
 const out={environment:'Synthetic Node GAS mock: no Google IO/network/OAuth/concurrent browser measurements',label,runs};fs.writeFileSync('output/data-loading-'+label+'.json',JSON.stringify(out,null,2)+'\n');console.log(JSON.stringify(out));

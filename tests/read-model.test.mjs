@@ -48,3 +48,9 @@ test('payroll summary filters month/department after resolving reversals and cac
 test('diagnostics separate server/payload timings without transmitting row data in telemetry',()=>{
  const {g,token}=fixture(1);g.properties.set('PERF_DIAGNOSTICS','true');const r=send(g,'list',{token,module:'materials'});assert.ok(Number.isFinite(r.meta.serverMs));assert.ok(r.meta.payloadChars>0);assert.equal(Object.keys(r.meta).sort().join(','),'payloadChars,serializeMs,serverMs');
 });
+test('cost, demand and variance read models match shared calculations without exporting source history',()=>{
+ const {g,token}=fixture(3),args={token,from:'2026-11-01',to:'2026-11-30'},data=g.ctx.data_();
+ const cost=send(g,'periodSummary',{...args,kind:'cost'});assert.equal(cost.ok,true);assert.equal(cost.data.rows[0].total,g.ctx.costRecipe('r',1,data,args.to).total);assert.equal(JSON.stringify(cost.data).includes('updatedBy'),false);
+ const demand=send(g,'periodSummary',{...args,kind:'demand'});assert.equal(demand.ok,true);assert.equal(demand.data.note,g.ctx.demand(data,args.from,args.to).note);
+ const variance=send(g,'periodSummary',{...args,kind:'variance'});assert.equal(variance.ok,true);assert.equal(variance.data.total,g.ctx.variance(data,args.from,args.to).length);
+});

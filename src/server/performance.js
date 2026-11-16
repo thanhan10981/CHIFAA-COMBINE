@@ -1,6 +1,6 @@
 function publicAsset_(args){if(args.id!=='exceljs-4.4.0')throw new Error('NOT_FOUND: Tài nguyên không tồn tại');return {source:HtmlService.createHtmlOutputFromFile('ExcelRuntime').getContent()};}
 function scopedCache_(user,kind,versions,args,force,build,seconds=20){
-  const key='read:v3:'+hash_({book:config_('SPREADSHEET_ID'),model:READ_MODEL_VERSION,kind,versions,args,email:user.email,role:user.role,permissions:user.permissions,permissionVersion:user.permissionVersion}),snapshot=['summary','strategy','payroll','inventory'].includes(kind);
+  const key='read:v3:'+hash_({book:config_('SPREADSHEET_ID'),model:READ_MODEL_VERSION,kind,versions,args,email:user.email,role:user.role,permissions:user.permissions,permissionVersion:user.permissionVersion}),snapshot=['summary','strategy','payroll','inventory','cost','demand','variance'].includes(kind);
   if(!force){const cached=cachePartsGet_(key);if(cached)return cached;const saved=snapshot?snapshotGet_(key):null;if(saved){cachePartsPut_(key,saved,seconds);return {...saved,readModel:{...saved.readModel,source:'snapshot'}};}}
   const stamp=stamp_(),value=build();assertReadable_();if(stamp!==stamp_())throw new Error('CONFLICT: Dữ liệu đổi trong lúc đọc. Thử đồng bộ lại.');
   if(snapshot){value.readModel={updatedAt:now_(),versions,source:'sheets'};snapshotPut_(user,key,value,versions,stamp);}cachePartsPut_(key,value,seconds);return value;
@@ -33,10 +33,13 @@ function strategySummary_(user,args){
   });
 }
 function periodSummary_(user,args){
-  const modules={payroll:['attendance','employees'],inventory:['materials','stock']}[args.kind];if(!modules||!validDate(args.from)||!validDate(args.to)||args.from>args.to||typeof(args.department||'')!=='string')throw new Error('VALIDATION: Báo cáo/kỳ không hợp lệ');for(const m of modules)require_(user,m,'read');const offset=args.offset??0;if(!Number.isInteger(offset)||offset<0)throw new Error('VALIDATION: Trang báo cáo không hợp lệ');
+  const modules={payroll:['attendance','employees'],inventory:['materials','stock'],cost:['materials','recipes','stock','dishes'],demand:['materials','recipes','production','orders','stores','dishes'],variance:['materials','counts','stock','production','recipes','dishes']}[args.kind];if(!modules||!validDate(args.from)||!validDate(args.to)||args.from>args.to||typeof(args.department||'')!=='string')throw new Error('VALIDATION: Báo cáo/kỳ không hợp lệ');for(const m of modules)require_(user,m,'read');const offset=args.offset??0;if(!Number.isInteger(offset)||offset<0)throw new Error('VALIDATION: Trang báo cáo không hợp lệ');
   const versions=moduleVersions_(),value=scopedCache_(user,args.kind,Object.fromEntries(modules.map(m=>[m,versions[m]])),{from:args.from,to:args.to,department:args.department||''},args.force===true,()=>{
     const data=data_(modules);requireValidSources_(data);
     if(args.kind==='inventory')return {rows:inventory(data,args.to)};
+    if(args.kind==='cost')return {rows:effective(data.recipes).map(r=>{const c=costRecipe(r.recordId,1,data,args.to);return {name:r.name,kind:r.kind,total:c.total,missing:c.missing};})};
+    if(args.kind==='demand'){const d=demand(data,args.from,args.to);return {rows:effective(data.materials).filter(m=>d.planned[m.recordId]||d.approvedOrders[m.recordId]).map(m=>({name:m.name,unit:m.unit,planned:d.planned[m.recordId]||0,approved:d.approvedOrders[m.recordId]||0})),note:d.note+(d.missing.length?' Thiếu công thức: '+d.missing.join(', '):'')};}
+    if(args.kind==='variance'){const names=new Map(data.materials.map(r=>[r.recordId,r.name]));return {rows:variance(data,args.from,args.to).map(r=>({...r,name:names.get(r.materialId)||r.materialId}))};}
     const names=new Map(data.employees.map(r=>[r.recordId,r.name])),rows=payroll(effective(data.attendance).filter(r=>r.date>=args.from&&r.date<=args.to&&(!args.department||r.department===args.department))).map(r=>({...r,name:names.get(r.employeeId)||r.employeeId}));return {rows};
   });
   const rows=args.kind==='inventory'&&args.reorder===true?value.rows.filter(r=>r.replenish>0||r.status==='gray'):value.rows;return {...value,rows:rows.slice(offset,offset+100),total:rows.length,next:offset+100<rows.length?offset+100:null};
