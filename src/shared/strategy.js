@@ -45,7 +45,7 @@ function strategyAggregate(data,from,to){
   return {from,to,days:days.size,revenue:raw.revenue,received:raw.received,foodCostPct:raw.foodCostPct,sxLaborPct:raw.sxLaborPct,policy:raw.policy,sold,returned,delivered,average:days.size?sold/days.size:null,returnRate:delivered?returned/delivered*100:null,profit,food:raw.cogs,wages,fixed,other,recovery,interest,variable,issues,stores:rows(stores),dishes:rows(dishes)};
 }
 function strategySeries(data,period,anchor,count){
-  count??=({day:14,week:12,month:12,quarter:8,year:5}[period]);const out=[];
+  if(count==null)count=({day:14,week:12,month:12,quarter:8,year:5}[period]);const out=[];
   for(let i=count-1;i>=0;i--){const a=strategyShift(period,anchor,-i),range=strategyRange(period,a),end=range.end>anchor?anchor:range.end;out.push({...range,...strategyAggregate(data,range.start,end),label:period==='year'?range.start.slice(0,4):period==='month'?range.start.slice(0,7):range.start.slice(5)});}
   return out;
 }
