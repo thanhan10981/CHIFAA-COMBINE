@@ -2,6 +2,8 @@
 
 ## Standalone — hướng dẫn hiện tại
 
+Nếu chưa có dự án Supabase DEV, làm theo [hướng dẫn tạo DEV](docs/standalone/SUPABASE_DEV_SETUP.md). Chưa có kết nối cloud nào được xác nhận trong phiên này.
+
 Không triển khai tiếp Apps Script theo yêu cầu mới. Root ứng dụng Vercel là `web/`; database ở `supabase/`.
 
 1. Tạo Supabase project **DEV riêng**, chọn vùng gần Việt Nam (đo latency trước kết luận). Không dùng PROD. Cất DB password trong secret manager.

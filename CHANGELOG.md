@@ -1,3 +1,7 @@
+## 2026-11-17 — Kiểm kê có kiểm tra xung đột
+
+Thêm bảng nhập kiểm kê theo trang, snapshot tồn/version và lưu điều chỉnh kho cùng giao dịch. Bắt buộc token phiên bản, từ chối số đếm không hữu hạn, kho không hợp lệ; giữ số 0 và chống ghi trùng khi thử lại. 31 tests, TypeScript/lint/build đạt. Thêm hướng dẫn Supabase DEV; chưa kết nối cloud.
+
 ## 2026-11-17 — Standalone P2 editor/version/giá
 
 Thêm form giá/quy đổi, 7 danh mục và editor công thức với tạo phiên bản sửa, công bố và xem giá vốn. 23 RPC, 19 migrations, 30 tests; TypeScript/lint/build đạt. Quyền xác minh độc lập quyền tạo; chặn công bố món không phép và công thức con chưa có hiệu lực. Giữ giá/BOM lịch sử, giá chưa biết trả null, hiển thị VND bằng BigInt. Chưa deploy cloud hoặc nhập dữ liệu thật; phần còn thiếu ở FEATURE_MATRIX.

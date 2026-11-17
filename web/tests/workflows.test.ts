@@ -11,6 +11,24 @@ before(async()=>{
  await db.query("insert into products(id,code,name,sale_unit,published) values($1,'PRODUCT','Cơm','phần',true)",[ids.product]);
  for(const [id,code,user] of [[ids.storeA,'STORE-A',identities.a],[ids.storeB,'STORE-B',identities.b]]){await db.query('insert into stores(id,code,name) values($1,$2,$2)',[id,code]);await db.query('insert into store_users(store_id,user_id) values($1,$2)',[id,user]);await db.query("insert into store_product_prices(store_id,product_id,price_vnd,effective_from) values($1,$2,$3,'2020-01-01')",[id,ids.product,code==='STORE-A'?15000:17000]);}
 });after(async()=>{await db?.close();});
+
+test('count worksheet pages with a string version and rejects missing tokens or non-finite counts atomically',async()=>{
+ const snapshot=(await rpc('stock_count_snapshot',[ids.warehouse,'2026-11-17','RICE',0])).rows[0].result;
+ assert.equal(typeof snapshot.inventory_version,'string');
+ assert.equal((snapshot.rows as {code:string}[])[0].code,'RICE');
+ await assert.rejects(()=>rpc('stock_count_snapshot',[ids.warehouse,'2026-11-17','',0],identities.a),/FORBIDDEN/);
+ await assert.rejects(()=>rpc('stock_count_snapshot',[ids.warehouse,'2026-11-17','',-1]),/INVALID_FILTER/);
+ const original=(await db.query('select * from stock_counts')).rows.length;
+ await assert.rejects(()=>rpc('post_stock_count',[ids.warehouse,'2026-11-17',[{material_id:ids.rice,counted_quantity:'0'}],null,randomUUID()]),/INVENTORY_VERSION_CONFLICT/);
+ for(const bad of ['NaN','Infinity','-1','1.1234567',''])await assert.rejects(()=>rpc('post_stock_count',[ids.warehouse,'2026-11-17',[{material_id:ids.rice,counted_quantity:bad}],snapshot.inventory_version,randomUUID()]),/INVALID_COUNT_QUANTITY/);
+ await assert.rejects(()=>rpc('post_stock_count',[randomUUID(),'2026-11-17',[{material_id:ids.rice,counted_quantity:'0'}],snapshot.inventory_version,randomUUID()]),/INGREDIENT_WAREHOUSE_REQUIRED/);
+ assert.equal((await db.query('select * from stock_counts')).rows.length,original);
+ const key=randomUUID(),args=[ids.warehouse,'2026-11-17',[{material_id:ids.rice,counted_quantity:'0'}],snapshot.inventory_version,key];
+ const zero=(await rpc('post_stock_count',args)).rows[0].result;
+ assert.equal(zero.movement_id,null);
+ assert.deepEqual((await rpc('post_stock_count',args)).rows[0].result,zero);
+ assert.equal((await db.query('select * from stock_counts')).rows.length,original+1);
+});
 test('multilevel recipes preserve configured cooked yield and exact unit/price basis; cycle is rejected',async()=>{
  const child=(await rpc('save_recipe',[{code:'RICE-COOKED',name:'Cơm chín',kind:'rice',effective_from:'2020-01-01',output_quantity:2500,output_unit_id:ids.g},[{material_id:ids.rice,quantity:1000,unit_id:ids.g}],randomUUID()])).rows[0].result;riceVersion=String(child.version_id);
  await rpc('publish_recipe',[riceVersion,1,null,null,randomUUID()]);

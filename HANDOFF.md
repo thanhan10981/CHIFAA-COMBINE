@@ -2,6 +2,8 @@
 
 ## Yêu cầu đang thực hiện — 17/11/2026
 
+Checkpoint kiểm kê: migration 020 thêm stock_count_snapshot phân trang 50+1, token dạng chuỗi và cùng snapshot PostgreSQL; post_stock_count bắt buộc token, kho nguyên liệu active, vật tư có đơn vị chuẩn, số đếm hữu hạn >=0. Màn hình /app/counts nhập theo trang, không tự coi trống là 0; khóa đổi bộ lọc khi có số chưa lưu, có nút bỏ rõ ràng; giữ nguyên idempotency key khi chưa nhận xác nhận. 20 migrations, 77 bảng, 24 RPC, 31 tests đạt; types/TS/lint/build đạt trong output/standalone-count-verify.txt; test bổ sung 0/replay đạt trong standalone-count-tests-final.txt. Chưa browser/cloud UAT. DEV setup hướng dẫn docs/standalone/SUPABASE_DEV_SETUP.md. Tiếp tục FEATURE_MATRIX, không làm Apps Script và không nhập dữ liệu thật.
+
 Checkpoint P2 đã xác minh: 19 migrations, 77 bảng, 23 RPC và 30/30 tests đạt; sinh types, TypeScript, lint và build đều đạt trong output/standalone-catalog-verify.txt. Migration 019 chặn công bố công thức chứa phiên bản con chưa có hiệu lực. Các số 18/29 trong ghi chú P2 bên dưới là trước test cuối. Người dùng xác nhận chưa có Supabase DEV; tiếp tục phần độc lập, chưa có cloud UAT, deploy hoặc nhập dữ liệu thật.
 
 ### P2 bổ sung sau commit nền tảng c48774d
