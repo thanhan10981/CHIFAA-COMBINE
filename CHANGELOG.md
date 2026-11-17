@@ -1,3 +1,7 @@
+## 2026-11-17 — Việt hóa nhóm và trạng thái danh mục
+
+Biểu mẫu danh mục chung dùng dropdown nhóm với nhãn tiếng Việt, giữ mã nội bộ cho API; trạng thái giá/loại đơn vị/kho/quỹ cũng dùng nhãn tiếng Việt. Bảng gốc 63 dòng mới được người dùng cung cấp có ghi chú Kg khác cơ sở giá đã chuẩn hóa trước đó ở sáu mã. Đang chờ xác nhận giá theo quả/vỉ, kg/túi/chai/can/lít trước khi tạo SQL sửa nguồn; chưa nhập lại hoặc sửa giá/đơn vị cloud.
+
 ## 2026-11-17 — Sửa SQL nhập vật tư trên SQL Editor
 
 Người dùng gặp 42P01: bảng tạm chifaa_material_source không tồn tại. Bỏ phụ thuộc bảng tạm/phiên kết nối: JSON nguồn và toàn bộ thao tác nhập nằm trong một DO atomic, giữ hash replay và các guard cũ. Sinh lại CHIFAA_63_VAT_TU_DEV.sql; kiểm tra DO chạy độc lập, nhập đủ 63/41/2/19 và không tạo phiếu kho. Không đổi schema/UI, chưa chạy SQL cloud.
