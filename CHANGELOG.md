@@ -1,3 +1,7 @@
+## 2026-11-17 — Responsive điện thoại, tablet và desktop
+
+Thêm bố cục chung cho màn hình nhỏ: tablet dùng menu trượt, khóa cuộn nền và giữ focus bàn phím; desktop 1024px thu gọn sidebar. Form chuyển một cột trên điện thoại, bảng cuộn trong vùng riêng, hộp thoại giới hạn theo chiều cao màn hình và vùng an toàn. Giữ cổng đặt hàng, vai trò và nút SVG trên mobile; bảng đơn hàng portal có vùng cuộn riêng. Không đổi SQL, quyền hoặc dữ liệu.
+
 ## 2026-11-17 — Căn giữa icon thẻ thống kê
 
 Sửa CSS chung: kiểu span mô tả đã ghi đè display grid và thêm margin vào ô icon vật tư. Khôi phục grid, bỏ margin/padding và dùng SVG20px ở giữa ô nền. Kiểm tra trình duyệt đo tâm icon trên desktop và bốn thẻ vật tư mobile. Không đổi SQL hoặc dữ liệu.

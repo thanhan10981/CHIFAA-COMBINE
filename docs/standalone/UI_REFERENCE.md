@@ -12,6 +12,8 @@ Không mang JavaScript cũ, dữ liệu minh họa, giá giả, email hay khóa 
 
 ## Kiểm tra lại
 
+Responsive dùng `web/features/design/responsive.css`: dưới 1024px dùng menu trượt có khóa cuộn nền, focus bàn phím và nút đóng; sidebar 276px ở 1024–1279px, 300px từ 1280px. Dưới 768px form một cột, input 16px, bảng cuộn tại chỗ và dialog giới hạn theo chiều cao/vùng an toàn. Cổng đặt hàng giữ trên màn hình nhỏ. Chạy `npm run test:responsive` để kiểm tra 41 route ở 11 kích thước từ 320 đến 2560px, bao gồm xoay ngang, menu tablet, các dialog vật tư và portal. Dữ liệu fixture giả lập, không gửi nghiệp vụ lên cloud; không thay thế kiểm thử trên toàn bộ thiết bị thực.
+
 Trong `web`, chạy `npm run verify`, sau đó `npm run test:design`. Kiểm tra giao diện cần Chrome cài sẵn; có thể đặt `CHIFAA_CHROME_PATH`. Fixture chỉ được bundle ra `output/design-parity`, không tạo route thử nghiệm hoặc bỏ qua Auth trong ứng dụng.
 
 Chrome headless kiểm tra 32 route ở 1440×1000: kích thước sidebar/header, 5 nhóm, một mục đang chọn, không tràn ngang; thêm đóng/mở nhóm, mở modal danh mục, ẩn Admin với quyền hạn chế. Kiểm tra drawer và tràn ngang cho 5 màn ở 390×844. Ảnh và báo cáo nằm trong `output/design-parity/`. Đây là fixture cô lập, chặn mạng ngoài; không thay thế đăng nhập thật hoặc UAT Supabase cloud.

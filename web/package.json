@@ -17,6 +17,7 @@
     "verify": "npm run db:types && npm run typecheck && npm run lint && npm test && npm run build",
     "benchmark": "tsx scripts/benchmark.ts",
     "test:design": "node scripts/design-check.mjs",
+    "test:responsive": "node scripts/design-check.mjs --responsive",
     "db:kiosk-update": "tsx scripts/package-kiosk-update.ts"
   },
   "engines": {

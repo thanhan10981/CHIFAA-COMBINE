@@ -1,0 +1,99 @@
+/* Shared responsive layout. Keep data grids scrollable rather than clipping the page. */
+.workspace .main,.workspace main.content,.portal main{min-width:0;width:100%}
+.workspace :is(.card,.panel,.split>*,.form-grid>*,.formgrid>*,.stats>*,.dashboard-grid>*){min-width:0;max-width:100%}
+.workspace :is(.table-wrap,.tablebox),.portal .table-wrap{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+.workspace :is(input,select,textarea),.portal :is(input,select,textarea){min-width:0;max-width:100%}
+.workspace :is(.toolbar,.filters,.v16-filter,.headline),.portal .toolbar{flex-wrap:wrap}
+.workspace .toolbar>*,.workspace .filters>*{max-width:100%}
+.workspace .context-tabs{max-width:100%}
+.workspace .sidebar-close{display:none}
+.workspace .page-heading>div{min-width:0}
+.workspace .page-heading h1,.workspace .headline h2,.portal h1{overflow-wrap:anywhere}
+.modal-backdrop{padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.modal-backdrop :is(.modal,.reference-drawer){min-width:0;max-width:100%;max-height:calc(100dvh - 32px);overscroll-behavior:contain}
+.portal .topbar{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.portal .portal-brand{display:flex;align-items:center;min-width:0}
+.portal .portal-brand b{overflow-wrap:anywhere}
+.portal main{margin-inline:auto;padding:32px clamp(16px,4vw,48px)}
+@media(min-width:1024px) and (max-width:1279px){
+ .workspace .sidebar{width:276px;flex-basis:276px;padding-inline:12px}
+ .workspace .sidebar .reference-navigation .navgroup-label{font-size:11.5px}
+ .workspace .sidebar .reference-navigation .navgroup{padding-inline:10px;gap:8px}
+ .workspace .sidebar .reference-navigation .navgroup-left{gap:8px}
+ .workspace .topbar{padding-inline:22px;gap:14px}
+ .workspace .topbar .top-actions{gap:8px}
+ .workspace .topbar .account-role{max-width:130px}
+ .workspace .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .workspace .split{grid-template-columns:minmax(220px,.8fr) minmax(0,1.2fr)}
+}
+@media(max-width:1023px){
+ .workspace{display:block}
+ .workspace .sidebar{position:fixed;inset:0 auto 0 0;width:min(320px,calc(100vw - 24px));max-width:320px;height:100dvh;flex:none;z-index:50;transform:translateX(-105%);visibility:hidden;transition:transform .2s ease,visibility .2s;box-shadow:14px 0 40px #0c233d20;padding:20px 14px max(16px,env(safe-area-inset-bottom))}
+ .workspace .sidebar.open{transform:translateX(0);visibility:visible}
+ .workspace .sidebar nav.reference-navigation{display:block;flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
+ .workspace .sidebar .sidebar-close{display:flex;align-items:center;justify-content:center;gap:8px;flex:none;min-height:40px;margin:6px 0 12px;border:1px solid #ffffff18;border-radius:9px;background:#ffffff07;color:#d2e0eb;font-size:12px}
+ .workspace .reference-backdrop{display:block;position:fixed;inset:0;z-index:45;background:#13253b80;border:0;backdrop-filter:blur(2px)}
+ .workspace .reference-menu-toggle{display:inline-flex;align-items:center;justify-content:center;flex:none;min-width:40px;min-height:40px}
+ .workspace .topbar{position:sticky;top:0;z-index:20;min-height:64px;height:auto;padding:10px 20px;gap:12px}
+ .workspace .reference-breadcrumb{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+ .workspace .crumb{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .workspace .top-actions{flex:none}
+ .workspace .main>main.content{padding:26px 24px 40px}
+ .workspace .split,.workspace .dashboard-grid{grid-template-columns:minmax(0,1fr)}
+ .workspace .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .workspace .page-heading{flex-wrap:wrap;gap:16px}
+ .workspace .page-heading>div:first-child{flex:1 1 320px}
+}
+@media(max-width:767px){
+ .workspace .main>main.content{padding:20px 16px 32px}
+ .workspace .topbar{padding:8px 12px;gap:8px}
+ .workspace .topbar .top-actions{gap:6px}
+ .workspace .topbar .account-role{max-width:92px;font-size:10px;padding:5px 7px}
+ .workspace .topbar .reference-portal{display:inline-flex;min-height:40px;align-items:center;gap:4px;font-size:11px;padding-inline:4px}
+ .workspace .topbar .reference-portal .portal-label{display:none}
+ .workspace .topbar .reference-portal::before{content:'Đặt hàng'}
+ .workspace .topbar .icon-button{width:38px;height:38px;min-height:38px;padding:0}
+ .workspace .page-heading{flex-direction:column;align-items:stretch}
+ .workspace .page-heading>div:first-child{flex:auto}
+ .workspace .card-head{flex-direction:column;align-items:stretch;gap:14px}
+ .workspace :is(.filters,.material-filters){width:100%;gap:8px}
+ .workspace .filters input{flex:1 1 160px;max-width:100%}
+ .workspace :is(.form-grid,.formgrid,.info-grid){grid-template-columns:minmax(0,1fr)}
+ .workspace :is(input,select,textarea),.portal :is(input,select,textarea){font-size:16px}
+ .workspace :is(.panel,.card){border-radius:13px}
+ .workspace .panel{padding:20px}
+ .workspace .material-dialog.chifaa-action-dialog{padding:22px}
+ .workspace .toolbar{padding:12px;gap:8px}
+ .workspace .toolbar .button,.workspace .material-row-actions .button{min-height:40px}
+ .workspace .v16-filter label{flex-wrap:wrap}
+ .workspace .v16-filter label input{max-width:100%;flex:1 1 130px}
+ .workspace .line-editor{grid-template-columns:minmax(0,1fr) minmax(70px,.5fr) 40px;gap:8px}
+ .workspace .line-editor>:first-child{grid-column:1/-1}
+ .workspace .line-editor>*{min-width:0;max-width:100%}
+ .portal main{padding:22px 16px}
+ .portal .topbar{padding:10px 16px;height:auto;min-height:64px}
+ .portal .portal-brand{gap:8px!important;font-size:12px}
+ .portal .portal-brand img{width:30px;height:38px;flex:none}
+ .portal .topbar .button{flex:none;min-height:40px;padding:8px 12px}
+ .portal .form-grid{grid-template-columns:minmax(0,1fr)}
+ .modal-backdrop{padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))}
+ .modal-backdrop :is(.modal,.reference-drawer){max-height:calc(100dvh - 20px);border-radius:14px}
+}
+@media(max-width:374px){
+ .workspace .topbar .crumb{display:none}
+ .workspace .topbar .reference-breadcrumb{flex:0 0 auto}
+ .workspace .topbar .top-actions{flex:1;justify-content:flex-end;gap:5px}
+ .workspace .topbar .account-role{max-width:70px}
+ .workspace .main>main.content{padding-inline:12px}
+ .workspace .stats{grid-template-columns:minmax(0,1fr)}
+ .workspace .material-heading-actions>.button{flex:1 1 100%}
+ .workspace .material-search{flex-wrap:wrap}
+ .workspace .material-search input{flex:1 1 150px}
+}
+@media(max-height:500px) and (max-width:1023px){
+ .workspace .sidebar{padding-top:12px}
+ .workspace .sidebar .logo{padding-bottom:10px}
+ .workspace .sidebar .brand-photo{height:36px;width:36px}
+ .workspace .sidebar .side-bottom{padding-top:8px}
+}
+@media(prefers-reduced-motion:reduce){.workspace .sidebar{transition:none}}

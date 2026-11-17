@@ -1,4 +1,5 @@
-import Link from 'next/link';import Image from 'next/image';import type {ReactNode} from 'react';
+import Link from 'next/link';import type {ReactNode} from 'react';
+import {PortalShell} from '@/components/portal-shell';
 import {currentAccess} from '@/lib/auth/access';import {Logout} from '@/components/logout';import {AccessBoundary} from '@/components/access-boundary';
 export const dynamic='force-dynamic';
-export default async function PortalLayout({children}:{children:ReactNode}){const context=await currentAccess();return <div className="portal"><header className="topbar"><Link href="/portal" className="portal-brand"><Image src="/logo-chifaa.png" width={36} height={44} alt="Chifaa"/><b>CHIFAA · Đặt hàng</b></Link>{context?<Logout/>:<Link href="/login?next=/portal">Đăng nhập</Link>}</header>{context&&<AccessBoundary userId={context.user.id} grants={JSON.stringify(context.access.permissions)}/>}<main id="main-content">{children}</main></div>;}
+export default async function PortalLayout({children}:{children:ReactNode}){const context=await currentAccess();return <PortalShell accountAction={context?<Logout/>:<Link href="/login?next=/portal">Đăng nhập</Link>}>{context&&<AccessBoundary userId={context.user.id} grants={JSON.stringify(context.access.permissions)}/>} {children}</PortalShell>;}

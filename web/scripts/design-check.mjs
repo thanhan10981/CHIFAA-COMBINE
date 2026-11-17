@@ -3,7 +3,9 @@ import path from 'node:path';
 import http from 'node:http';
 import {build} from 'esbuild';
 import {chromium} from '@playwright/test';
-const out=path.resolve('../output/design-parity');await fs.mkdir(out,{recursive:true});
+import {checkResponsive} from './responsive-check.mjs';
+const responsive=process.argv.includes('--responsive');
+const out=path.resolve(responsive?'../output/responsive-design':'../output/design-parity');await fs.mkdir(out,{recursive:true});
 await build({entryPoints:['tests/ui/fixture.tsx'],outfile:path.join(out,'fixture.js'),bundle:true,format:'iife',platform:'browser',jsx:'automatic',alias:{'next/navigation':path.resolve('tests/ui/router-shim.tsx'),'next/link':path.resolve('tests/ui/router-shim.tsx'),'next/image':path.resolve('tests/ui/image-shim.tsx')},define:{'process.env.NODE_ENV':'"production"','process.env.NEXT_PUBLIC_SUPABASE_URL':'"https://visual-fixture.supabase.co"','process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY':'"sb_publishable_visual_fixture_no_real_auth"'}});
 async function cssFiles(folder){const entries=await fs.readdir(folder,{withFileTypes:true});const values=await Promise.all(entries.map(entry=>entry.isDirectory()?cssFiles(path.join(folder,entry.name)):entry.name.endsWith('.css')?[path.join(folder,entry.name)]:[]));return values.flat();}
 const css=(await Promise.all((await cssFiles(path.resolve('.next/static'))).map(file=>fs.readFile(file,'utf8')))).join('\n').replaceAll('../media/','/_next/static/media/');
@@ -29,6 +31,7 @@ try {
  const context=await browser.newContext({viewport:{width:1440,height:1000},serviceWorkers:'block'});
  await context.route('**/*',route=>route.request().url().startsWith(base)?route.continue():route.abort());
  const page=await context.newPage();page.on('pageerror',error=>report.errors.push(error.message));
+ if(responsive){await checkResponsive(page,base,out,report);}else{
  const nav=JSON.parse(await fs.readFile('features/design/workspace-nav.json','utf8'));
  const routes=['','opsdashboard','strategy','materials','stores','products','employees','discounts','inventory','stockmovements','stockhistory','kiosk','reorder','recipes','batches','rice','packaging','cost','production','requirements','counts','variance','consumption','entry','entry-stock','sales','attendance','entry-production','targets','loans','receivables','cash','payroll','assets','orders','admin','audit','accounts','units','departments','warehouses'];
  for(const route of routes){
@@ -160,6 +163,7 @@ try {
  await page.getByRole('button',{name:'Đóng thông báo',exact:true}).click();await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();
  await page.getByRole('button',{name:'Write error',exact:true}).click();await page.locator('.chifaa-toast[role=alert]').waitFor();
  report.checks.push('overlapping query/mutation loading, deduplicated query error, persistent errors, timed success, modal toast layering, mobile and reduced motion');
+ }
  if(report.errors.length)throw new Error(report.errors.join('\n'));
  report.passed=true;
 }catch(error){report.passed=false;report.failure=error.message;process.exitCode=1;}finally{await fs.writeFile(path.join(out,'report.json'),JSON.stringify(report,null,2));await browser.close();await new Promise(resolve=>server.close(resolve));}
