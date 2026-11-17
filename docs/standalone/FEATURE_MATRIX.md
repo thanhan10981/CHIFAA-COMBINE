@@ -1,6 +1,6 @@
 # Bằng chứng chức năng hiện tại
 
-Chưa có nhóm nào được nghiệm thu trên Supabase cloud. Người dùng chưa tạo DEV. Schema hoặc route rỗng không được coi là nghiệp vụ đã hoàn thành.
+Chưa có nhóm nghiệp vụ nào được nghiệm thu trên Supabase cloud. Người dùng đã tạo DEV; Auth health phản hồi 200, schema CHIFAA chưa cài. Schema hoặc route rỗng không được coi là nghiệp vụ đã hoàn thành.
 
 | Nhóm | Đã có | Còn thiếu |
 |---|---|---|
@@ -21,6 +21,6 @@ Chưa có nhóm nào được nghiệm thu trên Supabase cloud. Người dùng 
 | Import | Audit/mapping, staging CLI UUID ổn định, không tự apply | Đọc đầy đủ lịch sử XLSX, staging DB/approve/import/reconcile/replay |
 | Offline | Public shell SW, trang offline, IndexedDB nháp với whitelist, không auto sync | Editor integration, khôi phục xung đột và browser E2E |
 | Storage/Realtime | Private bucket policy, subscription đơn theo điểm bán | Hosted policies, signed URL, Edge invite/rate UAT |
-| Triển khai | CI source, 31 tests, TS/lint/build, HTTP local, SQL benchmark, hướng dẫn tạo DEV | Supabase DEV/E2E, 10 concurrent/p95 network, backup/restore, preview |
+| Triển khai | CI source, 33 tests, TS/lint/build, HTTP local, SQL benchmark, Vercel config, gói SQL Editor có rollback, hướng dẫn online | Cài schema cloud, Vercel/OAuth/Admin/E2E, 10 concurrent/p95 network, backup/restore |
 
 Không nhập dữ liệu thật hoặc deploy public. Mã cũ và workbook chỉ là tư liệu; root npm scripts chạy Next.js.

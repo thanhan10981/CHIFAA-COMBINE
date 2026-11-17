@@ -2,6 +2,8 @@
 
 ## Standalone P1 (mới, không cộng với tests Apps Script)
 
+Chuẩn bị online: 33/33 tests, types/TypeScript/lint/build đạt trong output/online-deploy-final-verify.txt. Test gói SQL cài đủ 77 bảng có RLS, chặn chạy lại và lỗi giữa gói rollback bảng trước đó. Supabase DEV Auth health HTTP 200; materials HTTP 404/PGRST205 (chưa cài schema). Chưa kiểm thử transaction/Storage/Realtime/RLS trên cloud, Google OAuth hoặc Vercel. Không in giá trị env và không gửi dữ liệu nghiệp vụ.
+
 Kiểm kê: 31/31 tests đạt, 20 migrations, 77 bảng, 24 RPC. Test mới kiểm tra snapshot/token, phân quyền, bộ lọc không hợp lệ, thiếu token, NaN/Infinity/số âm, kho không tồn tại, rollback và số đếm 0/replay. Sinh types, TypeScript/lint/build đạt: output/standalone-count-verify.txt. Sau khi thêm assertion 0/replay, chạy lại tests đạt: output/standalone-count-tests-final.txt. Chưa kiểm thử trình duyệt hoặc Supabase cloud.
 
 P2: 30/30 tests đạt trên PostgreSQL nhúng. Bao gồm quyền xác minh/công bố, các biến thể boolean, tạo phiên bản công thức mới, hiệu lực phiên bản con, quy đổi SI và bao gói đã xác minh, cơ sở giá duy nhất, giá vốn dạng chuỗi/null, PATCH giữ số 0 và kiểm tra khóa bí mật trong biến public. 19 migrations, 77 bảng, 23 RPC; sinh types, TypeScript, lint và build đạt. Log: output/standalone-catalog-verify.txt. Chưa kiểm thử Supabase cloud hoặc browser E2E.

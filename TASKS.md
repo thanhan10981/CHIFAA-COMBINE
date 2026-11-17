@@ -2,6 +2,8 @@
 
 ## Ưu tiên mới: xây standalone Vercel + Supabase
 
+DEV online: người dùng đã tạo Supabase, cấu hình env hợp lệ; Auth 200, schema chưa cài (PGRST205). Đã chuẩn bị Vercel config và SQL Editor bootstrap từ 20 migrations; 33 tests + TS/lint/build đạt. Tiếp theo: upload nhánh DEV, người dùng chạy gói SQL trên Dashboard, import đúng nhánh/root web vào Vercel, đặt APP_URL online, OAuth/Admin và nghiệm thu cloud. Không yêu cầu chạy app local; không nhập JSON cũ.
+
 Kiểm kê: đã nối màn hình nhập số đếm theo trang 50 vật tư, snapshot tồn và phiên bản trong cùng lần đọc, lưu điều chỉnh atomic và thử lại cùng mã yêu cầu. 20 migrations / 24 RPC / 31 tests; TypeScript, lint, build đạt. Còn thiếu browser/cloud UAT và nghiệp vụ chuyển/đảo phiếu. Hướng dẫn người dùng chưa có DEV: docs/standalone/SUPABASE_DEV_SETUP.md.
 
 P2: 19 migrations, 77 bảng, 23 RPC, 30/30 tests; TypeScript, lint và build đạt. Đã thêm editor công thức, tạo phiên bản sửa, xem BOM/giá vốn, 7 danh mục và form xác minh giá/quy đổi. Chặn công bố công thức chứa phiên bản con chưa có hiệu lực. Lookup trên 200 dòng và cập nhật giá nháp còn cần hoàn thiện. Chưa có Supabase DEV; tiếp tục kiểm kê và thao tác kho cục bộ.

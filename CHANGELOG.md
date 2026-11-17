@@ -1,3 +1,7 @@
+## 2026-11-17 — Chuẩn bị triển khai DEV online
+
+Thêm cấu hình Vercel cho Next.js, loại file env khỏi CLI upload và công cụ đóng gói 20 migrations thành một SQL transaction cho Supabase SQL Editor. Test cài mới, chống chạy lại và rollback khi lỗi; 33 tests, TypeScript/lint/build đạt. Đã kiểm tra Auth Supabase DEV phản hồi 200, schema chưa có; chưa chạy migrations cloud hoặc deploy Vercel. Có hướng dẫn online không yêu cầu người dùng chạy localhost.
+
 ## 2026-11-17 — Kiểm kê có kiểm tra xung đột
 
 Thêm bảng nhập kiểm kê theo trang, snapshot tồn/version và lưu điều chỉnh kho cùng giao dịch. Bắt buộc token phiên bản, từ chối số đếm không hữu hạn, kho không hợp lệ; giữ số 0 và chống ghi trùng khi thử lại. 31 tests, TypeScript/lint/build đạt. Thêm hướng dẫn Supabase DEV; chưa kết nối cloud.

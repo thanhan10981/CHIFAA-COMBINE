@@ -12,6 +12,7 @@
     "test": "tsx --test --test-isolation=none tests/*.test.ts",
     "test:db": "tsx --test --test-isolation=none tests/database.test.ts",
     "db:types": "tsx scripts/generate-db-types.ts",
+    "db:package": "tsx scripts/package-supabase-dev.ts",
     "verify": "npm run db:types && npm run typecheck && npm run lint && npm test && npm run build",
     "benchmark": "tsx scripts/benchmark.ts"
   },

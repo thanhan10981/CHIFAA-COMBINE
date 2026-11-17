@@ -2,6 +2,8 @@
 
 ## Standalone — hướng dẫn hiện tại
 
+Người dùng hiện yêu cầu chạy **DEV online**, đã tạo Supabase. Theo [ONLINE_DEPLOY.md](docs/standalone/ONLINE_DEPLOY.md): có đường triển khai qua SQL Editor + Vercel Dashboard, không cần chạy app localhost. Cấu hình Vercel Root Directory = web. Chưa xác nhận deployment cloud thành công.
+
 Nếu chưa có dự án Supabase DEV, làm theo [hướng dẫn tạo DEV](docs/standalone/SUPABASE_DEV_SETUP.md). Chưa có kết nối cloud nào được xác nhận trong phiên này.
 
 Không triển khai tiếp Apps Script theo yêu cầu mới. Root ứng dụng Vercel là `web/`; database ở `supabase/`.
