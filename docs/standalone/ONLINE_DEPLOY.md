@@ -1,5 +1,11 @@
 # CHIFAA DEV online — Vercel + Supabase
 
+## Cơ sở giá sau giải thích của chủ sở hữu (migration024)
+
+Sau patch023, chạy `output/CHIFAA_PATCH_XAC_MINH_VAT_TU_DEV.sql`, rồi `output/CHIFAA_63_VAT_TU_DIEU_CHINH_DEV.sql`. Hai file dùng DO atomic; không xóa/tạo lại database. Nếu patch024 báo VERIFICATION_PATCH_ALREADY_APPLIED thì bỏ qua patch và chạy file điều chỉnh. File nhập chạy lại không trùng; không ghi đè lần xác minh Admin đã có, không sửa giá/phiếu kho cũ. Danh mục đã có lịch sử được giữ đơn vị kho và đánh dấu cần chuyển đổi thay vì relabel. Tải bản DEV mới để có nút Xác minh và xem giá theo cơ sở riêng. SQL Editor không đăng ký CLI history; reconcile024 trước db push sau này. Công cụ chưa thực thi SQL cloud.
+
+Danh mục sửa có 23 giá chờ xác minh (19 giá thiếu/0, TG/RCM/RCC/DAN). DM/DH dùng cơ sở kg đã được làm rõ; mua bằng chai/can và tiêu hao g. Nguồn/hypothesis/100–1000 conflict được lưu ở material_resolutions.source_data. Chưa có nguồn giá xác minh/đường quy đổi thì giá vốn NULL; báo cáo không được cộng phần thiếu như0. Snapshot đã ghi trước sửa nguồn cần đối chiếu riêng, không được coi là đã được SQL này sửa hồi tố.
+
 ## Cập nhật danh mục 63 vật tư (17/11/2026)
 
 Trên DEV đã có schema CHIFAA, owner chạy lần lượt `output/CHIFAA_PATCH_MATERIALS_DEV.sql` (migration023, chỉ cấu trúc/RPC) rồi `output/CHIFAA_63_VAT_TU_DEV.sql` (63 mã theo nguồn). Patch chặn chạy lại; nếu thấy MATERIAL_PATCH_ALREADY_APPLIED thì chỉ cần file nhập. Import chạy lại là no-op theo hash nguồn, giữ UUID mã có sẵn, rollback nếu xung đột giá/quy đổi và không tạo phiếu kho. Không chạy lại CHIFAA_SUPABASE_DEV.sql. SQL Editor không ghi lịch sử CLI; đối chiếu/reconcile migration023 trước db push sau này.

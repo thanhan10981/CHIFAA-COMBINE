@@ -1,0 +1,76 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {database,asUser,identities} from './database-fixture';
+import {buildMaterialImport,type MaterialImportRow} from '../lib/deploy/material-import';
+import {buildMaterialReconciliation,type ReconciledMaterial} from '../lib/deploy/material-reconciliation';
+const day='2026-11-17';
+const originals:MaterialImportRow[]=['TEST-MASS','TEST-EGG','TEST-LEAF','TEST-VOLUME'].map((code,index)=>({position:index+1,code,name:code,category:'ingredient',unit:'kg',amount:'100000',minimum:'1',reference:null,specification:'Original source'}));
+const reconciled:ReconciledMaterial[]=originals.map((row,index)=>({...row,purchase:index===0?'chai':index===1?'vỉ':index===2?'túi':'can',usage:index===0?'g':index===1?'quả':index===2?'lá':'l',basis:index===0?'kg':index===1?'quả':null,verification:index===0?'verified':'needs_verification',packageUnit:index===0?'chai':index===1?'vỉ':index===2?'túi':'can',contentUnit:index===0?'g':index===1?'quả':index===2?'lá':'l',packageQuantity:index===0?'250':index===1?'30':index===2?'100':'5',packageVerified:index!==2,minimumInUsage:null,issue:index===0?'':'Unconfirmed source',original:{unit:'Original unit',price:'100000',conflict:'Retain source'}}));
+async function setup(){const db=await database();await db.exec(buildMaterialImport(originals,'a'.repeat(64),day));await db.exec(buildMaterialReconciliation(reconciled,'c'.repeat(64),'2026-11-18'));return db;}
+test('reconciliation separates price/purchase/usage, overrides unsafe legacy prices without erasing them, and replays safely',async()=>{
+ const db=await setup();try{
+  const rows=(await db.query<{code:string;unit:string;amount:string;verification:string}>("select m.code,u.code unit,p.amount::text,p.verification from materials m cross join lateral private.effective_material_price(m.id,'2026-11-18') p left join material_units u on u.id=p.basis_unit_id order by m.code")).rows;
+  assert.equal(rows.find(r=>r.code==='TEST-MASS')?.unit,'kg');assert.equal(rows.find(r=>r.code==='TEST-EGG')?.verification,'needs_verification');assert.equal(rows.find(r=>r.code==='TEST-LEAF')?.unit,null);
+  assert.equal((await db.query('select * from material_prices')).rows.length,4);
+  const before=(await db.query('select id,code from materials order by code')).rows;
+  const audit=(await db.query('select count(*) n from audit_logs')).rows;
+  await db.exec(buildMaterialReconciliation(reconciled,'c'.repeat(64),'2026-11-18'));
+  assert.deepEqual((await db.query('select id,code from materials order by code')).rows,before);assert.deepEqual((await db.query('select count(*) n from audit_logs')).rows,audit);
+  assert.equal((await db.query('select * from inventory_movements')).rows.length,0);
+  await assert.rejects(()=>db.query("update material_resolutions set amount=1"),/RESOLUTION_IMMUTABLE/);
+  await assert.rejects(()=>db.query("update material_prices set amount=1"),/USE_MATERIAL_VERIFICATION/);
+ }finally{await db.close();}
+});
+test('date-aware BOM only costs verified bases, retains unknowns and rejects unconfirmed packaging/density',async()=>{
+ const db=await setup();try{
+  const units=Object.fromEntries((await db.query<{id:string;code:string}>('select id,code from material_units')).rows.map(r=>[r.code,r.id]));
+  const materials=Object.fromEntries((await db.query<{id:string;code:string}>('select id,code from materials')).rows.map(r=>[r.code,r.id]));
+  const preview=await asUser(db,identities.admin,()=>db.query<{p:{usage_cost_vnd:string;purchase_cost_vnd:string;official_ready:boolean}}>('select material_cost_basis($1,$2) p',[materials['TEST-MASS'],'2026-11-18']));
+  assert.equal(Number(preview.rows[0].p.usage_cost_vnd),100);assert.equal(Number(preview.rows[0].p.purchase_cost_vnd),25000);assert.equal(preview.rows[0].p.official_ready,true);
+  const unknown=await asUser(db,identities.admin,()=>db.query<{p:{usage_cost_vnd:string|null;official_ready:boolean}}>('select material_cost_basis($1,$2) p',[materials['TEST-EGG'],'2026-11-18']));assert.equal(unknown.rows[0].p.usage_cost_vnd,null);assert.equal(unknown.rows[0].p.official_ready,false);
+  assert.equal((await db.query<{q:string}>('select private.convert_quantity_at($1,$2,$3,1,$4)::text q',[materials['TEST-MASS'],units.chai,units.g,'2026-11-18'])).rows[0].q,'250.000000000');
+  await assert.rejects(()=>db.query('select private.convert_quantity_at($1,$2,$3,1,$4)',[materials['TEST-LEAF'],units['túi'],units['lá'],'2026-11-18']),/UNIT_NEEDS_VERIFICATION/);
+  await assert.rejects(()=>db.query('select private.convert_quantity_at($1,$2,$3,1,$4)',[materials['TEST-VOLUME'],units.can,units.kg,'2026-11-18']),/UNIT_NEEDS_VERIFICATION/);
+  const recipe=(await db.query<{id:string}>("insert into recipes(code,name,kind) values('TEST','Test','product') returning id")).rows[0].id;
+  const version=(await db.query<{id:string}>('insert into recipe_versions(recipe_id,revision,effective_from,output_quantity,output_unit_id) values($1,1,$2,1,$3) returning id',[recipe,day,units.g])).rows[0].id;
+  await db.query('insert into recipe_items(recipe_version_id,material_id,quantity,unit_id) values($1,$2,100,$3)',[version,materials['TEST-MASS'],units.g]);
+  const cost=await asUser(db,identities.admin,()=>db.query<{cost:{complete:boolean;total_vnd:string}}>('select recipe_cost($1,1,$2) cost',[version,'2026-11-18']));
+  assert.equal(cost.rows[0].cost.total_vnd,'10000');assert.equal(cost.rows[0].cost.complete,true);
+  await db.query('insert into recipe_items(recipe_version_id,material_id,quantity,unit_id) values($1,$2,1,$3)',[version,materials['TEST-EGG'],units['quả']]);
+  const incomplete=await asUser(db,identities.admin,()=>db.query<{cost:{complete:boolean;total_vnd:string|null}}>('select recipe_cost($1,1,$2) cost',[version,'2026-11-18']));assert.equal(incomplete.rows[0].cost.complete,false);assert.equal(incomplete.rows[0].cost.total_vnd,null);
+ }finally{await db.close();}
+});
+test('Admin verification is versioned/idempotent, checks live authority and protects source/history and unit identities',async()=>{
+ const db=await setup();try{
+  const m=(await db.query<{id:string;version:string}>("select * from materials where code='TEST-EGG'")).rows[0];
+  const r=(await db.query<Record<string,unknown>>('select * from material_resolutions where material_id=$1',[m.id])).rows[0];
+  const input={purchase_unit_id:r.purchase_unit_id,usage_unit_id:r.usage_unit_id,basis_unit_id:r.basis_unit_id,amount:'1000',verification:'verified',package_unit_id:r.package_unit_id,package_content_unit_id:r.package_content_unit_id,package_quantity:r.package_quantity,package_verified:true,evidence:'Owner checked invoice',issue:''};
+  const run=(id:string,version:string|null,key:string,changes={})=>asUser(db,id,()=>db.query('select resolve_material($1,$2,$3,$4,$5)',[m.id,version,'2026-11-18',{...input,...changes},key]));
+  await db.query("insert into user_permissions values($1,'materials','approve',true)",[identities.a]);await assert.rejects(()=>run(identities.a,m.version,crypto.randomUUID()),/FORBIDDEN/);
+  await assert.rejects(()=>run(identities.admin,null,crypto.randomUUID()),/VERSION_CONFLICT/);
+  await assert.rejects(()=>run(identities.admin,m.version,crypto.randomUUID(),{amount:'NaN'}),/INVALID_PRICE/);
+  const key=crypto.randomUUID();await run(identities.admin,m.version,key);await run(identities.admin,m.version,key);
+  const revisions=(await db.query<{source_data:unknown}>('select source_data from material_resolutions where material_id=$1 order by revision',[m.id])).rows;
+  assert.equal(revisions.length,2);assert.deepEqual(revisions[1].source_data,revisions[0].source_data);
+  const before=(await db.query<{verification:string}>('select verification from private.effective_material_price($1,$2)',[m.id,day])).rows[0];assert.equal(before.verification,'verified');
+  await assert.rejects(()=>run(identities.admin,m.version,crypto.randomUUID()),/VERSION_CONFLICT/);
+ }finally{await db.close();}
+});
+test('reconciliation preserves posted stock units/costs and quarantines new unverified ledger costs',async()=>{
+ const db=await database();try{
+  await db.exec(buildMaterialImport(originals,'a'.repeat(64),day));
+  const m=(await db.query<{id:string;usage_unit_id:string}>("select * from materials where code='TEST-EGG'")).rows[0];
+  const w=(await db.query<{id:string}>("insert into warehouses(code,name,kind) values('TEST-W','Warehouse','ingredient') returning id")).rows[0].id;
+  const movement=(await db.query<{id:string}>("insert into inventory_movements(warehouse_id,moved_on,kind) values($1,$2,'receipt') returning id",[w,day])).rows[0].id;
+  await db.query('insert into inventory_movement_lines(movement_id,material_id,unit_id,quantity,unit_cost) values($1,$2,$3,2,999)',[movement,m.id,m.usage_unit_id]);
+  await db.exec(buildMaterialReconciliation(reconciled,'c'.repeat(64),day));
+  assert.equal((await db.query<{usage_unit_id:string}>('select usage_unit_id from materials where id=$1',[m.id])).rows[0].usage_unit_id,m.usage_unit_id);
+  assert.equal((await db.query<{verification:string}>('select verification from private.effective_material_price($1,$2)',[m.id,day])).rows[0].verification,'needs_verification');
+  await asUser(db,identities.admin,()=>db.query('select post_inventory($1,$2,$3,$4,$5,$6)',[w,day,'receipt',[{material_id:m.id,unit_id:m.usage_unit_id,quantity:'1',unit_cost:'999'}],'Test receipt',crypto.randomUUID()]));
+  const costs=(await db.query<{unit_cost:string|null}>('select unit_cost from inventory_movement_lines where material_id=$1 order by created_at,id',[m.id])).rows;
+  assert.equal(costs.length,2);assert.ok(costs.some(row=>row.unit_cost===null));assert.ok(costs.some(row=>Number(row.unit_cost)===999));
+  const mass=(await db.query<{id:string;usage_unit_id:string}>("select id,usage_unit_id from materials where code='TEST-MASS'")).rows[0];
+  await asUser(db,identities.admin,()=>db.query('select post_inventory($1,$2,$3,$4,$5,$6)',[w,day,'receipt',[{material_id:mass.id,unit_id:mass.usage_unit_id,quantity:'1',unit_cost:'999999'}],'Verified cost receipt',crypto.randomUUID()]));
+  assert.equal(Number((await db.query<{unit_cost:string}>('select unit_cost from inventory_movement_lines where material_id=$1',[mass.id])).rows[0].unit_cost),100);
+ }finally{await db.close();}
+});

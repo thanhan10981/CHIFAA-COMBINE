@@ -96,6 +96,17 @@ try {
  await page.getByRole('button',{name:'Lưu phiếu kiểm kê',exact:true}).waitFor();
  await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();
  report.checks.push('material editor VND input, conversion settings and real stock count dialog; no cloud writes');
+ await page.locator('.material-row-actions').nth(1).getByRole('button',{name:'Xác minh',exact:true}).click();
+ await page.getByRole('button',{name:'Lưu phiên bản xác minh',exact:true}).waitFor();
+ if(await page.getByLabel('Đơn vị tính giá',{exact:true}).inputValue()!=='kg'||await page.getByLabel('Đơn vị mua',{exact:true}).inputValue()!=='chai'||await page.getByLabel('Đơn vị tiêu hao / kho',{exact:true}).inputValue()!=='g')throw new Error('Price, purchase and usage units were conflated');
+ await page.locator('.material-review-history summary').click();
+ await page.screenshot({path:path.join(out,'material-verification-desktop.png'),animations:'disabled'});
+ await page.setViewportSize({width:390,height:844});
+ if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))throw new Error('Material verification overflows mobile viewport');
+ await page.screenshot({path:path.join(out,'material-verification-mobile.png'),animations:'disabled'});
+ await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();
+ await page.setViewportSize({width:1440,height:1000});
+ report.checks.push('Admin verification separates price/purchase/usage/package units and preserves source/history');
  await page.goto(base+'/app/materials');
  const group=page.getByRole('button',{name:'DANH MỤC',exact:true});await group.click();if(await group.getAttribute('aria-expanded')!=='false')throw new Error('Sidebar collapse failed');await group.click();
  await page.getByRole('button',{name:'Thêm vật tư',exact:true}).click();await page.getByRole('dialog').waitFor();await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();report.checks.push('collapse/expand and real catalog dialog');

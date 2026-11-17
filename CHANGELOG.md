@@ -1,3 +1,7 @@
+## 2026-11-17 — Xác minh cơ sở giá, đơn vị và quy cách theo phiên bản
+
+Tách đơn vị tính giá khỏi đơn vị mua/tiêu hao. Thêm phiên bản xác minh bất biến, nguồn gốc, bằng chứng, ngày hiệu lực/ghi nhận và form Admin xem quy đổi đã lưu/lịch sử. Giá suy luận/mâu thuẫn không vào tổng giá vốn; BOM/sản xuất/kho dùng nguồn xác minh theo ngày. Giữ nguyên giá cũ và số liệu đã ghi; chặn relabel đơn vị có lịch sử, đánh dấu cần chuyển đổi/đối chiếu. SQL điều chỉnh 63 dòng giữ ID, không tạo tồn và chạy lại không trùng; 23 mã cần xác minh được tổng hợp trong output/VAT_TU_CHO_XAC_MINH.md. DM/DH sửa về cơ sở giá/kg; TG/RCM/RCC/DAN chờ xác minh. Migration024: 79 bảng,30 RPC. Chưa chạy SQL cloud hoặc thay workbook gốc.
+
 ## 2026-11-17 — Việt hóa nhóm và trạng thái danh mục
 
 Biểu mẫu danh mục chung dùng dropdown nhóm với nhãn tiếng Việt, giữ mã nội bộ cho API; trạng thái giá/loại đơn vị/kho/quỹ cũng dùng nhãn tiếng Việt. Bảng gốc 63 dòng mới được người dùng cung cấp có ghi chú Kg khác cơ sở giá đã chuẩn hóa trước đó ở sáu mã. Đang chờ xác nhận giá theo quả/vỉ, kg/túi/chai/can/lít trước khi tạo SQL sửa nguồn; chưa nhập lại hoặc sửa giá/đơn vị cloud.
