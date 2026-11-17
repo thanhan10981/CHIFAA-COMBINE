@@ -1,3 +1,9 @@
+## 2026-11-17 — Tải thư viện Excel nguyên văn
+
+Đã lên haiDEV@35; readback5file khớp, manifest/quyền không đổi. Không nhập hay sửa dữ liệu Google.
+
+Sửa lỗi “HTML không đúng định dạng” khi tải mẫu/xuất/nhập Excel: publicAsset_ dùng HtmlTemplate.getRawContent thay vì HtmlOutput.getContent cho raw JavaScript. Không thay ExcelJS, nội dung thư viện, hash kiểm tra hoặc dữ liệu nghiệp vụ.288tests/syntax91/build đạt; kiểm thử thư viện thật qua endpoint tới tạo sheet mẫu, chưa xác nhận download Google browser.
+
 ## 2026-11-17 — Bảo toàn nội dung RPC đã ký
 
 Đã triển khai hai DEV@34 và đọc lại đủ5file khớp. Chưa nhập dữ liệu Google và chưa nghiệm thu sửa lỗi trên trình duyệt thật.

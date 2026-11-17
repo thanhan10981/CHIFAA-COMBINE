@@ -1,4 +1,4 @@
-function publicAsset_(args){if(args.id!=='exceljs-4.4.0')throw new Error('NOT_FOUND: Tài nguyên không tồn tại');return {source:HtmlService.createHtmlOutputFromFile('ExcelRuntime').getContent()};}
+function publicAsset_(args){if(args.id!=='exceljs-4.4.0')throw new Error('NOT_FOUND: Tài nguyên không tồn tại');return {source:HtmlService.createTemplateFromFile('ExcelRuntime').getRawContent()};}
 function scopedCache_(user,kind,versions,args,force,build,seconds=20){
   const key='read:v3:'+hash_({book:config_('SPREADSHEET_ID'),model:READ_MODEL_VERSION,kind,versions,args,email:user.email,role:user.role,permissions:user.permissions,permissionVersion:user.permissionVersion}),snapshot=['summary','strategy','payroll','inventory','cost','demand','variance'].includes(kind);
   if(!force){const cached=cachePartsGet_(key);if(cached)return cached;const saved=snapshot?snapshotGet_(key):null;if(saved){cachePartsPut_(key,saved,seconds);return {...saved,readModel:{...saved.readModel,source:'snapshot'}};}}

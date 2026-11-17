@@ -1,4 +1,8 @@
-# HANDOFF hiện tại — 17/11/2026 — DEV34
+# HANDOFF hiện tại — 17/11/2026 — DEV35
+
+EXCEL-ASSET đã triển khai hai deployment DEV hiện có@35. Đọc lại đủ5file35 khớp dist, manifest/quyền không đổi;288tests/syntax91/build đạt. Chỉ sửa cách đọc raw thư viện Excel ở publicAsset_, không sửa dữ liệu hay tệp nguồn/JSON nhập. Evidence output/excel-asset-tests.txt, output/chifaa-dev/remote-excel-asset-version35/source, excel-asset-final-deployments.txt. Người dùng tải lại trang rồi bấm Tải mẫu Excel; chưa tuyên bố download Google browser đã thử. Các checkpoint candidate/34 bên dưới là lịch sử.
+
+EXCEL-ASSET candidate: lỗi người dùng tải mẫu trả “HTML không đúng định dạng” kèm nguyên ExcelJS. publicAsset_ từng dùng createHtmlOutputFromFile().getContent() cho raw JavaScript. Đổi sang createTemplateFromFile().getRawContent(), không evaluate template/không parse HTML, giữ nguyên nội dung và hash thư viện. Tests/excel.test.mjs mô phỏng HtmlOutput từ chối raw JS và kiểm thử endpoint→hash→chạy browser bundle thật→tạo sheet Nhap_lieu.288tests/syntax91/build đạt. Đang rollout DEV; chưa xác nhận download thực tế trên trình duyệt, không chạm dữ liệu Sheets. Backup mã34: output/chifaa-dev/remote-before-excel-asset/source.
 
 RPC-WIRE đã lên hai deployment DEV hiện có@34. Đọc lại đủ5file phiên bản34 khớp dist, manifest so semantic; không thay quyền/URL/schema.287localtests/syntax91/build/bundleparse đạt. Evidence output/rpc-wire-tests.txt, output/legacy-2026-11-17/rpc-wire-verification.json, output/chifaa-dev/remote-rpc-wire-version34/source và rpc-wire-final-deployments.txt. Chưa kiểm chứng sửa lỗi chữ ký trên trình duyệt Google; người dùng cần tải lại trang và chọn lại tệp để preview. Chưa nhập/đọc/backup dữ liệu Google; preview154effects tương ứng91bản ghi +63provenance, không được gọi154bản ghi nghiệp vụ.
 

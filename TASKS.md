@@ -1,5 +1,13 @@
 # Theo dõi công việc
 
+## EXCEL-ASSET — tải mẫu Excel
+
+- Đã triển khai haiDEV@35, readback5file khớp. Chờ xác nhận tải xuống trên trình duyệt người dùng; dòng “đang rollout” bên dưới là checkpoint trước triển khai.
+
+- Sửa publicAsset_ đọc nguyên văn ExcelRuntime bằng HtmlTemplate.getRawContent, không dựng HtmlOutput cho JavaScript.
+- 288tests/syntax91/build đạt, có regression endpoint→browser thực thi vendor thật→tạo mẫu. Giữ hash/cache/allowlist tài nguyên, không đọc workbook khi tải thư viện.
+- Đang rollout DEV; tải tệp thực tế trên Google còn chờ xác nhận.
+
 ## RPC-WIRE — lỗi chữ ký khi xem trước nhập dữ liệu
 
 - Đã rollout hai DEV hiện có@34, readback5file khớp, manifest không đổi quyền. Chờ người dùng thử lại preview trên Google; các dòng “đang rollout” dưới đây là trước khi hoàn tất gán deployment.

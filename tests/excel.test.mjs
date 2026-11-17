@@ -4,8 +4,20 @@ import ExcelJS from 'exceljs';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import crypto from 'node:crypto';
+import {gas} from './gas-mock.mjs';
+import {SCHEMA} from '../src/shared/schema.js';
 import {createModuleWorkbook,createImportWorkbook,parseImportXlsx,validateExcelArchive} from '../src/client/excel.js';
 const reload=async book=>{const bytes=await book.xlsx.writeBuffer(),copy=new ExcelJS.Workbook();await copy.xlsx.load(bytes);return {bytes,book:copy};};
+
+test('public Excel asset reads literal JavaScript without HTML parsing or template evaluation',async()=>{
+ const g=gas(),source='/*\n'+fs.readFileSync('assets/licenses/ExcelJS-LICENSE.txt','utf8')+'\n*/\n'+fs.readFileSync('node_modules/exceljs/dist/exceljs.min.js','utf8');
+ let rawReads=0;g.ctx.HtmlService.createHtmlOutputFromFile=()=>{throw new Error('Malformed HTML: raw JavaScript is not an HTML page');};
+ g.ctx.HtmlService.createTemplateFromFile=name=>{assert.equal(name,'ExcelRuntime');return {getRawContent(){rawReads++;return source;},evaluate(){throw new Error('Must not evaluate asset templates');}};};
+ const before=g.metrics.open,result=g.ctx.rpc('publicAsset',{id:'exceljs-4.4.0'});assert.equal(result.ok,true);assert.equal(result.data.source,source);assert.equal(rawReads,1);assert.equal(g.metrics.open,before);
+ assert.equal(g.ctx.rpc('publicAsset',{id:'../Code'}).error.code,'NOT_FOUND');assert.equal(rawReads,1);
+ const hash=crypto.createHash('sha256').update(source).digest('hex'),ctx=vm.createContext({SCHEMA,crypto:crypto.webcrypto,TextEncoder,Uint8Array,rpcCall:async()=>result.data,document:{createElement:()=>({remove(){}}),head:{append:script=>vm.runInContext(script.textContent,ctx)}}});
+ vm.runInContext(fs.readFileSync('src/client/excel.js','utf8').replace(/^import .*?;\r?\n/gm,'').replace(/^export \{[^}]*\};?\r?\n?/gm,'').replaceAll('__EXCEL_ASSET_HASH__',hash),ctx);await vm.runInContext('ensureExcelRuntime()',ctx);assert.equal(typeof ctx.ExcelJS.Workbook,'function');assert.equal(vm.runInContext("createImportWorkbook('materials').getWorksheet('Nhap_lieu').getCell('A1').value",ctx),'recordId');
+});
 test('real XLSX preserves Unicode, native dates/numbers, missing vs zero, inert formula-like text and trace metadata',async()=>{
  const date=new Date('2026-11-16T10:00:00Z'),rows=[{recordId:'00123',version:1,name:'Gạo & nếp <loại A>',purchaseUnit:'kg',unit:'g',conversion:1000,purchasePrice:0,minimum:2,updatedAt:date.toISOString(),deleted:false,reverses:''},{recordId:'002',version:NaN,name:'=HYPERLINK("https://example.com","click")',purchasePrice:'',deleted:true,reverses:'00123'}];
  const {bytes,book}=await reload(createModuleWorkbook('materials',rows,{exportedAt:date,stamp:'snapshot'},ExcelJS));assert.equal(bytes.subarray(0,2).toString(),'PK');
