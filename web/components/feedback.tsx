@@ -10,10 +10,10 @@ type Notify=(message:string,tone?:Tone)=>void;
 const FeedbackContext=createContext<Notify>(()=>{});
 export const useNotify=()=>useContext(FeedbackContext);
 
-export function ActionDialog({title,children,onClose,busy=false}:{title:string;children:ReactNode;onClose:()=>void;busy?:boolean}){
+export function ActionDialog({title,children,onClose,busy=false,className=''}:{title:string;children:ReactNode;onClose:()=>void;busy?:boolean;className?:string}){
  const container=useRef<HTMLElement>(null);
  useEffect(()=>{const previous=document.activeElement as HTMLElement|null;container.current?.querySelector<HTMLElement>('textarea,input,button')?.focus();return()=>previous?.focus();},[]);
- return <div className="modal-backdrop"><section ref={container} role="dialog" aria-modal="true" aria-label={title} className="panel modal chifaa-action-dialog" onKeyDown={event=>{if(event.key==='Escape'&&!busy){event.stopPropagation();onClose();}if(event.key==='Tab'){const elements=Array.from(container.current?.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),textarea:not(:disabled),a[href]')??[]);const first=elements[0],last=elements.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}}}}><header><h2>{title}</h2><button type="button" className="button" aria-label="Đóng hộp thoại" disabled={busy} onClick={onClose}><Icon name="close" size={18}/></button></header>{children}</section></div>;
+ return <div className="modal-backdrop"><section ref={container} role="dialog" aria-modal="true" aria-label={title} className={'panel modal chifaa-action-dialog '+className} onKeyDown={event=>{if(event.key==='Escape'&&!busy){event.stopPropagation();onClose();}if(event.key==='Tab'){const elements=Array.from(container.current?.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),textarea:not(:disabled),a[href]')??[]);const first=elements[0],last=elements.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}}}}><header><h2>{title}</h2><button type="button" className="button" aria-label="Đóng hộp thoại" disabled={busy} onClick={onClose}><Icon name="close" size={18}/></button></header>{children}</section></div>;
 }
 
 function ToastItem({toast,onClose}:{toast:Toast;onClose:(id:number)=>void}){

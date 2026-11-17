@@ -1,3 +1,9 @@
+## 2026-11-17 — Danh mục 63 vật tư, quy đổi và tiền Việt
+
+Thay màn vật tư bằng bốn chỉ số, tìm/lọc/phân trang, bảng giá/tồn/quy cách và hộp thoại sửa theo ảnh tham chiếu. Thêm cài đặt quy đổi theo vật tư và kiểm kê thật qua snapshot/version hiện có. Migration 023 bổ sung metadata nguồn, material_catalog và save_material; lưu vật tư/giá atomic, kiểm tra quyền hiện tại, chống gửi trùng, giữ lịch sử giá và chặn đổi đơn vị khi đã có lịch sử. Định dạng tiền Việt cho ô nhập giá/thu tiền, bảng vật tư và giá vốn công thức, giữ chính xác bigint/decimal.
+
+Đã chuẩn bị hai SQL trong output ignored: CHIFAA_PATCH_MATERIALS_DEV.sql rồi CHIFAA_63_VAT_TU_DEV.sql. Nguồn 63 mã được giữ riêng; kiểm tra PostgreSQL cục bộ cho đúng 63/41/2/19, phân biệt giá 0 và NULL, không tạo phiếu kho từ tồn tham chiếu, ba tỷ lệ chưa xác nhận vẫn unverified và chạy lại không ghi trùng. Chưa thực thi SQL trên Supabase cloud. Không dùng bootstrap cài mới cho DEV hiện có.
+
 ## 2026-11-17 — Cấp Admin đầu tiên có kiểm soát
 
 Sidebar refinement: aligned rows, softer group styling, readable section labels, fixed transparent branding/account area and independently scrolling navigation. Preserves menu order, SVG icons, permissions, portal and route targets.

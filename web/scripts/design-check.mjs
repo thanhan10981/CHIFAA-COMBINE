@@ -82,8 +82,23 @@ try {
  await page.goto(base+'/app/accounts');await page.getByRole('button',{name:'Thêm mới',exact:true}).click();await page.getByLabel('Tên quỹ / ngân hàng',{exact:true}).waitFor();await page.getByRole('button',{name:'Đóng',exact:true}).click();
  report.checks.push('cash/bank account setup dialog in its contextual tab');
  await page.goto(base+'/app/materials');
+ await page.locator('.material-row-actions').first().getByRole('button',{name:'Sửa',exact:true}).click();
+ await page.getByRole('dialog').waitFor();
+ const materialPrice=await page.getByLabel('Đơn giá theo ĐVT (đ)',{exact:true}).inputValue();
+ if(materialPrice!=='16.000'){await page.screenshot({path:path.join(out,'material-editor-failure.png')});throw new Error('Material edit price is not formatted as VND: '+JSON.stringify(materialPrice));}
+ await page.getByLabel('Đơn giá theo ĐVT (đ)',{exact:true}).fill('260.000');
+ if(await page.getByLabel('Đơn giá theo ĐVT (đ)',{exact:true}).inputValue()!=='260.000')throw new Error('Currency input lost grouping');
+ await page.screenshot({path:path.join(out,'material-editor-desktop.png')});
+ await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();
+ await page.getByRole('button',{name:'Cài đặt quy đổi',exact:true}).click();await page.getByRole('dialog').waitFor();
+ await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();
+ await page.locator('.material-row-actions').first().getByRole('button',{name:'Kiểm kê',exact:true}).click();await page.getByRole('dialog').waitFor();
+ await page.getByRole('button',{name:'Lưu phiếu kiểm kê',exact:true}).waitFor();
+ await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();
+ report.checks.push('material editor VND input, conversion settings and real stock count dialog; no cloud writes');
+ await page.goto(base+'/app/materials');
  const group=page.getByRole('button',{name:'DANH MỤC',exact:true});await group.click();if(await group.getAttribute('aria-expanded')!=='false')throw new Error('Sidebar collapse failed');await group.click();
- await page.getByRole('button',{name:'Thêm vật tư',exact:true}).click();await page.getByRole('dialog').waitFor();await page.getByRole('button',{name:'Đóng',exact:true}).click();report.checks.push('collapse/expand and real catalog dialog');
+ await page.getByRole('button',{name:'Thêm vật tư',exact:true}).click();await page.getByRole('dialog').waitFor();await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();report.checks.push('collapse/expand and real catalog dialog');
  await page.goto(base+'/app/materials?role=staff');if(await page.locator('a[href="/app/admin"]').count())throw new Error('Unauthorized admin menu visible');if(await page.locator('.account-role').textContent()!=='Kế toán')throw new Error('Accountant role label missing');report.checks.push('permission-scoped sidebar and actual Admin/accountant labels with icon-only refresh/logout');
  await page.setViewportSize({width:390,height:844});
  for(const route of ['materials','recipes','strategy','entry-stock','sales','kiosk','opsdashboard']){

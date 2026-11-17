@@ -1,5 +1,7 @@
 # Bằng chứng chức năng hiện tại
 
+Cập nhật danh mục vật tư: migration023, 51 tests, 78 bảng/28 RPC. Bảng và hộp thoại vật tư, chỉ số, giá theo ngày, quy đổi theo vật tư và kiểm kê thật đã nối RPC. Đã chuẩn bị SQL 63 mã theo nguồn người dùng, kiểm thử nâng cấp từ020 và nhập/replay bằng PostgreSQL cục bộ; **chưa chạy patch023 hoặc nhập63 trên cloud**. Các hạn chế nghiệp vụ còn lại trong bảng vẫn áp dụng.
+
 Cập nhật chuyển dự án cũ: [LEGACY_PARITY.md](LEGACY_PARITY.md). Menu runtime 7 nhóm/37 mục; Ki-ốt có UI/RPC thật, thêm nhật ký và cấu hình quỹ. Migrations 021/022 gồm Ki-ốt và sửa các lỗi audit, **chưa được công cụ áp lên cloud**. Bộ kiểm tra hiện có 47 tests; kiểm tra layout 41 route và 6 màn mobile trên fixture.
 
 Kiểm tra mới: [Báo cáo 17/11/2026](SYSTEM_AUDIT_2026-11-17.md). 37 tests hiện có đạt, nhưng kiểm tra bổ sung xác nhận lỗi null/version và gắn đơn vượt kế hoạch; chưa đủ điều kiện nghiệm thu.

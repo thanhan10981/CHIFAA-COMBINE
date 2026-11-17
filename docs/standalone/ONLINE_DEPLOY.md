@@ -1,5 +1,11 @@
 # CHIFAA DEV online — Vercel + Supabase
 
+## Cập nhật danh mục 63 vật tư (17/11/2026)
+
+Trên DEV đã có schema CHIFAA, owner chạy lần lượt `output/CHIFAA_PATCH_MATERIALS_DEV.sql` (migration023, chỉ cấu trúc/RPC) rồi `output/CHIFAA_63_VAT_TU_DEV.sql` (63 mã theo nguồn). Patch chặn chạy lại; nếu thấy MATERIAL_PATCH_ALREADY_APPLIED thì chỉ cần file nhập. Import chạy lại là no-op theo hash nguồn, giữ UUID mã có sẵn, rollback nếu xung đột giá/quy đổi và không tạo phiếu kho. Không chạy lại CHIFAA_SUPABASE_DEV.sql. SQL Editor không ghi lịch sử CLI; đối chiếu/reconcile migration023 trước db push sau này.
+
+Sau khi hai SQL thành công, promote bản DEV giao diện tương ứng trên Vercel và tải lại trang. Kỳ giá nguồn là 17/11/2026; 18 giá 0 và một giá trống cần xác minh, ba quy cách trứng/rong biển chưa được xác nhận. Tồn tham chiếu cần kiểm kê thật tại kho trước khi dùng như tồn đã ghi sổ. Công cụ chưa thực thi SQL trên cloud.
+
 Người dùng đã yêu cầu triển khai DEV bằng URL online. Không cần chạy ứng dụng bằng localhost. Việc build và kiểm thử trên máy chỉ chuẩn bị bản triển khai; không phải địa chỉ dùng cuối cùng.
 
 ## Trạng thái đã kiểm tra
