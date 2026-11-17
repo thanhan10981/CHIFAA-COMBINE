@@ -2,6 +2,12 @@
 
 ## Yêu cầu đang thực hiện — 17/11/2026
 
+Checkpoint P2 đã xác minh: 19 migrations, 77 bảng, 23 RPC và 30/30 tests đạt; sinh types, TypeScript, lint và build đều đạt trong output/standalone-catalog-verify.txt. Migration 019 chặn công bố công thức chứa phiên bản con chưa có hiệu lực. Các số 18/29 trong ghi chú P2 bên dưới là trước test cuối. Người dùng xác nhận chưa có Supabase DEV; tiếp tục phần độc lập, chưa có cloud UAT, deploy hoặc nhập dữ liệu thật.
+
+### P2 bổ sung sau commit nền tảng c48774d
+
+18 migrations,77tables,23RPC,29tests; P2verify/typecheck/lint/build đạt (output/standalone-catalog-verify.txt). UI có7catalog gồm departments/warehouses, form giá/quy đổi có proof và quyềnapprove, RecipeEditor thêm/copyrevision/publish/BOM/cost theo ngày. TiềnVND display bằngBigInt; cost trảchuỗi từSQL. GenericcatalogPATCH chỉgửitrườngđổi, xửlýsố0/null đúng, không yêu cầu xác minh lại khi chỉ sửa tên. APIverified/publication yêu cầuapprove, thử cảJSONboolean/stringTRUE/yes/1 khôngbypass. SI kg↔g/l↔ml vàpackageratio xácminh/inverse dùngchung, không tựsuy density. Mộtcanonicalpricebasis/material/date; ambiguousexistingdata làm migrationfail, không tựxóa. Newreadonlycostpreview sumline roundedVND chỉcho địnhmức, chưacoilàP&Lposted. Revision khôngsửaBOMcũ. Chưa có SupabaseDEV hoặc thêm nghiệp vụ tài chính đã chốt. Tiếp tục FEATURE_MATRIX.
+
 ### Checkpoint mới nhất — ưu tiên trước các số cũ bên dưới
 
 - Runtime mới ở web/, PostgreSQL ở supabase/. Root npm dev/build/test/check/verify đã trỏ sang web; legacy:* chỉ để đối chiếu. Không push Apps Script, không dùng workbook runtime, không deploy public, không nhập dữ liệu thật.

@@ -1,3 +1,7 @@
+## 2026-11-17 — Standalone P2 editor/version/giá
+
+Thêm form giá/quy đổi, 7 danh mục và editor công thức với tạo phiên bản sửa, công bố và xem giá vốn. 23 RPC, 19 migrations, 30 tests; TypeScript/lint/build đạt. Quyền xác minh độc lập quyền tạo; chặn công bố món không phép và công thức con chưa có hiệu lực. Giữ giá/BOM lịch sử, giá chưa biết trả null, hiển thị VND bằng BigInt. Chưa deploy cloud hoặc nhập dữ liệu thật; phần còn thiếu ở FEATURE_MATRIX.
+
 ## 2026-11-17 — Standalone checkpoint bảo mật/hiệu năng/UX
 
 13migrations/77tables/21RPC,22tests. Thêm UI sản xuất/nhập-xuất, dropdown tham chiếu, kiểm tra quyền khi focus, invalidation cache theo module, public-shell PWA/nháp whitelist và UUID staging CLI. Chặn lộ lương qua audit, ghi đè verified prices/quy đổi lịch sử. RLS InitPlan giảm p95 local10.000rows từ370,72 xuống13,47ms; chưa đo cloud/concurrent. Root scripts mặc định chạy Next. Chưa deploy/import thật; các workflow chưa xong được ghi riêng trong FEATURE_MATRIX.

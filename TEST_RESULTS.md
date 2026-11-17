@@ -2,6 +2,8 @@
 
 ## Standalone P1 (mới, không cộng với tests Apps Script)
 
+P2: 30/30 tests đạt trên PostgreSQL nhúng. Bao gồm quyền xác minh/công bố, các biến thể boolean, tạo phiên bản công thức mới, hiệu lực phiên bản con, quy đổi SI và bao gói đã xác minh, cơ sở giá duy nhất, giá vốn dạng chuỗi/null, PATCH giữ số 0 và kiểm tra khóa bí mật trong biến public. 19 migrations, 77 bảng, 23 RPC; sinh types, TypeScript, lint và build đạt. Log: output/standalone-catalog-verify.txt. Chưa kiểm thử Supabase cloud hoặc browser E2E.
+
 Mới nhất22/22tests: thêm chặn lương qua audit, immutable historical prices/conversions, thiếu giá không verified, private-function/search_path, Portalcapacity/unavailableproduct rollback, offline/staging.13migrations/77tables/21RPC, dbtypes generated; typecheck/lint/build đạt. HTTPsmoke local5pages+manifest+callback503 đạt. Benchmark RLS trước/sau xem PERFORMANCE_REPORT.md. Chưa có cloud, browser E2E,10concurrent hoặc backuprestore. Không lấy tests cũ Apps Script cộng vào hệ mới.
 
 Mới nhất16/16PostgreSQLtests trên77tables/11migrations: thêm nestedBOM/yield/cycle, productionissueonce/rollback/costsnapshot, countadjustment/conflict/period, customerA/Bprices/orders/internaldata, review/schedulekhôngrevenue, admincheckbox/lastmanager, olddebtallocation/cash, 8/9/10h/payprivacy/manualinterest/close-reopen. Không có cloudOAuth/Realtime/Storage/Edge/browsersession hay nhiều kết nối đồng thời. RuntimefinancialUI chưa xong. Những số6/12 phía dưới là checkpoint trước.

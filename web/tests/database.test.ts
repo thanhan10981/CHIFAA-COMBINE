@@ -44,3 +44,15 @@ test('Admin can grant scoped checkboxes; a user cannot self-promote or disable t
  await assert.rejects(()=>asUser(db,identities.admin,()=>db.query("select admin_assign_user($1,false,array['admin'],'[]',$2)",[identities.admin,randomUUID()])),/LAST_ADMIN_REQUIRED/);
  await assert.rejects(()=>asUser(db,identities.admin,()=>db.query("select admin_assign_user($1,true,array['admin'],$2::jsonb,$3)",[identities.admin,JSON.stringify([{module:'admin',action:'manage',allowed:false}]),randomUUID()])),/LAST_ADMIN_REQUIRED/);
 });
+test('creating a price is not permission to verify its basis',async()=>{
+ const material=(await db.query<{id:string}>('select id from materials limit 1')).rows[0].id,unit=randomUUID();await db.query("insert into material_units(id,code,name,dimension) values($1,'PRICE-UNIT','Unit','count')",[unit]);await db.query("insert into user_permissions values($1,'materials','create',true)",[identities.accountant]);
+ const value={material_id:material,basis_unit_id:unit,amount:'16000',effective_from:'2026-11-17',verification:'needs_verification',source_reference:'Pending invoice check'};
+ await asUser(db,identities.accountant,()=>db.query("select save_catalog('material_prices',null,null,$1::jsonb,$2)",[JSON.stringify(value),randomUUID()]));
+ await assert.rejects(()=>asUser(db,identities.accountant,()=>db.query("select save_catalog('material_prices',null,null,$1::jsonb,$2)",[JSON.stringify({...value,effective_from:'2026-11-18',verification:'verified'}),randomUUID()])),/FORBIDDEN_VERIFICATION/);
+ for(const verified of [true,'TRUE','yes',1])await assert.rejects(()=>asUser(db,identities.accountant,()=>db.query("select save_catalog('unit_conversions',null,null,$1::jsonb,$2)",[JSON.stringify({material_id:material,from_unit_id:unit,to_unit_id:randomUUID(),factor:30,verified,evidence:'Forged approval'}),randomUUID()])),/FORBIDDEN_VERIFICATION/);
+});
+test('product creation does not grant publication to customers',async()=>{
+ await db.query("insert into user_permissions values($1,'products','create',true)",[identities.accountant]);
+ await asUser(db,identities.accountant,()=>db.query("select save_catalog('products',null,null,'{\"code\":\"DRAFT-PRODUCT\",\"name\":\"Draft\",\"sale_unit\":\"phần\",\"published\":false}',$1)",[randomUUID()]));
+ await assert.rejects(()=>asUser(db,identities.accountant,()=>db.query("select save_catalog('products',null,null,'{\"code\":\"UNAPPROVED\",\"name\":\"Unapproved\",\"sale_unit\":\"phần\",\"published\":true}',$1)",[randomUUID()])),/FORBIDDEN_PUBLICATION/);
+});

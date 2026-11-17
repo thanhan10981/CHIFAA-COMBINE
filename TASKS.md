@@ -2,6 +2,8 @@
 
 ## Ưu tiên mới: xây standalone Vercel + Supabase
 
+P2: 19 migrations, 77 bảng, 23 RPC, 30/30 tests; TypeScript, lint và build đạt. Đã thêm editor công thức, tạo phiên bản sửa, xem BOM/giá vốn, 7 danh mục và form xác minh giá/quy đổi. Chặn công bố công thức chứa phiên bản con chưa có hiệu lực. Lookup trên 200 dòng và cập nhật giá nháp còn cần hoàn thiện. Chưa có Supabase DEV; tiếp tục kiểm kê và thao tác kho cục bộ.
+
 Mới nhất:13migrations/77tables/21RPC,22tests; TS/lint/build + HTTP local đạt. UI sản xuất/nhập-xuất đã nối thêm; dropdown danh mục, auth/cache boundary, public-shell PWA và stagingimport có source/tests. Bảo vệ audit/payroll/history đã bổ sung. Ma trận chính xác: docs/standalone/FEATURE_MATRIX.md. Những checkpoint6/11/16tests phía dưới là lịch sử. Chưa có cloud; toàn dự án vẫn đang làm, không đánh dấu giai đoạn hoàn chỉnh chỉ vì schema/RPC có tests.
 
 Checkpoint tiếp theo:16tests PostgreSQL,77tables/11migrations. Backend production/count/period/order/payment/manualinterest/attendance đã có transaction+tests; PortalUI gửi/xemđơn, nội bộ review, Admincheckbox đã nối. Màn hình workflow còn thiếu vẫn placeholderchặntácđộng, không đánh dấu toàn giai đoạn hoàn tất. Không có Supabasecloud, không deploy thật/import thật. Bảng bên dưới là checkpoint nền tảng trước phần bổ sung này.

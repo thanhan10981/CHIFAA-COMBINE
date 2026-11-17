@@ -1,4 +1,6 @@
 import type { NextConfig } from 'next';
+import {assertPublicEnvironment} from './lib/security/public-env';
+assertPublicEnvironment(process.env);
 const config: NextConfig = {
   outputFileTracingRoot: process.cwd(),
   poweredByHeader: false,
