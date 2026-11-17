@@ -52,8 +52,10 @@ function clearRpcSession({forget=true}={}){rpcSession=null;rpcReads.clear();for(
 async function rpcTransport(action, args = {}, { timeout = action==='maintenance'?180000:['bootstrap','workflow','mutate','entry','kiosk','linkOrderPlan','oauthFinish'].includes(action)?90000:60000 } = {}) {
   args=JSON.parse(JSON.stringify(args));
   if(args.token&&rpcSession?.token===args.token){
-    args.proof={requestId:crypto.randomUUID(),at:Date.now()};
-    const signature=await crypto.subtle.sign('HMAC',rpcSession.key,new TextEncoder().encode(requestMessage(action,args)));
+    args.proof={version:2,requestId:crypto.randomUUID(),at:Date.now()};
+    const messageBytes=new TextEncoder().encode(requestMessage(action,args));
+    if(action==='maintenance')args.proof.messageHash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',messageBytes)),b=>b.toString(16).padStart(2,'0')).join('');
+    const signature=await crypto.subtle.sign('HMAC',rpcSession.key,messageBytes);
     args.proof.signature=Array.from(new Uint8Array(signature),b=>b.toString(16).padStart(2,'0')).join('');
   }
   // Keep signed JSON opaque to the Apps Script object bridge. ASCII escaping

@@ -1,5 +1,7 @@
 # Đối chiếu yêu cầu CHIFAA COMBINE
 
+RPC-v2:290localtests/syntax91. Người dùng xác nhận chữ ký còn lỗi trên35 nên nghiệm thu AUTH/import vẫn chưa đạt. Ký ASCII + UTF-8 explicit và chẩn đoán checksum chỉ hỗ trợ phân biệt nguyên nhân, không thay xác thực. Chưa nhập dữ liệu Google.
+
 Checkpoint EXCEL-ASSET:288localtests/syntax91. Sửa lấy raw ExcelJS qua HtmlTemplate thay vì phân tích JavaScript như HTML; có kiểm thử endpoint→hash→browser tạo mẫu. Trạng thái nghiệm thu Google chưa đổi, cần người dùng tải mẫu sau rollout.
 
 Checkpoint RPC-WIRE:287localtests/syntax91; truyền signed JSON ASCII và tương thích client cũ, chưa nghiệm thu Google. Không nâng mức hoàn thành các yêu cầu xác thực/import vì chỉ có mock91bản ghi và ảnh lỗi chữ ký.

@@ -1,5 +1,7 @@
 # Kết quả kiểm thử master session
 
+RPC-v2:290/290tests/syntax91/build đạt. Thêm payloadUnicode >500k (ASCII/UTF-8 cùng byte), protocol downgrade không hợp lệ, checksum không thể cấp quyền; client→server mock dùng lô91bản ghi/154effects/0stock. Log output/rpc-v2-tests.txt. Lỗi chữ ký hosted người dùng vẫn có trên35; chưa có telemetry root cause/Google browser test. Không ghi dữ liệu Google.
+
 EXCEL-ASSET:288/288localtests/syntax91/build đạt. Regression mới ép HtmlOutput từ chối JS, kiểm tra raw template không evaluate, endpoint allowlist không mở Sheets; tải vendor thật qua SHA256 và tạo sheet Nhap_lieu trong VM browser. Các kiểm thử XLSX roundtrip vẫn đạt. Log output/excel-asset-tests.txt. Không xác nhận tải xuống thực tế trên Google trước UAT.
 
 RPC-WIRE:287/287local tests,91JSsyntax,build/server+inlineparse đạt.58tests mục tiêu bao gồm client phiên và bảo mật;2test mới kiểm tra JSON ASCII qua client→backend, nguồn tiếng Việt/emoji/CRLF/số nhỏ, chặn chữ ký sửa/phát lại/staff. Lô91bản ghi thật chỉ chạy trong GASmock:154effects,63materials,6recipes,0stock; evidence output/legacy-2026-11-17/rpc-wire-verification.json. Không có phép đo/tái hiện hosted Google; lỗi chữ ký từ ảnh chưa xác định nguyên nhân gốc bằng telemetry.

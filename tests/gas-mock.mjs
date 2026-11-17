@@ -34,7 +34,7 @@ export function gas(){
     Session:{getEffectiveUser:()=>({getEmail:()=> 'owner@example.com'})},
     LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock(){}})},CacheService:{getScriptCache:()=>({get:k=>cache.get(k),getAll:keys=>Object.fromEntries(keys.filter(k=>cache.has(k)).map(k=>[k,cache.get(k)])),putAll:values=>{for(const [k,v]of Object.entries(values))cache.set(k,v);},put:(k,v)=>cache.set(k,v),remove:k=>cache.delete(k)})},
     UrlFetchApp:{fetch:(url,options)=>{context.fetches.push({url,options});const body=context.fetchResponse?context.fetchResponse(url,options):url.endsWith('/token')?{access_token:'google-access-mock',token_type:'Bearer',expires_in:3600}:context.claims;return {getResponseCode:()=>body.status||200,getContentText:()=>JSON.stringify(body)};}},
-    Utilities:{getUuid:()=>crypto.randomUUID(),DigestAlgorithm:{SHA_256:'sha256'},computeDigest:(_,v)=>[...crypto.createHash('sha256').update(v).digest()],
+    Utilities:{getUuid:()=>crypto.randomUUID(),Charset:{UTF_8:'UTF-8'},DigestAlgorithm:{SHA_256:'sha256'},computeDigest:(_,v)=>[...crypto.createHash('sha256').update(v).digest()],
       formatDate:d=>d.toISOString().slice(0,10),computeHmacSha256Signature:(p,k)=>[...crypto.createHmac('sha256',k).update(p).digest()],
       base64EncodeWebSafe:v=>Buffer.from(typeof v==='string'?v:Uint8Array.from(v)).toString('base64url'),base64DecodeWebSafe:v=>[...Buffer.from(v,'base64url')],newBlob:v=>({getDataAsString:()=>Buffer.from(v).toString('utf8')})}
   });

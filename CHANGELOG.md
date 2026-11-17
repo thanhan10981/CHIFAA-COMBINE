@@ -1,3 +1,9 @@
+## 2026-11-17 — Chuẩn hóa thông điệp ký RPC-v2
+
+Đã lên haiDEV@36, readback5file khớp, giữ quyền/URL/schema; chờ người dùng xác nhận preview. Không nhập dữ liệu Google.
+
+Sau khi người dùng xác nhận lỗi chữ ký còn trên35, chuẩn hóa nội dung HMAC thành ASCII với phiên bản có prefix, chọn UTF-8 rõ ràng ở backend. Bản34 chỉ bảo toàn wire JSON nên chưa chứng minh giải quyết lỗi. Thêm thông báo phân biệt checksum nội dung khớp/thay đổi, không tiết lộ dữ liệu/khóa và không thay thế HMAC.290localtests/syntax91/build; chưa nghiệm thu hosted, không nhập dữ liệu.
+
 ## 2026-11-17 — Tải thư viện Excel nguyên văn
 
 Đã lên haiDEV@35; readback5file khớp, manifest/quyền không đổi. Không nhập hay sửa dữ liệu Google.

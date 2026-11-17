@@ -58,8 +58,12 @@ function verifyRequest_(action,args){
   if(!proof||typeof proof.requestId!=='string'||!/^[\w-]{16,100}$/.test(proof.requestId)||!Number.isSafeInteger(proof.at)||Math.abs(Date.now()-proof.at)>60000||typeof proof.signature!=='string')throw new Error('AUTH: Thiếu chữ ký hoặc yêu cầu đã hết hạn');
   const credentials=sessionCredentials_(args.token);
   if(!credentials)throw new Error('AUTH: Khóa phiên đã hết hạn');
-  const expected=Utilities.computeHmacSha256Signature(requestMessage(action,args),credentials.signingKey).map(b=>('0'+(b&255).toString(16)).slice(-2)).join('');
-  if(!constantEqual_(expected,proof.signature))throw new Error('AUTH: Chữ ký yêu cầu không hợp lệ');
+  const message=requestMessage(action,args),expected=Utilities.computeHmacSha256Signature(message,credentials.signingKey,Utilities.Charset.UTF_8).map(b=>('0'+(b&255).toString(16)).slice(-2)).join('');
+  if(!constantEqual_(expected,proof.signature)){
+    // Diagnostic only: never use this public checksum in place of the HMAC.
+    const detail=proof.version===2&&/^[a-f0-9]{64}$/.test(proof.messageHash||'')?(constantEqual_(hash_(message),proof.messageHash)?'; nội dung khớp, cần kiểm tra khóa phiên':'; nội dung đã thay đổi khi truyền'):'';
+    throw new Error('AUTH: Chữ ký yêu cầu không hợp lệ (RPC '+(proof.version===2?'v2':'cũ')+detail+').');
+  }
   // Durable nonce ledger: CacheService eviction must never re-enable replay.
   const sheet=table_('_AuthRequests'),rows=rowsPlain_('_AuthRequests'),sessionHash=hash_(args.token);
   if(rows.some(r=>r[0]===sessionHash&&r[1]===proof.requestId))throw new Error('AUTH: Yêu cầu đã được sử dụng');

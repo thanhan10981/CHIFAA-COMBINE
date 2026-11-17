@@ -1,5 +1,13 @@
 # Theo dõi công việc
 
+## RPC-v2 — lỗi chữ ký vẫn tái diễn trên Google
+
+- Đã triển khai haiDEV@36 và readback5file khớp. Chưa nghiệm thu chữ ký trên Google; bản35 thất bại đã được ghi nhận, không đánh dấu bug done chỉ vì local tests đạt.
+
+- V2 chuẩn hóa chính thông điệp ký sang ASCII, prefix/version có ràng buộc; backend chỉ định UTF-8. Không chỉ escape chuỗi truyền như34.
+- Thêm chẩn đoán khớp nội dung cho maintenance, không lộ checksum/khóa hay dùng checksum cấp quyền; phiên/HMAC/nonce/RBAC giữ nguyên.
+- 290tests/syntax91/build và mock91bản ghi đạt. Chưa tái hiện nguyên nhân gốc trên Google; đang rollout, chưa nghiệm thu.
+
 ## EXCEL-ASSET — tải mẫu Excel
 
 - Đã triển khai haiDEV@35, readback5file khớp. Chờ xác nhận tải xuống trên trình duyệt người dùng; dòng “đang rollout” bên dưới là checkpoint trước triển khai.

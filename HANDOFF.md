@@ -1,4 +1,8 @@
-# HANDOFF hiện tại — 17/11/2026 — DEV35
+# HANDOFF hiện tại — 17/11/2026 — DEV36
+
+RPC-v2 đã lên hai DEV hiện có@36. Đọc lại5file khớp dist/manifest semantic; quyền/schema/URL không đổi.290tests/syntax91/build và mock91bản ghi/154effects/0stock đạt. Evidence output/rpc-v2-tests.txt, output/chifaa-dev/remote-rpc-v2-version36/source, rpc-v2-final-deployments.txt. Chưa nghiệm thu chữ ký Google, chưa nhập dữ liệu. Nếu người dùng còn lỗi, đọc thông báo mới “RPC v2; nội dung khớp/đã thay đổi”; nếu vẫn thông báo cũ không có RPC, chưa xác nhận client/backend36. Không yêu cầu đổi dữ liệu vì lỗi HMAC. Candidate35 bên dưới là lịch sử.
+
+RPC-v2 candidate: người dùng vẫn nhận AUTH chữ ký sau35; không coi wire34 đã sửa thành công. V2 ký chuỗi ASCII có prefix/version (trước đây chỉ escape wire, canonical message vẫn Unicode), backend yêu cầu Utilities.Charset.UTF_8 rõ ràng. V1 client cũ vẫn được kiểm tra như trước. Maintenance kèm checksum chỉ để thông báo nội dung khớp/thay đổi khi HMAC lỗi; checksum tuyệt đối không thay thế xác thực, không trả giá trịhash/secret.290tests/syntax91/build đạt, test payload tiếng Việt >500k kýASCII, client→GASmock lô91/154effects/0stock. Chưa xác định nguyên nhân gốc hosted; cần thông báo lỗi v2 nếu còn lỗi để tách biến đổi nội dung/khóa phiên. Đang rollout, backup mã35: output/chifaa-dev/remote-before-rpc-v2/source. Chưa đọc/ghi/import dữ liệu Google.
 
 EXCEL-ASSET đã triển khai hai deployment DEV hiện có@35. Đọc lại đủ5file35 khớp dist, manifest/quyền không đổi;288tests/syntax91/build đạt. Chỉ sửa cách đọc raw thư viện Excel ở publicAsset_, không sửa dữ liệu hay tệp nguồn/JSON nhập. Evidence output/excel-asset-tests.txt, output/chifaa-dev/remote-excel-asset-version35/source, excel-asset-final-deployments.txt. Người dùng tải lại trang rồi bấm Tải mẫu Excel; chưa tuyên bố download Google browser đã thử. Các checkpoint candidate/34 bên dưới là lịch sử.
 
