@@ -1,8 +1,10 @@
 # Bằng chứng chức năng hiện tại
 
+Kiểm tra mới: [Báo cáo 17/11/2026](SYSTEM_AUDIT_2026-11-17.md). 37 tests hiện có đạt, nhưng kiểm tra bổ sung xác nhận lỗi null/version và gắn đơn vượt kế hoạch; chưa đủ điều kiện nghiệm thu.
+
 Giao diện hiện có bố cục tham chiếu cho 32 mục điều hướng; bố cục tĩnh có khóa thao tác không được tính là workflow hoàn tất. Xem [đối chiếu giao diện](UI_REFERENCE.md).
 
-Chưa có nhóm nghiệp vụ nào được nghiệm thu đầy đủ trên Supabase cloud. Người dùng đã chạy schema và deploy Vercel; Google provider bật, trang login và callback online phản hồi. Tài khoản đầu tiên đang chờ owner cấp Admin bằng SQL riêng. Schema hoặc route rỗng không được coi là nghiệp vụ đã hoàn thành.
+Chưa có nhóm nghiệp vụ nào được nghiệm thu đầy đủ trên Supabase cloud. Người dùng đã chạy schema và deploy Vercel; Google provider bật, trang login và callback online phản hồi. Chưa xác nhận trạng thái tài khoản Admin trên cloud. Schema hoặc route rỗng không được coi là nghiệp vụ đã hoàn thành.
 
 | Nhóm | Đã có | Còn thiếu |
 |---|---|---|
@@ -23,6 +25,6 @@ Chưa có nhóm nghiệp vụ nào được nghiệm thu đầy đủ trên Supa
 | Import | Audit/mapping, staging CLI UUID ổn định, không tự apply | Đọc đầy đủ lịch sử XLSX, staging DB/approve/import/reconcile/replay |
 | Offline | Public shell SW, trang offline, IndexedDB nháp với whitelist, không auto sync | Editor integration, khôi phục xung đột và browser E2E |
 | Storage/Realtime | Private bucket policy, subscription đơn theo điểm bán | Hosted policies, signed URL, Edge invite/rate UAT |
-| Triển khai | CI source, 35 tests, TS/lint/build, HTTP local/online, SQL benchmark, Vercel Ready, SQL Editor bootstrap, Google provider bật | Admin và E2E nghiệp vụ, 10 concurrent/p95 network, backup/restore |
+| Triển khai | CI source, 37 tests, TS/lint/build, HTTP local/online, SQL benchmark, Vercel Ready, SQL Editor bootstrap, Google provider bật | Admin và E2E nghiệp vụ, 10 concurrent/p95 network, backup/restore |
 
 Không nhập dữ liệu thật hoặc deploy public. Mã cũ và workbook chỉ là tư liệu; root npm scripts chạy Next.js.

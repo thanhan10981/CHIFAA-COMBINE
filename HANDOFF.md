@@ -1,5 +1,8 @@
 # HANDOFF hiện tại — CHIFAA standalone / Next.js + Supabase
 
+Kiểm tra toàn hệ thống 17/11/2026: source 8e0151f, 37/37 tests + types/TS/lint/build đạt nhưng chưa đầy đủ chức năng. 16/32 mục phác thảo là bố cục tĩnh; 21/43 đường dẫn nội bộ có component tương tác (không phải tỷ lệ hoàn thành). Probe online đã thấy CSS/font mới, Google bật, 7 bảng và my_access chặn anonymous; admin-invite OPTIONS404 NOT_FOUND. Chưa có phiên authenticated cloud để UAT hoặc xác nhận Admin. Probe PostgreSQL nhúng bổ sung xác nhận 3 RPC bỏ qua expected version null, review_order null approval từ chối thiếu lý do, và 2 đơn 40 phần đều gắn được kế hoạch 50 phần. Chưa sửa runtime/migration/cloud; cần forward migration + regression tests trước nghiệm thu. Báo cáo docs/standalone/SYSTEM_AUDIT_2026-11-17.md, bằng chứng output/system-audit-*.
+
+
 Nâng cấp trình bày theo yêu cầu mới: Be Vietnam Pro tự phục vụ (400/600/700, dấu tiếng Việt), navy–cam rõ hơn, thang chữ/khoảng cách/card/bảng/form đồng nhất, focus bàn phím, input mobile 16px. Giữ Cổng đặt hàng trên desktop và mobile. 37/37 tests + types/TS/lint/build đạt; Chrome fixture 32 route và 5 màn mobile đạt, xác nhận font thực sự tải. Đây là kiểm tra giao diện cô lập, không phải UAT cloud hoặc chứng nhận chất lượng. Không thay nghiệp vụ, schema hoặc dữ liệu. Chi tiết docs/standalone/UI_REFERENCE.md; log output/ui-polish-verify.txt và ui-polish-build-final.txt.
 
 
