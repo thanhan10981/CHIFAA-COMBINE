@@ -1,5 +1,7 @@
 # Đối chiếu yêu cầu CHIFAA COMBINE
 
+Checkpoint RPC-WIRE:287localtests/syntax91; truyền signed JSON ASCII và tương thích client cũ, chưa nghiệm thu Google. Không nâng mức hoàn thành các yêu cầu xác thực/import vì chỉ có mock91bản ghi và ảnh lỗi chữ ký.
+
 Ngày 2026-11-17; 78 REQ từ bộ tài liệu người dùng gửi. Sinh lại: `node scripts/requirement-audit.mjs`. Đánh giá do rà soát mã; script kiểm tra coverage/path, **không tự chứng minh nghiệp vụ đúng**.
 
 DONE chỉ áp dụng toàn tiêu chí hẹp đã có bằng chứng local; PARTIAL không đồng nghĩa nghiệm thu Google. BLOCKED mô tả phần không thể xác minh/thiếu nguồn, không tuyên bố kiến trúc bất khả thi.

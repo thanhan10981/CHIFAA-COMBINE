@@ -1,5 +1,7 @@
 # Kết quả kiểm thử master session
 
+RPC-WIRE:287/287local tests,91JSsyntax,build/server+inlineparse đạt.58tests mục tiêu bao gồm client phiên và bảo mật;2test mới kiểm tra JSON ASCII qua client→backend, nguồn tiếng Việt/emoji/CRLF/số nhỏ, chặn chữ ký sửa/phát lại/staff. Lô91bản ghi thật chỉ chạy trong GASmock:154effects,63materials,6recipes,0stock; evidence output/legacy-2026-11-17/rpc-wire-verification.json. Không có phép đo/tái hiện hosted Google; lỗi chữ ký từ ảnh chưa xác định nguyên nhân gốc bằng telemetry.
+
 Đơn vị liveDEV33: source da46387 đã đọc lại5file và gán hai deployment hiện có; lịch sử@2 giữ nguyên.285tests/syntax90/build/compiledparse đạt. Bằng chứng mã triển khai: output/chifaa-dev/unit-system-version33-readback.json; danh sáchdeployment tương ứng. Hosted Google UAT/ACL/browser và import dữ liệu thật vẫn chưa chạy.
 
 Hệ thống đơn vị candidate:285/285tests, syntax90, build/server/3bundle parse đạt.6test mới về package khácpricebasis, không đổi mật độ ngầm, blankmin≠0, giápending≠0, receiptprice lịch sử, Admin/RBAC/version/replay, importprovenance và guard đổi đơn vị đã liên kết, AdminUI. Full fixtures vẫnpass; scanner vẫn chỉ đọc module thay đổi. Lô91records actualsource chỉ trongmock:154effects,63materials/6recipes/63provenance/0stock. Evidence output/unit-system-tests.txt và unit-normalization-verification.json. Không phải Google UAT.

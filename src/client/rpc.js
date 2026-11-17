@@ -56,6 +56,9 @@ async function rpcTransport(action, args = {}, { timeout = action==='maintenance
     const signature=await crypto.subtle.sign('HMAC',rpcSession.key,new TextEncoder().encode(requestMessage(action,args)));
     args.proof.signature=Array.from(new Uint8Array(signature),b=>b.toString(16).padStart(2,'0')).join('');
   }
+  // Keep signed JSON opaque to the Apps Script object bridge. ASCII escaping
+  // also preserves Vietnamese, line endings and UTF-16 code units in source notes.
+  const wireArgs=args.proof?JSON.stringify(args).replace(/[\u007f-\uffff]/g,c=>'\\u'+c.charCodeAt(0).toString(16).padStart(4,'0')):args;
   const transportStarted=clientNow();return new Promise((resolve,reject)=>{
     let settled=false;
     const reading=['publicAsset','bootstrap','list','lookup','record','summary','strategySummary','periodSummary','settlements','sync','health','financialSummary','workflowReports','workflowStatus','export','portalCatalog','portalStatus','kioskReport','orderPlans','requestStatus'].includes(action),connecting=['oauthStart','oauthFinish'].includes(action);
@@ -65,7 +68,7 @@ async function rpcTransport(action, args = {}, { timeout = action==='maintenance
       if(settled)return;settled=true;clearTimeout(timer);
       if(Number.isFinite(result?.meta?.serverMs)){noteTiming('server:'+action,clientNow()-result.meta.serverMs);noteTiming('transport-queue:'+action,clientNow()-Math.max(0,clientNow()-transportStarted-result.meta.serverMs));}
       if(result?.ok)resolve(result.data);else{const e=new Error(result?.error?.message||'Không thể xử lý yêu cầu');e.code=result?.error?.code;reject(e);}
-    }).withFailureHandler(error=>{if(settled)return;settled=true;clearTimeout(timer);const e=new Error(error?.message||(reading||connecting?'Mất kết nối với máy chủ. Thử kết nối lại.':'Mất kết nối. Kết quả ghi chưa rõ.'));e.code='NETWORK';reject(e);}).rpc(action,args);
+    }).withFailureHandler(error=>{if(settled)return;settled=true;clearTimeout(timer);const e=new Error(error?.message||(reading||connecting?'Mất kết nối với máy chủ. Thử kết nối lại.':'Mất kết nối. Kết quả ghi chưa rõ.'));e.code='NETWORK';reject(e);}).rpc(action,wireArgs);
   });
 }
 export { rpcCall, setRpcSession, clearRpcSession, setRpcScope, restoreRpcSession,clientNow,noteTiming };

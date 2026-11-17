@@ -1,5 +1,13 @@
 # Theo dõi công việc
 
+## RPC-WIRE — lỗi chữ ký khi xem trước nhập dữ liệu
+
+- Đã rollout hai DEV hiện có@34, readback5file khớp, manifest không đổi quyền. Chờ người dùng thử lại preview trên Google; các dòng “đang rollout” dưới đây là trước khi hoàn tất gán deployment.
+
+- Hoàn tất mã và kiểm thử local: signed RPC gửi JSON ASCII nguyên vẹn; server giải mã trước khi xác minh, vẫn nhận client cũ. Không bỏ HMAC/nonce/RBAC.
+- 287/287 tests, syntax91, build và parse bundle đạt. Chính lô91 bản ghi đã đi qua client ký → server preview/apply trong mock:154effects,0stock. Chưa nhập Google.
+- Đang rollout DEV; cần thử lại preview trên trình duyệt thật. Ảnh lỗi không đủ chứng minh chính xác biến đổi nào trong cầu nối RPC; chưa tuyên bố nguyên nhân gốc đã tái hiện trên Google.
+
 ## Hệ thống đơn vị dùng chung — checkpoint mới
 
 - ĐÃ DEPLOY DEV33: source da46387,2deployment/readback5file khớp;285tests/syntax90/build/bundle đạt. Import91bản ghi chỉ là mock, chưa ghi Google. Những dòng candidate phía dưới là checkpoint trước deploy.

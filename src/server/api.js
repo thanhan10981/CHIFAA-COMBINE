@@ -7,6 +7,11 @@ function rpc(action,args){
   requestBooks_=new Map();requestRows_=new Map();requestTables_=new Map();requestProfile_={};requestConfig_=new Map();requestPropertyHandle_=null;
   const started=Date.now();args=args||{};let actor=null;
   try{
+    if(typeof args==='string'){
+      if(args.length>8000000)throw new Error('VALIDATION: Yêu cầu quá lớn');
+      try{args=JSON.parse(args);}catch(_){throw new Error('VALIDATION: Yêu cầu JSON không hợp lệ');}
+    }
+    if(!args||typeof args!=='object'||Array.isArray(args))throw new Error('VALIDATION: Yêu cầu không hợp lệ');
     let result;
     if(action==='publicAsset')result=publicAsset_(args);
     else if(action==='oauthStart')result=oauthStart_(args);

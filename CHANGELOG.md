@@ -1,3 +1,9 @@
+## 2026-11-17 — Bảo toàn nội dung RPC đã ký
+
+Đã triển khai hai DEV@34 và đọc lại đủ5file khớp. Chưa nhập dữ liệu Google và chưa nghiệm thu sửa lỗi trên trình duyệt thật.
+
+Gửi yêu cầu có chữ ký dưới dạng JSON ASCII, tránh cầu nối RPC tuần tự hóa lại từng trường trước khi backend kiểm tra. Server nhận cả JSON và đối tượng client cũ, từ chối JSON sai cấu trúc/quá lớn. HMAC, phiên, nonce và phân quyền giữ nguyên. Thêm kiểm thử Unicode/CRLF/số thập phân/tamper/replay/RBAC;287tests/syntax91. Lô91bản ghi chỉ thử trong mock, chưa ghi Google; cần xác nhận lại lỗi thực tế sau rollout.
+
 ## 2026-11-17 — Hệ thống đơn vị và cơ sở giá
 
 Đã lên haiDEV@33, source da46387, readback5file khớp;285tests/syntax90. Không import dữ liệu hoặc thay file gốc/quyền Google. Bàn giao docs/UNIT_SYSTEM.md.
