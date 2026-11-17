@@ -1,10 +1,14 @@
 # Kiến trúc và giới hạn
 
+OAuth / signed-session details: [AUTH_DEV.md](AUTH_DEV.md).
+
+Nghiệp vụ liên kết và khởi tạo: [NGHIEP_VU_LIEN_KET.md](NGHIEP_VU_LIEN_KET.md). Sản xuất/kiểm kê/lương/lãi/phân bổ nợ dùng journal nhiều bảng, `_Workflows` lưu snapshot, `_Periods` khóa kỳ, `_JournalChunks` lưu payload lớn có hash. Preview không ghi; apply kiểm tra lại dữ liệu, quyền hiện tại kể cả retry, khóa kỳ và idempotency. Restore tạo workbook mới, không đổi nguồn đang chạy. Portal dùng workbook riêng.
+
 Frontend SPA → `rpc(action,args)` → kiểm tra phiên/permission → schema/domain → LockService → journal PREPARED → ghi Sheet/audit → APPLIED → bump sync version. Backend chỉ công khai doGet/rpc có quyền truy cập dữ liệu; helpers kết thúc `_`. Pure functions được bundle cùng source không truy cập dịch vụ Google.
 
-Source chia `src/client`, `src/shared`, `src/server`; build tạo một Code.gs và HTML tự chứa cho HtmlService. Không phụ thuộc bundler remote. Mọi dữ liệu nghiệp vụ trên client ở RAM; không localStorage, không preload tài chính trước login. Không IndexedDB trong phiên bản này. Không CacheService cho nội dung nghiệp vụ; chỉ cache nonce đăng nhập có TTL 5 phút. Trường nhạy cảm không được log trong console. Audit có ảnh trước/sau, chỉ chủ file backend và người được chủ file cho phép có thể xem trực tiếp.
+Source chia `src/client`, `src/shared`, `src/server`; build tạo Code.gs và HTML tự chứa. Dữ liệu nghiệp vụ trên client ở RAM, không preload trước login. IndexedDB chỉ giữ ID phiên/khóa HMAC không xuất được/expiry trong scope riêng, không lưu Google token, Client Secret hoặc dữ liệu nghiệp vụ. Cache bootstrap server tối đa 30 giây theo workbook/stamp/user/role/permissions/version, vẫn xác thực mỗi RPC trước khi dùng cache. Cache khóa ký mất thì từ chối; chống replay dùng `_AuthRequests`. Bootstrap tối đa 200 dòng/bảng và metadata phần còn lại; bảng phân trang server, báo cáo tải đủ chunk trước tính, CSV tải hết trang và kiểm tra stamp. Audit giữ trước/sau; payload lớn có hash và journal chunk, không cấp cho tài khoản thường.
 
-17 bảng nghiệp vụ khai báo trong `src/shared/schema.js`. Metadata chung: recordId, version, updatedAt, updatedBy, source, deleted, reverses. Cột lines chứa JSON của thành phần công thức; nên sửa bằng UI, các cột scalar danh mục có thể sửa trên Sheet. 5 bảng hệ thống: _Users, _Sessions, _Audit, _Requests, _Sync. Header phải khớp tuyệt đối; setup preflight trước khi thay đổi bảng. Chưa có schema migration tự động cho nâng phiên bản, phải backup và viết migration riêng.
+17 bảng nghiệp vụ khai báo trong `src/shared/schema.js`. Metadata chung giữ nguyên. Có 9 bảng hệ thống gồm 6 bảng xác thực/journal cũ và `_Workflows`, `_Periods`, `_JournalChunks`. Header phải khớp; setup preflight và chỉ thêm bảng mới, không đổi cột nghiệp vụ hoặc suy ra snapshot cho dữ liệu quá khứ. Admin khởi tạo qua màn hình Nhật ký & đồng bộ. Mọi migration làm đổi cột hoặc dữ liệu cũ vẫn cần backup/đối chiếu riêng.
 
 Ghi API so sánh cả version và hash toàn dòng. Dữ liệu sửa ngoài API không bị ghi đè âm thầm. Lock chỉ phối hợp các lệnh Apps Script, không khóa tay người đang sửa Sheet. Vì vậy transaction Sheets không ACID: journal và rollback giảm rủi ro, PREPARED chưa phục hồi sẽ chặn các lệnh ghi mới. Chủ file vẫn có thể sửa journal. Audit không phải log chống sửa tuyệt đối.
 

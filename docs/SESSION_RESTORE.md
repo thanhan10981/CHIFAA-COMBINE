@@ -1,0 +1,19 @@
+# Restore an active application session after reload
+
+2026-11-16: supersedes the earlier RAM-only authentication credential design at the user's request. Business records still stay in RAM.
+
+After successful Google verification, the browser imports the application signing key as a non-exportable HMAC/SHA-256 CryptoKey and discards the raw key string. IndexedDB stores exactly the opaque application session ID (`token`), CryptoKey (`key`) and original absolute expiry (`expires`). These are application credentials, not Google access/refresh tokens. No Client Secret, Google token, email, permissions, workbook records or form values are stored there. No credentials are inserted into HTML, URLs, cookies, localStorage or sessionStorage.
+
+The existing `oauthStart` response supplies a public storage namespace derived from the configured callback URL and DEV workbook ID; it does not expose the secret/config fingerprint. On startup, the browser attempts to load a saved session in that namespace, rejects expired/malformed/exportable keys, verifies that the key can sign, then sends a freshly signed bootstrap request. The server still checks `_Sessions`, expiry, current `_Users`, signature and durable replay nonce before any cached or fresh business data is returned. Restoring a session does not issue another session or extend its original two-hour expiry. The one-active-Admin rule is unchanged.
+
+Logout revokes the server session and removes the saved browser credentials. Server rejection after revocation, disablement, config changes, expiry or signing-key cache eviction removes the local saved entry and offers Google login. Temporary network failure during restoration preserves the entry for a Retry action rather than forcing a new OAuth flow. The initial HTML now shows a branded boot/loading screen with the login form hidden. Pending restoration and bootstrap keep that loading screen visible; connection errors show an inline Retry there. Login appears only after there is no usable saved session. Successful new Google verification also transitions to the boot screen during bootstrap. The existing freshly verified same-Admin replacement remains a fallback when a stored session is unavailable.
+
+Storage can be blocked or cleared by browser privacy settings, private browsing or changes to Apps Script's iframe origin/partition. The app falls back to Google login if it cannot restore. It tells the user when a new login could not be saved. It never changes workbook sharing permissions or disables server authorization to work around storage policy. Users should log out on shared computers; any script running with the same origin can use a non-exportable key even though it cannot export its raw bytes. Existing text-only rendering and absence of third-party scripts remain important.
+
+Validation:
+
+- Full automated suite: 112 passing tests, including reload without new Admin session, logout deletion, disabled/expired/revoked rejection, copied-ID rejection, current accountant permissions and network retry.
+- Chrome headless with an isolated local profile: real `Page.reload`, IndexedDB recovery, HMAC signing, rejected raw key export and deletion all passed. Evidence: `output/session-persistence-browser-result.json`. Initial virtual-time dump attempts were inconclusive; they are not the successful test evidence.
+- This local browser test does not establish actual Google-hosted iframe storage availability. User should log in once after deployment, press F5 on the same DEV URL and confirm restoration. Google Admin/accountant two-account hosted UAT remains pending.
+
+References: [MDN structured clone types including CryptoKey and IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm), [Apps Script iframe sandbox restrictions](https://developers.google.com/apps-script/guides/html/restrictions).

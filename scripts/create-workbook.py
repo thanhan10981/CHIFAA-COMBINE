@@ -24,7 +24,7 @@ guide=book.add_worksheet('HUONG_DAN')
 guide.hide_gridlines(2);guide.set_tab_color('#17283D');guide.set_column('A:A',3);guide.set_column('B:E',22);guide.set_row(1,28)
 guide.merge_range('B2:E2','CHIFAA COMBINE',title)
 guide.merge_range('B4:E4','Workbook nguồn — môi trường dev',body)
-guide.insert_image('B6',str(ROOT/'assets/logo-chifaa-navy-v3.png'),{'x_scale':0.12,'y_scale':0.12,'object_position':3})
+guide.insert_image('B6',str(ROOT/'assets/logo-chifaa-original-transparent-v4.png'),{'x_scale':0.12,'y_scale':0.12,'object_position':3})
 guide.merge_range('C7:E9','Bảng mới chưa có dữ liệu nghiệp vụ. Không chứa mật khẩu, email quản trị hay số liệu minh họa.',body)
 notes=[
 ('B15:E16','1. Nhập file này thành Google Sheets. Giữ nguyên tên tab và hàng header.'),

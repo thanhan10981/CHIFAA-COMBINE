@@ -8,7 +8,7 @@ files=[]
 for item in items:
     p=root/item
     files.extend([p] if p.is_file() else [f for f in p.rglob('*') if f.is_file() and '__pycache__' not in f.parts])
-for item in ['verifier/package.json','verifier/package-lock.json','verifier/server.mjs','verifier/Dockerfile','output/chifaa-dev/CHIFAA_DEV.xlsx','output/chifaa-dev/verification.json','output/CHIFAA_APP.html','output/CHIFAA_PHAT_THAO_LOGO_MOI.html','output/demo.html','output/test-results.txt']:
+for item in ['output/chifaa-dev/CHIFAA_DEV.xlsx','output/chifaa-dev/verification.json','output/CHIFAA_APP.html','output/CHIFAA_PHAT_THAO_LOGO_MOI.html','output/demo.html','output/test-results.txt']:
     files.append(root/item)
 manifest={str(f.relative_to(root)).replace('\\','/'):hashlib.sha256(f.read_bytes()).hexdigest() for f in files}
 with zipfile.ZipFile(target,'w',zipfile.ZIP_DEFLATED)as z:

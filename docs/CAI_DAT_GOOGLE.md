@@ -1,63 +1,96 @@
-# Cài đặt trên Google — môi trường dev
+# OAuth thuần Apps Script và Sheets — chỉ DEV
 
-Chưa thực hiện các bước Google trong phiên hiện tại. Không có tài khoản, Spreadsheet ID, OAuth client ID hoặc Script ID được hardcode trong source.
+## Trạng thái và mô hình
 
-## 1. Tạo workbook mới
+Mã đã được chuyển sang OAuth Authorization Code + PKCE S256, dùng URL `/exec` của deployment Apps Script làm callback. Chưa triển khai/xác nhận hai tài khoản trên Google thật trong phiên này. Xem `AUTH_TASKS.md` và `AUTH_DEV_UAT.md`.
 
-Luồng ưu tiên: nhập `output/chifaa-dev/CHIFAA_DEV.xlsx` thành Google Sheets bằng Google Drive, giữ nguyên tên tab và header. Trong ChatGPT cần cài và kết nối Google Drive trước; nếu thao tác thủ công, tải file lên Drive rồi mở bằng Google Sheets và lưu dạng Google Sheets.
+Google chỉ xử lý đăng nhập/consent. Runtime ứng dụng là Apps Script, lưu dữ liệu ở Sheets; không có Cloud Run, Firebase, dịch vụ verifier, thư viện OAuth bên ngoài hoặc GIS trong iframe. Google Cloud chỉ cấu hình OAuth client/consent. Không đăng ký origin của `googleusercontent.com`.
 
-Tạo project Apps Script riêng cho dev. Đặt Script Property `SPREADSHEET_ID` bằng ID workbook vừa nhập, `ADMIN_EMAIL` bằng Gmail quản trị thật, `APP_MODE=internal`. Chạy `setup_()` trong trình soạn thảo để áp dụng bảo vệ, định dạng, tài khoản admin. Lần chạy đầu cần bạn cấp quyền Google. Setup dừng nếu phát hiện header lạ; không xóa bảng cũ.
+1. Tab CHIFAA sinh bí mật trình duyệt bằng Web Crypto; gửi SHA-256 tới `oauthStart`.
+2. Apps Script giữ state, PKCE verifier, hash bí mật trình duyệt, hạn 5 phút trong Script Cache. Trả URL Google có state và PKCE challenge, không có bí mật trình duyệt.
+3. Nút mở Google ở tab riêng bằng thao tác người dùng. Google trả `code` + `state` về **đúng URL `/exec`** đã đăng ký.
+4. Callback kiểm tra state và tiêu thụ một lần dưới ScriptLock; đổi code tại endpoint Google bằng Client Secret + verifier. Gọi UserInfo qua HTTPS với access token để xác minh `sub`, `email_verified`, Gmail/Workspace và `_Users`. Không đọc/giải mã JWT chưa xác minh. Không sử dụng `Session.getActiveUser()` hay `getEffectiveUser()` làm danh tính người dùng app.
+5. Callback chỉ hiển thị thông báo cố định. Tab gốc poll `oauthFinish` bằng state + bí mật trong RAM; server kiểm tra ràng buộc tab rồi phát phiên. Mã callback, state, email, Google token, khóa phiên không được nhúng vào HTML hoặc gửi qua postMessage/URL trở lại tab gốc.
+6. Session ID + khóa ký được trả **một lần qua RPC** cho tab gốc. Browser nhập khóa HMAC thành CryptoKey không export được, chỉ giữ RAM. Không ghi token vào HTML, localStorage, sessionStorage hoặc cookie do app quản lý. Không thể có app phiên đăng nhập mà browser hoàn toàn không giữ thông tin phiên: khóa RAM này là thông tin phiên app, không phải Google access/refresh token.
+7. Mọi RPC nội bộ ký HMAC-SHA256 trên action + nội dung + ID yêu cầu + thời gian. Backend kiểm tra phiên, khóa, chữ ký, lệch giờ tối đa 60 giây, nonce một lần rồi mới đọc/ghi. `_AuthRequests` giữ nonce bền vững 120 giây: cache eviction không làm request cũ hợp lệ trở lại. Retry phiếu giữ business idempotency key, tạo chữ ký/request ID mới.
+8. `_Users` được đọc lại mỗi request. `_Sessions` chỉ giữ hash session ID, metadata; khóa ký ở Script Cache tối đa 2 giờ. Cache mất → yêu cầu đăng nhập lại. Thu hồi/hết hạn/vô hiệu hóa tài khoản chặn ngay request tiếp theo. Một phiên Admin áp dụng cho tất cả tài khoản mang role admin, kế toán có thể làm việc đồng thời.
 
-Mã cũng có `createNewDev_()` để khởi tạo workbook bằng Apps Script nếu bạn chủ động chọn luồng đó. Hàm tạo một workbook mới và dùng email chủ sở hữu làm admin; không chia sẻ file. Đây là luồng thay thế, chưa được chạy trên tài khoản của bạn.
+Google access token chỉ tồn tại trong biến cục bộ callback để gọi UserInfo; không giữ refresh token, không yêu cầu offline access. Client Secret chỉ trong Script Properties. Google `sub` được ràng buộc với email bằng hash trong Script Properties để phát hiện đổi danh tính. Khi cần thay tài khoản Workspace cùng email, chủ sở hữu kiểm tra danh tính rồi xử lý binding trong editor; không tự bỏ qua kiểm tra.
 
-## 2. Đưa source vào Apps Script
+## 1. Kiểm tra quyền file DEV
 
-```powershell
-npm ci
-npm run check
-npm test
-npm run build
-npm run clasp:login
-```
+- Dùng Google Sheets **native**, không dùng file XLSX trực tiếp. Giữ `SPREADSHEET_ID` hiện có nếu đó là DEV, không tạo/nhập lại hoặc xóa dữ liệu.
+- Workbook và Apps Script project chỉ chia sẻ cho chủ sở hữu/dev đáng tin cậy. **Kế toán và nhân viên không được cấp Viewer/Editor trên workbook backend hoặc project.** Sheet Protection và ẩn tab không phải ranh giới bảo mật cho người đã có quyền đọc workbook.
+- Kiểm tra Share của workbook, project, thư mục cha và link sharing. Nếu đã chia sẻ cho kế toán/nhân viên, chủ sở hữu cần gỡ quyền trực tiếp trước UAT. Web app hoạt động bằng quyền người triển khai nên không cần share workbook.
+- Dùng hai Google profile/browser riêng khi thử hai tài khoản, tránh chọn nhầm Google account do nhiều phiên đăng nhập.
 
-Tạo `.clasp.json` tại gốc dự án (đã gitignore):
+## 2. Cập nhật mã và schema
 
-```json
-{"scriptId":"ID_PROJECT_APPS_SCRIPT_THAT","rootDir":"dist"}
-```
+Chạy `npm run check`, `npm test`, `npm run build`. Chép **cùng phiên bản** `dist/Code.gs`, `dist/Index.html`, `dist/Portal.html`, `dist/appsscript.json` vào DEV Apps Script; hoặc dùng clasp với `.clasp.json` trỏ chính xác DEV (`rootDir: dist`). Không upload `src`, `source`, `node_modules` hoặc secrets.
 
-Sau đó `npm run clasp:push`. Hoặc copy `dist/Code.gs`, `dist/Index.html`, `dist/Portal.html`, `dist/appsscript.json` vào project bằng trình soạn thảo. Bật Apps Script API nếu clasp yêu cầu. Không copy `source/` vào deployment.
+Chạy `setup_` từ editor bằng chủ sở hữu (hoặc wrapper khởi tạo editor đã có). Hàm không xóa nghiệp vụ, kiểm tra header trước khi cập nhật và tạo thêm `_AuthRequests` nếu thiếu. Không đổi cột của `_Users`, `_Sessions` hoặc các bảng nghiệp vụ. Template XLSX cũ vẫn nhập được; setup tạo bảng hệ thống mới. Bản hiện tại gồm 17 bảng nghiệp vụ + 6 bảng hệ thống.
 
-Manifest mặc định `access=MYSELF`, `executeAs=USER_DEPLOYING`: chỉ chủ sở hữu. Không tự đổi thành công khai. Mở rộng quyền truy cập chỉ sau khi nghiệm thu xác thực và chủ dự án chọn phạm vi.
+Chủ sở hữu chạy `recoverAdminSessions_` một lần trong editor khi chuyển auth để đóng phiên Admin cũ. Các phiên bearer cũ tự bị chặn vì không có khóa HMAC. Đóng deployment cũ còn chạy mã GIS; nếu giữ nó, mã auth cũ vẫn có thể tồn tại ở URL cũ. Không xóa audit hoặc dữ liệu nghiệp vụ.
 
-## 3. Xác thực production
+Chỉ `doGet` và `rpc` là cửa vào dữ liệu. Không thêm wrapper public cho `data_`, `rawRows_`, `bootstrap_`, `admin_`, import, backup hoặc recovery. Hàm editor bảo trì kết thúc `_` không được gọi qua `google.script.run`.
 
-Tạo OAuth Web client trong Google Cloud, cấu hình OAuth consent/test users cho Gmail dev và JavaScript origins hợp lệ cho môi trường HtmlService thực tế. Không đoán origin sandbox; kiểm tra lỗi Google Identity trong deployment `/dev`. GIS có thể cần cấu hình bổ sung trong iframe và phải được kiểm thử trên thiết bị thật.
+## 3. Google Cloud / OAuth Client
 
-Đặt `GOOGLE_CLIENT_ID` trong Script Properties. ID này là cấu hình công khai được gửi tới nút Google; secrets không gửi ra browser.
+1. Dùng project Google Cloud DEV do bạn quản lý. Trong Google Auth Platform cấu hình Branding, email hỗ trợ, Audience **External / Testing** cho Gmail cá nhân và thêm **hai Gmail Admin + kế toán** làm test users. Workspace có thể dùng Internal nếu phù hợp miền; không giả định Gmail dùng được Internal.
+2. Data Access của OAuth đăng nhập chỉ cần `openid` và email (`https://www.googleapis.com/auth/userinfo.email`). **Không yêu cầu scope Sheets/Drive cho nhân viên.** Scope rộng trong manifest Apps Script là quyền chủ sở hữu cấp cho runtime, tách với OAuth đăng nhập người dùng.
+3. Tạo OAuth Client loại **Web application**, tên `CHIFAA DEV`. Client Secret chỉ lưu trong Script Properties. Không gửi secret vào chat, repo, bảng tính, ảnh chụp hoặc frontend.
+4. Tạo deployment Web App DEV (mục 4) để lấy URL. Sau đó thêm URL đó vào **Authorized redirect URIs**, nguyên văn `https://script.google.com/macros/s/DEPLOYMENT_ID/exec`. Không thêm `/dev`, URL iframe `script.googleusercontent.com`, query, fragment, dấu `/` cuối hoặc `/usercallback` vào client này. Mã hiện dùng `doGet` callback `/exec`, không dùng thư viện OAuth2 `/usercallback`.
+5. Authorized JavaScript origins không cần cho luồng này. Lỗi `redirect_uri_mismatch` phải sửa redirect URI chính xác, không quay lại GIS.
 
-Thư mục `verifier/` là dịch vụ Node sử dụng `google-auth-library` chính thức:
+## 4. Script Properties và deployment
 
-```powershell
-cd verifier
-npm ci
-```
+Apps Script → Project Settings → Script Properties:
 
-Đưa dịch vụ lên Cloud Run hoặc dịch vụ HTTPS do bạn quản lý. Cần billing/quota của tài khoản nếu nền tảng yêu cầu; chưa triển khai hoặc tạo chi phí. Thiết lập biến môi trường `GOOGLE_CLIENT_ID`, `VERIFIER_SHARED_SECRET` (bí mật ngẫu nhiên tối thiểu 32 ký tự, dùng Secret Manager của nền tảng), `PORT` do nền tảng cấp. Endpoint `/verify` chỉ nhận POST với header secret; không log token. Container chạy dưới user `node`.
-
-Apps Script Properties:
-
-| Key | Giá trị |
+| Key | Giá trị DEV |
 | --- | --- |
-| AUTH_MODE | `verifier` |
-| VERIFIER_URL | HTTPS URL kết thúc `/verify` |
-| VERIFIER_SHARED_SECRET | Cùng secret dịch vụ verifier |
-| GOOGLE_CLIENT_ID | Cùng audience OAuth |
-| WORKSPACE_DOMAIN | Để trống khi dùng Gmail cá nhân |
+| `SPREADSHEET_ID` | ID Google Sheets DEV hiện tại |
+| `AUTH_DEV_SPREADSHEET_ID` | Cùng ID DEV, cơ chế chặn trỏ nhầm workbook |
+| `AUTH_ENV` | `DEV` |
+| `APP_MODE` | `internal` |
+| `ADMIN_EMAIL` | Một Gmail Admin chính, chữ thường |
+| `GOOGLE_CLIENT_ID` | OAuth Web client vừa tạo |
+| `GOOGLE_CLIENT_SECRET` | Secret cùng OAuth client, chỉ ở đây |
+| `WEB_APP_URL` | URL `/exec` chính xác của deployment DEV |
+| `WORKSPACE_DOMAIN` | Bỏ trống/xóa khi thử Gmail cá nhân; chỉ đặt khi giới hạn Workspace |
 
-GAS kiểm tra thêm audience, issuer, hạn token, verified email, nonce dùng một lần, domain (nếu đặt), allowlist và quyền server. Chỉ nhận Gmail hoặc Workspace mà Google là đơn vị xác thực email. Token phiên chỉ giữ trong RAM browser; Sheet lưu hash, không lưu token gốc.
+Xóa cấu hình cũ `AUTH_MODE`, `ALLOW_TEST_AUTH`, `VERIFIER_URL`, `VERIFIER_SHARED_SECRET`; mã mới không dùng chúng. Không xóa các properties nghiệp vụ, backup, portal khác.
 
-Chế độ spike duy nhất: `AUTH_MODE=test-tokeninfo` **và** `ALLOW_TEST_AUTH=true`. Chỉ dùng dev riêng tư, không có dữ liệu khách hàng. Xóa `ALLOW_TEST_AUTH` trước nghiệm thu production. Google nêu tokeninfo phục vụ gỡ lỗi và có thể bị giới hạn: [Verify ID tokens](https://developers.google.com/identity/gsi/web/guides/verify-google-id-token), [OpenID Connect](https://developers.google.com/identity/openid-connect).
+Deploy → New deployment → Web app:
+
+- **Execute as: Me / người triển khai (chủ sở hữu workbook)**, tương ứng `USER_DEPLOYING`.
+- **Who has access: Anyone with Google account**, tương ứng `ANYONE`, để tài khoản kế toán vào được vỏ đăng nhập. Đây là quyền mở app, không phải quyền workbook hay quyền đọc dữ liệu. `_Users` + signed session mới cho phép dữ liệu.
+- Manifest đã đặt `ANYONE` + `USER_DEPLOYING`. Chỉ áp dụng DEV. Không bật anonymous và không tạo production deployment trong bước này. Nếu policy Workspace không cho lựa chọn này, dừng và xử lý policy, không share workbook để lách lỗi.
+- Chủ sở hữu tự cấp quyền Apps Script. Không chuyển sang Execute as user accessing: cấu hình đó buộc nhân viên có quyền dữ liệu nguồn.
+
+Copy URL `/exec` vào `WEB_APP_URL` và Authorized redirect URIs của OAuth client. Lần tạo đầu có thể deploy trước khi auth properties hoàn chỉnh; lúc đó app chỉ hiển thị lỗi cấu hình, không cấp dữ liệu. Khi cập nhật mã tiếp, Manage deployments → Edit → **New version** trên đúng deployment DEV để giữ URL. Lưu source chưa tự cập nhật `/exec`.
+
+Không nhầm Cloud Project Number, Apps Script Script ID, deployment ID và Spreadsheet ID. Không cần Cloud Run/billing cho verifier. Mọi chi phí/quota Apps Script vẫn theo tài khoản Google của chủ sở hữu.
+
+## 5. Cấp tài khoản kế toán
+
+Admin đăng nhập DEV rồi mở `Tài khoản & phiên đăng nhập`. Thêm Gmail thứ hai, role `accountant`, enabled true; permissions khởi đầu có thể là `{"sales":["read"]}` để thử ranh giới. **Role accountant không tự cấp quyền**; chỉ actions trong JSON mới được phép. Không cấp employees/attendance/cash/loans/debts/assets nếu ngoài phạm vi.
+
+Nếu cần nhập sales thì sau kiểm thử read-only mới cấp thêm `create` và các module tham chiếu cần xem. Module thiếu read có thể làm form/report báo thiếu quyền: không tự mở rộng quyền hoặc preload dữ liệu bí mật để làm dashboard đầy đủ. Report cần nhiều nguồn phải được cấp quyền rõ ràng từng nguồn.
+
+Không thêm Gmail thứ hai vào `ADMIN_EMAIL`. Khi nâng role thành admin hoặc khóa user, server thu hồi phiên hiện tại của user đó. Giới hạn một Admin khiến lần đăng nhập Admin mới bị từ chối cho đến khi phiên cũ đăng xuất/hết hạn/được thu hồi. Mất tab Admin thì chủ sở hữu chạy `recoverAdminSessions_` trong editor; recovery thu hồi tất cả tài khoản mang role admin cùng Gmail `ADMIN_EMAIL`.
+
+## 6. Nghiệm thu và giới hạn
+
+Làm từng dòng `AUTH_DEV_UAT.md` và ghi bằng chứng đã che bí mật. Không ghi PASS cho hai tài khoản Google thật chỉ vì mock pass. Cần xác nhận cả quyền file Drive và response network, không chỉ menu bị ẩn.
+
+Không hứa chống được malware/extension độc hại/XSS chạy trong chính tab hoặc chủ sở hữu/editor đọc Script Properties. CryptoKey không export được giảm lộ khóa thụ động; XSS vẫn có thể sử dụng khóa ký. Giữ render text cho nội dung không tin cậy và không thêm script remote. HTTPS + PKCE + state/browser binding + HMAC/nonce + hạn 2 giờ + revoke xử lý các đường giả mạo/phát lại thông thường. Reload mất phiên trong RAM, không tự phục hồi.
+
+Apps Script/Cache/Sheets có quota và không có giao dịch ACID. `_AuthRequests` dọn nonce hết hạn khi có request đã ký; giới hạn 5.000 dòng sống, quá tải trả BUSY. Cache mất khóa có thể buộc đăng nhập lại sớm; phiên Admin vẫn giữ lock theo `_Sessions` đến khi logout/recovery/hết hạn. Chưa đo hiệu năng/quota thật.
+
+Tài liệu Google dùng để thiết kế: [OAuth server flow](https://developers.google.com/identity/protocols/oauth2/web-server), [OpenID/UserInfo và PKCE discovery](https://developers.google.com/identity/openid-connect/openid-connect), [Apps Script Web Apps](https://developers.google.com/apps-script/guides/web), [Manifest access/executeAs](https://developers.google.com/apps-script/manifest/web-app-api-executable).
+
+
+---
 
 ## 4. Trigger, backup và chỉnh trực tiếp Sheet
 

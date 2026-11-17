@@ -203,3 +203,7 @@ Các bảng nguồn dùng header máy ở hàng 1 để backend kiểm tra chín
 - _Audit: recordId, at, user, action, module, subjectId, before, after
 - _Requests: key, actor, fingerprint, state, effects, result, createdAt
 - _Sync: module, recordId, hash, seenAt
+- _AuthRequests: sessionHash, requestId, expires
+- _Workflows: recordId, version, updatedAt, updatedBy, source, deleted, reverses, date, kind, referenceId, details
+- _Periods: recordId, version, updatedAt, updatedBy, source, deleted, reverses, from, to, status, note
+- _JournalChunks: recordId, version, updatedAt, updatedBy, source, deleted, reverses, requestKey, part, details
