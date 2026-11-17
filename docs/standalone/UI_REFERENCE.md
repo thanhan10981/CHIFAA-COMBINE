@@ -2,7 +2,9 @@
 
 Nguồn: `CHIFAA_COMBINE_PHAT_THAO.html` do người dùng cung cấp ngày 17/11/2026. SHA256: `c15cc8d2cfc64cd46877ba8a09e553c02a7251f17fbce97904d628932503c0b2`.
 
-Style gốc được giới hạn trong `.workspace` ở `web/features/design/reference.css`. Sidebar lấy 32 mục, 5 nhóm và SVG từ bản phác thảo; dùng permission thật để lọc menu. Desktop rộng 282px, header 75px; mobile dùng drawer. Giữ logo CHIFAA chính thức. Font theo nguồn: Inter/system-ui/Segoe UI/Arial; nguồn không kèm font Inter để nhúng.
+Style gốc được giới hạn trong `.workspace` ở `web/features/design/reference.css`. Sidebar lấy 32 mục, 5 nhóm và SVG từ bản phác thảo; dùng permission thật để lọc menu. Desktop rộng 282px, header 75px; mobile dùng drawer. Giữ logo CHIFAA chính thức.
+
+Theo yêu cầu nâng cấp giao diện sau đó, `polish.css` bổ sung font Be Vietnam Pro tự phục vụ (400/600/700, đầy đủ dấu tiếng Việt), thang chữ, khoảng cách, navy–cam, card, bảng và form dễ đọc hơn. Giấy phép font đi kèm tại `public/fonts/Be-Vietnam-Pro-OFL.txt`. Nút chính có màu đậm hơn, focus bàn phím rõ, ô nhập tối thiểu 44px và font 16px trên mobile. Cổng đặt hàng giữ trên desktop và mobile. Không gọi đây là chứng nhận “5 sao” hoặc kiểm định WCAG đầy đủ; kiểm tra Chrome xác nhận font thực sự được tải.
 
 Danh mục, tổng quan và trình xem công thức dùng bố cục mới cùng truy vấn/RPC hiện có. Editor kho, sản xuất, kiểm kê, quản trị và duyệt đơn vẫn dùng các biểu mẫu nghiệp vụ đã triển khai; chưa đồng nhất từng thành phần với phác thảo. Các phân hệ chưa có UI nghiệp vụ dùng bố cục tham chiếu đã làm sạch, có thông báo đang hoàn thiện và khóa thao tác. Đây chưa phải nghiệm thu giống 100% từng pixel hoặc hoàn tất backend.
 

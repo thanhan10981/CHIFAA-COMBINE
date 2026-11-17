@@ -1,5 +1,8 @@
 ## 2026-11-17 — Cấp Admin đầu tiên có kiểm soát
 
+Nâng cấp trình bày theo yêu cầu mới: Be Vietnam Pro tự phục vụ (400/600/700, dấu tiếng Việt), navy–cam rõ hơn, thang chữ/khoảng cách/card/bảng/form đồng nhất, focus bàn phím, input mobile 16px. Giữ Cổng đặt hàng trên desktop và mobile. 37/37 tests + types/TS/lint/build đạt; Chrome fixture 32 route và 5 màn mobile đạt, xác nhận font thực sự tải. Đây là kiểm tra giao diện cô lập, không phải UAT cloud hoặc chứng nhận chất lượng. Không thay nghiệp vụ, schema hoặc dữ liệu. Chi tiết docs/standalone/UI_REFERENCE.md; log output/ui-polish-verify.txt và ui-polish-build-final.txt.
+
+
 Giao diện phác thảo: đã áp style gốc có scope, sidebar 5 nhóm/32 mục, bố cục danh mục/tổng quan/công thức và bố cục chờ backend. 37/37 tests, types/TS/lint/build đạt; Chrome fixture kiểm tra 32 route desktop và 5 drawer mobile, không lỗi JavaScript/tràn ngang. Chưa nghiệm thu pixel 100%, chưa UAT authenticated cloud. Các editor kho/sản xuất/kiểm kê vẫn còn khác cấu trúc phác thảo; phân hệ chờ backend khóa thao tác. Chi tiết docs/standalone/UI_REFERENCE.md. Không đổi migration hoặc nhập dữ liệu thật.
 
 
