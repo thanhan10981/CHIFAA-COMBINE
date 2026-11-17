@@ -1,4 +1,6 @@
 export const modules=[
+ ['accounts','Tài khoản quỹ & ngân hàng','cash'],
+ ['assets','Tài sản & khấu hao','assets'],
  ['opsdashboard','Dashboard vận hành','dashboard'],['discounts','Bảng chiết khấu','prices'],
  ['stockmovements','Nhập / xuất / kiểm kê','inventory'],['stockhistory','Lịch sử kho','inventory'],['reorder','Cảnh báo & bổ sung hàng','inventory'],
  ['batches','Công thức nhân / sốt','recipes'],['rice','Công thức cơm chín','recipes'],['packaging','Định mức bao bì','recipes'],['cost','Tổng hợp giá vốn','recipes'],

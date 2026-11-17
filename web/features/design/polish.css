@@ -143,6 +143,12 @@ button, input, select, textarea {font-family: inherit;}
 .workspace .reference-empty-cell, .workspace .reference-recipe-empty, .workspace .empty {font-size: 12px; line-height: 1.9; color: #617185;}
 .workspace .reference-drawer {box-shadow: 0 24px 80px #10233b30;}
 .workspace .reference-drawer-heading h2 {font-size: 18px; font-weight: 700;}
+.workspace .context-tabs {display:flex;gap:6px;flex-wrap:wrap;margin:0 0 24px;padding:6px;background:#eaf0f6;border:1px solid #dfe7ef;border-radius:12px;width:fit-content;max-width:100%;}
+.workspace .context-tabs a {font-size:12px;font-weight:600;line-height:1.6;padding:10px 14px;border-radius:8px;color:#526b83;}
+.workspace .context-tabs a:hover {background:#f6f9fc;color:#23445e;}
+.workspace .context-tabs a[aria-current=page] {background:#fff;color:#203e56;box-shadow:0 2px 5px #17324a0c;}
+.workspace .kiosk-actions {display:flex;gap:7px;flex-wrap:wrap;min-width:140px;}
+.workspace .kiosk-actions .button {font-size:11px;min-height:36px;padding:7px 10px;}
 .workspace .error, .portal .error {background: #fff1ef; border: 1px solid #f0c9c3; color: #982e24; line-height: 1.8;}
 .workspace .success {background: #eaf7f0; color: #176448;}
 .login-card h2 {font-weight: 600; font-size: 32px; line-height: 1.5; letter-spacing: -1px;}

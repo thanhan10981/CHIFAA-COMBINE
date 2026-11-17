@@ -3,6 +3,25 @@ import assert from 'node:assert/strict';
 import {referenceNavigation,referenceRoutes} from '../features/design/routes';
 import {modules} from '../lib/navigation';
 import blueprints from '../features/design/blueprints.json';
+import {readFileSync} from 'node:fs';
+import {workspaceNavigation,navigationParents} from '../features/design/routes';
+
+test('workspace menu preserves the actual legacy groups, order and names without a utility dumping ground',()=>{
+ const navigation=readFileSync(new URL('../../src/client/navigation.js',import.meta.url),'utf8');
+ const sections=JSON.parse(navigation.match(/const NAV_SECTIONS = (\[[\s\S]*?\]);/)![1]) as [string,string,string,string[]][];
+ const schema=readFileSync(new URL('../../src/shared/schema.js',import.meta.url),'utf8');
+ const names=new Map([...schema.matchAll(/\['([^']+)','([^']+)','([^']+)'\]/g)].map(match=>[match[1],match[2]]));
+ assert.equal(workspaceNavigation.groups.length,sections.length);
+ for(const [index,[id,label,,items]] of sections.entries()){
+  const actual=workspaceNavigation.groups[index];assert.equal(actual.id,'legacy-'+id);assert.equal(actual.label,label);
+  assert.deepEqual(actual.items.map(item=>item.id),items);
+  for(const item of actual.items){assert.equal(item.label,names.get(item.id));const route=referenceRoutes[item.id];assert.ok(route,item.id);assert.ok(modules.some(([slug,,module])=>slug===route.slug&&module===route.module),item.id);}
+ }
+ const links=[...workspaceNavigation.top,...workspaceNavigation.groups.flatMap(group=>group.items)];assert.equal(links.length,37);assert.equal(new Set(links.map(item=>item.id)).size,37);
+ assert.ok(workspaceNavigation.groups.find(group=>group.id==='legacy-warehouse')?.items.some(item=>item.id==='kiosk'));
+ assert.ok(workspaceNavigation.groups.find(group=>group.id==='legacy-customers')?.items.some(item=>item.id==='orders'));
+ for(const [slug,parent] of Object.entries(navigationParents)){assert.ok(modules.some(([path])=>path===slug));assert.ok(links.some(item=>referenceRoutes[item.id].slug===parent));}
+});
 
 test('all 32 draft destinations map to an existing permission-checked module',()=>{
  const links=[...referenceNavigation.top,...referenceNavigation.groups.flatMap(group=>group.items)];

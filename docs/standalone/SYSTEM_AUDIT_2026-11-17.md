@@ -1,5 +1,7 @@
 # Kiểm tra hệ thống CHIFAA — 17/11/2026
 
+Cập nhật sau audit: migration 022 đã sửa các lỗi null/version và tổng đơn vượt kế hoạch trong source; migration 021 bổ sung workflow Ki-ốt. Chưa áp cloud từ công cụ. Xem [trạng thái chuyển dự án cũ](LEGACY_PARITY.md). Nội dung bên dưới là bằng chứng tại commit 8e0151f trước các sửa đổi này.
+
 **Kết luận: chưa hoàn thiện tất cả chức năng và chưa đủ bằng chứng để nghiệm thu vận hành đầy đủ.** Mã nguồn đã có các workflow thật, nhưng nhiều màn hình còn tĩnh, một số RPC chưa có UI, và kiểm tra bổ sung phát hiện lỗi nghiệp vụ.
 
 Phạm vi: source `8e0151f`; 20 migrations, 77 bảng public, 24 hàm public. Kiểm tra HTTP online lúc 15:26 ngày 17/11/2026 (Asia/Ho_Chi_Minh). Không ghi dữ liệu cloud, không nhập lịch sử, không thay quyền hoặc gửi email. Không có phiên trình duyệt/tài khoản đăng nhập trong công cụ để kiểm thử giao dịch cloud.
