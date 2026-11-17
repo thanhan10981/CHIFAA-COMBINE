@@ -1,5 +1,7 @@
 # HANDOFF hiện tại — 17/11/2026 — DEV32
 
+Checkpoint mới: chuẩn bị dữ liệu cũ theo yêu cầu người dùng, **chưa nhập Google**. Lô11điểm/11món, staging18nhóm/92dòng; thiếu danh mục vật tư và kết nối thao tác.276local tests/syntax85; mã ứng dụng đang chạy vẫn bản32 với273tests tại thời điểm release. Mở [LEGACY_IMPORT_2026-11-17.md](docs/LEGACY_IMPORT_2026-11-17.md) trước khi tiếp tục. Dữ liệu riêng lưu `output/legacy-2026-11-17/`, không commit. Google Drive đã gợi ý, chưa xác nhận cài/kết nối; CUA vẫn không có browser. Chưa đọc/ghi/backup dữ liệu đích.
+
 Đã tiếp tục master M00–M09, không viết lại ứng dụng. Hai deployment DEV hiện có@32; readback đủ5file khớp, lịch sử@2 không đổi. Source ứng dụng chốt tại7f3bf88; các commit M01–M09 trước đó giữ từng checkpoint.
 
 273/273 kiểm thử local, syntax83, build và bundle parse đạt. Xem [bàn giao hiện tại](docs/MASTER_RESULT_2026-11-17.md), [ma trận](REQUIREMENT_MATRIX.md), [cổng còn chờ](DECISIONS_REQUIRED.md). Kiosk, entry preview/correction, liên kết đơn, kiểm tra nguồn/schema/backup và bảo mật phiên đã có backend/UI/tests. Không thay dữ liệu/ACL/trigger/tài nguyên Google nghiệp vụ hoặc hai workbook gốc.

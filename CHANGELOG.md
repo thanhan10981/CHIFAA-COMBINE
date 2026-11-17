@@ -1,3 +1,7 @@
+## 2026-11-17 — Chuẩn bị dữ liệu cũ, chưa ghi Google
+
+Thêm công cụ chuẩn hóa TSV công thức/catalog JSON, ánh xạ mã importer và giữ riêng dữ liệu thiếu/mâu thuẫn. Không tự điền giá0, gộp mã vật tư hoặc sinh giao dịch lịch sử.276tests/syntax85 đạt; lô22bản ghi đã qua preview/apply mock, chưa đọc/ghi đích thật. Dữ liệu nguồn riêng nằm trong output ignored. DEV32 không đổi.
+
 ## 2026-11-17 — Master DEV32,273kiểm thử local
 
 M09 bổ sung: giữ trạng thái Chưa đủ dữ liệu cho giá vốn/lợi nhuận thiếu nguồn hoặc giá vốn ki-ốt chưa chốt; đơn giá nhập tùy chọn để trống. Batch cấu hình theo RPC, poll60s/focus, giữ fresh phiên/nonce/version; Properties calls mẫu31→5/59→12/64→9 trong mock. Backup hiện rõ trạng thái kiểm chứng. Source7f3bf88, chưa Google UAT.

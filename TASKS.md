@@ -1,5 +1,11 @@
 # Theo dõi công việc
 
+## Nhập dữ liệu cũ — đang chờ nguồn/kết nối
+
+- Chuẩn bị22bản ghi danh mục và staging công thức có dòng nguồn: đạt local,276tests/syntax85. Công cụ `scripts/legacy-catalog-preparation.mjs` không gọi Google.
+- Đọc/backup/preview/apply trên DEV: CHƯA THỰC HIỆN, không có browser hoặc Google Drive đã kết nối. Chưa xác định dữ liệu đích trùng ID/tên.
+- Nhận danh mục vật tư, xác minh unit sốt phô mai/hiệu suất cơm/giá thu hồi và sai khác cost: còn chờ. Chi tiết docs/LEGACY_IMPORT_2026-11-17.md. Không thay deployment32.
+
 ## Checkpoint master hiện tại — DEV32 — 17/11/2026
 
 - M01 bảo mật/phiên, M02 thu hồi ki-ốt, M03 bốn chế độ nhập, M04 KPI, M05 nguồn/backup, M06 liên kết đơn, M07 UOM/schema: đã có mã và kiểm thử local theo phạm vi ghi tại docs/MASTER_AUDIT_2026-11-17.md.
