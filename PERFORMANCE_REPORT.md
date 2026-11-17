@@ -1,5 +1,21 @@
 # Báo cáo hiệu năng hiện tại
 
+## Standalone Next.js/Supabase — checkpoint mới
+
+Benchmark PGlite trên máy DEV, dữ liệu tổng hợp, một connection và 20 mẫu/mức. Bao gồm SET ROLE transaction, không gồm mạng, Supabase Auth/Realtime hoặc 10 người đồng thời. Truy vấn một trang 25 vật tư, lọc tên và RLS. Trước: can() bị gọi từng dòng; sau: quyền module tĩnh được bọc SELECT để PostgreSQL InitPlan tính một lần/truy vấn, không cache quyền qua user.
+
+| Dòng | p95 trước (ms) | p95 sau (ms) |
+|---:|---:|---:|
+|100|7,34|3,11|
+|1.000|84,12|2,24|
+|10.000|370,72|13,47|
+
+Evidence: output/standalone-sql-benchmark-before.json và standalone-sql-benchmark.json có EXPLAIN JSON. Script web/scripts/benchmark.ts. Không dùng các số này cam kết latency cloud hoặc UI dưới 200 ms.
+
+HTTP smoke local: 5 trang, manifest và callback fail-closed khi thiếu config. Browser E2E=false, cloud=false; output/standalone-http-smoke.json. Chưa đo cold Auth, Dashboard network, warm tab, 10 user hoặc khách đồng thời. Catalog ILIKE và phân trang inventory balance còn cần tuning trên cloud.
+
+Các số Apps Script phía dưới là lịch sử, không đại diện runtime mới.
+
 Checkpoint unitsystem (285tests/syntax90): scan hash thô tắt decorationprovenance để không đọc_Workflows khi sửa một module. RPCmaterial/coldreport đọc ledgerunit liên quan; hot scopedcache vẫn xác thực mới. Benchmark Node/mock `output/data-loading-unit-system.json`:5000rows Dashboardcold43getValues/405257cells/578.27ms, snapshot5/205/.71ms; inventorycold18/130248/189.83ms, hot3/78/6.07ms. Fixture đo chưa có nhiều unitprovenance, không là Google latency/quota/UAT; dữ liệu thật63provenance đã qua transactionfixture riêng. Không cam kết200ms trình duyệt từ số đo này.
 
 ## Bản hiện tại DEV32 —273kiểm thử local

@@ -1,5 +1,26 @@
 # Triển khai DEV và hoàn tác
 
+## Standalone — hướng dẫn hiện tại
+
+Không triển khai tiếp Apps Script theo yêu cầu mới. Root ứng dụng Vercel là `web/`; database ở `supabase/`.
+
+1. Tạo Supabase project **DEV riêng**, chọn vùng gần Việt Nam (đo latency trước kết luận). Không dùng PROD. Cất DB password trong secret manager.
+2. Tạo web/.env.local từ web/.env.example; điền project URL, publishable key, APP_URL=http://localhost:3000. Không đặt service role trong NEXT_PUBLIC_*.
+3. Cài Supabase CLI. Với Docker local: `supabase start`; chỉ khi đây là DB local disposable mới `supabase db reset --local`. Với cloudDEV: link đúng projectref rồi kiểm tra `supabase migration list`/`supabase db push --dry-run` trước `supabase db push`. Không chạy lệnh trước khi xác minh projectDEV.
+4. Bật Google OAuth trong Supabase Auth, dùng redirect URI Supabase cung cấp ở cấu hình provider; Auth redirect allowlist chỉ `http://localhost:3000/auth/callback` và preview URL được duyệt. Web tự dựng callback từ APP_URL, không tin host tùy ý.
+5. Tạo/invite user Auth từ Supabase Dashboard. Owner cấp Admin đầu tiên bằng SQL transaction sử dụng UUID Auth thực tế: insert/upsert profiles(enabled=true); insert user_roles(user_id,role_id='admin') on conflict do nothing. Không tự cấp Admin cho email đầu tiên đăng nhập. Không chạy SQL placeholder chưa thayUUID.
+6. `cd web`; `npm ci`; typecheck/lint/test/build; `npm run dev`. Thử tài khoản riêng choAdmin/kếtoán/kháchA/B và RESTAPI trước nghiệm thu.
+7. Edgeadmin-invite cần APP_ORIGINS allowlist và serversecret môi trường Edge. Chưa deploy/test thực tế. Storage/Realtimemigrations/chức năng còn xây tiếp; không đánh dấu xong.
+8. Vercel: chưa deploy public. Khi được phép preview, chọn root web, thiết lập env đúng SupabaseDEV, callback allowlist theo domainpreviewcụthể; khôngwildcardproduction. VercelHobby không phù hợp thương mại: https://vercel.com/docs/plans/hobby .
+
+### Rollback và backup
+
+Supabase Free có thể pause khi ít hoạt động trong7ngày; cần theo dõi uptime/limits và lịch export riêng. Không coi góiFree là đã có backup đủ điều kiện khôi phục. Đối chiếu nguồn chính thức: https://supabase.com/docs/guides/platform/free-project-pausing và https://supabase.com/docs/guides/platform/backups . Chưa chạy backup/restore drill khi chưa có DEV.
+
+Không có down migration DROP/CASCADE trên dữ liệu nghiệp vụ. Trước migration cloud: backupDB bằng pg_dump với credentialDEV giữlocal, kiểm checksum, restore sang DBDEV riêng rồi mới triển khai. Nếu migration lỗi transaction sẽ rollback; nếu đã commit, rollback application về bản tương thích và dùng forwardfix có kiểm thử. Rollback schema/history chỉ từ backup đã diễn tập trênDB riêng, không overwrite database đang chạy. Hiện chưa có DBcloud/pg_dump/Docker nên chưa thực hiện backup/restore drill.
+
+### Hướng dẫn Apps Script bên dưới là lịch sử
+
 Mới nhất: haiDEV@33, source da46387,285tests/syntax90/build/bundle và readback5file đạt; lịch sử@2 không đổi. Xem docs/UNIT_SYSTEM.md. Không thêm header hoặc bảng mới cho unitsystem; blankmin/conversion và provenance trong_Workflows. Chưa import dữ liệu thật. Sau khi dùng giá có cơ sở khác đơn vị mua, không mở ghi với code32 trở xuống vì code cũ không hiểupricebasis; dừng ghi và đối soát hoặc ưu tiên forwardfix. Đoạn DEV32 dưới đây là checkpoint lịch sử.
 
 Hiện tại: hai deployment DEV đã ở **32**, source trước đợt khớp28/trước bản cuối khớp31; readback32 khớp đủ5file.273test local/syntax83/build đạt. Xem docs/MASTER_RESULT_2026-11-17.md. Google hai tài khoản/ACL/popup/trigger và Drive UAT chưa nghiệm thu.

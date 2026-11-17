@@ -1,0 +1,2 @@
+import {currentAccess,allowed} from '@/lib/auth/access';import {ConnectionRequired} from '@/components/connection-required';import {Dashboard} from '@/features/dashboard/dashboard';
+export default async function Home(){const context=await currentAccess();if(!context)return <ConnectionRequired/>;if(!allowed(context.access,'dashboard'))return <section className="panel"><h1>Không gian làm việc</h1><p>Chọn phân hệ đã được cấp quyền ở thanh bên.</p></section>;return <Dashboard userId={context.user.id}/>;}

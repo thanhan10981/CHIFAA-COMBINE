@@ -1,0 +1,2 @@
+-- No business sample records or admin identity are seeded automatically.
+-- Reference roles and permissions are inserted by migrations.

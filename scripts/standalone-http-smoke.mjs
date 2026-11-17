@@ -1,0 +1,5 @@
+import assert from 'node:assert/strict';import fs from 'node:fs/promises';
+const base='http://127.0.0.1:3100',results=[];
+for(const route of ['/login','/app','/app/materials','/portal','/offline']){const at=performance.now(),response=await fetch(base+route),body=await response.text();assert.equal(response.status,200);if(route!=='/offline')assert.match(body,/Chưa kết nối/);else assert.match(body,/Đang mất kết nối/);assert.equal(response.headers.get('x-content-type-options'),'nosniff');results.push({route,status:response.status,ms:performance.now()-at,bytes:Buffer.byteLength(body)});}
+const manifest=await fetch(base+'/manifest.webmanifest');assert.equal((await manifest.json()).name,'CHIFAA COMBINE');const callback=await fetch(base+'/auth/callback');assert.equal(callback.status,503);
+await fs.writeFile('output/standalone-http-smoke.json',JSON.stringify({browserE2E:false,supabaseConnected:false,results,missingConfigCallbackStatus:callback.status},null,2));console.log('Local HTTP smoke passed: 5 pages + manifest + fail-closed callback. No browser/cloud E2E.');

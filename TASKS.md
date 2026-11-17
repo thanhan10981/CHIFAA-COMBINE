@@ -1,5 +1,27 @@
 # Theo dõi công việc
 
+## Ưu tiên mới: xây standalone Vercel + Supabase
+
+Mới nhất:13migrations/77tables/21RPC,22tests; TS/lint/build + HTTP local đạt. UI sản xuất/nhập-xuất đã nối thêm; dropdown danh mục, auth/cache boundary, public-shell PWA và stagingimport có source/tests. Bảo vệ audit/payroll/history đã bổ sung. Ma trận chính xác: docs/standalone/FEATURE_MATRIX.md. Những checkpoint6/11/16tests phía dưới là lịch sử. Chưa có cloud; toàn dự án vẫn đang làm, không đánh dấu giai đoạn hoàn chỉnh chỉ vì schema/RPC có tests.
+
+Checkpoint tiếp theo:16tests PostgreSQL,77tables/11migrations. Backend production/count/period/order/payment/manualinterest/attendance đã có transaction+tests; PortalUI gửi/xemđơn, nội bộ review, Admincheckbox đã nối. Màn hình workflow còn thiếu vẫn placeholderchặntácđộng, không đánh dấu toàn giai đoạn hoàn tất. Không có Supabasecloud, không deploy thật/import thật. Bảng bên dưới là checkpoint nền tảng trước phần bổ sung này.
+
+Đặc tả: web/MASTER_SPEC.md. Mục tiêu Apps Script/importSheets cũ được thay thế; không sử dụng trong runtime mới.
+
+| Giai đoạn | Trạng thái có bằng chứng | Còn lại |
+|---|---|---|
+| P0 Audit | Đọc fullmaster, schema/domain cũ,2Excel read-only hashkhôngđổi, logo, ERD/mapping | Mapping lịch sử chi tiết theo từng chứng từ |
+| P1 Foundation | Next/Auth source,76tables/RLS/RBAC,6PostgreSQLtests, typecheck/lint/build đạt | Supabase DEV chưa tạo; hostedAuth/Storage/Realtime/Edge/invite/rate limits/singleAdmin còn chờ |
+| P2 Catalog/recipe |5catalog CRUD+RPC có version/idempotency/audit; BOM/cycleSQL | UI tham chiếu bằng dropdown, version editing, BOM tests đầy đủ |
+| P3 Operations | Schema chuẩn hóa | RPC production/count/returns + UI, nghiệm thu |
+| P4 Portal | Layout riêng | Catalog giá riêng, orderRPC/RLSisolation/realtime/UI |
+| P5 Finance/HR | Schema chuẩn hóa | Tất cả posting/adjustments/payroll+UI và quyết định tài chính |
+| P6 Dashboard | AggregateSQL với null/permissions + UI metrics | Charts/drilldown/report snapshots/strategy |
+| P7 Migration/offline | Mapping nguồn | Importtransaction/reconcile/PWA/drafts/export |
+| P8 Hardening/deploy | Localtests nền tảng | CloudRLS/AuthE2E,10users/p95,backuprestore,preview; PROD chưa được phép |
+
+Checkpoint P1 chuyển tiếp sang tác vụ độc lập P2/P3; không đánh dấu cloud integration đã xong.
+
 ## RPC-v2 — lỗi chữ ký vẫn tái diễn trên Google
 
 - Đã triển khai haiDEV@36 và readback5file khớp. Chưa nghiệm thu chữ ký trên Google; bản35 thất bại đã được ghi nhận, không đánh dấu bug done chỉ vì local tests đạt.

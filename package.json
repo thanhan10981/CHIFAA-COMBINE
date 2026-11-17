@@ -7,13 +7,15 @@
     "node": ">=24"
   },
   "scripts": {
-    "check": "node scripts/check.mjs",
-    "test": "node --test --test-isolation=none tests/*.test.mjs",
-    "build": "node scripts/build.mjs",
-    "dev": "node scripts/serve.mjs",
-    "clasp:login": "npx @google/clasp login",
-    "clasp:push": "node scripts/push.mjs",
-    "clasp:deploy": "npx @google/clasp deploy"
+    "check": "npm --prefix web run typecheck",
+    "lint": "npm --prefix web run lint",
+    "test": "npm --prefix web test",
+    "build": "npm --prefix web run build",
+    "dev": "npm --prefix web run dev",
+    "verify": "npm --prefix web run verify",
+    "legacy:check": "node scripts/check.mjs",
+    "legacy:test": "node --test --test-isolation=none tests/*.test.mjs",
+    "legacy:build": "node scripts/build.mjs"
   },
   "devDependencies": {
     "exceljs": "4.4.0",

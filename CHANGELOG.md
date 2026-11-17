@@ -1,3 +1,15 @@
+## 2026-11-17 — Standalone checkpoint bảo mật/hiệu năng/UX
+
+13migrations/77tables/21RPC,22tests. Thêm UI sản xuất/nhập-xuất, dropdown tham chiếu, kiểm tra quyền khi focus, invalidation cache theo module, public-shell PWA/nháp whitelist và UUID staging CLI. Chặn lộ lương qua audit, ghi đè verified prices/quy đổi lịch sử. RLS InitPlan giảm p95 local10.000rows từ370,72 xuống13,47ms; chưa đo cloud/concurrent. Root scripts mặc định chạy Next. Chưa deploy/import thật; các workflow chưa xong được ghi riêng trong FEATURE_MATRIX.
+
+## 2026-11-17 — Standalone workflows PostgreSQL
+
+Thêm RPC/test BOM/yield/publish/cycle, sản xuất+snapshot+xuất kho, kiểm kêđiềuchỉnh, kỳclose/reopen với advisorylock, Portal scope/serversideprice/orderstatus/idempotency/linkplan không cộngtrùng. Thu nợcũ→allocation/cashkhôngrevenue; lãi nhập tay; chấm công qua ngày và pay snapshots riêng RLS payroll.16tests PostgreSQL đạt;77publictables,11migrations. UI Portal/duyệtđơn/Admincheckbox hoạt động quaRPC khi cấu hìnhDEV. Chưa có cloud, màn hình sản xuất/tài chính/công thức còn xây tiếp, không chốt completion.
+
+## 2026-11-17 — Standalone P0/P1
+
+Theo yêu cầu mới, tạo ứng dụng độc lập web/ (Next App Router/React/TypeScript/Tailwind/Supabase/TanStack Query), không thay runtime cũ hoặc ghi Google. PostgreSQL migrations từ DB trống:76bảng, RLS, permissions, idempotency/version/audit, catalog+recipe/BOM+admin RPC; official logo, /app /portal, catalogUI và Dashboard aggregate.6tests PGlite/TypeScript/lint/build đạt. Chưa có Supabase DEV nên cloudAuth/Storage/Realtime và nghiệp vụ còn lại chưa nghiệm thu. Không deploy/nhập dữ liệu thật.
+
 ## 2026-11-17 — Chuẩn hóa thông điệp ký RPC-v2
 
 Đã lên haiDEV@36, readback5file khớp, giữ quyền/URL/schema; chờ người dùng xác nhận preview. Không nhập dữ liệu Google.

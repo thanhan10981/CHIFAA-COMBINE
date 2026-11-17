@@ -1,0 +1,2 @@
+import Link from 'next/link';
+export default function Offline(){return <main id="main-content" className="connection panel"><p className="eyebrow">CHIFAA / NGOẠI TUYẾN</p><h1>Đang mất kết nối</h1><p>Chưa có đơn hàng, phiếu thu, duyệt đơn hoặc chốt lương nào được xác nhận khi offline. Kết nối lại để xem dữ liệu và kiểm tra kết quả.</p><Link className="button primary" href="/app">Thử kết nối lại</Link></main>;}

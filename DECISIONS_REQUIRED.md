@@ -1,5 +1,15 @@
 # Quyết định và rào cản cần xác nhận
 
+## Standalone — đặc tả mới là ưu tiên
+
+- SUPABASE_DEV: người dùng xác nhận chưa tạo; cần dự án DEV riêng, URL/publishable key trong web/.env.local. Secret/password không gửi chat. Phát triển SQL/localtests/UI độc lập vẫn tiếp tục.
+- FINANCIAL_POLICY_NEW: đặc tả mới yêu cầu chưa tự ghi sổ phần điểm bán chịu/hỗ trợ thu hồi, dù hội thoại cũ từng chốt. Giữ lượng tách riêng; posting phần mâu thuẫn bị chặn tới khi xác nhận policy áp dụng hệ mới. Lãi vay nhập tay; Food32,2%/SX15% trên doanh thu thuần.
+- ACCOUNTING: phương pháp giá tồn, phân bổ hồi kho, kỳ/allowance/retention/chốt số đầu kỳ vẫn cần xác nhận; không coi null là0.
+- HOSTING: chọn gói Vercel cho sử dụng doanh nghiệp; Hobby chỉ cá nhân/phi thương mại theo docs hiện hành https://vercel.com/docs/plans/hobby . Không deploy public khi chưa được phép.
+- ADMIN_SESSION: chưa bật một phiên vì chưa có revoke server-side/test song song hoàn chỉnh.
+
+Các rào cản Google bên dưới là lịch sử runtime cũ, không yêu cầu cho hệ mới.
+
 17/11/2026 — master request mới ưu tiên; đối chiếu DECISIONS.md, không coi quyết định đã chốt là chức năng đã nghiệm thu.
 
 Đã chốt: D01 base doanh thu thuần cho Food32,2%/SX15%; D02 phần điểm bán chịu phải trả sau chiết khấu; D03 hỗ trợ thu hồi là chi phí riêng; D28 lãi tự nhập. Master yêu cầu năng suất theo tổng sản xuất/giờ SX; giữ sản lượng đạt và năng suất đạt riêng, chưa suy ra mẫu số tỷ lệ lỗi được duyệt.

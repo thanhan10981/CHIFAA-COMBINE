@@ -1,5 +1,13 @@
 # Kết quả kiểm thử master session
 
+## Standalone P1 (mới, không cộng với tests Apps Script)
+
+Mới nhất22/22tests: thêm chặn lương qua audit, immutable historical prices/conversions, thiếu giá không verified, private-function/search_path, Portalcapacity/unavailableproduct rollback, offline/staging.13migrations/77tables/21RPC, dbtypes generated; typecheck/lint/build đạt. HTTPsmoke local5pages+manifest+callback503 đạt. Benchmark RLS trước/sau xem PERFORMANCE_REPORT.md. Chưa có cloud, browser E2E,10concurrent hoặc backuprestore. Không lấy tests cũ Apps Script cộng vào hệ mới.
+
+Mới nhất16/16PostgreSQLtests trên77tables/11migrations: thêm nestedBOM/yield/cycle, productionissueonce/rollback/costsnapshot, countadjustment/conflict/period, customerA/Bprices/orders/internaldata, review/schedulekhôngrevenue, admincheckbox/lastmanager, olddebtallocation/cash, 8/9/10h/payprivacy/manualinterest/close-reopen. Không có cloudOAuth/Realtime/Storage/Edge/browsersession hay nhiều kết nối đồng thời. RuntimefinancialUI chưa xong. Những số6/12 phía dưới là checkpoint trước.
+
+6/6tests real embedded PostgreSQL(PGlite) áp dụng5migrations từ DB trống:76tables cóRLS, APIroles không ghi trực tiếp, catalogRPC audit/version/idempotency/conflict/rollback, accountant không đọcpayroll, disable quyền ngay, dashboard thiếu dữ liệu trảnull. npm run db:types sinh từ schema đã apply. npm run typecheck, npm run lint (0warning), npm run build Next16 đạt. PGlite giả lập auth.uid/users/roles, không chứng minh Supabase hostedAuth/JWT/Realtime/Storage/Edge hoặc multi-connection. Chưa có credentialscloud; không báo E2E/deploy/backup thành công.
+
 RPC-v2:290/290tests/syntax91/build đạt. Thêm payloadUnicode >500k (ASCII/UTF-8 cùng byte), protocol downgrade không hợp lệ, checksum không thể cấp quyền; client→server mock dùng lô91bản ghi/154effects/0stock. Log output/rpc-v2-tests.txt. Lỗi chữ ký hosted người dùng vẫn có trên35; chưa có telemetry root cause/Google browser test. Không ghi dữ liệu Google.
 
 EXCEL-ASSET:288/288localtests/syntax91/build đạt. Regression mới ép HtmlOutput từ chối JS, kiểm tra raw template không evaluate, endpoint allowlist không mở Sheets; tải vendor thật qua SHA256 và tạo sheet Nhap_lieu trong VM browser. Các kiểm thử XLSX roundtrip vẫn đạt. Log output/excel-asset-tests.txt. Không xác nhận tải xuống thực tế trên Google trước UAT.

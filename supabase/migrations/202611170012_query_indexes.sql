@@ -1,0 +1,10 @@
+begin;
+create index recipe_items_version_idx on public.recipe_items(recipe_version_id);
+create index receipt_allocations_debt_idx on public.receipt_allocations(receivable_id,receipt_id);
+create index pay_rates_effective_idx on public.employee_pay_rates(employee_id,effective_from desc);
+create index material_prices_effective_idx on public.material_prices(material_id,effective_from desc);
+create index notifications_user_idx on public.notifications(user_id,created_at desc);
+create index order_history_order_idx on public.order_status_history(order_id,created_at);
+create index production_batch_date_idx on public.production_batches(produced_on,id) where status='posted';
+create index inventory_batch_lines_idx on public.ingredient_requirement_snapshots(batch_line_id);
+commit;

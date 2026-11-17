@@ -1,4 +1,34 @@
-# HANDOFF hiện tại — 17/11/2026 — DEV36
+# HANDOFF hiện tại — CHIFAA standalone / Next.js + Supabase
+
+## Yêu cầu đang thực hiện — 17/11/2026
+
+### Checkpoint mới nhất — ưu tiên trước các số cũ bên dưới
+
+- Runtime mới ở web/, PostgreSQL ở supabase/. Root npm dev/build/test/check/verify đã trỏ sang web; legacy:* chỉ để đối chiếu. Không push Apps Script, không dùng workbook runtime, không deploy public, không nhập dữ liệu thật.
+- 13 migrations, 77 public tables, 21 public RPC, types sinh từ PostgreSQL catalog. 22/22 tests thực thi PostgreSQL nhúng + domain; typecheck/lint/build Next đạt. Log build/verify output/standalone-verify.txt chứa checkpoint21tests, test mới nhất22tests đã chạy riêng; cần cập nhật log tổng ở checkpoint kế.
+- UI hiện có:5catalog có dropdown tham chiếu, Admin checkbox, Portal catalog/submit/history, review orders, production và nhập/xuất nguyên liệu. SQL đã có count/period/payment/manualinterest/attendance. Recipe/finance/count UI, fulfillment/return/kiosk/payroll/reports/strategy còn thiếu; xem docs/standalone/FEATURE_MATRIX.md, không gọi toàn hệ thống xong.
+- Bảo mật mới: audit chỉ thấy phân hệ gốc được cấp quyền; lương snapshot tách khỏi chấm công; không ghi đè verified prices hoặc conversions đã có lịch sử. Cache theo user, scope invalidation, kiểm tra lại quyền khi focus/30s, logout xóa RAM/IndexedDB.
+- PWA chỉ cache public assets/offline page. IndexedDB whitelist nháp3module, chưa tích hợp editor/sync; không auto-commit đơn/tiền. Import CLI mới chỉ staging UUID/needs_review, chưa đọc đầy đủ lịch sử và chưa apply DB.
+- Benchmark RLS tĩnh: p95 cho10.000dòng giảm370,72→13,47ms trên PGlite một connection, không là số cloud/10concurrent. HTTP local smoke5pages+manifest+callback đạt, không phải browserE2E. Evidence output/standalone-*.json.
+- User xác nhận chưa có Supabase DEV. Docker/psql/CLI không có; Auth OAuth/Edge/Storage/Realtime/cloud policies/multi-connection/backuprestore chưa được thử. Không xin secret qua chat.
+- Đã đọc lại2Excel gốc hash không đổi. Giữ file/business values trong output ignored. Mã/log/benchmark synthetic không dùng thay dữ liệu doanh nghiệp.
+- Tiếp tục độc lập theo FEATURE_MATRIX: hoàn thiện recipe UI/versioning, price/admin tools, count/operations; sau đó giao/thu hồi/ki-ốt, finance/payroll, charts/report/import workflow. Các policy tài chính mâu thuẫn giữ blocker trong DECISIONS_REQUIRED, không suy đoán.
+
+Checkpoint mới nhất (ưu tiên đoạn này):11migrations/77publictables (65business),16/16PostgreSQLtests đạt; UI5catalog+Portal order/catalog/history+internalreview+Admincheckbox đã nối RPC. SQL thêm production→inventory/snapshot/count, publishedBOM/cycle, orderpricing/scope/review/schedulekhôngcộngtrùngplan, paymentsallocation/cash, manualinterest, attendanceprivatepay, periodclose/reopen. Storage/Realtimemigration chỉ chạy nếu Supabase schemas/publication tồn tại; PGlite không giả nghiệm thu cloud. UIworkflow production/count/finance/recipe vẫn chưa xong. Generatedtypes đã sinh lại77tables. Chưa có SupabaseDEV, chưa có dữ liệu thật hoặc publicdeploy. FullNexttypecheck/lint/build gần nhất đạt ở12tests; cần chạy lại sau checkpoint tài chính16tests (SQL/typegen) trước commit.
+
+User thay mục tiêu: xây mới toàn bộ theo MASTER_PROMPT_CODEX_VERCEL_SUPABASE.md. Đã đọc đầy đủ file Downloads và lưu web/MASTER_SPEC.md. KHÔNG tiếp tục phát triển/triển khai Apps Script, không nhập lô91 vào Sheets. Mã cũ giữ nguyên làm tư liệu; checkpoint DEV36 phía dưới chỉ lịch sử.
+
+Người dùng xác nhận **chưa có Supabase DEV**. Không có cloud credentials, Docker/psql/Supabase CLI. Không deploy public/production hoặc chuyển dữ liệu thật.
+
+P0/P1 local: web/ Next16.4.6 React19.3.1 TypeScript6.0.2 Tailwind4, SSR Supabase Auth (proxy refresh + getUser + DB my_access), RLS/RBAC deny-by-default, 76bảng từ5migrations (64business), catalog RPC idempotency/version/audit, recipe/BOM SQL, admin permissions RPC/invite Edge source, layout /app /portal và5catalog. Official logo copy assets. Chưa tự gọi các màn hình workflow placeholder là chức năng xong.
+
+Đã chạy6tests PostgreSQL nhúng PGlite qua SET ROLE/auth.uid stub (không phải mock SQL), db types generate76bảng, typecheck/lint/build Next đạt. TS7 latest không tương thích ESLint nên ghimTS6 + ESLint9. Build root config sau đó đã explicit web. Cloud Google OAuth/Realtime/Storage/Edge chưa chạy, singleAdmin chưa bật.
+
+Đọc lại2Excel gốc read-only, SHA256 không đổi; evidence output/legacy-2026-11-17/postgres-source-audit.json. Không import dữ liệu thật. Xem docs/standalone/ARCHITECTURE.md, ERD.md, DATA_MAPPING.md.
+
+Bước tiếp theo: bổ sung và kiểm thử công thức đa tầng/cycle/snapshots, sản xuất→kho/kiểm kê, Portal isolation/order workflow; sinh lại types sau migration. Chạy npm run typecheck/lint/test/build trong web trước checkpoint. Không dừng độc lập vì chưa có cloud; không báo cả6giai đoạn hoàn tất.
+
+## Lịch sử runtime cũ — DEV36
 
 QUAN TRỌNG sau list cuối: ngoài2deployment DEV vừa gán36, deployment từng lịch sử@2 hiện quan sát@35 (không do lệnh update-deployment của task này). Không tự rollback/chạm deployment đó. Chưa biết user đang dùng URL nào; đã hỏi qua async để đối chiếu chính xác. Nếu user dùng link thứ ba35, chưa có RPC-v2 trên link đó. Không tiếp tục yêu cầu refresh/đăng nhập mù; xác định URL rồi cập nhật đúng deployment khi thuộc DEV được user xác nhận. Danh sách bằng chứng rpc-v2-final-deployments.txt; không tuyên bố lịch sử@2 còn nguyên ở thời điểm này.
 
