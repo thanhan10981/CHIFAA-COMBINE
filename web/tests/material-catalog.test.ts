@@ -8,7 +8,11 @@ const rows:MaterialImportRow[]=[{position:1,code:'TEST-A',name:'Vật tư kiểm
 
 test('material source import preserves Unicode codes, zero/NULL, original identities and ledger; replay is a no-op',async()=>{
  const db=await database();try{
-  await db.exec(buildMaterialImport(rows,hash,day));
+  const sql=buildMaterialImport(rows,hash,day);
+  assert.doesNotMatch(sql,/create temporary table|chifaa_material_source/i);
+  const standalone=sql.slice(sql.indexOf('do $import$'),sql.indexOf('end $import$;')+'end $import$;'.length);
+  // SQL Editor/pool may execute statements separately. The import must stand alone.
+  await db.exec(standalone);
   const before=(await db.query('select id,code from materials order by code')).rows;
   const audit=(await db.query('select count(*) n from audit_logs')).rows;
   await db.exec(buildMaterialImport(rows,hash,day));

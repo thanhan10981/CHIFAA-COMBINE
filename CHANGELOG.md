@@ -1,3 +1,7 @@
+## 2026-11-17 — Sửa SQL nhập vật tư trên SQL Editor
+
+Người dùng gặp 42P01: bảng tạm chifaa_material_source không tồn tại. Bỏ phụ thuộc bảng tạm/phiên kết nối: JSON nguồn và toàn bộ thao tác nhập nằm trong một DO atomic, giữ hash replay và các guard cũ. Sinh lại CHIFAA_63_VAT_TU_DEV.sql; kiểm tra DO chạy độc lập, nhập đủ 63/41/2/19 và không tạo phiếu kho. Không đổi schema/UI, chưa chạy SQL cloud.
+
 ## 2026-11-17 — Danh mục 63 vật tư, quy đổi và tiền Việt
 
 Thay màn vật tư bằng bốn chỉ số, tìm/lọc/phân trang, bảng giá/tồn/quy cách và hộp thoại sửa theo ảnh tham chiếu. Thêm cài đặt quy đổi theo vật tư và kiểm kê thật qua snapshot/version hiện có. Migration 023 bổ sung metadata nguồn, material_catalog và save_material; lưu vật tư/giá atomic, kiểm tra quyền hiện tại, chống gửi trùng, giữ lịch sử giá và chặn đổi đơn vị khi đã có lịch sử. Định dạng tiền Việt cho ô nhập giá/thu tiền, bảng vật tư và giá vốn công thức, giữ chính xác bigint/decimal.

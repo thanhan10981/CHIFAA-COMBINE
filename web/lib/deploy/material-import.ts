@@ -8,23 +8,22 @@ export function buildMaterialImport(rows:MaterialImportRow[],sourceHash:string,e
 -- Explicit zero prices are retained as unverified; blank values remain NULL.
 -- Positive prices use the exact stated purchase unit, effective ${effective}.
 -- Unknown package conversions stay unverified. No volume-to-mass assumption.
-begin;
-set local lock_timeout='5s';
-set local statement_timeout='120s';
-create temporary table chifaa_material_source on commit drop as select * from jsonb_to_recordset(${literal(JSON.stringify(rows))}::jsonb) as r(position integer,code text,name text,category text,unit text,amount numeric,minimum numeric,reference numeric,specification text);
+-- All import writes run atomically in ONE DO statement; no temporary table/session dependency.
 do $import$
-declare r record; unit_id uuid; target_material uuid; old_row public.materials; price public.material_prices; from_id uuid; to_id uuid; ratio numeric; is_verified boolean;
+declare source_rows jsonb=${literal(JSON.stringify(rows))}::jsonb;
+ r record; unit_id uuid; target_material uuid; old_row public.materials; price public.material_prices; to_id uuid; ratio numeric; is_verified boolean;
 begin
  if current_user not in ('postgres','supabase_admin') then raise exception 'SQL_EDITOR_OWNER_REQUIRED';end if;
+ perform set_config('lock_timeout','5s',true);
  if to_regprocedure('public.material_catalog(date,text,text,integer,integer)') is null then raise exception 'MATERIAL_PATCH_023_REQUIRED';end if;
  perform pg_advisory_xact_lock(170024);
  if exists(select 1 from public.app_settings where key='material_import:${sourceHash}') then return;end if;
- if (select count(*) from chifaa_material_source)<>${rows.length} then raise exception 'SOURCE_ROW_COUNT';end if;
+ if jsonb_array_length(source_rows)<>${rows.length} then raise exception 'SOURCE_ROW_COUNT';end if;
  for r in select * from (values ('kg','Kilôgam','mass'),('g','Gam','mass'),('l','Lít','volume'),('túi','Túi','package'),('vắt','Vắt','count'),('vỉ','Vỉ','package'),('quả','Quả','count'),('bì','Bì','package'),('lá','Lá','count'),('can','Can','package'),('chai','Chai','package'),('cái','Cái','count')) u(code,name,dimension) loop
   if exists(select 1 from public.material_units where code=r.code and (dimension<>r.dimension or archived)) then raise exception 'EXISTING_UNIT_CONFLICT: %',r.code;end if;
   insert into public.material_units(code,name,dimension) values(r.code,r.name,r.dimension) on conflict(code) do nothing;
  end loop;
- for r in select * from chifaa_material_source order by position loop
+ for r in select * from jsonb_to_recordset(source_rows) as source(position integer,code text,name text,category text,unit text,amount numeric,minimum numeric,reference numeric,specification text) order by position loop
   select id into strict unit_id from public.material_units where code=r.unit;
   select * into old_row from public.materials where code=r.code for update;
   if old_row.archived then raise exception 'ARCHIVED_MATERIAL_REVIEW: %',r.code;end if;
@@ -54,7 +53,6 @@ begin
  end loop;
  insert into public.app_settings(key,value) values('material_import:${sourceHash}',jsonb_build_object('rows',${rows.length},'effective_from',${literal(effective)},'inventory_posted',false,'source_hash','${sourceHash}'));
 end $import$;
-commit;
 select count(*) imported_codes from public.materials where code in (select code from jsonb_to_recordset(${literal(JSON.stringify(rows.map(({code})=>({code}))))}::jsonb) r(code text));
 `;
 }
