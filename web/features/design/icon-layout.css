@@ -5,3 +5,19 @@
 /* Keep nested decorative icons inline as well, without changing card/menu layout. */
 .workspace svg,.portal svg{display:inline-block;vertical-align:middle}
 @media(max-width:720px){.workspace :is(button,a):has(>svg),.portal :is(button,a):has(>svg){gap:6px}}
+.workspace .stat .stat-icon {
+  display: grid;
+  place-items: center;
+  align-self: flex-start;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0;
+  line-height: 0;
+}
+.workspace .stat .stat-icon > svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  flex: none;
+}

@@ -47,6 +47,11 @@ try {
    return Math.abs((text.top+text.bottom)/2-(icon.top+icon.bottom)/2)>6?[button.textContent.trim()]:[];
   }));
   if(brokenIcons.length)throw new Error('Icon/label wrapped on '+route+': '+brokenIcons.join(', '));
+  const offCenter=await page.locator('.stat-icon:has(>svg)').evaluateAll(boxes=>boxes.flatMap(box=>{
+   const outer=box.getBoundingClientRect(),inner=box.querySelector('svg').getBoundingClientRect();
+   return Math.abs(outer.x+outer.width/2-inner.x-inner.width/2)>0.5||Math.abs(outer.y+outer.height/2-inner.y-inner.height/2)>0.5?[box.outerHTML.slice(0,100)]:[];
+  }));
+  if(offCenter.length)throw new Error('Stat SVG is not centered on '+route+': '+offCenter.join(', '));
  }
  // Sidebar composition: long section names fit, header/account stay fixed while menu scrolls.
  for(const [width,height] of [[1440,900],[1280,720],[1024,768]]){
@@ -114,6 +119,10 @@ try {
  await page.setViewportSize({width:390,height:844});
  for(const route of ['materials','recipes','strategy','entry-stock','sales','kiosk','opsdashboard']){
   await page.goto(base+'/app/'+route);await page.evaluate(()=>document.fonts.ready);
+  if(route==='materials'){
+   const centered=await page.locator('.stat-icon:has(>svg)').evaluateAll(boxes=>boxes.length===4&&boxes.every(box=>{const outer=box.getBoundingClientRect(),inner=box.querySelector('svg').getBoundingClientRect();return Math.abs(outer.x+outer.width/2-inner.x-inner.width/2)<=0.5&&Math.abs(outer.y+outer.height/2-inner.y-inner.height/2)<=0.5;}));
+   if(!centered)throw new Error('Material stat icons are misaligned on mobile');
+  }
   if(!await page.locator('.reference-portal').isVisible())throw new Error('Mobile ordering portal hidden');
   await page.screenshot({path:path.join(out,route+'-mobile-content.png')});
   await page.getByRole('button',{name:'Mở menu',exact:true}).click();await page.locator('.sidebar.open').waitFor();

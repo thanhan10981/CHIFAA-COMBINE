@@ -1,3 +1,7 @@
+## 2026-11-17 — Căn giữa icon thẻ thống kê
+
+Sửa CSS chung: kiểu span mô tả đã ghi đè display grid và thêm margin vào ô icon vật tư. Khôi phục grid, bỏ margin/padding và dùng SVG20px ở giữa ô nền. Kiểm tra trình duyệt đo tâm icon trên desktop và bốn thẻ vật tư mobile. Không đổi SQL hoặc dữ liệu.
+
 ## 2026-11-17 — Xác minh cơ sở giá, đơn vị và quy cách theo phiên bản
 
 Tách đơn vị tính giá khỏi đơn vị mua/tiêu hao. Thêm phiên bản xác minh bất biến, nguồn gốc, bằng chứng, ngày hiệu lực/ghi nhận và form Admin xem quy đổi đã lưu/lịch sử. Giá suy luận/mâu thuẫn không vào tổng giá vốn; BOM/sản xuất/kho dùng nguồn xác minh theo ngày. Giữ nguyên giá cũ và số liệu đã ghi; chặn relabel đơn vị có lịch sử, đánh dấu cần chuyển đổi/đối chiếu. SQL điều chỉnh 63 dòng giữ ID, không tạo tồn và chạy lại không trùng; 23 mã cần xác minh được tổng hợp trong output/VAT_TU_CHO_XAC_MINH.md. DM/DH sửa về cơ sở giá/kg; TG/RCM/RCC/DAN chờ xác minh. Migration024: 79 bảng,30 RPC. Chưa chạy SQL cloud hoặc thay workbook gốc.
