@@ -1,5 +1,8 @@
 # Kết quả kiểm thử master session
 
+Giao diện phác thảo: đã áp style gốc có scope, sidebar 5 nhóm/32 mục, bố cục danh mục/tổng quan/công thức và bố cục chờ backend. 37/37 tests, types/TS/lint/build đạt; Chrome fixture kiểm tra 32 route desktop và 5 drawer mobile, không lỗi JavaScript/tràn ngang. Chưa nghiệm thu pixel 100%, chưa UAT authenticated cloud. Các editor kho/sản xuất/kiểm kê vẫn còn khác cấu trúc phác thảo; phân hệ chờ backend khóa thao tác. Chi tiết docs/standalone/UI_REFERENCE.md. Không đổi migration hoặc nhập dữ liệu thật.
+
+
 ## Standalone P1 (mới, không cộng với tests Apps Script)
 
 Admin ban đầu: 35/35 tests + types/TypeScript/lint/build đạt (output/first-admin-verify.txt). Test mới cấp đúng chủ sở hữu đã xác minh, my_access trả quyền quản trị/kho, replay chỉ một audit; chặn email thiếu/chưa xác minh, manager đã tồn tại, deny override, API role và chuỗi email không hợp lệ. File SQL chỉ được sinh, chưa thực thi cloud. Probe online mới: Google enabled=true, callback thiếu code307 về login?reason=oauth trên domain chính; chưa xác nhận tài khoản Admin hoặc UAT đăng nhập từ công cụ.

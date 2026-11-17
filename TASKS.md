@@ -1,5 +1,8 @@
 # Theo dõi công việc
 
+Giao diện phác thảo: đã áp style gốc có scope, sidebar 5 nhóm/32 mục, bố cục danh mục/tổng quan/công thức và bố cục chờ backend. 37/37 tests, types/TS/lint/build đạt; Chrome fixture kiểm tra 32 route desktop và 5 drawer mobile, không lỗi JavaScript/tràn ngang. Chưa nghiệm thu pixel 100%, chưa UAT authenticated cloud. Các editor kho/sản xuất/kiểm kê vẫn còn khác cấu trúc phác thảo; phân hệ chờ backend khóa thao tác. Chi tiết docs/standalone/UI_REFERENCE.md. Không đổi migration hoặc nhập dữ liệu thật.
+
+
 ## Ưu tiên mới: xây standalone Vercel + Supabase
 
 BE/Admin ban đầu: Google provider đã bật, APP_URL callback hoạt động trên domain chính. Đã tạo SQL cấp Admin đầu tiên đúng email chủ sở hữu xác nhận, có kiểm tra owner/verified/manager/deny và audit/idempotency; 35 tests + TS/lint/build đạt. Cần người dùng chạy output/CHIFAA_FIRST_ADMIN_DEV.sql trong Supabase SQL Editor rồi kiểm tra/app. Tiếp theo tiếp tục BE kế hoạch/sản xuất/kho, giao/thu hồi, tài chính theo FEATURE_MATRIX; chưa đánh dấu các giai đoạn xong.

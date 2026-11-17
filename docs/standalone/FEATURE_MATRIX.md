@@ -1,5 +1,7 @@
 # Bằng chứng chức năng hiện tại
 
+Giao diện hiện có bố cục tham chiếu cho 32 mục điều hướng; bố cục tĩnh có khóa thao tác không được tính là workflow hoàn tất. Xem [đối chiếu giao diện](UI_REFERENCE.md).
+
 Chưa có nhóm nghiệp vụ nào được nghiệm thu đầy đủ trên Supabase cloud. Người dùng đã chạy schema và deploy Vercel; Google provider bật, trang login và callback online phản hồi. Tài khoản đầu tiên đang chờ owner cấp Admin bằng SQL riêng. Schema hoặc route rỗng không được coi là nghiệp vụ đã hoàn thành.
 
 | Nhóm | Đã có | Còn thiếu |

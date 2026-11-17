@@ -1,5 +1,8 @@
 ## 2026-11-17 — Cấp Admin đầu tiên có kiểm soát
 
+Giao diện phác thảo: đã áp style gốc có scope, sidebar 5 nhóm/32 mục, bố cục danh mục/tổng quan/công thức và bố cục chờ backend. 37/37 tests, types/TS/lint/build đạt; Chrome fixture kiểm tra 32 route desktop và 5 drawer mobile, không lỗi JavaScript/tràn ngang. Chưa nghiệm thu pixel 100%, chưa UAT authenticated cloud. Các editor kho/sản xuất/kiểm kê vẫn còn khác cấu trúc phác thảo; phân hệ chờ backend khóa thao tác. Chi tiết docs/standalone/UI_REFERENCE.md. Không đổi migration hoặc nhập dữ liệu thật.
+
+
 Thêm công cụ tạo SQL cấp Admin theo email chủ sở hữu đã xác nhận; kiểm tra Auth duy nhất/đã xác minh, chỉ owner SQL Editor, giữ deny overrides, chặn khi đã có quản trị và ghi audit một lần. Không tạo endpoint tự nâng quyền. 35 tests + TypeScript/lint/build đạt; file SQL chưa chạy trên cloud. Xác minh Google đã bật, callback online không còn thiếu APP_URL.
 
 ## 2026-11-17 — Kiểm tra bản DEV online

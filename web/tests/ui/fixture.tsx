@@ -1,0 +1,28 @@
+// This offline visual fixture is bundled into ignored output/, never a Next route.
+import {createRoot} from 'react-dom/client';
+import {QueryClient,QueryClientProvider} from '@tanstack/react-query';
+import {AppShell} from '@/components/app-shell';
+import {CatalogPage} from '@/features/catalog/catalog-page';
+import {RecipeWorkspace} from '@/features/recipes/recipe-workspace';
+import {Dashboard} from '@/features/dashboard/dashboard';
+import {OperationEditor} from '@/features/operations/editor';
+import {StockCount} from '@/features/operations/stock-count';
+import {BlueprintPage} from '@/features/design/blueprint-page';
+import {modules} from '@/lib/navigation';
+import {referencePageForSlug} from '@/features/design/routes';
+const user='visual-fixture',client=new QueryClient({defaultOptions:{queries:{staleTime:Infinity,retry:false,refetchOnWindowFocus:false}}});
+const path=window.location.pathname.split('/').pop()??'',reference=referencePageForSlug(path==='app'?'':path);
+const role=new URLSearchParams(window.location.search).get('role');
+const access={user_id:user,enabled:true,permissions:role==='staff'?[{module:'materials',action:'view'}]:[...new Set(['dashboard',...modules.map(([, ,module])=>module)])].flatMap(module=>['view','create','edit','approve','manage'].map(action=>({module,action})))};
+const rows=Array.from({length:6},(_,index)=>({id:'material-'+index,version:1,code:'MAT-'+(index+1),name:'Nguyên liệu kiểm thử '+(index+1),category:'ingredient',purchase_unit_id:'kg',usage_unit_id:'kg',minimum_quantity:index===0?0:null,price_status:'needs_verification'}));
+client.setQueryData([user,'catalog','materials',0,''],{rows,total:rows.length});
+client.setQueryData([user,'catalog','materials','count'],rows.length);
+client.setQueryData([user,'catalog-reference','material_units'],[{id:'kg',code:'kg',name:'Kilogram'}]);
+for(const kind of ['product','rice','sauce','packaging'])client.setQueryData([user,'recipe-workspace',kind,0,''],{rows:[],total:0});
+const date=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh'}).format(new Date());
+client.setQueryData([user,'production','options',date],{warehouses:[],products:[]});
+client.setQueryData([user,'inventory','options',date],{warehouses:[],products:[]});
+client.setQueryData([user,'inventory','warehouses'],[]);
+client.setQueryData([user,'dashboard',date],{net_revenue_vnd:null,received_vnd:null,produced:null,production_hours:null,updated_at:new Date().toISOString(),completeness:'Chưa đủ dữ liệu'});
+const content=path==='materials'?<CatalogPage slug="materials" userId={user} canCreate canEdit canApprove/>:['recipes','batches','rice','packaging','cost'].includes(path)?<RecipeWorkspace slug={path} userId={user} canCreate canEdit canApprove canReadCost/>:path==='counts'?<StockCount userId={user} canPost/>:['inventory','production','stockmovements','entry-stock','entry-production'].includes(path)?<OperationEditor kind={path==='production'||path==='entry-production'?'production':'inventory'} userId={user} canPost/>:path==='app'?<Dashboard userId={user}/>:<BlueprintPage page={reference??'entry'}/>;
+createRoot(document.getElementById('root')!).render(<QueryClientProvider client={client}><AppShell access={access} userLabel="Tài khoản kiểm thử">{content}</AppShell></QueryClientProvider>);
