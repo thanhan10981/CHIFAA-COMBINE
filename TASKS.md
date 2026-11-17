@@ -2,6 +2,8 @@
 
 ## Hệ thống đơn vị dùng chung — checkpoint mới
 
+- ĐÃ DEPLOY DEV33: source da46387,2deployment/readback5file khớp;285tests/syntax90/build/bundle đạt. Import91bản ghi chỉ là mock, chưa ghi Google. Những dòng candidate phía dưới là checkpoint trước deploy.
+
 - Đọc2workbook gốc, giữ hash; áp dụng quy cách độc lập cơ sở giá, ngưỡng trống khác0; chuẩn hóa63vật tư, lô91bản ghi và63provenance. Không ghi/xóa nguồn hoặc đích Google.
 - Shared unitFactor/materialUnitState, admin inspect/save, import provenance transaction, bảo vệ đơn vị lịch sử và read-model invalidation:285tests/syntax90/build/bundle đạt. Candidate chờ rolloutverified. Xem docs/UNIT_SYSTEM.md.
 - Giá/quy cách chỉ còn các mã thật sự thiếu căn cứ ở cuối output/legacy-2026-11-17/KET_QUA_CHUAN_HOA.md. Tiếp tục các task độc lập; không hỏi lại các quy cách đã có chứng cứ.

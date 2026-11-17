@@ -1,5 +1,7 @@
 # Chuẩn bị dữ liệu cũ — 17/11/2026
 
+Mới nhất: đã tìm/đọc2file gốc và chuẩn hóa63vật tư theo hệ thống đơn vị dùng chung DEV33 (da46387,285tests/syntax90). Không còn chặn nhập vì ngưỡng trống. Lô05hiện91bản ghi,154effects gồm63unitprovenance;6công thức con đủ định lượng. Mã/giá thật ở output ignored, không Git. Chưa nhập/backup Google đích. Đọc docs/UNIT_SYSTEM.md và output/legacy-2026-11-17/KET_QUA_CHUAN_HOA.md; các số57/33/2 và trạng thái thiếu2file bên dưới là lịch sử đã được cập nhật.
+
 Trạng thái: **PREPARED_NOT_IMPORTED**. Người dùng yêu cầu nhập danh mục, công thức và dữ liệu liên quan vào DEV. Chưa ghi hoặc đọc workbook đích, chưa backup Google. DEV vẫn32; không đổi mã ứng dụng, deployment hay ACL.
 
 ## Checkpoint sau khi có bảng vật tư

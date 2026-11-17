@@ -1,5 +1,7 @@
 # Đơn vị và cơ sở giá dùng chung
 
+Đã triển khai DEV33 trên hai deployment hiện có, source da46387; readback5file khớp (manifest semantic), lịch sử@2 giữ nguyên.285tests/syntax90/build/bundle đạt. Chưa Google browser/UAT hoặc nhập dữ liệu thật. Các đoạn candidate bên dưới mô tả điều kiện release đã thực hiện bằng CLI, không thay kiểm thử vận hành.
+
 285kiểm thử local, syntax90/build/bundle parse đạt tại checkpoint triển khai. Mã cập nhật vẫn phải xác minh readback và gán cả hai deployment DEV trước khi gọi là live. Không thay file nguồn hoặc dữ liệu Google trong bước chuẩn bị.
 
 ## Cấu trúc

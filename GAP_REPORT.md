@@ -1,6 +1,6 @@
-# Current checkpoint: MASTER DEV32 - 2026-11-17
+# Current checkpoint: MASTER DEV33 - 2026-11-17
 
-273 local tests pass; both existing DEV deployments32 verified by exact5file readback. See docs/MASTER_RESULT_2026-11-17.md and REQUIREMENT_MATRIX.md for current evidence. The older audit below is historical, not a current missing-function list.
+285 local tests pass; both existing DEV deployments33 verified by exact5file readback (manifest semantic). Shared material units/price basis and Admin verification implemented; two original Excel workbooks read without changes. No live Google import/UAT. See docs/UNIT_SYSTEM.md and REQUIREMENT_MATRIX.md. Older audits below are historical.
 
 | Gap | Current evidence and remaining gate |
 | --- | --- |
@@ -8,8 +8,8 @@
 | G02 | Confirmed net/expense/ratio rules shared; full COGS/source accounting UAT pending |
 | G03 | Return approval/receipt/kiosk sale/undo implemented; valuation/batch/expiry pending |
 | G04 | Scoped scanner and source/schema workbench; direct-Sheets payroll checks; Google trigger lag/quota pending |
-| G05 | Original two workbooks unavailable; no guessed import/opening balances |
-| G06 | Standard mass/volume checks; normalized recipe DB/effectivity migration requires source/UOM approval |
+| G05 | Both original Excel files found/read; source IMPORTRANGE/#REF! and opening balances still need reconciliation; no guessed Google import |
+| G06 | Shared package/price-basis/standard units and Admin source review implemented; normalized recipe DB/effectivity and historical-unit migration remain |
 | G07 | Four entry commands, preview/diff and atomic single-voucher correction; durable drafts/group correction remain separate scope |
 | G08 | Daily allowance and overlap gates implemented; monthly/overnight policy still pending |
 | G09 | Shared total/good productivity and variance percentage; calendar/threshold/bonus and Google data gates remain |

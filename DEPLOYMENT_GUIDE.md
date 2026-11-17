@@ -1,5 +1,7 @@
 # Triển khai DEV và hoàn tác
 
+Mới nhất: haiDEV@33, source da46387,285tests/syntax90/build/bundle và readback5file đạt; lịch sử@2 không đổi. Xem docs/UNIT_SYSTEM.md. Không thêm header hoặc bảng mới cho unitsystem; blankmin/conversion và provenance trong_Workflows. Chưa import dữ liệu thật. Sau khi dùng giá có cơ sở khác đơn vị mua, không mở ghi với code32 trở xuống vì code cũ không hiểupricebasis; dừng ghi và đối soát hoặc ưu tiên forwardfix. Đoạn DEV32 dưới đây là checkpoint lịch sử.
+
 Hiện tại: hai deployment DEV đã ở **32**, source trước đợt khớp28/trước bản cuối khớp31; readback32 khớp đủ5file.273test local/syntax83/build đạt. Xem docs/MASTER_RESULT_2026-11-17.md. Google hai tài khoản/ACL/popup/trigger và Drive UAT chưa nghiệm thu.
 
 Chỉ DEV đã chỉ định; không public/production, không chạm2workbook gốc. Mã local khác HEADAppsScript và khác version /exec.

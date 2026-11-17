@@ -1,5 +1,7 @@
 ## 2026-11-17 — Hệ thống đơn vị và cơ sở giá
 
+Đã lên haiDEV@33, source da46387, readback5file khớp;285tests/syntax90. Không import dữ liệu hoặc thay file gốc/quyền Google. Bàn giao docs/UNIT_SYSTEM.md.
+
 Tách package, purchase unit, usage/standard unit, original price and price basis trong provenance journal. Dùng chung cho cost/demand/inventory/counts/reports, không giả định mật độ hoặc giá bao gói; min/conversion trống được giữ. Admin có màn hình xác minh và source; guard đổi đơn vị đã có lịch sử. Import ghi provenance cùng transaction. Đã đọc2Excel gốc hashkhôngđổi;285tests/syntax90/build đạt; candidate chuẩn bị rollout DEV, không import dữ liệu thật.
 
 ## 2026-11-17 — Chuẩn bị dữ liệu cũ, chưa ghi Google

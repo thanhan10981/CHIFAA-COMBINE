@@ -1,10 +1,10 @@
 # Báo cáo kiểm thử theo bộ yêu cầu
 
-Thời điểm UTC: 2026-11-16T19:52:51.319Z; ngày Việt Nam 2026-11-17. HEAD: 7f3bf88; working tree dirty, không gán kết quả cho riêng HEAD. Baseline Node/DOM/GAS-mock: **273 pass / 0 fail / 273 tests**. Log: output/master-m08-tests.txt (local, không commit dữ liệu nhạy cảm). Syntax83 và build đã chạy đạt cùng phiên.
+Thời điểm UTC: 2026-11-17T02:01:56.469Z; ngày Việt Nam 2026-11-17. HEAD: da46387; working tree dirty, không gán kết quả cho riêng HEAD. Baseline Node/DOM/GAS-mock: **285 pass / 0 fail / 285 tests**. Log: output/unit-system-tests.txt (local, không commit dữ liệu nhạy cảm). Syntax90 và build đã chạy đạt cùng phiên.
 
 Mock Sheets/Drive/OAuth đều là fixture RAM, không gọi Google. Local tests không chứng minh Gmail/ACL/trigger/quota hay số liệu thật. Chưa chạy Google/browser/UAT/10-user load/legacy import. Không có latency Google P50/P95; không bịa số. Mã IDs tài nguyên thực tế không đưa vào báo cáo này.
 
-Bộ acceptance gốc có 93 ca. Bảng dưới là **trạng thái toàn bộ tiêu chí của ca**, không đổi tên 273 test local thành 93 ca Google. LOCAL_REVIEW nghĩa đã có một phần unit/mock liên quan nhưng cần test exact/luồng đầy đủ; không phải PASS. BLOCKED_DECISION phải cập nhật sau khi policy đã triển khai và có test.
+Bộ acceptance gốc có 93 ca. Bảng dưới là **trạng thái toàn bộ tiêu chí của ca**, không đổi tên 285 test local thành 93 ca Google. LOCAL_REVIEW nghĩa đã có một phần unit/mock liên quan nhưng cần test exact/luồng đầy đủ; không phải PASS. BLOCKED_DECISION phải cập nhật sau khi policy đã triển khai và có test.
 
 | TEST_ID | Toàn tiêu chí | Tiêu chí nguồn |
 | --- | --- | --- |

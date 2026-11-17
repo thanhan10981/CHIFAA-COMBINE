@@ -1,4 +1,6 @@
-# HANDOFF hiện tại — 17/11/2026 — DEV32
+# HANDOFF hiện tại — 17/11/2026 — DEV33
+
+Đã triển khai unitsystem source da46387 trên cả2DEV@33; readback đủ5file khớp (manifest so semantic),285tests/syntax90/build/bundleparse đạt. Evidence output/chifaa-dev/unit-system-version33-readback.json và unit-system-final-deployments.txt; lịch sử@2 không đổi. Không chạy import/setup hoặc thay dữ liệu/ACL Google. Mở docs/UNIT_SYSTEM.md trước; checkpoint candidate/DEV32 phía dưới là lịch sử. Không rollback mở ghi bằng32 khi đã dùng pricebasis mới vì code cũ bỏ qua metadata giá.
 
 Checkpoint đơn vị: user chốt quy cách khác cơ sở giá và ngưỡng trống chưa thiết lập. Đã tìm và đọc2workbook Excel gốc tại Downloads, hashkhôngđổi; metadata/formula/source evidence riêng trong output. Candidate unitsystem285tests/syntax90/build/bundle đạt, chuẩn bị triển khai sau khi backup/readback. Lô91bản ghi/154effects/63provenance mới chỉ applymock, chưa ghi Google. Mở docs/UNIT_SYSTEM.md và output/legacy-2026-11-17/KET_QUA_CHUAN_HOA.md; không dùng lại lô57cũ. Mã ứng dụng vật tư cho blankconversion/minimum nhưng giữ nguyên header, provenance ở_Workflows. Google/visual/ACL UAT vẫn chờ.
 

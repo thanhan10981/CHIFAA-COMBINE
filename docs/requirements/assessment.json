@@ -20,12 +20,12 @@
   },
   "rows": {
     "REQ-CORE-01": ["PARTIAL", "Có nguồn sản xuất/doanh thu/kho; thiếu chuỗi giao hàng–thu hồi–kiosk và nghiệm thu thực tế."],
-    "REQ-CORE-02": ["BLOCKED", "Chưa có hai workbook legacy trong source; chưa inventory/mapping/đối chiếu dữ liệu gốc."],
+    "REQ-CORE-02": ["PARTIAL", "Đã tìm/đọc2Excel gốc, inventory/hash và đối chiếu catalog/recipe/demand;63vật tư có provenance và lô nhập local. IMPORTRANGE/#REF! và số đầu kỳ/source khác cần đối soát; chưa import Google.", ["scripts/inspect-legacy-workbook-units.mjs","scripts/legacy-material-preparation.mjs","docs/UNIT_SYSTEM.md"]],
     "REQ-CORE-03": ["PARTIAL", "Owner-execute, RBAC và Portal riêng có code/mock; chưa UAT Google/ACL và tải dưới 10 users."],
     "REQ-CORE-04": ["PARTIAL", "Có backend Sheets, giao diện phác thảo và Strategy; chưa đạt đầy đủ các luồng nghiệp vụ."],
     "REQ-CORE-05": ["PARTIAL", "Có recordId/version/updatedAt/source/date; thiếu createdAt và lifecycle nhất quán ở mọi bảng."],
-    "REQ-CAT-01": ["PARTIAL", "CRUD/quy đổi/min có; thiếu mã hiển thị/nhóm/quy cách/active và danh mục nguồn chính thức."],
-    "REQ-CAT-02": ["PARTIAL", "Có conversion theo vật tư; chưa lịch sử hiệu lực quy cách và UOM nhiều chiều."],
+    "REQ-CAT-01": ["PARTIAL", "CRUD, min trống chưa thiết lập, cấu trúc đơn vị/cơ sở giá/source đã có;63vật tư nguồn đã đối chiếu local. Mã hiển thị/nhóm/active và Google import/UAT còn chờ.", ["src/shared/schema.js","src/server/material-units.js","tests/material-units.test.mjs","docs/UNIT_SYSTEM.md"]],
+    "REQ-CAT-02": ["PARTIAL", "Shared conversion, package khácpricebasis, Adminprovenance/giápending đã có. Chưa migration đơn vị cho lịch sử đã phát sinh; Google UAT/hiệu lực lịch sử còn chờ.", ["src/shared/domain.js","src/server/material-units.js","tests/material-units.test.mjs","docs/UNIT_SYSTEM.md"]],
     "REQ-CAT-03": ["PARTIAL", "Có tên/giá/published; thiếu code/nhóm/đơn vị bán/active và đối chiếu 11 mã."],
     "REQ-CAT-04": ["PARTIAL", "Có danh mục điểm; chưa loại kiosk/location, chính sách và mã ĐB09 chính thức."],
     "REQ-CAT-05": ["PARTIAL", "Có snapshot lương/bộ phận trên ca; thiếu mã/STT/active/allowancePolicy và lịch sử master."],
@@ -34,7 +34,7 @@
     "REQ-REC-01": ["PARTIAL", "Recipe đa tầng có; lines còn JSON, chưa outputUom/waste/effectivity và migration chuẩn hóa."],
     "REQ-REC-02": ["PARTIAL", "Đệ quy/yield/cycle/cộng gộp có test; thiếu UOM/effectivity đầy đủ và Google source validation."],
     "REQ-REC-03": ["PARTIAL", "Có giá dự kiến và production snapshot; editor chưa đủ breakdown 1 mẻ/1 phần/UOM và version quy đổi."],
-    "REQ-REC-04": ["PARTIAL", "Giá thiếu/null được chặn; giá 0 vẫn coi hợp lệ không có cờ xác nhận — cần phân loại nguồn."],
+    "REQ-REC-04": ["PARTIAL", "Thiếu/mâu thuẫn pricebasis trảnull;0 nhập rõ giữ0. Metadata phân loại source/verification và receiptprice lịch sử có test; giá vốn/source thật chưa nghiệm thu.", ["src/shared/domain.js","src/server/material-units.js","tests/material-units.test.mjs"]],
     "REQ-REC-05": ["PARTIAL", "Có thuật toán yield; chưa fixture exact 114g ×100 /2,5 trong acceptance suite, hệ số nguồn chưa xác nhận."],
     "REQ-PROD-01": ["PARTIAL", "planned/date có; chưa tách ngày lập/ngày giao và plan snapshot riêng."],
     "REQ-PROD-02": ["PARTIAL", "Có produced/extra/rejected; chưa tách rework/waste/discard và policy mẫu số D08."],
@@ -95,7 +95,7 @@
     "REQ-UX-03": ["PARTIAL", "Đã chỉnh nhiều nhãn; một số CONFIG/RPC/chi tiết JSON còn kỹ thuật, cần thân thiện hóa có mã hỗ trợ."],
     "REQ-UX-04": ["PARTIAL","SPA/lazy/index/cache/snapshot/read queue/pagination/scanner theo lát có; benchmark local100/1000/5000 và API mới cache theo quyền. Chưa Google P50/P95/visual/draft UX.",["src/client/rpc.js","src/server/read-model.js","src/server/scanner.js","scripts/benchmark-master.mjs","tests/master-cache.test.mjs"]],
     "REQ-OPS-01": ["PARTIAL","Có UI kiểm tra nguồn/schema, backup manifest nhất quán và chặn restore bản bị đổi; lock không giữ khi đọc/copy. Chưa Drive restore drill/lịch thực tế và retention.",["src/server/inspection.js","src/server/operations.js","tests/inspection.test.mjs"]],
-    "REQ-OPS-02": ["PARTIAL","Hai DEV deployment32 đã xác nhận CLI, readback5file khớp và backup nguồn28/31; /exec OAuth/hai Gmail/ACL thật còn chờ. Source7f3bf88,273local tests không thay Google UAT.",["DEPLOYMENT_GUIDE.md","docs/MASTER_RESULT_2026-11-17.md"]],
+    "REQ-OPS-02": ["PARTIAL","Hai DEV deployment33 đã xác nhận CLI, readback5file khớp và backup nguồn32; /exec OAuth/hai Gmail/ACL thật còn chờ. Source da46387,285local tests không thay Google UAT.",["DEPLOYMENT_GUIDE.md","docs/MASTER_RESULT_2026-11-17.md"]],
     "REQ-OPS-03": ["PARTIAL", "Có handoff/tasks/changelog; bổ sung matrix/gaps/decisions/test report và checkpoint commit theo bộ mới." ]
   }
 }

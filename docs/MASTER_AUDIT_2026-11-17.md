@@ -1,5 +1,7 @@
 # Master audit và lộ trình phiên dài
 
+Mới nhất: unitsystem DEV33 verified2deployment/5file,285tests/syntax90, source da46387. Đã đọc2Excel gốc và giữ hash; sharedunits/source/pricebasis/Adminverification triển khai, chưa import Google hoặc UAT. Các số32/273trong các checkpoint dưới là lịch sử; xem docs/UNIT_SYSTEM.md và MASTER_RESULT_2026-11-17.md.
+
 Yêu cầu đầy đủ lưu MASTER_REQUEST_2026-11-17.md. Inventory/hashes/headings output/master-repository-inventory.json; repository có thay đổi tài liệu/generator sẵn, không reset/gộp ngoài task. Baseline224→273tests. DEV32 đã xác minh5file và hai deployment; các số cũ là lịch sử. Bàn giao chi tiết: MASTER_RESULT_2026-11-17.md.
 
 | Task | Ưu tiên/phụ thuộc | Phạm vi tự động hóa | Trạng thái |

@@ -1,4 +1,6 @@
-# Bàn giao master CHIFAA COMBINE — DEV32
+# Bàn giao master CHIFAA COMBINE — DEV33
+
+Cập nhật đơn vị: đã lên haiDEV@33, source da46387;285tests/syntax90/build/bundle/readback5file đạt. Đã đọc lại2Excel gốc, hashkhôngđổi. Shared unitFactor/materialUnitState tách quy cách với cơ sở giá, min trống chưa thiết lập, Admin có bảng source/xác minh.63vật tư và lô91bản ghi/154effects đã chuẩn bị, chỉ applymock; chưa nhập Google. Bàn giao mới nhất [UNIT_SYSTEM.md](UNIT_SYSTEM.md); báo cáo riêng output/legacy-2026-11-17/KET_QUA_CHUAN_HOA.md có các mã thực sự chưa đủ căn cứ ở cuối. Các đoạn32 bên dưới là checkpoint lịch sử, không phải trạng thái deploy mới nhất.
 
 Hai deployment DEV hiện có đã ở **bản 32**. Source đầu đợt khớp bản28, trước bản cuối khớp bản31; bản32 được đọc lại và đối chiếu đủ5file. Không tạo deployment công khai mới, không thay scope/ACL/dữ liệu nghiệp vụ/hai workbook gốc. Chưa nghiệm thu vận hành chính thức.
 
