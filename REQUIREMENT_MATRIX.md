@@ -1,5 +1,7 @@
 # Đối chiếu yêu cầu CHIFAA COMBINE
 
+Checkpoint027: KH-11 phần catalogue công thức IMPLEMENTED_LOCAL / CLOUD_UAT_PENDING. KH-01/03/10 phần nền công thức và nguồn là PARTIAL: năm route, editor và phiên bản, công thức con/bao bì, cost xác minh theo ngày, nguồn riêng tư và SQL21 nháp đã kiểm thử; báo cáo kỳ/hao hụt thực tế chưa hoàn thành. Bằng chứng và giới hạn: docs/standalone/RECIPE_CATALOG.md, TEST_RESULTS.md. Không đánh dấu toàn bộ yêu cầu khách hàng đã xong hoặc dữ liệu đã nhập cloud.
+
 RPC-v2:290localtests/syntax91. Người dùng xác nhận chữ ký còn lỗi trên35 nên nghiệm thu AUTH/import vẫn chưa đạt. Ký ASCII + UTF-8 explicit và chẩn đoán checksum chỉ hỗ trợ phân biệt nguyên nhân, không thay xác thực. Chưa nhập dữ liệu Google.
 
 Checkpoint EXCEL-ASSET:288localtests/syntax91. Sửa lấy raw ExcelJS qua HtmlTemplate thay vì phân tích JavaScript như HTML; có kiểm thử endpoint→hash→browser tạo mẫu. Trạng thái nghiệm thu Google chưa đổi, cần người dùng tải mẫu sau rollout.

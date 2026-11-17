@@ -18,7 +18,7 @@ test('SQL Editor package installs atomically and rejects a second run without ch
   const sql=buildDevBootstrap(migrations);
   await db.exec(sql);
   const state=await db.query<{tablename:string;rowsecurity:boolean}>("select tablename,rowsecurity from pg_tables where schemaname='public' order by tablename");
-  assert.equal(state.rows.length,83);
+  assert.equal(state.rows.length,84);
   assert.ok(state.rows.every(row=>row.rowsecurity));
   await assert.rejects(()=>db.exec(sql),/CHIFAA_DEV_NOT_EMPTY/);
   await db.exec('rollback');

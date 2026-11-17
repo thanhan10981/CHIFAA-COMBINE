@@ -1,3 +1,11 @@
+## 2026-11-17 — Danh mục công thức theo ảnh chuẩn và nhập sheet nguồn
+
+Hoàn thiện năm mục công thức món, nhân/sốt, cơm chín, bao bì và tổng giá vốn: tìm/lọc/ngày xem, số liệu thật, chi tiết trực tiếp, mở công thức con, tạo/sao chép/sửa thành phiên bản mới, lịch sử, công bố/liên kết món bán và đơn vị riêng mỗi dòng. 027 giữ dòng nguồn chưa rõ, chặn BOM chính thức khi thiếu định lượng/quy đổi và bảo vệ nguồn/giá theo quyền. Chuẩn bị SQL riêng cho21 công thức nháp từ sheet được gửi, giữ dữ liệu gốc/cost tham khảo, không tạo bản sao thử nghiệm trong ảnh, không tự đổi giá danh mục hoặc ghi kho. Đã đối chiếu nguyên tử/replay nguồn cục bộ và kiểm tra responsive5 mục ×5 kích thước. KH-01/03/10/11; chi tiết docs/standalone/RECIPE_CATALOG.md. Chưa chạy SQL cloud; báo cáo nhu cầu/hao hụt theo kỳ vẫn là hạng mục riêng.
+
+## 2026-11-17 — Lưu yêu cầu khách hàng và bắt buộc đọc trước khi code
+
+Tổng hợp chat và ba ảnh vào `docs/standalone/CUSTOMER_REQUIREMENTS_2026-11-17.md` với mã KH-01..KH-10, tiêu chí nghiệm thu và ưu tiên nhu cầu nguyên liệu/đối chiếu kho. Ghi rõ phụ cấp ngày/ca bổ sung phụ cấp tháng; khác biệt doanh thu/thực thu và quy tắc hỗ trợ thu hồi cần đối chiếu quyết định cũ. Thêm AGENTS.md ở gốc và dẫn chiếu trong web/AGENTS.md để mỗi task phải đọc, chọn yêu cầu liên quan và kiểm chứng. Chỉ cập nhật tài liệu, không thay code nghiệp vụ, SQL hoặc dữ liệu cloud.
+
 ## 2026-11-17 — Phụ cấp riêng từng tháng, bỏ phụ cấp mặc định
 
 Theo xác nhận chủ sở hữu: lương giờ không chứa phụ cấp; phụ cấp nhập tổng tiền riêng cho nhân viên/tháng, không kế thừa tháng trước. 026 thêm lịch sử điều chỉnh bất biến, quyền payroll riêng, chống gửi trùng/ghi đè và khóa tháng đã chốt. Bỏ trường/cột phụ cấp mặc định, ngừng sao chép mức cũ vào ca mới; dữ liệu ca/lương cũ giữ nguyên. Thu gọn thanh tìm/lọc/ngày xem trên bốn danh mục, tránh ép chữ trong bảng nhân viên. File cập nhật riêng CHIFAA_PATCH_PHU_CAP_THANG_DEV.sql, không nhập lại danh mục, chưa áp cloud.

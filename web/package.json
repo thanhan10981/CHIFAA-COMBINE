@@ -19,6 +19,7 @@
     "test:design": "node scripts/design-check.mjs",
     "test:responsive": "node scripts/design-check.mjs --responsive",
     "test:commercial": "node scripts/design-check.mjs --commercial",
+    "test:recipes": "node scripts/design-check.mjs --recipes",
     "db:kiosk-update": "tsx scripts/package-kiosk-update.ts"
   },
   "engines": {

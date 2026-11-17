@@ -38,6 +38,16 @@ client.setQueryData([user,'orders',0],[]);
 client.setQueryData([user,'catalog-reference','material_units'],[{id:'kg',code:'kg',name:'Kilogram'}]);
 for(const kind of ['product','rice','sauce','packaging'])client.setQueryData([user,'recipe-workspace',kind,0,''],{rows:[],total:0});
 const date=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh'}).format(new Date());
+// Synthetic recipe catalogue: exercise the actual components without exposing business source.
+for(const kind of ['product','rice','sauce','packaging']){
+ const id='recipe-'+kind,vid='version-'+kind,cost={complete:false,total_vnd:null,lines:[]};
+ const row={id,code:'SYN-'+kind,name:'Công thức kiểm thử '+kind,kind,version:'1',version_id:vid,revision:1,status:'draft',effective_from:date,output_quantity:kind==='rice'?'2000':'1',output_unit:kind==='rice'?'g':'phần',review_issue:'',cost};
+ client.setQueryData([user,'recipe-catalog',kind,date,'',0],{rows:[row],total:1,stats:{products:1,batches:3,materials:6,unpriced:1}});
+ client.setQueryData([user,'recipe-catalog','versions',id],[{id:vid,version:'1',revision:1,effective_from:date,status:'draft',output_quantity:row.output_quantity}]);
+ client.setQueryData([user,'recipe-detail',vid,date],{version:{id:vid,revision:1,effective_from:date,status:'draft',output_quantity:row.output_quantity,output_unit_id:kind==='rice'?'g':'portion',output_unit:row.output_unit,review_issue:''},cost,source:{reference:'1234',raw:[['Synthetic source','not official cost']],product:'SYN-P',productQuantity:'1'},products:[],lines:[{id:'line-'+kind,type:'material',target_id:'material-0',recipe_id:null,code:'SYN-M',name:'Nguyên liệu kiểm thử',quantity:'125',unit:'g',unit_id:'g',per_output:'125',converted:'.125',stock_unit:'kg',unit_cost_vnd:'10',line_cost_vnd:'1250',issue:''},{id:'missing-'+kind,type:'unresolved',name:'Thành phần nguồn chưa xác minh',quantity:'1',unit:'phần',issue:'Cần xác minh đơn vị và định lượng'}]});
+}
+client.setQueryData([user,'recipe-form-options'],{materials:[{id:'material-0',code:'SYN-M',name:'Nguyên liệu kiểm thử',usage_unit_id:'kg'}],units:[{id:'kg',code:'kg',name:'Kilôgam'},{id:'g',code:'g',name:'Gam'},{id:'portion',code:'phần',name:'Phần'}],children:[{id:'version-sauce',recipe_id:'recipe-sauce',revision:1,status:'draft',output_unit_id:'portion',recipes:{code:'SYN-S',name:'Sốt kiểm thử'}}]});
+client.setQueryData([user,'recipe-catalog','products'],[{id:'product-fixture',code:'SYN-P',name:'Món kiểm thử'}]);
 const nextMonth=new Date(Date.UTC(Number(date.slice(0,4)),Number(date.slice(5,7)),1)).toISOString().slice(0,7);
 client.setQueryData([user,'monthly-allowance','employee-fixture',date.slice(0,7)],{current:{id:'monthly-fixture',amount_vnd:'300000'},history:[{id:'monthly-fixture',revision:'1',amount_vnd:'300000',month:date.slice(0,7)+'-01',note:'Phụ cấp tháng kiểm thử',created_at:new Date().toISOString()}]});
 client.setQueryData([user,'monthly-allowance','employee-fixture',nextMonth],{current:null,history:[]});
