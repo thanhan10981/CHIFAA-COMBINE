@@ -46,13 +46,13 @@ test('discount matrix uses explicit false as zero, appends dates, requires compl
  await assert.rejects(()=>db.exec("update store_discount_policies set common_rate=.9"),/TERMS_IMMUTABLE/);
 });
 test('payroll data and raw source stay hidden without payroll rights; unknown departments block posting',async()=>{
- await terms('pay',ids.employee,{date:'2026-11-17',amount:'25000',allowance:'0',evidence:'Owner wage list'});
+ await terms('pay',ids.employee,{date:'2026-11-17',amount:'25000',evidence:'Owner wage list'});
  await db.query("insert into user_permissions values($1,'employees','view',true),($1,'stores','view',true),($1,'products','view',true)",[identities.accountant]);
  const catalogue=await rpc('commercial_catalog',['employees','2026-11-18','','',0,25],identities.accountant);assert.equal((catalogue.rows as Record<string,unknown>[])[0].hourly_vnd,null);
  const stores=await rpc('commercial_catalog',['stores','2026-11-18','','',0,25],identities.accountant);assert.equal((stores.rows as Record<string,unknown>[])[0].common_rate,null);assert.equal((stores.rows as Record<string,unknown>[])[0].policy_id,null);
  await assert.rejects(()=>rpc('commercial_history',['pay',ids.employee],identities.accountant),/FORBIDDEN/);
  await assert.rejects(()=>asUser(db,identities.accountant,()=>db.exec('select * from private.catalog_sources')),/permission denied/);
- await assert.rejects(()=>terms('pay',ids.employee,{date:'2027-01-01',amount:'1',allowance:'0',evidence:'Denied'},randomUUID(),undefined,identities.accountant),/FORBIDDEN/);
+ await assert.rejects(()=>terms('pay',ids.employee,{date:'2027-01-01',amount:'1',evidence:'Denied'},randomUUID(),undefined,identities.accountant),/FORBIDDEN/);
  await assert.rejects(()=>rpc('post_attendance',[ids.employee,'2026-11-18T01:00:00Z','2026-11-18T05:00:00Z',0,randomUUID()]),/not-null constraint|DEPARTMENT_REQUIRED/);
  assert.equal((await db.query('select * from attendance_shifts')).rows.length,0);
 });

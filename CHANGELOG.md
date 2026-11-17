@@ -1,3 +1,7 @@
+## 2026-11-17 — Phụ cấp riêng từng tháng, bỏ phụ cấp mặc định
+
+Theo xác nhận chủ sở hữu: lương giờ không chứa phụ cấp; phụ cấp nhập tổng tiền riêng cho nhân viên/tháng, không kế thừa tháng trước. 026 thêm lịch sử điều chỉnh bất biến, quyền payroll riêng, chống gửi trùng/ghi đè và khóa tháng đã chốt. Bỏ trường/cột phụ cấp mặc định, ngừng sao chép mức cũ vào ca mới; dữ liệu ca/lương cũ giữ nguyên. Thu gọn thanh tìm/lọc/ngày xem trên bốn danh mục, tránh ép chữ trong bảng nhân viên. File cập nhật riêng CHIFAA_PATCH_PHU_CAP_THANG_DEV.sql, không nhập lại danh mục, chưa áp cloud.
+
 ## 2026-11-17 — Bốn danh mục kinh doanh và nhập nguồn
 
 Điểm bán, món bán, nhân viên và CK có UI/RPC thật: thêm/sửa/ngừng dùng, tìm/lọc/phân trang/ngày xem, giá chung/giá riêng, lương/phụ cấp, liên kết công thức và ma trận CK theo món/ngày. Thêm025 với giá chung và chính sách CK, lịch sử/bằng chứng, khóa version/idempotency, RLS và quyền duyệt. Portal dùng giá/CK cùng nguồn và giữ snapshot đơn cũ. Cost nguồn chỉ tham khảo; thiếu bộ phận/phụ cấp không tự điền giả. Chuẩn bị SQL riêng cho11 điểm bán/11 món/5 nhân viên/121 ô CK;44 dòng trống tên giữ nguồn riêng. Không nhập cloud hoặc ghi phiếu kinh doanh; không sửa63 vật tư/workbook. Chi tiết docs/standalone/COMMERCIAL_CATALOGS.md.

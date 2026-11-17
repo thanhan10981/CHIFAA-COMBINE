@@ -10,12 +10,21 @@ export async function checkCommercial(page,base,out,report){
   for(const kind of Object.keys(names)){
    await page.goto(base+'/app/'+kind);await page.getByRole('heading',{name:names[kind],exact:true}).first().waitFor();await page.locator('tbody tr').first().waitFor();await page.evaluate(()=>document.fonts.ready);await fits(kind+' '+width);report.pages.push({kind,width,overflow:false});
    await page.screenshot({path:path.join(out,kind+'-'+width+'.png')});
+   if(width>=1280){const header=await page.locator('.commercial-workspace .card-head').boundingBox();if(header.height>110)throw new Error('Commercial filters unnecessarily wrap');}
+   if(kind==='employees'){
+    if(await page.getByText('Phụ cấp mặc định',{exact:false}).count())throw new Error('Default allowance still shown');
+    await page.getByRole('button',{name:'Phụ cấp tháng',exact:true}).click();await page.getByRole('button',{name:'Lưu phụ cấp tháng',exact:true}).waitFor();await dialog('Monthly allowance '+width);
+    if(await page.getByLabel('Tổng phụ cấp tháng (đ) *',{exact:true}).inputValue()!=='300.000')throw new Error('Monthly amount format missing');
+    const today=new Date();const next=new Date(Date.UTC(today.getFullYear(),today.getMonth()+1,1)).toISOString().slice(0,7);await page.getByLabel('Tháng áp dụng',{exact:true}).fill(next);
+    await page.getByText('Chưa ghi nhận phụ cấp cho tháng này.',{exact:true}).waitFor();if(await page.getByLabel('Tổng phụ cấp tháng (đ) *',{exact:true}).inputValue()!=='')throw new Error('Allowance carried to another month');
+    await page.screenshot({path:path.join(out,'monthly-allowance-'+width+'.png')});await close();
+   }
    if(kind!=='discounts'){
     await page.getByRole('button',{name:'Sửa',exact:true}).first().click();await dialog(kind+' editor');
     if(kind==='employees'&&await page.getByLabel('Bộ phận',{exact:true}).inputValue()!=='')throw new Error('Unknown department was invented');
     await close();
    }
-   const captions=kind==='stores'?['Giá riêng','Chiết khấu']:kind==='products'?['Giá bán','Công thức']:kind==='employees'?['Lương & phụ cấp']:['Chi tiết / lịch sử'];
+   const captions=kind==='stores'?['Giá riêng','Chiết khấu']:kind==='products'?['Giá bán','Công thức']:kind==='employees'?['Lương giờ']:['Chi tiết / lịch sử'];
    for(const caption of captions){
     await page.getByRole('button',{name:caption,exact:true}).first().click();await page.getByText('Nguồn kiểm thử tổng hợp',{exact:true}).waitFor();await dialog(kind+' history');
     await page.getByRole('button',{name:'Thêm phiên bản',exact:true}).click();await page.getByRole('button',{name:'Lưu phiên bản mới',exact:true}).waitFor();await dialog(kind+' '+caption);
@@ -31,7 +40,7 @@ export async function checkCommercial(page,base,out,report){
   }
  }
  await page.goto(base+'/app/employees?role=staff');await page.locator('tbody tr').waitFor();
- if(await page.getByRole('button',{name:'Lương & phụ cấp',exact:true}).count()||await page.getByRole('button',{name:'Sửa',exact:true}).count()||await page.getByText('25.000 đ',{exact:true}).count())throw new Error('Unauthorized payroll/action rendered');
+ if(await page.getByRole('button',{name:'Lương giờ',exact:true}).count()||await page.getByRole('button',{name:'Sửa',exact:true}).count()||await page.getByText('25.000 đ',{exact:true}).count())throw new Error('Unauthorized payroll/action rendered');
  const requests=[];
  await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/save_commercial_terms',async route=>{requests.push(route.request().postDataJSON());await route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({code:'NETWORK',message:'Synthetic uncertain response'})});});
  await page.goto(base+'/app/products');await page.getByRole('button',{name:'Giá bán',exact:true}).click();await page.getByRole('button',{name:'Thêm phiên bản',exact:true}).click();await page.getByLabel('Nguồn / lý do *',{exact:true}).fill('Synthetic new quote');await page.getByRole('button',{name:'Lưu phiên bản mới',exact:true}).click();await page.getByRole('button',{name:'Kiểm tra lại lần lưu',exact:true}).waitFor();await page.getByRole('button',{name:'Kiểm tra lại lần lưu',exact:true}).click();await page.waitForFunction(()=>document.querySelectorAll('.chifaa-toast').length>0);
