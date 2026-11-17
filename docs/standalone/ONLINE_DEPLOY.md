@@ -6,7 +6,7 @@ Người dùng đã yêu cầu triển khai DEV bằng URL online. Không cần 
 
 - Project Supabase DEV do người dùng vừa tạo: dịch vụ Auth trả HTTP 200 bằng cấu hình hiện có. Không in key vào log.
 - REST `materials` trả PGRST205: chưa có schema CHIFAA tại thời điểm kiểm tra, không coi là đã kết nối nghiệp vụ.
-- Repository GitHub có origin cấu hình. Mã Next.js mới cần được đưa lên nhánh DEV trước khi import Vercel.
+- Đã push mã Next.js và cấu hình triển khai lên nhánh `chifaa-next-dev` của `thanhan10981/CHIFAA-COMBINE` (commit abcdf91). Nhánh main remote giữ nguyên; import đúng nhánh DEV này vào Vercel.
 - Chưa có phiên CLI Vercel/Supabase trong môi trường công cụ; trình duyệt không có phiên có thể điều khiển. Người dùng thực hiện các bước đăng nhập trên Dashboard.
 
 ## 1. Tạo database CHIFAA trên Supabase DEV mới
