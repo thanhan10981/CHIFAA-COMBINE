@@ -2,6 +2,8 @@
 
 ## Nhập dữ liệu cũ — đang chờ nguồn/kết nối
 
+- Mới nhất: nhận63vật tư, nối37/37mã công thức; lô57bản ghi rõ ràng và giữ riêng30vật tư/16nhóm công thức chờ.279tests/syntax87 đạt. `scripts/legacy-material-preparation.mjs` không gọi Google; chưa ghi dữ liệu thật. Các dòng bên dưới là checkpoint trước khi nhận danh mục.
+
 - Chuẩn bị22bản ghi danh mục và staging công thức có dòng nguồn: đạt local,276tests/syntax85. Công cụ `scripts/legacy-catalog-preparation.mjs` không gọi Google.
 - Đọc/backup/preview/apply trên DEV: CHƯA THỰC HIỆN, không có browser hoặc Google Drive đã kết nối. Chưa xác định dữ liệu đích trùng ID/tên.
 - Nhận danh mục vật tư, xác minh unit sốt phô mai/hiệu suất cơm/giá thu hồi và sai khác cost: còn chờ. Chi tiết docs/LEGACY_IMPORT_2026-11-17.md. Không thay deployment32.

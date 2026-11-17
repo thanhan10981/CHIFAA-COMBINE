@@ -1,5 +1,7 @@
 # Kết quả kiểm thử master session
 
+Checkpoint chuẩn bị vật tư:279/279local tests, syntax87. Thử lô57bản ghi thực tế bằng GAS mock: preview0lỗi,11stores/11dishes/33materials/2recipes, lặp lại bị chặn57ID,0stockrows. Không có Google reads/writes; DEV32 vẫn dùng source release trước. Log output/legacy-material-tests.txt; evidence output/legacy-2026-11-17/materials-verification.json. Test mới: ID tiếng Việt không gộp, nguồn #N/A và giá thiếu khác0, blankthreshold không tự gán0, chỉ nhập batch đầy đủ, đơn vị chú thích không tự coi làkg.
+
 ## Hiện tại — DEV32
 
 273/273 local tests,0fail; syntax83/build/bundle parse đạt. Readback32 khớp5file; CLI xác nhận haiDEV@32, lịch sử@2 giữ nguyên. Chỉ xác minh mã triển khai, không xác minh vận hành Google. Kết nối browser thất bại `No browser is available`; hai Gmail/ACL/popup/Drive/trigger/concurrency chưa chạy. Case mới và evidence: docs/MASTER_RESULT_2026-11-17.md; các checkpoint bên dưới giữ kết quả tại thời điểm chạy.

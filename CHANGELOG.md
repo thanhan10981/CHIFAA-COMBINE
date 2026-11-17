@@ -1,5 +1,7 @@
 ## 2026-11-17 — Chuẩn bị dữ liệu cũ, chưa ghi Google
 
+Nhận thêm bảng vật tư: parser và mapping giữ mã Unicode phân biệt, min theo đơn vị mua đổi sang đơn vị dùng, giá trống khác0, ô lỗi tồn chỉ lưu nguồn. Chuẩn bị lô gộp57bản ghi;279tests/syntax87;30vật tư/16nhóm công thức chưa đủ thông tin giữ staging. Chưa đọc/ghi Google hoặc đổi DEV32.
+
 Thêm công cụ chuẩn hóa TSV công thức/catalog JSON, ánh xạ mã importer và giữ riêng dữ liệu thiếu/mâu thuẫn. Không tự điền giá0, gộp mã vật tư hoặc sinh giao dịch lịch sử.276tests/syntax85 đạt; lô22bản ghi đã qua preview/apply mock, chưa đọc/ghi đích thật. Dữ liệu nguồn riêng nằm trong output ignored. DEV32 không đổi.
 
 ## 2026-11-17 — Master DEV32,273kiểm thử local
