@@ -1,5 +1,11 @@
 # Theo dõi công việc
 
+## Hệ thống đơn vị dùng chung — checkpoint mới
+
+- Đọc2workbook gốc, giữ hash; áp dụng quy cách độc lập cơ sở giá, ngưỡng trống khác0; chuẩn hóa63vật tư, lô91bản ghi và63provenance. Không ghi/xóa nguồn hoặc đích Google.
+- Shared unitFactor/materialUnitState, admin inspect/save, import provenance transaction, bảo vệ đơn vị lịch sử và read-model invalidation:285tests/syntax90/build/bundle đạt. Candidate chờ rolloutverified. Xem docs/UNIT_SYSTEM.md.
+- Giá/quy cách chỉ còn các mã thật sự thiếu căn cứ ở cuối output/legacy-2026-11-17/KET_QUA_CHUAN_HOA.md. Tiếp tục các task độc lập; không hỏi lại các quy cách đã có chứng cứ.
+
 ## Nhập dữ liệu cũ — đang chờ nguồn/kết nối
 
 - Mới nhất: nhận63vật tư, nối37/37mã công thức; lô57bản ghi rõ ràng và giữ riêng30vật tư/16nhóm công thức chờ.279tests/syntax87 đạt. `scripts/legacy-material-preparation.mjs` không gọi Google; chưa ghi dữ liệu thật. Các dòng bên dưới là checkpoint trước khi nhận danh mục.

@@ -1,5 +1,7 @@
 function maintenance_(user,args){
   requireAdmin_(user);authConfig_();
+  if(args.operation==='inspectMaterialUnits')return inspectMaterialUnits_(args);
+  if(args.operation==='saveMaterialUnits')return locked_(()=>saveMaterialUnits_(authenticate_(args.token),args));
   if(args.operation==='verifyBackup')return verifyBackup_(args.backupId);
   if(args.operation==='inspectSources')return inspectSources_(args);
   if(args.operation==='inspectSchema')return inspectSchema_();

@@ -1,5 +1,7 @@
 # Quyết định nghiệp vụ và bảo mật
 
+Xác nhận thêm17/11/2026: quy cách đóng gói độc lập cơ sở giá; tự áp dụng quy cách có chứng cứ, không suy giá/kg thành giá/chai/can, không giả định mật độ dầu. Giá mâu thuẫn phải Cần xác minh đơn giá/null; tồn tối thiểu trống là Chưa thiết lập,0nhập rõ mới là0. Giữ nguồn, có Admin cập nhật; không ghi đè hai workbook gốc. Thiết kế và kiểm thử: docs/UNIT_SYSTEM.md. Đây không là xác nhận cơ sở giá từng vật tư.
+
 Yêu cầu chat mới nhất ưu tiên hơn bản tổng hợp. Xác nhận ngày 16/11/2026. CONFIRMED nghĩa đã chốt quy tắc, **không tự suy ra đã lập trình/triển khai/nghiệm thu**.
 
 | ID | Trạng thái | Quy tắc / việc còn chờ |

@@ -4,7 +4,7 @@ const header='STT\tMã SP\tTên vật tư\tĐVT\tĐơn giá (đ/ĐVT)\tNhóm\tT�
 const row=(code,{minimum='1',price='16.000',unit='Kg',conversion='1.000'}={})=>['1',code,'Source name',unit,price,'Source group',minimum,'#N/A','#N/A','#N/A',conversion].join('\t');
 test('Material source errors stay distinct from opening inventory and blank thresholds stay unknown',()=>{
   const text=header+'\n'+row('A',{minimum:'',price:''})+'\n'+row('B',{price:'0'}),parsed=parseLegacyMaterials(text);assert.equal(parsed[0].minimum,null);assert.equal(parsed[0].purchasePrice,null);assert.equal(parsed[0].sourceBalance,'#N/A');assert.equal(parsed[1].purchasePrice,0);
-  const p=prepareLegacyMaterials(text,{});assert.equal(p.materialsReady,1);assert.equal(p.materialsPending.length,1);assert.equal(p.bundle.records[0].record.minimum,1000);assert.equal(p.bundle.records[0].record.purchasePrice,0);
+  const p=prepareLegacyMaterials(text,{});assert.equal(p.materialsReady,2);assert.equal(p.materialsPending.length,0);assert.equal(p.bundle.records[0].record.minimum,'');assert.equal(p.bundle.records[0].record.purchasePrice,'');assert.equal(p.bundle.records[1].record.minimum,1000);assert.equal(p.bundle.records[1].record.purchasePrice,0);
 });
 test('Vietnamese material codes preserve identity; annotation units cannot silently use kilogram price',()=>{
   assert.notEqual(legacyMaterialId('ĐV'),legacyMaterialId('DV'));assert.match(legacyMaterialId('ĐUA'),/^[\w-]+$/);

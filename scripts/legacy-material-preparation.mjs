@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises';import path from 'node:path';import crypto from 'node:crypto';import {fileURLToPath} from 'node:url';
-import {legacyNumber} from './legacy-catalog-preparation.mjs';import {cleanRecord} from '../src/shared/domain.js';
+import {legacyNumber} from './legacy-catalog-preparation.mjs';import {cleanRecord,materialUnitState,unitFactor} from '../src/shared/domain.js';
 
 // Escape rather than transliterate identifiers: Vietnamese codes must remain distinct.
 export const legacyMaterialId=code=>'legacy-materials-'+Array.from(code.normalize('NFC')).map(c=>/[A-Za-z0-9-]/.test(c)?c:'_u'+c.codePointAt(0).toString(16)+'_').join('');
@@ -13,20 +13,23 @@ export function parseLegacyMaterials(text){
     return {sourceLine:index+2,code:c[1],name:c[2],purchaseUnit:c[3],purchasePrice:legacyNumber(c[4]),group:c[5],minimum:legacyNumber(c[6]),sourceBalance:c[7],sourceInventoryValue:c[8],sourceWarning:c[9],sourceConversion:legacyNumber(c[10]),sourceCells:c};
   });
 }
-export function prepareLegacyMaterials(text,recipeStaging,{unitRules={}}={}){
+export function prepareLegacyMaterials(text,recipeStaging,{unitRules={},evidence={}}={}){
   const source=parseLegacyMaterials(text),ready=[],pending=[],mapping=[],mapped=new Map(),priceDifferences=[];
   for(const row of source){
     const recordId=legacyMaterialId(row.code),issues=[];if(recordId.length>100)throw Error('Material ID too long');
-    let units=unitRules[row.code];
+    const rule=unitRules[row.code];let units=rule;
     if(!units){
       if(key(row.purchaseUnit)==='kg'&&row.sourceConversion===1000)units={purchaseUnit:'kg',unit:'g',conversion:1000};
       else if(['cái','quả'].includes(key(row.purchaseUnit))&&[null,1].includes(row.sourceConversion))units={purchaseUnit:key(row.purchaseUnit),unit:key(row.purchaseUnit),conversion:1};
+      else if(/^[^()]+$/.test(row.purchaseUnit)){const weight=row.name.match(/\(([\d,]+)\s*(kg|g)\)/i),amount=weight?legacyNumber(weight[1])*(weight[2].toLowerCase()==='kg'?1000:1):null;units={purchaseUnit:key(row.purchaseUnit),unit:amount?'g':key(row.purchaseUnit),conversion:amount||1};}
       else issues.push('Cần xác nhận đơn vị mua/sử dụng, quy cách và cơ sở đơn giá');
     }
-    if(row.minimum==null)issues.push('Tồn tối thiểu trống; schema hiện yêu cầu số, chưa tự đặt0');
-    const record=units?{name:row.name,...units,purchasePrice:row.purchasePrice??'',minimum:row.minimum==null?null:row.minimum*units.conversion}:null;
-    if(record&& !issues.length){cleanRecord('materials',record);ready.push({module:'materials',recordId,record});}
-    const item={...row,recordId,normalized:record,issues,status:issues.length?'PENDING':'READY_FOR_SERVER_PREVIEW'};
+    const record=units?{name:row.name,purchaseUnit:units.purchaseUnit,unit:units.unit,conversion:units.conversion??'',purchasePrice:row.purchasePrice??'',minimum:row.minimum==null||rule?.minimumBasis==='unknown'?'':row.minimum*(units.conversion||1)}:null;
+    const spec=units?{version:1,purchaseUnit:units.purchaseUnit,packageType:rule?.packageType||units.purchaseUnit,packageQuantity:rule&&Object.hasOwn(rule,'packageQuantity')?rule.packageQuantity:units.conversion||null,packageUnit:rule?.packageUnit||units.unit,usageUnit:units.unit,standardUnit:units.unit,originalPrice:row.purchasePrice,priceBasis:rule&&Object.hasOwn(rule,'priceBasis')?rule.priceBasis:units.purchaseUnit,priceStatus:rule?.priceStatus||(row.purchasePrice==null?'pending':'verified'),note:rule?.note||'Đối chiếu đơn vị danh mục và quy cách nguồn',source:{cells:row.sourceCells,sourceLine:row.sourceLine,provenance:rule?.provenance||evidence[row.code]||[]}}:null;
+    if(spec&&spec.priceStatus==='verified'&&unitFactor(spec,spec.priceBasis,spec.standardUnit)==null)spec.priceStatus='pending';
+    if(record&&spec.priceStatus!=='verified')record.purchasePrice=''; // Also safe if opened by an older importer without provenance support.
+    if(record&& !issues.length){cleanRecord('materials',record);ready.push({module:'materials',recordId,record,unitSpec:spec});}
+    const item={...row,recordId,normalized:record,unitSpec:spec,unitState:record?materialUnitState({...record,unitSpec:spec}):null,issues,status:issues.length?'PENDING':'READY_FOR_SERVER_PREVIEW'};
     if(issues.length)pending.push(item);mapped.set(row.code,item);mapping.push({legacyCode:row.code,recordId,name:row.name,status:item.status});
   }
   const recipes=[],recipesPending=[],recipeJoins=[];const readyData={materials:ready.map(x=>({...x.record,recordId:x.recordId})),recipes:[]};
@@ -41,8 +44,8 @@ export function prepareLegacyMaterials(text,recipeStaging,{unitRules={}}={}){
       if(material.normalized&&key(material.normalized.unit)!==key(line.unit))issues.push({line:line.sourceLine,reason:'Đơn vị thành phần khác đơn vị sử dụng; cần quy đổi được duyệt'});
       lines.push({type:'material',id:material.recordId,quantity:line.quantity});
       if(section.type!=='batch'&&material.normalized&&key(material.normalized.unit)===key(line.unit)&&line.sourceUnitPrice!=null&&material.purchasePrice!=null){
-        const catalogUnitPrice=material.purchasePrice/material.normalized.conversion;
-        if(Math.abs(line.sourceUnitPrice-catalogUnitPrice)>1e-9)priceDifferences.push({code:line.code,section:section.name,sourceLine:line.sourceLine,formulaUnitPrice:line.sourceUnitPrice,catalogUnitPrice});
+        const catalogUnitPrice=material.unitState.standardPrice;
+        if(catalogUnitPrice!=null&&Math.abs(line.sourceUnitPrice-catalogUnitPrice)>1e-9)priceDifferences.push({code:line.code,section:section.name,sourceLine:line.sourceLine,formulaUnitPrice:line.sourceUnitPrice,catalogUnitPrice});
       }
     }
     if(section.type!=='batch')issues.push({reason:'Công thức món/bao bì cần nối công thức con và đúng đơn vị hộp/cây/phần trước khi nhập'});
@@ -51,7 +54,7 @@ export function prepareLegacyMaterials(text,recipeStaging,{unitRules={}}={}){
     if(issues.length){recipesPending.push({recordId,source:section,issues});continue;}
     const record={name:section.name,kind:'nhan-sot',dishId:'',yield:section.yieldSource,lines};cleanRecord('recipes',record,readyData);readyData.recipes.push({...record,recordId});recipes.push({module:'recipes',recordId,record});
   }
-  return {status:'PREPARED_NOT_IMPORTED',bundle:{records:[...ready,...recipes]},source,materialsReady:ready.length,materialsPending:pending,recipesReady:recipes.length,recipesPending,mapping,recipeJoins,priceDifferences,missingRecipeCodes:[...new Set(recipeJoins.filter(x=>x.code&&!x.materialId).map(x=>x.code))],sourceHash:crypto.createHash('sha256').update(text).digest('hex'),notes:['Source balances/errors retained only; no opening-stock, cash or historical transactions generated.','Blank minimum is not0. Minimum amounts converted from purchase units to usage units.','Partial recipes are never written. Parent, packaging and rice/sauce ambiguities remain staging.','Source price0 remains explicit0; blank price remains blank. Price discrepancies are reported, not silently replaced.']};
+  return {status:'PREPARED_NOT_IMPORTED',bundle:{records:[...ready,...recipes]},source,materialsReady:ready.length,materialsPending:pending,priceReview:[...mapped.values()].filter(x=>x.unitState?.status!=='verified'),recipesReady:recipes.length,recipesPending,mapping,recipeJoins,priceDifferences,missingRecipeCodes:[...new Set(recipeJoins.filter(x=>x.code&&!x.materialId).map(x=>x.code))],sourceHash:crypto.createHash('sha256').update(text).digest('hex'),notes:['Source balances/errors retained only; no opening-stock, cash or historical transactions generated.','Blank minimum remains unconfigured. Only known minimum-unit conversions are applied.','Partial recipes are never written. Parent, packaging and rice/sauce ambiguities remain staging.','Source price0 remains explicit0; blank price remains blank. Package quantity never establishes price basis.']};
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   const [sourcePath,recipePath,rulesPath,out]=process.argv.slice(2);if(!out)throw Error('Usage: node scripts/legacy-material-preparation.mjs materials.tsv staging.json rules.json outputDir');

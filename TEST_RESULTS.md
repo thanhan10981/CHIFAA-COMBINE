@@ -1,5 +1,7 @@
 # Kết quả kiểm thử master session
 
+Hệ thống đơn vị candidate:285/285tests, syntax90, build/server/3bundle parse đạt.6test mới về package khácpricebasis, không đổi mật độ ngầm, blankmin≠0, giápending≠0, receiptprice lịch sử, Admin/RBAC/version/replay, importprovenance và guard đổi đơn vị đã liên kết, AdminUI. Full fixtures vẫnpass; scanner vẫn chỉ đọc module thay đổi. Lô91records actualsource chỉ trongmock:154effects,63materials/6recipes/63provenance/0stock. Evidence output/unit-system-tests.txt và unit-normalization-verification.json. Không phải Google UAT.
+
 Checkpoint chuẩn bị vật tư:279/279local tests, syntax87. Thử lô57bản ghi thực tế bằng GAS mock: preview0lỗi,11stores/11dishes/33materials/2recipes, lặp lại bị chặn57ID,0stockrows. Không có Google reads/writes; DEV32 vẫn dùng source release trước. Log output/legacy-material-tests.txt; evidence output/legacy-2026-11-17/materials-verification.json. Test mới: ID tiếng Việt không gộp, nguồn #N/A và giá thiếu khác0, blankthreshold không tự gán0, chỉ nhập batch đầy đủ, đơn vị chú thích không tự coi làkg.
 
 ## Hiện tại — DEV32

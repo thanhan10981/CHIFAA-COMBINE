@@ -46,7 +46,7 @@ function rawRowsRange_(module,offset,limit){
 }
 function decodeRows_(module,cellsAll,firstRow){
   const headers=headers_(module),fields=fields_(module),definitions=Object.entries(fields);
-  return cellsAll.map((cells,i)=>{
+  const decoded=cellsAll.map((cells,i)=>{
     if(cells.every(c=>c===''))return null;
     const row={}; headers.forEach((h,j)=>{row[h]=cells[j] instanceof Date?Utilities.formatDate(cells[j],'Asia/Ho_Chi_Minh',fields[h]?.type==='time'?'HH:mm':'yyyy-MM-dd'):cells[j];});
     if(![true,false,''].includes(row.deleted))row._sourceError='Cờ xóa không hợp lệ';
@@ -58,7 +58,7 @@ function decodeRows_(module,cellsAll,firstRow){
     row._hash=hash_(cells.map(v=>v instanceof Date?v.toISOString():v)); row._row=i+firstRow;
     Object.defineProperty(row,'_cells',{value:cells,enumerable:false});
     return row;
-  }).filter(Boolean);
+  }).filter(Boolean);return module==='materials'&&decorateMaterialUnits_?attachMaterialUnits_(decoded):decoded;
 }
 function data_(modules=Object.keys(SCHEMA)) { const data={};for(const m of new Set(modules))data[m]=rawRows_(m);if(data.debts)data.debts=attachDebtAllocations_(data.debts);if(data.production)data.production=attachProductionCosts_(data.production,{role:'admin',permissions:{}});if(data.sales&&data.production)data.sales=attachKioskCostPending_(data.sales);return data; }
 function mutationModules_(module,action){

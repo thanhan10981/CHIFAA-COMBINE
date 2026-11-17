@@ -126,6 +126,7 @@ function previewImport_(bundle,actor='OWNER'){
       if(['production','counts'].includes(item.module)&&bundle.linkStock!==true)throw new Error('Cần chọn Tự liên kết kho và đối chiếu phiếu xuất để tránh ghi trùng');
       const after={...record,recordId:item.recordId,version:1,updatedAt:'IMPORT_PREVIEW',updatedBy:actor,source:'MIGRATION',deleted:false,reverses:''};
       data[item.module].push(after);effects.push({module:item.module,before:null,after});
+      if(item.module==='materials'&&item.unitSpec){const spec=unitSpecValidate_(item.unitSpec);validateMaterialSpecForRecord_(record,spec);after.unitSpec=spec;effects.push(workflowMarker_({email:actor},'material-units',after.recordId,now_().slice(0,10),{spec,sourceMaterialHash:'MIGRATION'}));}
       if(['production','counts'].includes(item.module)){const linked=stockLinkEffects_({email:actor,role:'admin'},item.module==='production'?'production':'count',after,data);for(const e of linked){effects.push(e);if(data[e.module])data[e.module].push(e.after);}}
     }catch(e){errors.push({index,message:e.message});}
   }

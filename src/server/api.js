@@ -146,6 +146,7 @@ function mutationEffects_(user,args,providedData){
   }else{
     if(module==='orders'&&action==='update'&&before.status!=='pending')throw new Error('IMMUTABLE: Đơn đã duyệt không được sửa');
     const record=cleanRecord(module,args.record,data);
+    if(module==='materials'&&before&&canonicalUnit(before.unit)!==canonicalUnit(record.unit)&&materialUnitUsed_(before.recordId))throw Error('LINKED: Đơn vị sử dụng đã có dữ liệu liên kết; cần migration đối soát thay vì đổi nhãn lịch sử');
     if(module==='orders'&&record.status!=='pending')throw new Error('FORBIDDEN: Tạo đơn ở trạng thái chờ, sau đó dùng Duyệt');
     after={...record,recordId:action==='create'?uid_():before.recordId,version:before?before.version+1:1,deleted:false,reverses:''};
     if(module==='recipes'){

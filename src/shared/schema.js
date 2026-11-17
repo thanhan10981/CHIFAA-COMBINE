@@ -7,8 +7,8 @@ const CHOICE = (label, options) => FIELD(label, 'select', true, { options });
 const SCHEMA = {
   materials: { title: 'Danh mục vật tư', group: 'Danh mục', fields: {
     name: FIELD('Tên vật tư'), purchaseUnit: FIELD('Đơn vị mua'), unit: FIELD('Đơn vị sử dụng'),
-    conversion: FIELD('Số đơn vị sử dụng / đơn vị mua', 'number', true, { min: 0.000001 }),
-    purchasePrice: FIELD('Giá mua', 'number', false, { min: 0 }), minimum: QTY('Tồn tối thiểu') } },
+    conversion: FIELD('Số đơn vị sử dụng / đơn vị mua', 'number', false, { min: 0.000001 }),
+    purchasePrice: FIELD('Đơn giá gốc', 'number', false, { min: 0 }), minimum: FIELD('Tồn tối thiểu (trống = chưa thiết lập)', 'number', false, { min: 0 }) } },
   dishes: { title: 'Danh mục món bán', group: 'Danh mục', fields: {
     name: FIELD('Tên món'), price: QTY('Giá bán'), published: FIELD('Công bố cho khách', 'boolean', false) } },
   stores: { title: 'Danh mục điểm bán', group: 'Danh mục', fields: {

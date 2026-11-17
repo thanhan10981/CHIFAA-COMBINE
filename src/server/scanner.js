@@ -1,4 +1,7 @@
 function withReadContext_(fn){
+  const prior=decorateMaterialUnits_;decorateMaterialUnits_=false;try{return withRawScanContext_(fn);}finally{decorateMaterialUnits_=prior;}
+}
+function withRawScanContext_(fn){
   if(requestBooks_)return fn();requestBooks_=new Map();requestRows_=new Map();requestTables_=new Map();requestProfile_={};
   try{return fn();}finally{console.log(JSON.stringify({event:'scan_profile',steps:requestProfile_}));requestBooks_=null;requestRows_=null;requestTables_=null;requestProfile_=null;}
 }

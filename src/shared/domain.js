@@ -11,6 +11,25 @@ function unitConversion(purchaseUnit,useUnit){
   if(!a||!b)return {known:false,compatible:null,expected:null};
   return {known:true,compatible:a[0]===b[0],expected:a[0]===b[0]?a[1]/b[1]:null};
 }
+function canonicalUnit(value){const n=String(value||'').normalize('NFKC').trim().toLowerCase();return ({kilogram:'kg',gram:'g',gam:'g',lit:'l','lít':'l',cai:'cái',qua:'quả',la:'lá',doi:'đôi'})[n]||n;}
+function unitFactor(spec,from,to){
+  from=canonicalUnit(from);to=canonicalUnit(to);if(!from||!to)return null;if(from===to)return 1;
+  const physical=unitConversion(from,to);if(physical.expected!=null)return physical.expected;
+  const purchase=canonicalUnit(spec?.packageType||spec?.purchaseUnit),pack=canonicalUnit(spec?.packageUnit),qty=spec?.packageQuantity;
+  if(!finite(qty)||qty<=0||!purchase||!pack||purchase===pack)return null;
+  if(from===purchase){const f=unitFactor(null,pack,to);return f==null?null:qty*f;}
+  if(to===purchase){const f=unitFactor(null,from,pack);return f==null?null:f/qty;}
+  return null; // No implicit density or count-to-weight conversion.
+}
+function materialUnitState(material){
+  const spec=material?.unitSpec;
+  if(!spec){const conversion=finite(material?.conversion)&&material.conversion>0?material.conversion:null,ambiguous=/[()=]/.test(String(material?.purchaseUnit||'')),physical=unitConversion(material?.purchaseUnit,material?.unit),quantityReady=!(physical.known&&physical.compatible===false),ready=!ambiguous&&quantityReady&&conversion&&finite(material?.purchasePrice);return {status:ready?'verified':'pending',quantityReady,unit:material?.unit||'',standardPrice:ready?material.purchasePrice/conversion:null,reason:'Cần xác minh đơn giá'};}
+  const quantityReady=canonicalUnit(spec.usageUnit)===canonicalUnit(material.unit)&&canonicalUnit(spec.standardUnit)===canonicalUnit(material.unit);
+  const factor=unitFactor(spec,spec.priceBasis,spec.standardUnit),priceSame=spec.originalPrice===material.purchasePrice;
+  const buyFactor=unitFactor(spec,spec.purchaseUnit,spec.usageUnit),binding=canonicalUnit(material.purchaseUnit)===canonicalUnit(spec.purchaseUnit)&&(buyFactor==null||finite(material.conversion)&&Math.abs(material.conversion-buyFactor)<=1e-9*Math.max(1,buyFactor));
+  const ready=quantityReady&&binding&&spec.priceStatus==='verified'&&factor!=null&&finite(spec.originalPrice)&&priceSame;
+  return {status:ready?'verified':'pending',quantityReady,unit:material.unit,standardUnit:spec.standardUnit,standardPrice:ready?spec.originalPrice/factor:null,conversion:unitFactor(spec,spec.purchaseUnit,spec.usageUnit),purchaseUnit:spec.purchaseUnit,priceBasis:spec.priceBasis,packageQuantity:spec.packageQuantity,packageUnit:spec.packageUnit,reason:ready?'Đã xác minh':'Cần xác minh đơn giá'};
+}
 // Confirmed by owner 2026-11-16: D01/D02/D03. Cash receipts are never the ratio base.
 const ACCOUNTING_POLICY=Object.freeze({version:'net-sales-2026-11-16',foodCostMax:0.322,productionLaborMax:0.15});
 function validDate(value) {
@@ -47,6 +66,7 @@ function cleanRecord(module, input, data = {}) {
   if(module==='materials'){
     const u=unitConversion(out.purchaseUnit,out.unit);
     if(u.known&&!u.compatible)fail('Không quy đổi trực tiếp khối lượng sang thể tích khi chưa có quy cách được xác nhận');
+    if(u.expected!=null&&out.conversion==='')out.conversion=u.expected;
     if(u.expected!=null&&Math.abs(out.conversion-u.expected)>Math.max(1e-9,u.expected*1e-9))fail('Sai quy đổi đơn vị: 1 '+out.purchaseUnit+' = '+u.expected+' '+out.unit+'. Hiệu suất chế biến phải đặt ở công thức, không đặt vào quy đổi mua.');
   }
   if (module === 'production' && out.rejected > out.produced + out.extra) fail('Lỗi / hủy vượt sản xuất');
@@ -71,6 +91,7 @@ function sourceIssues(data, partial = {}) {
       if(row.deleted===true)continue;
       try{
         if(row._sourceError)fail(row._sourceError);
+        if(module==='materials'&&row.unitSpec&&!materialUnitState(row).quantityReady)fail('Đơn vị sử dụng đã đổi so với nguồn xác minh; cần migration đối soát phiếu/công thức, không đổi nhãn lịch sử');
         if(typeof row.recordId!=='string'||!row.recordId||!Number.isInteger(row.version)||row.version<1)fail('Thiếu ID / phiên bản hợp lệ');
         if(counts.get(row.recordId)>1)fail('ID bị trùng trong Sheet');
         const refs={},input={};
@@ -130,7 +151,8 @@ function costRecipe(id, quantity, data, asOf) {
     const historical = effective(data.stock || []).filter(r => r.materialId === id && r.type === 'nhap' && r.date <= cutoff && finite(r.unitCost))
       .sort((a,b) => b.date.localeCompare(a.date) || String(b.updatedAt).localeCompare(String(a.updatedAt)))[0];
     // A current catalog price must not be presented as a historical price.
-    const price = historical ? historical.unitCost : (asOf === 'current' && material && finite(material.purchasePrice) ? material.purchasePrice / material.conversion : null);
+    const units=materialUnitState(material);
+    const price = !units.quantityReady?null:historical ? historical.unitCost : (asOf === 'current' ? units.standardPrice : null);
     if (!finite(price)) missing.push(id); else total += amount * price;
   }
   return { total: missing.length ? null : round(total), missing, raw, asOf, basis: 'last-receipt-price' };
@@ -164,9 +186,10 @@ function inventory(data, to) {
   for(const r of effective(data.stock||[]))if(r.date<=to){present.add(r.materialId);balances.set(r.materialId,(balances.get(r.materialId)||0)+(['nhap','dieu-chinh-tang'].includes(r.type)?1:-1)*r.quantity);}
   return effective(data.materials || []).map(m => {
     const has=present.has(m.recordId),balance=balances.get(m.recordId)||0;
-    return { materialId: m.recordId, name: m.name, unit: m.unit, balance: quantityValue(balance), minimum: m.minimum,
-      replenish: quantityValue(Math.max(0,m.minimum - balance)), status: has ? (balance < m.minimum ? 'orange' : 'green') : 'gray',
-      completeness: has ? 'Cần có phiếu tồn đầu nếu đã hoạt động trước hệ thống' : 'Chưa có phiếu kho' };
+    const threshold=finite(m.minimum)?m.minimum:null;
+    return { materialId: m.recordId, name: m.name, unit: m.unit, balance: quantityValue(balance), minimum:threshold,
+      replenish:threshold==null||!has?null:quantityValue(Math.max(0,threshold-balance)), status:has&&threshold!=null?(balance<threshold?'orange':'green'):'gray',
+      completeness:!has?'Chưa có phiếu kho':threshold==null?'Chưa thiết lập tồn tối thiểu':'Cần có phiếu tồn đầu nếu đã hoạt động trước hệ thống' };
   });
 }
 function demand(data, from, to) {
@@ -287,4 +310,4 @@ function compareWeeks(data,anchor){
     rows.push({date:iso(current),previousDate:iso(previous),revenue:a.revenue,previousRevenue:b.revenue,difference:a.revenue==null||b.revenue==null?null:round(a.revenue-b.revenue)});
   }return rows;
 }
-export { ACCOUNTING_POLICY, round, unitConversion, cleanRecord, sourceIssues, effective, validDate, shiftHours, flattenRecipe, costRecipe, salesMetrics, payroll, inventory, demand, report, scenario, variance, finance, targets, compareWeeks };
+export { ACCOUNTING_POLICY, round, canonicalUnit, unitFactor, materialUnitState, unitConversion, cleanRecord, sourceIssues, effective, validDate, shiftHours, flattenRecipe, costRecipe, salesMetrics, payroll, inventory, demand, report, scenario, variance, finance, targets, compareWeeks };

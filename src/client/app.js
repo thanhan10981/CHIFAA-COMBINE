@@ -256,18 +256,18 @@ function openEditor(module,row){
     }
     if(['ref','select'].includes(f.type)){
       input=document.createElement('select');const empty=el('option','Chọn…');empty.value='';input.append(empty);
-      const options=f.ref?effective(referenceRows(f.ref)).map(r=>[r.recordId,r.name]):f.options.map(v=>[v,v]);
+      const options=f.ref?effective(referenceRows(f.ref)).map(r=>[r.recordId,r.name+(f.ref==='materials'?' · '+r.unit:'')]):f.options.map(v=>[v,v]);
       for(const [id,title]of options.filter(([id])=>!(module==='cash'&&key==='category'&&['lai-vay','luong-thuong'].includes(id)))){const o=el('option',title);o.value=id;input.append(o);}
     }else{input=document.createElement('input');input.type=f.type==='boolean'?'checkbox':['number','date','time'].includes(f.type)?f.type:'text';if(f.type==='number'){input.step='any';if(f.min!=null)input.min=f.min;if(f.max!=null)input.max=f.max;}}
     input.name=key;input.required=f.required&&f.type!=='boolean';if(f.type==='boolean')input.checked=row?.[key]===true;else input.value=row?.[key]??(f.type==='date'?dateToday():f.type==='number'&&f.required?0:'');
-    if(key==='yield'&&!row)input.value=1;if(key==='conversion'&&!row)input.value=1;
+    if(key==='yield'&&!row)input.value=1;
     if(module==='recipes'&&key==='kind'&&!row)input.value=({recipes:'mon',batches:'nhan-sot',rice:'com',packaging:'bao-bi'})[state.route]||'mon';
     if(module==='orders'&&key==='status'){input.value=row?.status||'pending';input.disabled=true;}
     label.append(input);$('form-fields').append(label);
   }
   if(!row)wireSnapshotDefaults(module);
   if(module==='materials'){
-    const input=key=>$('form-fields').querySelector('[name="'+key+'"]'),hint=el('p',null,'notice field full'),update=()=>{const u=unitConversion(input('purchaseUnit').value,input('unit').value);hint.textContent=u.expected!=null?'Quy đổi đơn vị chuẩn: 1 '+input('purchaseUnit').value+' = '+u.expected+' '+input('unit').value+'. Hiệu suất nấu/chế biến đặt ở công thức riêng.':u.known?'Khối lượng và thể tích cần quy cách được xác nhận; không đổi trực tiếp.':'Bao/can/túi/chai: nhập hệ số theo đúng quy cách thực tế. Hệ thống không tự dùng hệ số ví dụ.';};
+    const input=key=>$('form-fields').querySelector('[name="'+key+'"]'),hint=el('p',null,'notice field full'),update=()=>{const u=unitConversion(input('purchaseUnit').value,input('unit').value);if(u.expected!=null&&!row)input('conversion').value=u.expected;hint.textContent=u.expected!=null?'Quy đổi đơn vị chuẩn: 1 '+input('purchaseUnit').value+' = '+u.expected+' '+input('unit').value+'. Hiệu suất nấu/chế biến đặt ở công thức riêng.':u.known?'Khối lượng và thể tích cần quy cách được xác nhận; không đổi trực tiếp.':'Bao/can/túi/chai: nhập hệ số theo đúng quy cách thực tế. Giá gốc và cơ sở giá xác minh riêng tại Nhật ký & đồng bộ → Đơn vị và đơn giá. Tồn tối thiểu trống là chưa thiết lập.';};
     for(const key of ['purchaseUnit','unit','conversion'])input(key).addEventListener('input',update);$('form-fields').append(hint);update();
   }
   $('editor').showModal();

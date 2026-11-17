@@ -1,5 +1,5 @@
 // Derived, disposable read models. Never used by mutations or financial posting.
-const READ_MODEL_VERSION='2026-11-17.5';
+const READ_MODEL_VERSION='2026-11-17.6';
 function verifyReadHeader_(module,sheet,headers){const key='read-header:'+module;if(requestTables_?.has(key))return;if(JSON.stringify(profileValues_(module,sheet.getRange(1,1,1,headers.length))[0])!==JSON.stringify(headers))throw new Error('SCHEMA: Sai cột bảng '+module);requestTables_?.set(key,true);}
 function cachePartsGet_(key){
   try{const cache=CacheService.getScriptCache(),m=JSON.parse(cache.get(key)||'null');if(!m||m.until<=Date.now()||!Number.isInteger(m.count)||m.count<1||m.count>64)return null;

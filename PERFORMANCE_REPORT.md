@@ -1,5 +1,7 @@
 # Báo cáo hiệu năng hiện tại
 
+Checkpoint unitsystem (285tests/syntax90): scan hash thô tắt decorationprovenance để không đọc_Workflows khi sửa một module. RPCmaterial/coldreport đọc ledgerunit liên quan; hot scopedcache vẫn xác thực mới. Benchmark Node/mock `output/data-loading-unit-system.json`:5000rows Dashboardcold43getValues/405257cells/578.27ms, snapshot5/205/.71ms; inventorycold18/130248/189.83ms, hot3/78/6.07ms. Fixture đo chưa có nhiều unitprovenance, không là Google latency/quota/UAT; dữ liệu thật63provenance đã qua transactionfixture riêng. Không cam kết200ms trình duyệt từ số đo này.
+
 ## Bản hiện tại DEV32 —273kiểm thử local
 
 Đã xác minh mã trên hai deployment, chưa đo latency Google. Bỏ tra cứu lồng nhật ký, thêm cache theo quyền/phiên bản cho ki-ốt/liên kết đơn; các ghi luôn đọc lại nguồn. Dashboard trả tổng bộ phận, không gửi toàn bộ lương nhân viên. Kiểm tra backup/Google HTTP không giữ khóa ghi toàn cục trong lúc chờ dịch vụ.
