@@ -34,7 +34,7 @@ button, input, select, textarea {font-family: inherit;}
 .workspace .logo {padding-bottom: 24px; border-color: #ffffff16;}
 .workspace .logo h1 {font-size: 14px; font-weight: 700; letter-spacing: .15px;}
 .workspace .logo small {font-size: 9px; letter-spacing: .9px; color: #b1c0d1;}
-.workspace .brand-photo {border-radius: 14px; border: 1px solid #ffffff24; box-shadow: 0 4px 16px #0002;}
+.workspace .brand-photo {object-fit: contain; background: transparent; border-radius: 0; border: 0; box-shadow: none;}
 .workspace .menu-title {font-size: 10px; font-weight: 600; letter-spacing: 1.5px; color: #9bb0c6;}
 .workspace .sidebar nav .navitem {
   font-size: 12.5px;
