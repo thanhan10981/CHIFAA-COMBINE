@@ -57,6 +57,9 @@ try {
  const fonts=await page.evaluate(()=>({loaded:[...document.fonts].filter(font=>font.family.includes('Be Vietnam Pro')&&font.status==='loaded').length,portalVisible:!!document.querySelector('a[href="/portal"]')}));
  if(fonts.loaded<2||!fonts.portalVisible)throw new Error('Vietnamese fonts or ordering portal missing: '+JSON.stringify(fonts));
  report.checks.push('self-hosted Vietnamese fonts loaded and ordering portal retained');
+ if(await page.locator('.account-role').textContent()!=='Admin')throw new Error('Actual Admin role label missing');
+ if((await page.getByRole('button',{name:'Làm mới dữ liệu',exact:true}).textContent()).trim()||(await page.getByRole('button',{name:'Đăng xuất',exact:true}).textContent()).trim())throw new Error('Topbar buttons must show SVG icons only');
+ if(await page.getByRole('button',{name:'Đăng xuất',exact:true}).locator('svg path').count()!==1)throw new Error('Custom logout SVG missing');
  if(await page.getByText('QUẢN TRỊ & TIỆN ÍCH',{exact:true}).count())throw new Error('Flat utility menu returned');
  const warehouse=page.locator('.reference-nav-section').filter({has:page.getByRole('button',{name:'KHO & TỒN KHO',exact:true})});
  if(await warehouse.locator('a[href="/app/kiosk"]').count()!==1)throw new Error('Kiosk outside its legacy warehouse group');
@@ -72,7 +75,7 @@ try {
  await page.goto(base+'/app/materials');
  const group=page.getByRole('button',{name:'DANH MỤC',exact:true});await group.click();if(await group.getAttribute('aria-expanded')!=='false')throw new Error('Sidebar collapse failed');await group.click();
  await page.getByRole('button',{name:'Thêm vật tư',exact:true}).click();await page.getByRole('dialog').waitFor();await page.getByRole('button',{name:'Đóng',exact:true}).click();report.checks.push('collapse/expand and real catalog dialog');
- await page.goto(base+'/app/materials?role=staff');if(await page.locator('a[href="/app/admin"]').count())throw new Error('Unauthorized admin menu visible');report.checks.push('permission-scoped sidebar');
+ await page.goto(base+'/app/materials?role=staff');if(await page.locator('a[href="/app/admin"]').count())throw new Error('Unauthorized admin menu visible');if(await page.locator('.account-role').textContent()!=='Kế toán')throw new Error('Accountant role label missing');report.checks.push('permission-scoped sidebar and actual Admin/accountant labels with icon-only refresh/logout');
  await page.setViewportSize({width:390,height:844});
  for(const route of ['materials','recipes','strategy','entry-stock','sales','kiosk']){
   await page.goto(base+'/app/'+route);await page.evaluate(()=>document.fonts.ready);

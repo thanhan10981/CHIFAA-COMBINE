@@ -1,5 +1,7 @@
 # Kết quả kiểm thử master session
 
+Topbar checkpoint: full verify passed 47 tests, types, lint and build. Browser design checks cover SVG-only refresh/logout buttons, role badges for Admin/accountant and mobile overflow, alongside sidebar/feedback checks. Roles are read via user_roles RLS; isolated fixture roles are not cloud account verification.
+
 Sidebar refinement: full verify passed 47/47 tests, generated types, TypeScript, ESLint and production build. Browser QA includes label fit and fixed brand/account while scrolling at 1440/1280/1024 widths, plus existing desktop routes/mobile drawers and feedback interactions. Screenshots: output/design-parity/sidebar-admin-desktop.png and existing mobile captures. Isolated UI checks; no cloud writes.
 
 Shared feedback checkpoint: full verify passed 47/47 DB/domain tests plus type generation, TypeScript, ESLint and production build. Browser fixtures exercised 41 desktop routes, six mobile drawers and delayed overlapping query/mutation requests; checked error deduplication, persistent errors, timed success dismissal, toast hit-testing over a modal, top-right position, mobile overflow and reduced-motion preference. Actual Next login checks passed seven viewport sizes and access/OAuth toast errors with portal routing retained. Artifacts under ignored output/design-parity/ and output/login-design/. These are isolated browser checks, not authenticated cloud UAT.

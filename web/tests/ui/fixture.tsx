@@ -26,6 +26,7 @@ const rows=Array.from({length:6},(_,index)=>({id:'material-'+index,version:1,cod
 client.setQueryData([user,'catalog','materials',0,''],{rows,total:rows.length});
 for(const slug of Object.keys(catalogs))if(slug!=='materials')client.setQueryData([user,'catalog',slug,0,''],{rows:[],total:0});
 client.setQueryData([user,'catalog','materials','count'],rows.length);
+client.setQueryData([user,'account-roles'],role==='staff'?['accountant']:['admin']);
 client.setQueryData([user,'activity-log',0,''],{rows:[],total:0});
 client.setQueryData([user,'admin','profiles'],[]);
 client.setQueryData([user,'orders',0],[]);

@@ -1,0 +1,8 @@
+.workspace .topbar .icon-button,.portal .topbar .icon-button{display:inline-flex;align-items:center;justify-content:center;flex:none;width:42px;height:42px;min-height:42px;padding:0;border-radius:12px;background:#fff;color:#526f84;border:1px solid #dbe5ed;box-shadow:none}
+.workspace .topbar .icon-button:hover,.portal .topbar .icon-button:hover{background:#edf4f8;border-color:#b8cedc;color:#254b65}
+.workspace .topbar .logout-button:hover,.portal .topbar .logout-button:hover{color:#b14d2e;border-color:#ebccbf;background:#fff5ef}
+.workspace .topbar .account-role{display:inline-flex;align-items:center;justify-content:center;min-height:34px;max-width:220px;padding:6px 12px;border-radius:9px;background:#edf3f7;color:#426078;font-size:11px;font-weight:600;line-height:1.5;text-align:center;overflow-wrap:anywhere}
+.workspace .topbar .top-actions{gap:12px}
+@media(max-width:720px){.workspace .topbar .top-actions{gap:7px}.workspace .topbar .icon-button,.portal .topbar .icon-button{width:36px;height:36px;min-height:36px;border-radius:10px}.workspace .topbar .account-role{font-size:10px;max-width:110px;min-height:30px;padding:5px 8px}.workspace .topbar .reference-breadcrumb{flex:1;min-width:0}.workspace .topbar .crumb{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.workspace .topbar .reference-menu-toggle{flex:none}.workspace .topbar .top-actions{flex:none}}
+
+.workspace .topbar .account-role>span{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

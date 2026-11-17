@@ -38,6 +38,7 @@ const paths:Record<string,string>={
  trash:'M3 6h18 M9 6V3h6v3 M5 6l1 15h12l1-15 M10 10v7 M14 10v7',
  bag:'M4 7h16l1 14H3z M8 7V6a4 4 0 0 1 8 0v1',
  loader:'M12 3a9 9 0 1 1-9 9',
+ logout:'M10 3H4v18h6 M9 12h13 M18 8l4 4-4 4',
  lock:'M5 10h14v11H5z M8 10V6a4 4 0 0 1 8 0v4 M12 14v3',
  clock:'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20 M12 6v6l4 2',
  scale:'M12 3v18 M7 21h10 M4 7h16 M6 7l-4 8h8z M18 7l-4 8h8z',
