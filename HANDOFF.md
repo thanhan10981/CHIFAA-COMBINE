@@ -1,5 +1,7 @@
 # HANDOFF hiện tại — CHIFAA standalone / Next.js + Supabase
 
+Icon alignment fix (17/11/2026): CSS reset had rendered SVG as a separate block in legacy-style action buttons (notably opsdashboard target settings and dashboard links). Shared icon-layout rules keep direct SVG/text actions in a nonwrapping flex row and decorative SVG inline. Browser QA measures icon/text vertical alignment across desktop routes; desktop/mobile overflow checks remain. No backend or business changes.
+
 Topbar controls (17/11/2026): refresh and logout are custom SVG-only buttons with accessible labels/tooltips and pending states. Replaced initials avatar with actual user_roles read through own-user RLS, translated labels (Admin/Kế toán/etc.), no inference from permissions/name/email. Multiple roles retain full tooltip while compact badge truncates on mobile. Portal retained; no SQL or permission changes. Browser checks cover Admin/accountant badges and icon-only controls.
 
 Sidebar refinement (17/11/2026): 300px desktop width, sentence-case visual section labels (original accessible names/menu order retained), aligned SVG/label/chevron rows, quiet flat group styling and a single active treatment. Only the menu scrolls; transparent brand and account identity stay fixed. Account email truncates with a title rather than breaking into fragments. Desktop/tablet/mobile QA checks section-label fit and fixed header/footer while scrolling. No permission, route or database changes.

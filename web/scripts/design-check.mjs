@@ -37,7 +37,16 @@ try {
   const state=await page.evaluate(()=>({sidebarWidth:getComputedStyle(document.querySelector('.sidebar')).width,fontFamily:getComputedStyle(document.querySelector('.sidebar')).fontFamily,contentFont:getComputedStyle(document.querySelector('main.content')).fontFamily,headingFont:getComputedStyle(document.querySelector('main.content h1,main.content h2')).fontFamily,groupCount:document.querySelectorAll('.sidebar .navgroup').length,activeCount:document.querySelectorAll('.sidebar [aria-current=page]').length,headerHeight:document.querySelector('.topbar').getBoundingClientRect().height,overflow:document.documentElement.scrollWidth>innerWidth+1}));
   report.pages.push({route,...state});
   if(state.sidebarWidth!=='300px'||state.groupCount!==7||state.activeCount!==1||state.headerHeight!==75||state.overflow||!state.contentFont.includes('Be Vietnam Pro'))throw new Error('Desktop layout check failed: '+JSON.stringify({route,...state}));
-  if(['','materials','recipes','strategy','kiosk','audit'].includes(route))await page.screenshot({path:path.join(out,(route||'dashboard')+'-desktop.png')});
+  if(['','opsdashboard','materials','recipes','strategy','kiosk','audit'].includes(route))await page.screenshot({path:path.join(out,(route||'dashboard')+'-desktop.png')});
+  const brokenIcons=await page.evaluate(()=>Array.from(document.querySelectorAll('.workspace button:has(>svg),.workspace a:has(>svg)')).flatMap(button=>{
+   if(!button.getClientRects().length)return [];
+   const node=Array.from(button.childNodes).find(node=>node.nodeType===Node.TEXT_NODE&&node.textContent.trim());
+   if(!node)return [];
+   const range=document.createRange();range.selectNodeContents(node);
+   const text=range.getBoundingClientRect(),icon=button.querySelector(':scope>svg').getBoundingClientRect();
+   return Math.abs((text.top+text.bottom)/2-(icon.top+icon.bottom)/2)>6?[button.textContent.trim()]:[];
+  }));
+  if(brokenIcons.length)throw new Error('Icon/label wrapped on '+route+': '+brokenIcons.join(', '));
  }
  // Sidebar composition: long section names fit, header/account stay fixed while menu scrolls.
  for(const [width,height] of [[1440,900],[1280,720],[1024,768]]){
@@ -77,7 +86,7 @@ try {
  await page.getByRole('button',{name:'Thêm vật tư',exact:true}).click();await page.getByRole('dialog').waitFor();await page.getByRole('button',{name:'Đóng',exact:true}).click();report.checks.push('collapse/expand and real catalog dialog');
  await page.goto(base+'/app/materials?role=staff');if(await page.locator('a[href="/app/admin"]').count())throw new Error('Unauthorized admin menu visible');if(await page.locator('.account-role').textContent()!=='Kế toán')throw new Error('Accountant role label missing');report.checks.push('permission-scoped sidebar and actual Admin/accountant labels with icon-only refresh/logout');
  await page.setViewportSize({width:390,height:844});
- for(const route of ['materials','recipes','strategy','entry-stock','sales','kiosk']){
+ for(const route of ['materials','recipes','strategy','entry-stock','sales','kiosk','opsdashboard']){
   await page.goto(base+'/app/'+route);await page.evaluate(()=>document.fonts.ready);
   if(!await page.locator('.reference-portal').isVisible())throw new Error('Mobile ordering portal hidden');
   await page.screenshot({path:path.join(out,route+'-mobile-content.png')});

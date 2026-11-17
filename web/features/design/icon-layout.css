@@ -1,0 +1,7 @@
+/* SVG defaults to block under the CSS reset. Keep action icons and labels together. */
+.workspace :is(button,a):has(>svg),.portal :is(button,a):has(>svg){display:inline-flex;flex-direction:row;flex-wrap:nowrap;align-items:center;justify-content:center;gap:8px;white-space:nowrap}
+.workspace :is(button,a)>svg,.portal :is(button,a)>svg{display:inline-block;vertical-align:middle;flex:0 0 auto;margin:0}
+.workspace .v16-btn>svg{margin:0}
+/* Keep nested decorative icons inline as well, without changing card/menu layout. */
+.workspace svg,.portal svg{display:inline-block;vertical-align:middle}
+@media(max-width:720px){.workspace :is(button,a):has(>svg),.portal :is(button,a):has(>svg){gap:6px}}

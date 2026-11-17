@@ -1,5 +1,7 @@
 # Kết quả kiểm thử master session
 
+Icon alignment checkpoint: verify types/lint/47 tests/build and browser icon/text alignment checks across desktop routes, including disabled legacy-layout buttons; mobile overflow checks retained. Artifacts: output/design-parity/. No cloud data changes.
+
 Topbar checkpoint: full verify passed 47 tests, types, lint and build. Browser design checks cover SVG-only refresh/logout buttons, role badges for Admin/accountant and mobile overflow, alongside sidebar/feedback checks. Roles are read via user_roles RLS; isolated fixture roles are not cloud account verification.
 
 Sidebar refinement: full verify passed 47/47 tests, generated types, TypeScript, ESLint and production build. Browser QA includes label fit and fixed brand/account while scrolling at 1440/1280/1024 widths, plus existing desktop routes/mobile drawers and feedback interactions. Screenshots: output/design-parity/sidebar-admin-desktop.png and existing mobile captures. Isolated UI checks; no cloud writes.
