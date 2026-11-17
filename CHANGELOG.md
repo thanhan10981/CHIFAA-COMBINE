@@ -1,3 +1,11 @@
+## 2026-11-17 — Cấp Admin đầu tiên có kiểm soát
+
+Thêm công cụ tạo SQL cấp Admin theo email chủ sở hữu đã xác nhận; kiểm tra Auth duy nhất/đã xác minh, chỉ owner SQL Editor, giữ deny overrides, chặn khi đã có quản trị và ghi audit một lần. Không tạo endpoint tự nâng quyền. 35 tests + TypeScript/lint/build đạt; file SQL chưa chạy trên cloud. Xác minh Google đã bật, callback online không còn thiếu APP_URL.
+
+## 2026-11-17 — Kiểm tra bản DEV online
+
+Người dùng báo SQL khởi tạo thành công và Vercel Ready. Kiểm tra domain chính chifaa-combine.vercel.app mở trang login, chặn app/portal anonymous bằng redirect. Xác định APP_URL còn thiếu (callback503) và Google provider chưa bật; chưa xác nhận đăng nhập hoặc nghiệp vụ cloud. Không sửa runtime, chạy lại bootstrap hay nhập dữ liệu thật.
+
 ## 2026-11-17 — Chuẩn bị triển khai DEV online
 
 Thêm cấu hình Vercel cho Next.js, loại file env khỏi CLI upload và công cụ đóng gói 20 migrations thành một SQL transaction cho Supabase SQL Editor. Test cài mới, chống chạy lại và rollback khi lỗi; 33 tests, TypeScript/lint/build đạt. Đã kiểm tra Auth Supabase DEV phản hồi 200, schema chưa có; chưa chạy migrations cloud hoặc deploy Vercel. Có hướng dẫn online không yêu cầu người dùng chạy localhost.

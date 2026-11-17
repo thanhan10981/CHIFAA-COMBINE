@@ -2,6 +2,10 @@
 
 ## Ưu tiên mới: xây standalone Vercel + Supabase
 
+BE/Admin ban đầu: Google provider đã bật, APP_URL callback hoạt động trên domain chính. Đã tạo SQL cấp Admin đầu tiên đúng email chủ sở hữu xác nhận, có kiểm tra owner/verified/manager/deny và audit/idempotency; 35 tests + TS/lint/build đạt. Cần người dùng chạy output/CHIFAA_FIRST_ADMIN_DEV.sql trong Supabase SQL Editor rồi kiểm tra/app. Tiếp theo tiếp tục BE kế hoạch/sản xuất/kho, giao/thu hồi, tài chính theo FEATURE_MATRIX; chưa đánh dấu các giai đoạn xong.
+
+DEV đã online: screenshot SQL Success và Vercel Ready. Probe domain chính https://chifaa-combine.vercel.app/login200; alias -web chuyển307 sang domain chính. Việc cần làm ngay trên Dashboard: APP_URL Vercel + redeploy (callback hiện503), Supabase Site/Redirect URLs và bật Google (hiệnfalse), cấp Admin và UAT. Không chạy lại bootstrap hoặc nhập dữ liệu cũ. Authenticated workflow chưa được kiểm tra.
+
 DEV online: người dùng đã tạo Supabase, cấu hình env hợp lệ; Auth 200, schema chưa cài (PGRST205). Đã chuẩn bị Vercel config và SQL Editor bootstrap từ 20 migrations; 33 tests + TS/lint/build đạt. Tiếp theo: upload nhánh DEV, người dùng chạy gói SQL trên Dashboard, import đúng nhánh/root web vào Vercel, đặt APP_URL online, OAuth/Admin và nghiệm thu cloud. Không yêu cầu chạy app local; không nhập JSON cũ.
 
 Kiểm kê: đã nối màn hình nhập số đếm theo trang 50 vật tư, snapshot tồn và phiên bản trong cùng lần đọc, lưu điều chỉnh atomic và thử lại cùng mã yêu cầu. 20 migrations / 24 RPC / 31 tests; TypeScript, lint, build đạt. Còn thiếu browser/cloud UAT và nghiệp vụ chuyển/đảo phiếu. Hướng dẫn người dùng chưa có DEV: docs/standalone/SUPABASE_DEV_SETUP.md.

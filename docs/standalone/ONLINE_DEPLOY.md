@@ -4,6 +4,8 @@ Người dùng đã yêu cầu triển khai DEV bằng URL online. Không cần 
 
 ## Trạng thái đã kiểm tra
 
+**Cập nhật sau deploy:** người dùng chạy SQL thấy Success và Vercel Ready. Domain `https://chifaa-combine-web.vercel.app` thực tế chuyển hướng sang `https://chifaa-combine.vercel.app`; dùng domain chính này cho APP_URL và OAuth. `/login` trả200, callback trả503 vì chưa đặt APP_URL. Supabase Google provider còn disabled. Thiết lập Vercel `NEXT_PUBLIC_APP_URL=https://chifaa-combine.vercel.app` cho Production rồi redeploy; Supabase Site URL cùngdomain, Redirect URL `https://chifaa-combine.vercel.app/auth/callback`. Sau đó bật Google và cấp Admin. Không chạy lại gói SQL. Những kiểm tra PGRST205 phía dưới là trước khi người dùng chạy SQL; probe mới anonymous materials trả401/42501.
+
 - Project Supabase DEV do người dùng vừa tạo: dịch vụ Auth trả HTTP 200 bằng cấu hình hiện có. Không in key vào log.
 - REST `materials` trả PGRST205: chưa có schema CHIFAA tại thời điểm kiểm tra, không coi là đã kết nối nghiệp vụ.
 - Đã push mã Next.js và cấu hình triển khai lên nhánh `chifaa-next-dev` của `thanhan10981/CHIFAA-COMBINE` (commit abcdf91). Nhánh main remote giữ nguyên; import đúng nhánh DEV này vào Vercel.

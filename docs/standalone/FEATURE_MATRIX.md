@@ -1,10 +1,10 @@
 # Bằng chứng chức năng hiện tại
 
-Chưa có nhóm nghiệp vụ nào được nghiệm thu trên Supabase cloud. Người dùng đã tạo DEV; Auth health phản hồi 200, schema CHIFAA chưa cài. Schema hoặc route rỗng không được coi là nghiệp vụ đã hoàn thành.
+Chưa có nhóm nghiệp vụ nào được nghiệm thu đầy đủ trên Supabase cloud. Người dùng đã chạy schema và deploy Vercel; Google provider bật, trang login và callback online phản hồi. Tài khoản đầu tiên đang chờ owner cấp Admin bằng SQL riêng. Schema hoặc route rỗng không được coi là nghiệp vụ đã hoàn thành.
 
 | Nhóm | Đã có | Còn thiếu |
 |---|---|---|
-| Auth | Next SSR/proxy/getUser, profile disabled mặc định, DB permissions, callback cố định | Google OAuth, expiry/revoke, một phiên Admin và E2E cloud |
+| Auth | Next SSR/proxy/getUser, profile disabled mặc định, DB permissions, callback cố định; Google bật trên cloud, script cấp Admin đầu tiên có kiểm tra/audit | Chạy lệnh Admin trên DEV, UAT OAuth/expiry/revoke, một phiên Admin và E2E cloud |
 | Danh mục | 7 form, CRUD RPC, dropdown, tìm/phân trang/cache, form tạo quy đổi/giá có cơ sở và bằng chứng, quyền approve riêng | Chỉnh draft giá/quy đổi, giá theo điểm và pay rates; tìm lookup quá 200 dòng |
 | Công thức | Editor thành phần, draft/publish/copy revision, BOM/cost theo ngày, cycle/yield/unit/price, bảo vệ lịch sử | Lịch sử/so sánh sâu, bao bì chuyên biệt, lookup lớn và browser/cloud UAT |
 | Sản xuất | RPC chính + thêm, ràng buộc lỗi, snapshot/xuất kho atomic; UI ghi một món | Plan editor, nhiều dòng, bổ sung/điều chỉnh/đảo và kho thành phẩm |
@@ -21,6 +21,6 @@ Chưa có nhóm nghiệp vụ nào được nghiệm thu trên Supabase cloud. N
 | Import | Audit/mapping, staging CLI UUID ổn định, không tự apply | Đọc đầy đủ lịch sử XLSX, staging DB/approve/import/reconcile/replay |
 | Offline | Public shell SW, trang offline, IndexedDB nháp với whitelist, không auto sync | Editor integration, khôi phục xung đột và browser E2E |
 | Storage/Realtime | Private bucket policy, subscription đơn theo điểm bán | Hosted policies, signed URL, Edge invite/rate UAT |
-| Triển khai | CI source, 33 tests, TS/lint/build, HTTP local, SQL benchmark, Vercel config, gói SQL Editor có rollback, hướng dẫn online | Cài schema cloud, Vercel/OAuth/Admin/E2E, 10 concurrent/p95 network, backup/restore |
+| Triển khai | CI source, 35 tests, TS/lint/build, HTTP local/online, SQL benchmark, Vercel Ready, SQL Editor bootstrap, Google provider bật | Admin và E2E nghiệp vụ, 10 concurrent/p95 network, backup/restore |
 
 Không nhập dữ liệu thật hoặc deploy public. Mã cũ và workbook chỉ là tư liệu; root npm scripts chạy Next.js.

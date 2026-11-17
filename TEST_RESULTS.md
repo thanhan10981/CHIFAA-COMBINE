@@ -2,6 +2,10 @@
 
 ## Standalone P1 (mới, không cộng với tests Apps Script)
 
+Admin ban đầu: 35/35 tests + types/TypeScript/lint/build đạt (output/first-admin-verify.txt). Test mới cấp đúng chủ sở hữu đã xác minh, my_access trả quyền quản trị/kho, replay chỉ một audit; chặn email thiếu/chưa xác minh, manager đã tồn tại, deny override, API role và chuỗi email không hợp lệ. File SQL chỉ được sinh, chưa thực thi cloud. Probe online mới: Google enabled=true, callback thiếu code307 về login?reason=oauth trên domain chính; chưa xác nhận tài khoản Admin hoặc UAT đăng nhập từ công cụ.
+
+Probe online 17/11/2026: domain alias chifaa-combine-web.vercel.app chuyển307 sang chifaa-combine.vercel.app. Domain chính /login200, manifest200, /app và /portal chuyển/login khi anonymous. /auth/callback503: chưa APP_URL online. Supabase auth settings200/Googlefalse; materials limit0 anonymous401/code42501, không còn lỗi thiếu table PGRST205. Chưa xác thực OAuth, cấp Admin, nghiệp vụ hay toàn bộ RLS cloud. Evidence output/online-live-status.json và online-canonical-status.json; không đọc dữ liệu nghiệp vụ, không có thay đổi runtime cần chạy lại tests.
+
 Chuẩn bị online: 33/33 tests, types/TypeScript/lint/build đạt trong output/online-deploy-final-verify.txt. Test gói SQL cài đủ 77 bảng có RLS, chặn chạy lại và lỗi giữa gói rollback bảng trước đó. Supabase DEV Auth health HTTP 200; materials HTTP 404/PGRST205 (chưa cài schema). Chưa kiểm thử transaction/Storage/Realtime/RLS trên cloud, Google OAuth hoặc Vercel. Không in giá trị env và không gửi dữ liệu nghiệp vụ.
 
 Kiểm kê: 31/31 tests đạt, 20 migrations, 77 bảng, 24 RPC. Test mới kiểm tra snapshot/token, phân quyền, bộ lọc không hợp lệ, thiếu token, NaN/Infinity/số âm, kho không tồn tại, rollback và số đếm 0/replay. Sinh types, TypeScript/lint/build đạt: output/standalone-count-verify.txt. Sau khi thêm assertion 0/replay, chạy lại tests đạt: output/standalone-count-tests-final.txt. Chưa kiểm thử trình duyệt hoặc Supabase cloud.
