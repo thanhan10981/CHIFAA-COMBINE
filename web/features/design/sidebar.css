@@ -1,0 +1,64 @@
+/* A single sidebar layout, with a fixed brand/account and a scrolling menu. */
+.workspace .sidebar {
+ width:300px;flex:0 0 300px;height:100dvh;padding:24px 14px 16px;
+ display:flex;flex-direction:column;overflow:hidden;
+ background:linear-gradient(180deg,#192f43 0%,#142638 100%);
+ border-right:1px solid #ffffff08;
+}
+.workspace .sidebar .logo {gap:12px;padding:0 8px 22px;border-bottom:1px solid #ffffff0e;min-width:0;flex:none;}
+.workspace .sidebar .brand-photo {width:48px;height:52px;object-fit:contain;background:transparent;border:0;border-radius:0;box-shadow:none;}
+.workspace .sidebar .logo>div {min-width:0;}
+.workspace .sidebar .logo h1 {font-size:14px;font-weight:700;letter-spacing:.15px;line-height:1.35;white-space:nowrap;}
+.workspace .sidebar .logo small {font-size:8px;font-weight:500;letter-spacing:1px;line-height:1.6;margin-top:5px;color:#9eb3c5;white-space:nowrap;}
+.workspace .sidebar nav.reference-navigation {
+ flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:20px 2px 16px 0;
+ scrollbar-width:thin;scrollbar-color:#ffffff20 transparent;scrollbar-gutter:stable;
+}
+.workspace .sidebar .reference-navigation .menu-title {margin:24px 12px 10px;font-size:9px;font-weight:600;letter-spacing:1.7px;line-height:1.5;color:#7f9bb1;}
+.workspace .sidebar .reference-navigation>.menu-title:first-child {margin-top:0;}
+.workspace .sidebar .reference-navigation .navitem {
+ display:flex;align-items:center;justify-content:flex-start;gap:11px;
+ min-height:43px;width:100%;padding:11px 12px;margin:3px 0;
+ border:0;border-radius:9px;background:transparent;box-shadow:none;
+ color:#b9cbd9;font-size:12px;font-weight:500;line-height:1.6;
+ transition:background .16s ease,color .16s ease;
+}
+.workspace .sidebar .reference-navigation .navitem .nav-label {flex:1;min-width:0;width:auto;line-height:1.6;white-space:normal;overflow-wrap:normal;word-break:normal;}
+.workspace .sidebar .reference-navigation :is(.nav-icon,.navgroup-icon) {display:grid;place-items:center;width:18px;height:20px;flex:0 0 18px;color:#8daabe;}
+.workspace .sidebar .reference-navigation :is(.nav-icon,.navgroup-icon) svg {display:block;width:17px;height:17px;}
+.workspace .sidebar .reference-navigation .navitem small {margin-left:auto;min-width:23px;padding:1px 6px;font-size:10px;font-weight:500;background:#ffffff0c;color:#aec5d7;}
+.workspace .sidebar .reference-navigation .navitem:hover {background:#ffffff07;color:#fff;}
+.workspace .sidebar .reference-navigation .navitem.active {background:#c55b22;color:#fff;border:0;box-shadow:inset 3px 0 #f6aa72;font-weight:600;}
+.workspace .sidebar .reference-navigation .navitem.active .nav-icon {color:#fff;}
+.workspace .sidebar .reference-navigation .navitem.active small {background:#ffffff24;color:#fff;}
+.workspace .sidebar .reference-navigation .navgroup {
+ display:grid;grid-template-columns:minmax(0,1fr) 16px;align-items:center;gap:10px;
+ width:100%;min-height:46px;margin:5px 0 0;padding:12px;
+ border:0;border-radius:9px;background:transparent;box-shadow:none;color:#c7d7e3;
+ font-size:13px;font-weight:600;line-height:1.5;letter-spacing:0;
+ transition:background .16s ease,color .16s ease;
+}
+.workspace .sidebar .reference-navigation .navgroup-left {display:flex;align-items:center;gap:11px;min-width:0;}
+.workspace .sidebar .reference-navigation .navgroup-label {display:block;font-size:12.5px;font-weight:600;line-height:1.6;letter-spacing:0;overflow-wrap:normal;word-break:normal;}
+.workspace .sidebar .reference-navigation .navgroup:hover {background:#ffffff07;color:#fff;}
+.workspace .sidebar .reference-navigation .navgroup.is-open {background:#ffffff09;color:#f2f7fb;border:0;}
+.workspace .sidebar .reference-navigation .nav-chevron {width:16px;height:16px;border-radius:0;background:transparent;color:#7f9cb1;}
+.workspace .sidebar .reference-navigation .nav-chevron svg {width:14px;height:14px;}
+.workspace .sidebar .reference-navigation .nav-children {margin:4px 0 10px 20px;padding:1px 0 1px 12px;border-left:1px solid #ffffff12;min-width:0;}
+.workspace .sidebar .reference-navigation .nav-children[hidden] {display:none;}
+.workspace .sidebar .reference-navigation .nav-children .navitem {font-size:11.5px;padding:10px;min-height:41px;gap:9px;}
+.workspace .sidebar .reference-navigation :is(.navgroup,.navitem):focus-visible {outline:2px solid #8fb9d3;outline-offset:-2px;}
+.workspace .sidebar .side-bottom {
+ flex:none;display:flex;align-items:center;gap:11px;padding:16px 8px 0;margin-top:0;
+ border-top:1px solid #ffffff0e;min-width:0;line-height:1.5;
+}
+.workspace .sidebar-account-icon {display:grid;place-items:center;width:34px;height:34px;flex:none;border:1px solid #ffffff12;border-radius:11px;color:#a6bdce;background:#ffffff04;}
+.workspace .sidebar-account-copy {min-width:0;flex:1;}
+.workspace .sidebar .side-bottom strong {display:block;font-size:10.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#d2e0eb;}
+.workspace .sidebar-account-state {display:flex;align-items:center;gap:6px;font-size:9px;color:#819eb3;margin-top:4px;}
+.workspace .sidebar-account-state .dot {width:5px;height:5px;margin:0;}
+@media(max-width:720px){
+ .workspace .sidebar {position:fixed;top:0;left:0;width:min(300px,calc(100vw - 32px));max-width:300px;flex:0 0 auto;padding:22px 14px 16px;}
+ .workspace .sidebar.open {transform:translateX(0);}
+}
+@media(prefers-reduced-motion:reduce){.workspace .sidebar .reference-navigation :is(.navgroup,.navitem){transition:none}}

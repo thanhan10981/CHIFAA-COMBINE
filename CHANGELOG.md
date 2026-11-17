@@ -1,5 +1,7 @@
 ## 2026-11-17 — Cấp Admin đầu tiên có kiểm soát
 
+Sidebar refinement: aligned rows, softer group styling, readable section labels, fixed transparent branding/account area and independently scrolling navigation. Preserves menu order, SVG icons, permissions, portal and route targets.
+
 Shared UI feedback: skeleton/orbit loaders and request activity, top-right deduplicated toasts, custom CHIFAA SVG icons, neutral stat tiles and consistent action dialogs. Removed redundant banners; preserved important field guidance, permissions, financial guards and all SQL workflows. Local verification passed; cloud authenticated UAT remains separate.
 
 Login: replaced the previous compact design with the supplied navy/light split, official CHIFAA branding, capability list, white outlined Google sign-in card, security note and responsive mobile header. Added pending submit feedback while retaining OAuth action, errors and portal routing. Production build and 47 tests passed; actual Next login browser checks passed seven widths. No schema/data changes or authenticated cloud sign-in test.

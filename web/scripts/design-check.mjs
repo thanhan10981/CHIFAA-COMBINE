@@ -36,9 +36,23 @@ try {
   await page.evaluate(()=>document.fonts.ready);
   const state=await page.evaluate(()=>({sidebarWidth:getComputedStyle(document.querySelector('.sidebar')).width,fontFamily:getComputedStyle(document.querySelector('.sidebar')).fontFamily,contentFont:getComputedStyle(document.querySelector('main.content')).fontFamily,headingFont:getComputedStyle(document.querySelector('main.content h1,main.content h2')).fontFamily,groupCount:document.querySelectorAll('.sidebar .navgroup').length,activeCount:document.querySelectorAll('.sidebar [aria-current=page]').length,headerHeight:document.querySelector('.topbar').getBoundingClientRect().height,overflow:document.documentElement.scrollWidth>innerWidth+1}));
   report.pages.push({route,...state});
-  if(state.sidebarWidth!=='282px'||state.groupCount!==7||state.activeCount!==1||state.headerHeight!==75||state.overflow||!state.contentFont.includes('Be Vietnam Pro'))throw new Error('Desktop layout check failed: '+JSON.stringify({route,...state}));
+  if(state.sidebarWidth!=='300px'||state.groupCount!==7||state.activeCount!==1||state.headerHeight!==75||state.overflow||!state.contentFont.includes('Be Vietnam Pro'))throw new Error('Desktop layout check failed: '+JSON.stringify({route,...state}));
   if(['','materials','recipes','strategy','kiosk','audit'].includes(route))await page.screenshot({path:path.join(out,(route||'dashboard')+'-desktop.png')});
  }
+ // Sidebar composition: long section names fit, header/account stay fixed while menu scrolls.
+ for(const [width,height] of [[1440,900],[1280,720],[1024,768]]){
+  await page.setViewportSize({width,height});await page.goto(base+'/app/admin');await page.evaluate(()=>document.fonts.ready);
+  const sidebar=await page.evaluate(()=>{
+   const brand=document.querySelector('.sidebar .logo').getBoundingClientRect(),footer=document.querySelector('.sidebar .side-bottom').getBoundingClientRect();
+   const labels=[...document.querySelectorAll('.navgroup-label')].map(element=>({height:element.getBoundingClientRect().height,overflow:element.scrollWidth>element.clientWidth+1}));
+   const nav=document.querySelector('.sidebar nav');nav.scrollTop=nav.scrollHeight;
+   return {labels,brandTop:brand.top,footerBottom:footer.bottom,brandMoved:Math.abs(document.querySelector('.sidebar .logo').getBoundingClientRect().top-brand.top)>1,footerMoved:Math.abs(document.querySelector('.sidebar .side-bottom').getBoundingClientRect().bottom-footer.bottom)>1};
+  });
+  if(sidebar.labels.some(label=>label.height>22||label.overflow)||sidebar.brandMoved||sidebar.footerMoved||sidebar.footerBottom>height)throw new Error('Sidebar alignment/scroll failed: '+JSON.stringify({width,...sidebar}));
+  if(width===1440)await page.screenshot({path:path.join(out,'sidebar-admin-desktop.png'),animations:'disabled'});
+ }
+ report.checks.push('sidebar section labels fit at 1024/1280/1440; fixed brand and account during menu scrolling');
+ await page.setViewportSize({width:1440,height:1000});
  await page.goto(base+'/app/materials');
  const fonts=await page.evaluate(()=>({loaded:[...document.fonts].filter(font=>font.family.includes('Be Vietnam Pro')&&font.status==='loaded').length,portalVisible:!!document.querySelector('a[href="/portal"]')}));
  if(fonts.loaded<2||!fonts.portalVisible)throw new Error('Vietnamese fonts or ordering portal missing: '+JSON.stringify(fonts));
