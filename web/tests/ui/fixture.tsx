@@ -1,5 +1,8 @@
 // This offline visual fixture is bundled into ignored output/, never a Next route.
 import {createRoot} from 'react-dom/client';
+import {FeedbackProvider,RequestActivity} from '@/components/feedback';
+import {Providers} from '@/components/providers';
+import {FeedbackFixture} from './feedback-fixture';
 import {QueryClient,QueryClientProvider} from '@tanstack/react-query';
 import {AppShell} from '@/components/app-shell';
 import {CatalogPage} from '@/features/catalog/catalog-page';
@@ -36,4 +39,4 @@ client.setQueryData([user,'inventory','options',date],{warehouses:[],products:[]
 client.setQueryData([user,'inventory','warehouses'],[]);
 client.setQueryData([user,'dashboard',date],{net_revenue_vnd:null,received_vnd:null,produced:null,production_hours:null,updated_at:new Date().toISOString(),completeness:'Chưa đủ dữ liệu'});
 const content=catalogs[path]?<CatalogPage slug={path} userId={user} canCreate canEdit canApprove/>:['recipes','batches','rice','packaging','cost'].includes(path)?<RecipeWorkspace slug={path} userId={user} canCreate canEdit canApprove canReadCost/>:path==='counts'?<StockCount userId={user} canPost/>:['inventory','production','stockmovements','entry-stock','entry-production'].includes(path)?<OperationEditor kind={path==='production'||path==='entry-production'?'production':'inventory'} userId={user} canPost/>:path==='kiosk'?<Kiosk userId={user} canApprove canSell canUndo/>:path==='audit'?<ActivityLog userId={user}/>:path==='admin'?<Accounts userId={user} canManage/>:path==='orders'?<ReviewOrders userId={user} canApprove/>:path==='app'?<Dashboard userId={user}/>:reference?<BlueprintPage page={reference}/>:<section className="panel"><h1>{modules.find(([slug])=>slug===path)?.[1]}</h1><p>Workflow chưa hoàn tất.</p></section>;
-createRoot(document.getElementById('root')!).render(<QueryClientProvider client={client}><AppShell access={access} userLabel="Tài khoản kiểm thử">{content}</AppShell></QueryClientProvider>);
+createRoot(document.getElementById('root')!).render(path==='feedback'?<Providers><FeedbackFixture/></Providers>:<FeedbackProvider><QueryClientProvider client={client}><RequestActivity/><AppShell access={access} userLabel="Tài khoản kiểm thử">{content}</AppShell></QueryClientProvider></FeedbackProvider>);

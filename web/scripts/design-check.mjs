@@ -71,6 +71,34 @@ try {
   await page.screenshot({path:path.join(out,route+'-mobile.png')});
  }
  report.checks.push('mobile drawer and overflow');report.navigationItems=nav.top.length+nav.groups.flatMap(g=>g.items).length;
+ // Exercise the production feedback provider with delayed, isolated requests.
+ await page.goto(base+'/feedback');await page.setViewportSize({width:1440,height:1000});
+ await page.getByRole('button',{name:'Overlap',exact:true}).click();
+ await page.locator('.chifaa-request-activity').waitFor();await page.locator('.chifaa-loading').waitFor();await page.screenshot({path:path.join(out,'feedback-loading.png'),animations:'disabled'});
+ await page.getByText('Dữ liệu kiểm tra',{exact:true}).waitFor();
+ if(!await page.locator('.chifaa-request-activity').isVisible())throw new Error('Loading stopped while a concurrent mutation was running');
+ await page.locator('.chifaa-request-activity').waitFor({state:'detached'});
+ await page.locator('.chifaa-toast').waitFor();await page.getByRole('button',{name:'Đóng thông báo',exact:true}).click();
+ await page.getByRole('button',{name:'Read error',exact:true}).click();await page.locator('.chifaa-toast[role=alert]').waitFor();
+ if(await page.locator('.chifaa-toast').count()!==1)throw new Error('Query error was toasted twice');
+ await page.waitForTimeout(6200);if(!await page.locator('.chifaa-toast[role=alert]').isVisible())throw new Error('Actionable error dismissed automatically');
+ await page.getByRole('button',{name:'Đóng thông báo',exact:true}).click();
+ await page.getByRole('button',{name:'Duplicate success',exact:true}).click();
+ if(await page.locator('.chifaa-toast').count()!==1)throw new Error('Success toast not deduplicated');
+ await page.locator('.chifaa-toast').waitFor({state:'detached',timeout:9000});
+ await page.getByRole('button',{name:'Open modal',exact:true}).click();await page.getByRole('button',{name:'Modal notification',exact:true}).click();
+ await page.locator('.chifaa-toast[role=alert]').waitFor();
+ const toast=await page.locator('.chifaa-toast').boundingBox();if(!toast||toast.x<1000||toast.y>100)throw new Error('Toast is not in the top-right corner');
+ if(await page.locator('.chifaa-toast').evaluate(element=>getComputedStyle(element).backgroundColor)!=='rgb(255, 255, 255)')throw new Error('Legacy error CSS overrides toast surface');
+ if(!await page.locator('.chifaa-toast').evaluate(element=>{const box=element.getBoundingClientRect();return !!document.elementFromPoint(box.x+20,box.y+20)?.closest('.chifaa-toast');}))throw new Error('Toast is behind the modal backdrop');
+ await page.screenshot({path:path.join(out,'feedback-desktop.png'),animations:'disabled'});
+ await page.setViewportSize({width:390,height:844});await page.screenshot({path:path.join(out,'feedback-mobile.png'),animations:'disabled'});
+ if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))throw new Error('Feedback overflows mobile viewport');
+ await page.emulateMedia({reducedMotion:'reduce'});
+ if(await page.locator('.chifaa-toast').evaluate(element=>getComputedStyle(element).animationName)!=='none')throw new Error('Reduced-motion preference ignored');
+ await page.getByRole('button',{name:'Đóng thông báo',exact:true}).click();await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();
+ await page.getByRole('button',{name:'Write error',exact:true}).click();await page.locator('.chifaa-toast[role=alert]').waitFor();
+ report.checks.push('overlapping query/mutation loading, deduplicated query error, persistent errors, timed success, modal toast layering, mobile and reduced motion');
  if(report.errors.length)throw new Error(report.errors.join('\n'));
  report.passed=true;
 }catch(error){report.passed=false;report.failure=error.message;process.exitCode=1;}finally{await fs.writeFile(path.join(out,'report.json'),JSON.stringify(report,null,2));await browser.close();await new Promise(resolve=>server.close(resolve));}

@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import {ToastNotice} from '@/components/feedback';
 import {GoogleSubmit} from './submit';
 
 const capabilities=[['Theo dõi vận hành','Sản xuất, nguyên liệu và tồn kho'],['Kiểm soát kinh doanh','Điểm bán, doanh thu và công nợ'],['Quản lý có trách nhiệm','Phân quyền và nhật ký hoạt động']];
@@ -17,8 +18,8 @@ export function LoginView({connected,reason,target,action}:{connected:boolean;re
     <div className="access-divider"><span>TÀI KHOẢN LÀM VIỆC</span></div>
     <form action={action}><input type="hidden" name="target" value={target}/><GoogleSubmit connected={connected}/></form>
     <p className="access-help">Bấm đăng nhập để tiếp tục tới Google. CHIFAA sẽ đón bạn trở lại sau khi xác nhận.</p>
-    {!connected&&<p role="status" className="access-message">Chưa kết nối Supabase DEV. Cần cấu hình môi trường trước khi đăng nhập.</p>}
-    {reason&&<p role="alert" className="access-message access-error">{reason==='access'?'Tài khoản chưa được cấp quyền hoặc đã bị khóa.':'Chưa hoàn tất đăng nhập. Kiểm tra cấu hình và thử lại.'}</p>}
+    {!connected&&<ToastNotice message="Chưa kết nối Supabase DEV. Cần cấu hình môi trường trước khi đăng nhập." tone="error"/>}
+    {reason&&<ToastNotice message={reason==='access'?'Tài khoản chưa được cấp quyền hoặc đã bị khóa.':'Chưa hoàn tất đăng nhập. Kiểm tra cấu hình và thử lại.'} tone="error"/>}
     <div className="access-security"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V6a4 4 0 0 1 8 0v4m-4 5v2"/></svg><div><strong>Quyền truy cập theo tài khoản</strong><p>Chỉ hiển thị dữ liệu trong phạm vi được cấp. Quyền truy cập được kiểm tra cho từng thao tác.</p></div></div>
    </div>
    <footer className="access-panel-footer">CHIFAA COMBINE <span>·</span> Quản trị vận hành</footer>

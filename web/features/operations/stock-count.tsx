@@ -1,8 +1,9 @@
 'use client';
+import {ToastNotice,LoadingState} from '@/components/feedback';
 
 import {useState} from 'react';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
-import {LoaderCircle} from 'lucide-react';
+
 import {browserSupabase} from '@/lib/supabase/browser';
 
 type CountRow = {id:string; code:string; name:string; unit_id:string; unit_code:string; quantity:string|null};
@@ -58,7 +59,7 @@ export function StockCount({userId, canPost}:{userId:string; canPost:boolean}) {
  const reset=()=>{setCounts({});setMessage('');};
  return <section>
   <div className="page-heading"><div><p className="eyebrow">CHIFAA / KHO</p><h1>Kiểm kê nguyên liệu</h1><p>Nhập số đếm theo đơn vị chuẩn. Chỉ các dòng đã nhập được ghi nhận; ô trống không được coi là 0.</p></div></div>
-  <div className="panel">
+  <div className="panel">{warehouses.isFetching&&<LoadingState compact label="Đang tải danh sách kho…"/>}
    <fieldset disabled={locked||hasDraft}><div className="form-grid">
     <label>Ngày kiểm kê<input type="date" value={date} onChange={e=>{setDate(e.target.value);reset();}}/></label>
     <label>Kho nguyên liệu<select value={warehouse} onChange={e=>{setWarehouse(e.target.value);setOffset(0);reset();}}><option value="">Chọn kho</option>{warehouses.data?.map(w=><option key={w.id} value={w.id}>{w.name}</option>)}</select></label>
@@ -66,8 +67,8 @@ export function StockCount({userId, canPost}:{userId:string; canPost:boolean}) {
     <input aria-label="Tìm vật tư theo tiền tố mã hoặc tên" placeholder="Tìm mã hoặc tên vật tư…" value={search} maxLength={100} onChange={e=>{setSearch(e.target.value);setOffset(0);reset();}}/>
     <button className="button" disabled={!warehouse||snapshot.isFetching} onClick={()=>{reset();void snapshot.refetch();}}>Tải lại tồn</button>
    </div></fieldset>
-   {snapshot.isFetching&&<p role="status"><LoaderCircle size={16} className="spin"/> Đang tải tồn kho…</p>}
-   {(warehouses.isError||snapshot.isError)&&<p role="alert" className="error">{warehouses.error?.message||snapshot.error?.message}</p>}
+   {snapshot.isFetching&&<LoadingState compact label="Đang tải tồn kho…"/>}
+   {(warehouses.isError||snapshot.isError)&&<ToastNotice message={warehouses.error?.message||snapshot.error?.message} tone="error"/>}
    {warehouse&&snapshot.data&&<>
     <div className="table-wrap"><table><thead><tr><th>Mã</th><th>Vật tư</th><th>Đơn vị chuẩn</th><th>Tồn theo sổ</th><th>Số đếm thực tế</th></tr></thead><tbody>
      {snapshot.data.rows.slice(0,50).map(row=><tr key={row.id}><td>{row.code}</td><td>{row.name}</td><td>{row.unit_code}</td><td>{row.quantity??'Chưa có chuyển động'}</td><td><input aria-label={`Số đếm ${row.name}`} inputMode="decimal" disabled={!canPost||locked||snapshot.isFetching} value={counts[row.id]??''} placeholder="Bỏ qua" onChange={e=>setCounts({...counts,[row.id]:e.target.value})}/></td></tr>)}
@@ -80,8 +81,8 @@ export function StockCount({userId, canPost}:{userId:string; canPost:boolean}) {
     </div>
     <button className="button primary" disabled={!canPost||save.isPending||snapshot.isFetching} onClick={()=>save.mutate()}>{save.isPending?'Đang lưu…':pending?'Kiểm tra lại lần lưu':'Ghi kiểm kê & điều chỉnh'}</button>
    </>}
-   {!canPost&&<p className="notice">Cần quyền duyệt Kiểm kê và tạo phiếu Kho để ghi kiểm kê.</p>}
-   {message&&<p role={save.isError?'alert':'status'} className={save.isError?'error':'notice'}>{message}</p>}
+   {!canPost&&<ToastNotice message="Cần quyền duyệt Kiểm kê và tạo phiếu Kho để ghi kiểm kê." tone="info"/>}
+   {!save.isPending&&message&&<ToastNotice message={message} tone={save.isError?'error':'success'} eventKey={save.submittedAt}/>}
   </div>
  </section>;
 }

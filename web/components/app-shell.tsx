@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {usePathname} from 'next/navigation';
 import {useState,type ReactNode} from 'react';
-import {ChevronDown,Menu,X,ArrowUpRight,RefreshCw} from 'lucide-react';
+import {ChevronDown,Menu,X,ArrowUpRight,RefreshCw,Icon,navigationIcon} from '@/components/icons';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {browserSupabase} from '@/lib/supabase/browser';
 import type {Access} from '@/lib/auth/access';
@@ -24,7 +24,7 @@ export function AppShell({children,access,userLabel='Nội bộ'}:{children:Reac
  const itemLink=(item:{id:string;label:string;icon:string})=>{
   const route=referenceRoutes[item.id];if(!route||!canView(route.module))return null;
   const href='/app'+(route.slug?'/'+route.slug:''),active=activeSlug===route.slug;
-  return <Link href={href} key={item.id} className={'navitem'+(active?' active':'')} aria-current={active?'page':undefined} onClick={()=>setMobile(false)}><span className="nav-icon" dangerouslySetInnerHTML={{__html:item.icon}}/><span className="nav-label">{item.label}</span>{item.id==='catalog'&&materialCount.data!=null&&<small>{materialCount.data}</small>}</Link>;
+  return <Link href={href} key={item.id} className={'navitem'+(active?' active':'')} aria-current={active?'page':undefined} onClick={()=>setMobile(false)}><span className="nav-icon"><Icon name={navigationIcon(item.id)}/></span><span className="nav-label">{item.label}</span>{item.id==='catalog'&&materialCount.data!=null&&<small>{materialCount.data}</small>}</Link>;
  };
  return <div className="workspace">
   {mobile&&<button className="reference-backdrop" aria-label="Đóng thanh điều hướng" onClick={()=>setMobile(false)}/>}
@@ -35,7 +35,7 @@ export function AppShell({children,access,userLabel='Nội bộ'}:{children:Reac
      if(!group.items.some(item=>canView(referenceRoutes[item.id].module)))return null;
      const active=group.items.some(item=>referenceRoutes[item.id].slug===activeSlug),manual=closed[group.id];
      const open=manual?(!manual.closed||(active&&manual.path!==pathname)):active;
-     return <div className="reference-nav-section" key={group.id}><button type="button" className={'navgroup'+(open?' is-open':'')} aria-expanded={open} aria-controls={'children-'+group.id} onClick={()=>setClosed({...closed,[group.id]:{closed:open,path:pathname}})}><span className="navgroup-left"><span className="navgroup-icon" dangerouslySetInnerHTML={{__html:group.icon}}/><span className="navgroup-label">{group.label}</span></span><span className="nav-chevron"><ChevronDown/></span></button><div className={'nav-children'+(open?'':' collapsed')} id={'children-'+group.id} hidden={!open}>{group.items.map(itemLink)}</div></div>;
+     return <div className="reference-nav-section" key={group.id}><button type="button" className={'navgroup'+(open?' is-open':'')} aria-expanded={open} aria-controls={'children-'+group.id} onClick={()=>setClosed({...closed,[group.id]:{closed:open,path:pathname}})}><span className="navgroup-left"><span className="navgroup-icon"><Icon name={navigationIcon(group.id)}/></span><span className="navgroup-label">{group.label}</span></span><span className="nav-chevron"><ChevronDown/></span></button><div className={'nav-children'+(open?'':' collapsed')} id={'children-'+group.id} hidden={!open}>{group.items.map(itemLink)}</div></div>;
     })}
    </nav>
    <div className="side-bottom"><span className="dot"/>{access?'Đã xác thực tài khoản':'Chưa xác thực'}<br/><strong>CHIFAA COMBINE</strong><span className="preview-footer-note">{userLabel}</span></div>

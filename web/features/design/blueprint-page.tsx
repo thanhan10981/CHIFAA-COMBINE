@@ -1,6 +1,7 @@
 import blueprints from './blueprints.json';
+import {replaceDecorativeIcons} from '@/components/icons';
 export function BlueprintPage({page}:{page:string}) {
  const markup=blueprints[page as keyof typeof blueprints];
  if(!markup)return null;
- return <><div className="reference-status" role="status">Phân hệ đang hoàn thiện. Các thao tác chưa sẵn sàng được tạm khóa; chưa có dữ liệu nào được ghi nhận từ màn hình này.</div><div dangerouslySetInnerHTML={{__html:markup}}/></>;
+ return <><p className="reference-status">Phân hệ đang hoàn thiện · Chưa mở thao tác ghi dữ liệu.</p><div dangerouslySetInnerHTML={{__html:replaceDecorativeIcons(markup)}}/></>;
 }

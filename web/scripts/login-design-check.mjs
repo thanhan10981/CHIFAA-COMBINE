@@ -22,14 +22,14 @@ try {
   if([1902,390,320].includes(width))await page.screenshot({path:path.join(out,`login-${width}.png`),fullPage:true});
  }
  await page.goto(base+'/login?reason=access&next=/portal');
- await page.locator('.access-error[role=alert]').waitFor();
+ await page.locator('.chifaa-toast[role=alert]').waitFor();
  if(await page.locator('input[name=target]').inputValue()!=='/portal')throw new Error('Ordering portal login target lost');
  await page.screenshot({path:path.join(out,'login-access-error-mobile.png'),fullPage:true});
  await page.goto(base+'/login?reason=oauth&next=https://invalid.example');
- await page.locator('.access-error[role=alert]').waitFor();
+ await page.locator('.chifaa-toast[role=alert]').waitFor();
  if(await page.locator('input[name=target]').inputValue()!=='/app')throw new Error('Unsafe login target accepted');
  await page.keyboard.press('Tab');
- await page.getByRole('button').focus();
+ await page.locator('.access-google').focus();
  if(await page.locator('.access-google').evaluate(element=>getComputedStyle(element).outlineStyle)==='none')throw new Error('Keyboard focus indicator missing');
  if(report.errors.length)throw new Error(report.errors.join('\n'));
  report.checks=['desktop and mobile layout','self-hosted Vietnamese font and official logo','access and OAuth errors','portal target retained; unsafe target rejected','keyboard focus'];
