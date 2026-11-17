@@ -1,0 +1,40 @@
+import path from 'node:path';
+export async function checkCommercial(page,base,out,report){
+ await page.routeWebSocket('**',socket=>socket.close());
+ const names={stores:'Danh mục điểm bán',products:'Danh mục món bán',employees:'Danh mục nhân viên',discounts:'Bảng chiết khấu'};
+ async function fits(label){const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);if(overflow)throw new Error(label+' page overflows');}
+ async function close(){await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();await page.getByRole('dialog').waitFor({state:'detached'});}
+ async function dialog(label){const box=await page.getByRole('dialog').boundingBox(),viewport=page.viewportSize();if(!box||box.x<0||box.y<0||box.x+box.width>viewport.width+1||box.y+box.height>viewport.height+1)throw new Error(label+' dialog outside screen');await fits(label);const last=page.getByRole('dialog').locator('button').last();await last.scrollIntoViewIfNeeded();if(await page.evaluate(()=>document.body.style.overflow)!=='hidden')throw new Error('Modal background scroll unlocked');}
+ for(const width of [320,390,768,1024,1440]){
+  await page.setViewportSize({width,height:width<500?844:900});
+  for(const kind of Object.keys(names)){
+   await page.goto(base+'/app/'+kind);await page.getByRole('heading',{name:names[kind],exact:true}).first().waitFor();await page.locator('tbody tr').first().waitFor();await page.evaluate(()=>document.fonts.ready);await fits(kind+' '+width);report.pages.push({kind,width,overflow:false});
+   await page.screenshot({path:path.join(out,kind+'-'+width+'.png')});
+   if(kind!=='discounts'){
+    await page.getByRole('button',{name:'Sửa',exact:true}).first().click();await dialog(kind+' editor');
+    if(kind==='employees'&&await page.getByLabel('Bộ phận',{exact:true}).inputValue()!=='')throw new Error('Unknown department was invented');
+    await close();
+   }
+   const captions=kind==='stores'?['Giá riêng','Chiết khấu']:kind==='products'?['Giá bán','Công thức']:kind==='employees'?['Lương & phụ cấp']:['Chi tiết / lịch sử'];
+   for(const caption of captions){
+    await page.getByRole('button',{name:caption,exact:true}).first().click();await page.getByText('Nguồn kiểm thử tổng hợp',{exact:true}).waitFor();await dialog(kind+' history');
+    await page.getByRole('button',{name:'Thêm phiên bản',exact:true}).click();await page.getByRole('button',{name:'Lưu phiên bản mới',exact:true}).waitFor();await dialog(kind+' '+caption);
+    if(caption==='Giá bán'&&await page.getByLabel('Giá bán (đ) *',{exact:true}).inputValue()!=='15.000')throw new Error('VND input not formatted');
+    if(caption==='Chiết khấu'||kind==='discounts'){
+     const excluded=page.getByRole('checkbox',{name:'SYN-W · Món nguyên cây kiểm thử',exact:true});if(await excluded.isChecked())throw new Error('Excluded product was ticked');
+     await page.getByRole('button',{name:'Chọn tất cả',exact:true}).click();if(!await excluded.isChecked())throw new Error('Select all failed');
+     await page.getByRole('button',{name:'Bỏ chọn tất cả',exact:true}).click();if(await excluded.isChecked())throw new Error('Clear all failed');
+     await page.screenshot({path:path.join(out,'discount-editor-'+width+'.png')});
+    }
+    await close();
+   }
+  }
+ }
+ await page.goto(base+'/app/employees?role=staff');await page.locator('tbody tr').waitFor();
+ if(await page.getByRole('button',{name:'Lương & phụ cấp',exact:true}).count()||await page.getByRole('button',{name:'Sửa',exact:true}).count()||await page.getByText('25.000 đ',{exact:true}).count())throw new Error('Unauthorized payroll/action rendered');
+ const requests=[];
+ await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/save_commercial_terms',async route=>{requests.push(route.request().postDataJSON());await route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({code:'NETWORK',message:'Synthetic uncertain response'})});});
+ await page.goto(base+'/app/products');await page.getByRole('button',{name:'Giá bán',exact:true}).click();await page.getByRole('button',{name:'Thêm phiên bản',exact:true}).click();await page.getByLabel('Nguồn / lý do *',{exact:true}).fill('Synthetic new quote');await page.getByRole('button',{name:'Lưu phiên bản mới',exact:true}).click();await page.getByRole('button',{name:'Kiểm tra lại lần lưu',exact:true}).waitFor();await page.getByRole('button',{name:'Kiểm tra lại lần lưu',exact:true}).click();await page.waitForFunction(()=>document.querySelectorAll('.chifaa-toast').length>0);
+ if(requests.length!==2||requests[0].p_key!==requests[1].p_key||requests[0].p_input.amount!=='15000')throw new Error('Uncertain retry lost key or exact VND amount');
+ report.checks.push('4 commercial catalogues ×5 widths, metadata/price/pay/store-price/recipe/discount dialogs, Vietnamese money, unknown department retained, discount checkboxes, hidden salary/actions and same-key uncertain retry; synthetic offline fixture');
+}

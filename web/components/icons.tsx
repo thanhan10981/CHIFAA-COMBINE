@@ -26,6 +26,7 @@ const paths:Record<string,string>={
  upload:'M12 16V3 M7 8l5-5 5 5 M3 16v5h18v-5',
  search:'M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14 M15 15l6 6',
  plus:'M12 4v16 M4 12h16',
+ edit:'m15 4 5 5 M4 20l5-1L21 7a2 2 0 0 0-5-5L4 14z M4 14l5 5 M13 21h8',
  close:'m6 6 12 12 M18 6 6 18',
  chevron:'m6 9 6 6 6-6',
  arrow:'M5 19 19 5 M6 5h13v13',

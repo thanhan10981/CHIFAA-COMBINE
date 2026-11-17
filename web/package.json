@@ -18,6 +18,7 @@
     "benchmark": "tsx scripts/benchmark.ts",
     "test:design": "node scripts/design-check.mjs",
     "test:responsive": "node scripts/design-check.mjs --responsive",
+    "test:commercial": "node scripts/design-check.mjs --commercial",
     "db:kiosk-update": "tsx scripts/package-kiosk-update.ts"
   },
   "engines": {

@@ -1,3 +1,7 @@
+## 2026-11-17 — Bốn danh mục kinh doanh và nhập nguồn
+
+Điểm bán, món bán, nhân viên và CK có UI/RPC thật: thêm/sửa/ngừng dùng, tìm/lọc/phân trang/ngày xem, giá chung/giá riêng, lương/phụ cấp, liên kết công thức và ma trận CK theo món/ngày. Thêm025 với giá chung và chính sách CK, lịch sử/bằng chứng, khóa version/idempotency, RLS và quyền duyệt. Portal dùng giá/CK cùng nguồn và giữ snapshot đơn cũ. Cost nguồn chỉ tham khảo; thiếu bộ phận/phụ cấp không tự điền giả. Chuẩn bị SQL riêng cho11 điểm bán/11 món/5 nhân viên/121 ô CK;44 dòng trống tên giữ nguồn riêng. Không nhập cloud hoặc ghi phiếu kinh doanh; không sửa63 vật tư/workbook. Chi tiết docs/standalone/COMMERCIAL_CATALOGS.md.
+
 ## 2026-11-17 — Responsive điện thoại, tablet và desktop
 
 Thêm bố cục chung cho màn hình nhỏ: tablet dùng menu trượt, khóa cuộn nền và giữ focus bàn phím; desktop 1024px thu gọn sidebar. Form chuyển một cột trên điện thoại, bảng cuộn trong vùng riêng, hộp thoại giới hạn theo chiều cao màn hình và vùng an toàn. Giữ cổng đặt hàng, vai trò và nút SVG trên mobile; bảng đơn hàng portal có vùng cuộn riêng. Không đổi SQL, quyền hoặc dữ liệu.

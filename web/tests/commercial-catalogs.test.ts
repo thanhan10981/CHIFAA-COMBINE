@@ -1,0 +1,85 @@
+import test,{before,after} from 'node:test';import assert from 'node:assert/strict';import {randomUUID} from 'node:crypto';import type {PGlite} from '@electric-sql/pglite';
+import {database,asUser,identities} from './database-fixture';
+import {parseCommercialSource,buildCommercialImport} from '../lib/deploy/commercial-import';
+let db:PGlite;const ids={store:randomUUID(),product:randomUUID(),product2:randomUUID(),employee:randomUUID()};
+const rpc=async(name:string,args:unknown[],user=identities.admin)=>(await asUser(db,user,()=>db.query<{result:Record<string,unknown>}>(`select public.${name}(${args.map((_,i)=>'$'+(i+1)).join(',')}) result`,args))).rows[0].result;
+const version=async(table:string,id:string)=>String((await db.query<{version:string}>(`select version::text from public.${table} where id=$1`,[id])).rows[0].version);
+const terms=async(kind:string,id:string,input:unknown,key=randomUUID(),ver?:string|null,user=identities.admin)=>rpc('save_commercial_terms',[kind,id,ver===undefined?await version(kind==='pay'?'employees':['store_price','discount'].includes(kind)?'stores':'products',id):ver,JSON.stringify(input),key],user);
+before(async()=>{db=await database();await db.query("insert into stores(id,code,name) values($1,'COMM-S','Synthetic store')",[ids.store]);await db.query("insert into products(id,code,name,sale_unit,published) values($1,'COMM-P','Synthetic product','portion',true),($2,'COMM-P2','Excluded product','whole',true)",[ids.product,ids.product2]);await db.query("insert into employees(id,code,name) values($1,'COMM-E','Synthetic employee')",[ids.employee]);await db.query('insert into store_users(store_id,user_id) values($1,$2)',[ids.store,identities.a]);});
+after(async()=>{await db?.close();});
+test('commercial CRUD preserves identity, idempotency, NULL departments, live rights and stale-version protection',async()=>{
+ const key=randomUUID(),input={code:'COMM-E',name:'Updated employee',department_id:null,phone:'0123456789',note:'Synthetic note',active:true};
+ const ver=await version('employees',ids.employee);const first=await rpc('save_commercial_catalog',['employees',ids.employee,ver,JSON.stringify(input),key]);
+ assert.deepEqual(await rpc('save_commercial_catalog',['employees',ids.employee,ver,JSON.stringify(input),key]),first);
+ await assert.rejects(()=>rpc('save_commercial_catalog',['employees',ids.employee,null,JSON.stringify(input),randomUUID()]),/VERSION_CONFLICT/);
+ await assert.rejects(()=>rpc('save_commercial_catalog',['employees',ids.employee,ver,JSON.stringify(input),randomUUID()]),/VERSION_CONFLICT/);
+ assert.equal((await db.query<{department_id:null}>('select department_id from employees where id=$1',[ids.employee])).rows[0].department_id,null);
+ await assert.rejects(()=>rpc('save_commercial_catalog',['stores',null,null,JSON.stringify({code:'DENY',name:'Denied'}),randomUUID()],identities.accountant),/FORBIDDEN/);
+ await db.query("insert into user_permissions values($1,'products','create',true)",[identities.accountant]);
+ for(const published of [true,'TRUE','yes',1])await assert.rejects(()=>rpc('save_commercial_catalog',['products',null,null,JSON.stringify({code:'PUB',name:'No approval',sale_unit:'portion',published}),randomUUID()],identities.accountant),/FORBIDDEN_PUBLICATION/);
+});
+test('default prices and store overrides apply by date; decimal money strings and order snapshots stay exact',async()=>{
+ await terms('price',ids.product,{date:'2026-11-17',amount:'15000',evidence:'Initial price'});
+ await terms('price',ids.product2,{date:'2026-11-17',amount:'11000',evidence:'Whole price'});
+ await terms('price',ids.product,{date:'2026-12-01',amount:'17000',evidence:'New price'});
+ const before=(await asUser(db,identities.a,()=>db.query<{price_vnd:string}>("select * from portal_catalog($1,'2026-11-18')",[ids.store]))).rows;
+ assert.equal(before.find(r=>r.price_vnd==='15000')?.price_vnd,'15000');
+ await terms('store_price',ids.store,{date:'2026-11-20',product_id:ids.product,amount:'16000',evidence:'Store quote'});
+ const after=(await asUser(db,identities.a,()=>db.query<{price_vnd:string;product_id:string}>("select * from portal_catalog($1,'2026-12-02')",[ids.store]))).rows;assert.equal(after.find(r=>r.product_id===ids.product)?.price_vnd,'16000');
+ await assert.rejects(()=>terms('price',ids.product,{date:'2026-12-01',amount:'99',evidence:'Conflicting price'}),/unique constraint/);
+ await assert.rejects(()=>terms('price',ids.product,{date:'2027-01-01',amount:'1.5',evidence:'Fraction invalid'}),/INVALID_MONEY/);
+ const catalogue=await rpc('commercial_catalog',['products','2026-11-18','','',0,25]);const rows=catalogue.rows as Record<string,unknown>[];assert.equal(rows.find(r=>r.id===ids.product)?.price_vnd,'15000');
+ await assert.rejects(()=>asUser(db,identities.b,()=>db.query("select * from portal_catalog($1,'2026-11-18')",[ids.store])),/FORBIDDEN/);
+});
+test('discount matrix uses explicit false as zero, appends dates, requires complete products and never rewrites existing orders',async()=>{
+ const key=randomUUID(),input={date:null,common_rate:'0.15',enabled:true,note:'Synthetic policy',evidence:'Owner matrix',items:[{product_id:ids.product,eligible:true,override_rate:null},{product_id:ids.product2,eligible:false,override_rate:null}]};
+ const ver=await version('stores',ids.store);await terms('discount',ids.store,input,key,ver);await terms('discount',ids.store,input,key,ver);
+ const offer=async(date:string)=>(await asUser(db,identities.a,()=>db.query<{product_id:string;discount_rate:string}>('select * from portal_catalog($1,$2)',[ids.store,date]))).rows;
+ const initial=await offer('2026-11-18');assert.equal(Number(initial.find(r=>r.product_id===ids.product)?.discount_rate),.15);assert.equal(Number(initial.find(r=>r.product_id===ids.product2)?.discount_rate),0);
+ const order=await rpc('submit_order',[ids.store,'2026-12-03','AM',JSON.stringify([{product_id:ids.product,quantity:'1'}]),'',randomUUID()],identities.a);
+ await terms('discount',ids.store,{...input,date:'2026-12-01',common_rate:'0.17'});
+ assert.equal(Number((await offer('2026-12-02')).find(r=>r.product_id===ids.product)?.discount_rate),.17);
+ const snap=await db.query<{discount_rate:string}>('select discount_rate::text from customer_order_items where order_id=$1',[order.order_id]);assert.equal(Number(snap.rows[0].discount_rate),.15);
+ await assert.rejects(()=>terms('discount',ids.store,{...input,date:'2027-01-01',items:input.items.slice(0,1)}),/PRODUCT_LIST_CHANGED/);
+ await assert.rejects(()=>terms('discount',ids.store,{...input,date:'2027-01-01',common_rate:'1.1'}),/check constraint/);
+ await assert.rejects(()=>terms('discount',ids.store,{...input,date:'2027-01-01'},randomUUID(),null),/VERSION_CONFLICT/);
+ await assert.rejects(()=>db.exec("update store_discount_policies set common_rate=.9"),/TERMS_IMMUTABLE/);
+});
+test('payroll data and raw source stay hidden without payroll rights; unknown departments block posting',async()=>{
+ await terms('pay',ids.employee,{date:'2026-11-17',amount:'25000',allowance:'0',evidence:'Owner wage list'});
+ await db.query("insert into user_permissions values($1,'employees','view',true),($1,'stores','view',true),($1,'products','view',true)",[identities.accountant]);
+ const catalogue=await rpc('commercial_catalog',['employees','2026-11-18','','',0,25],identities.accountant);assert.equal((catalogue.rows as Record<string,unknown>[])[0].hourly_vnd,null);
+ const stores=await rpc('commercial_catalog',['stores','2026-11-18','','',0,25],identities.accountant);assert.equal((stores.rows as Record<string,unknown>[])[0].common_rate,null);assert.equal((stores.rows as Record<string,unknown>[])[0].policy_id,null);
+ await assert.rejects(()=>rpc('commercial_history',['pay',ids.employee],identities.accountant),/FORBIDDEN/);
+ await assert.rejects(()=>asUser(db,identities.accountant,()=>db.exec('select * from private.catalog_sources')),/permission denied/);
+ await assert.rejects(()=>terms('pay',ids.employee,{date:'2027-01-01',amount:'1',allowance:'0',evidence:'Denied'},randomUUID(),undefined,identities.accountant),/FORBIDDEN/);
+ await assert.rejects(()=>rpc('post_attendance',[ids.employee,'2026-11-18T01:00:00Z','2026-11-18T05:00:00Z',0,randomUUID()]),/not-null constraint|DEPARTMENT_REQUIRED/);
+ assert.equal((await db.query('select * from attendance_shifts')).rows.length,0);
+});
+function syntheticSource(){
+ const header=Array(57).fill('');header[1]='Mã ĐB';header[14]='Mã NV';header[32]='Mã ĐB';for(let i=0;i<11;i++)header[37+i]='SYN-P'+i;
+ const lines=[header];for(let i=0;i<12;i++){const row=Array(57).fill('');if(i===0){row[0]='1';row[1]='SYN-S';row[2]='Synthetic imported store';row[3]='Synthetic address';row[4]='0,15';row[13]='1';row[14]='SYN-E';row[15]='Synthetic imported employee';row[17]='25.000';}if(i<11){row[6]=String(i+1);row[7]='SYN-P'+i;row[8]='Synthetic imported product '+i;row[9]='Phần';row[10]='15.000';row[11]='5.000';}if(i===1){row[32]='SYN-S';row[35]='15,0%';row[36]='Synthetic source';for(let j=0;j<11;j++)row[37+j]=j===9?'FALSE':'TRUE';}if(i===11){row[1]='SYN-BLANK';row[14]='SYN-EMPTY';}lines.push(row);}return lines.map(row=>row.join('\t')).join('\n');
+}
+test('recipe links require a published effective revision and units with transaction history cannot be relabeled',async()=>{
+ const unit=randomUUID(),recipe=randomUUID(),draft=randomUUID();
+ await db.query("insert into material_units(id,code,name,dimension) values($1,'COMM-U','Synthetic portion','count')",[unit]);
+ await db.query("insert into recipes(id,code,name,kind) values($1,'COMM-R','Synthetic recipe','product')",[recipe]);
+ await db.query("insert into recipe_versions(id,recipe_id,revision,effective_from,output_quantity,output_unit_id) values($1,$2,1,'2026-11-17',1,$3)",[draft,recipe,unit]);
+ await assert.rejects(()=>terms('recipe',ids.product,{date:'2026-11-17',recipe_version_id:draft,quantity:'1',evidence:'Link draft denied'}),/PUBLISHED_RECIPE_REQUIRED/);
+ await db.query("update recipe_versions set status='published' where id=$1",[draft]);
+ await terms('recipe',ids.product,{date:'2026-11-17',recipe_version_id:draft,quantity:'1',evidence:'Confirmed recipe link'});
+ await assert.rejects(async()=>rpc('save_catalog',['products',ids.product,await version('products',ids.product),JSON.stringify({sale_unit:'different unit'}),randomUUID()]),/PRODUCT_UNIT_HAS_HISTORY/);
+ const history=await rpc('commercial_history',['recipe',ids.product]);assert.ok(JSON.stringify(history).includes('COMM-R'));assert.ok(JSON.stringify(history).includes('Confirmed recipe link'));
+ await assert.rejects(()=>db.exec('update product_prices set price_vnd=1'),/TERMS_IMMUTABLE/);
+});
+test('one-statement source import preserves raw values and UUIDs, skips blank names and replays without business postings',async()=>{
+ const source=parseCommercialSource(syntheticSource());assert.equal(source.products.length,11);assert.equal(source.skipped.length,2);assert.equal(source.discounts[0].rate,'0.150');
+ const sql=buildCommercialImport(source,'a'.repeat(64),'2026-11-17');const statement=sql.slice(0,sql.indexOf('select key,value'));await db.exec(statement);
+ const first=(await db.query<{id:string}>("select id from products where code like 'SYN-P%' order by code")).rows;await db.exec(statement);assert.deepEqual((await db.query("select id from products where code like 'SYN-P%' order by code")).rows,first);
+ assert.equal((await db.query("select * from stores where code='SYN-BLANK'")).rows.length,0);assert.equal((await db.query("select * from employees where code='SYN-EMPTY'")).rows.length,0);
+ assert.equal((await db.query("select * from products where code like 'SYN-P%' and published")).rows.length,0);
+ assert.equal((await db.query('select * from inventory_movements')).rows.length,0);assert.equal((await db.query('select * from payroll_lines')).rows.length,0);
+ const conflict=buildCommercialImport({...source,products:source.products.map((p,i)=>i===10?{...p,price:'999'}:p)},'b'.repeat(64),'2026-11-17');await assert.rejects(()=>db.exec(conflict),/EXISTING_PRICE_REVIEW/);
+ assert.equal((await db.query("select * from app_settings where key=$1",['commercial_import:'+'b'.repeat(64)])).rows.length,0);
+ assert.throws(()=>parseCommercialSource(syntheticSource().replace('15,0%','16,0%')),/conflicts/);
+});
