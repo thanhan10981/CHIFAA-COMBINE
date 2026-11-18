@@ -5,7 +5,7 @@
 - [x] UI gọn, SVG, +/popup, bỏ điều hướng lặp/bằng chứng/tải lại/CSV/trang tài sản.
 - [x] Sửa/xóa có audit, hoàn tác quỹ và cập nhật lương từ ca SX/VP/BH.
 - [x] Verify109 tests,50 bố cục +14 popup nhập liệu và30 bố cục SX;33 dòng quỹ nguồn được nhập thật/replay local.
-- [ ] Owner chạy033_READY và033_DATA_READY trước phát hành DEV; authenticated UAT còn lại.
+- [x] Owner xác nhận033_READY và033_DATA_READY; phát hành DEV theo output/entry-compact-release-status.json. Authenticated UAT còn lại.
 
 ## Checkpoint032 — Nhập liệu từ HTML và logic dùng chung
 

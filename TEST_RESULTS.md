@@ -1,5 +1,7 @@
 # Kết quả kiểm thử master session
 
+Phát hành033: owner xác nhận cả033_READY và033_DATA_READY trong chat. Candidate6a5744d đã đạt109 tests/types/lint/build,50 bố cục +14 popup Nhập liệu và30 bố cục SX. Đẩy riêng chifaa-next-dev; bằng chứng commit/Vercel/HTTP ghi tại ignored output/entry-compact-release-status.json. Chưa UAT authenticated. Không áp SQL cloud từ công cụ.
+
 ## 18/11/2026 — Checkpoint033: nhập liệu gọn và điều chỉnh liên thông
 
 KH-02/05/09/10 và yêu cầu trực tiếp mới nhất: bỏ hàng điều hướng1–9 trùng sidebar, bảng nguồn phát thảo, trường nhập bằng chứng, nút tải lại/CSV trong phạm vi Kho/SX/Nhập liệu và trang Tài sản & khấu hao khỏi điều hướng (URL cũ chuyển về Nhập liệu). Bảng gọn, SVG, lọc ngày/tháng/bộ phận, nút + mở popup một nút Lưu. Sản xuất cũng mở popup, giữ preview kế hoạch và định mức server.
