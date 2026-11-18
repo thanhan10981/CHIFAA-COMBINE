@@ -1,5 +1,17 @@
 # HANDOFF hiện tại — CHIFAA standalone / Next.js + Supabase
 
+## 18/11/2026 — Danh mục vật tư gọn (034)
+
+Bổ sung theo làm rõ của owner: không hiển thị lịch sử trên giao diện vật tư. Đã gỡ hẳn khối “Dữ liệu gốc & lịch sử” khỏi MaterialReview, chỉ đọc1 bản gần nhất với các cột cần điền form, không tải danh sách50 bản hoặc raw source. Lịch sử/audit trong DB vẫn giữ nguyên theo KH-10; việc ẩn giao diện không cần SQL mới. Kiểm tra lại typecheck/lint/build và113 tests đạt; Chrome fixture6 cỡ + assertion không có khối lịch sử ở cài đặt đạt, báo cáo output/material-table-design/report.json. Chưa push/deploy.
+
+KH-01/10/11, yêu cầu trực tiếp mới nhất: cột Thao tác mỗi dòng chỉ còn Sửa; form chỉ có mã, tên, nhóm, ĐVT, giá/cơ sở giá, tồn tối thiểu, tồn hiện tại chỉ xem và quy cách. Bỏ nguồn/chứng từ, ngày hiệu lực, checkbox đối chiếu và hướng dẫn Xác minh trong form Sửa. Cảnh báo chỉ liệt kê cột còn trống;0 là giá trị có dữ liệu. Owner xác nhận tồn chỉ lấy từ Kho, không sửa ở Danh mục: bỏ số tham chiếu thay thế tồn và gỡ kiểm kê nhanh khỏi màn này. Quy đổi/xác minh nâng cao vẫn ở Cài đặt quy đổi trên đầu trang, giữ riêng đơn vị mua/giá/tiêu hao.
+
+RPC mới save_material_table trong migration034 lưu metadata + phiên bản giá cùng transaction, kiểm tra quyền/version/idempotency. Ngày hiệu lực tự lấy ngày nghiệp vụ Việt Nam hiện tại; sửa nhiều lần cùng ngày thêm revision, không sửa giá cũ/snapshot. Metadata-only không đổi trạng thái giá; giá/cơ sở giá được sửa chỉ bởi quyền admin/manage + materials/approve, tạo revision needs_verification, không tự nhận là đã đối chiếu chứng từ. Quy cách mô tả không tự tạo hệ số quy đổi; giữ quy đổi đóng gói đã lưu và đơn vị kho hiện có. Không ghi tồn/chứng từ kho từ nút Sửa.
+
+Bằng chứng:113/113 tests (thêm4 kiểm tra package034/replay, transaction rollback/lịch sử/giá cùng ngày/quyền/giá0/null, đơn vị độc lập/quy đổi, cảnh báo ô trống), db:types94 bảng/60 RPC, typecheck/lint/build đạt. Chrome fixture6 cỡ320/390/768/1024/1440/1920 kiểm tra một nút Sửa, form theo cột, giá resolved sửa được với Admin, tồn read-only, không tràn ngang; giả lập503 rồi gửi lại giữ nguyên payload/key, số tiền decimal đúng. Đã xem ảnh bảng1440 và form1440/390. Bằng chứng ignored output/material-table-design/report.json; không phải authenticated cloud UAT.
+
+Gói sẵn: output/CHIFAA_PATCH_DANH_MUC_VAT_TU_GON_DEV.sql, sau033, owner chạy toàn bộ file trong SQL Editor DEV →034_READY. SHA256 ce3f115fabf9535c3942baf7f2324f4a67a3e51efd58ddb48f85452d86c1285e. Sinh lại bằng `cd web; npx tsx scripts/package-material-table-update.ts`. Chưa chạy SQL cloud, commit/push/deploy hoặc UAT dữ liệu thật trong checkpoint này. Cần cài034 trước khi phát hành UI mới; rollback frontend về13983af nếu cần, giữ RPC/schema bổ sung và lịch sử dữ liệu.
+
 ## 18/11/2026 — Nút thu gọn/mở lại sidebar
 
 Yêu cầu trực tiếp của owner, liên quan KH-10 (giao diện tiếng Việt, responsive): thêm nút SVG ở mép phải sidebar trên desktop; ẩn hoàn toàn menu để nội dung mở rộng, giữ nút sát mép trái để mở lại. Nút navy, hover cam, có tooltip, aria-expanded/controls và focus bàn phím. Trạng thái giữ trong AppShell khi chuyển trang, tải lại trang trở về mặc định mở. Mobile/tablet tiếp tục dùng drawer hiện có.

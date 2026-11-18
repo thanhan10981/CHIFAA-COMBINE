@@ -1,6 +1,7 @@
 import {checkEntries} from './entry-check.mjs';
 import {checkInventory} from './inventory-check.mjs';
 import {checkProduction} from './production-check.mjs';
+import {checkMaterialTable} from './material-table-check.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import http from 'node:http';
@@ -10,12 +11,13 @@ import {checkResponsive} from './responsive-check.mjs';
 import {checkCommercial} from './commercial-check.mjs';
 import {checkRecipes} from './recipe-check.mjs';
 const entries=process.argv.includes('--entries');
+const materialTable=process.argv.includes('--materials');
 const inventory=process.argv.includes('--inventory');
 const production=process.argv.includes('--production');
 const responsive=process.argv.includes('--responsive');
 const commercial=process.argv.includes('--commercial');
 const recipes=process.argv.includes('--recipes');
-const out=path.resolve(entries?'../output/entry-design':inventory?'../output/inventory-design':production?'../output/production-design':recipes?'../output/recipe-design':commercial?'../output/commercial-design':responsive?'../output/responsive-design':'../output/design-parity');await fs.mkdir(out,{recursive:true});
+const out=path.resolve(materialTable?'../output/material-table-design':entries?'../output/entry-design':inventory?'../output/inventory-design':production?'../output/production-design':recipes?'../output/recipe-design':commercial?'../output/commercial-design':responsive?'../output/responsive-design':'../output/design-parity');await fs.mkdir(out,{recursive:true});
 await build({entryPoints:['tests/ui/fixture.tsx'],outfile:path.join(out,'fixture.js'),bundle:true,format:'iife',platform:'browser',jsx:'automatic',alias:{'next/navigation':path.resolve('tests/ui/router-shim.tsx'),'next/link':path.resolve('tests/ui/router-shim.tsx'),'next/image':path.resolve('tests/ui/image-shim.tsx')},define:{'process.env.NODE_ENV':'"production"','process.env.NEXT_PUBLIC_SUPABASE_URL':'"https://visual-fixture.supabase.co"','process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY':'"sb_publishable_visual_fixture_no_real_auth"'}});
 async function cssFiles(folder){const entries=await fs.readdir(folder,{withFileTypes:true});const values=await Promise.all(entries.map(entry=>entry.isDirectory()?cssFiles(path.join(folder,entry.name)):entry.name.endsWith('.css')?[path.join(folder,entry.name)]:[]));return values.flat();}
 const css=(await Promise.all((await cssFiles(path.resolve('.next/static'))).map(file=>fs.readFile(file,'utf8')))).join('\n').replaceAll('../media/','/_next/static/media/');
@@ -41,7 +43,7 @@ try {
  const context=await browser.newContext({viewport:{width:1440,height:1000},serviceWorkers:'block'});
  await context.route('**/*',route=>route.request().url().startsWith(base)?route.continue():route.abort());
  const page=await context.newPage();page.on('pageerror',error=>report.errors.push(error.message));
- if(entries){await checkEntries(page,base,out,report);}else if(inventory){await checkInventory(page,base,out,report);}else if(production){await checkProduction(page,base,out,report);}else if(recipes){await checkRecipes(page,base,out,report);}else if(commercial){await checkCommercial(page,base,out,report);}else if(responsive){await checkResponsive(page,base,out,report);}else{
+ if(materialTable){await checkMaterialTable(page,base,out,report);}else if(entries){await checkEntries(page,base,out,report);}else if(inventory){await checkInventory(page,base,out,report);}else if(production){await checkProduction(page,base,out,report);}else if(recipes){await checkRecipes(page,base,out,report);}else if(commercial){await checkCommercial(page,base,out,report);}else if(responsive){await checkResponsive(page,base,out,report);}else{
  const nav=JSON.parse(await fs.readFile('features/design/workspace-nav.json','utf8'));
  const routes=['','opsdashboard','strategy','materials','stores','products','employees','discounts','inventory','stockmovements','stockhistory','kiosk','reorder','recipes','batches','rice','packaging','cost','production','requirements','counts','variance','consumption','entry','entry-stock','sales','attendance','entry-production','targets','loans','receivables','cash','payroll','assets','orders','admin','audit','accounts','units','departments','warehouses'];
  for(const route of routes){
@@ -102,22 +104,21 @@ try {
  await page.goto(base+'/app/materials');
  await page.locator('.material-row-actions').first().getByRole('button',{name:'Sửa',exact:true}).click();
  await page.getByRole('dialog').waitFor();
- const materialPrice=await page.getByLabel('Đơn giá theo ĐVT (đ)',{exact:true}).inputValue();
+ const materialPrice=await page.getByLabel('Đơn giá (đ)',{exact:true}).inputValue();
  if(materialPrice!=='16.000'){await page.screenshot({path:path.join(out,'material-editor-failure.png')});throw new Error('Material edit price is not formatted as VND: '+JSON.stringify(materialPrice));}
- await page.getByLabel('Đơn giá theo ĐVT (đ)',{exact:true}).fill('260.000');
- if(await page.getByLabel('Đơn giá theo ĐVT (đ)',{exact:true}).inputValue()!=='260.000')throw new Error('Currency input lost grouping');
+ await page.getByLabel('Đơn giá (đ)',{exact:true}).fill('260.000');
+ if(await page.getByLabel('Đơn giá (đ)',{exact:true}).inputValue()!=='260.000')throw new Error('Currency input lost grouping');
  await page.screenshot({path:path.join(out,'material-editor-desktop.png')});
  await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();
  await page.getByRole('button',{name:'Cài đặt quy đổi',exact:true}).click();await page.getByRole('dialog').waitFor();
  await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();
- await page.locator('.material-row-actions').first().getByRole('button',{name:'Kiểm kê',exact:true}).click();await page.getByRole('dialog').waitFor();
- await page.getByRole('button',{name:'Lưu phiếu kiểm kê',exact:true}).waitFor();
- await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();
- report.checks.push('material editor VND input, conversion settings and real stock count dialog; no cloud writes');
- await page.locator('.material-row-actions').nth(1).getByRole('button',{name:'Xác minh',exact:true}).click();
+ report.checks.push('material editor VND input, single row action, conversion settings; no cloud writes');
+ await page.getByRole('button',{name:'Cài đặt quy đổi',exact:true}).click();
+ await page.getByRole('dialog').getByRole('combobox').selectOption('material-1');
+ await page.getByRole('button',{name:'Xem giá, đơn vị & quy cách',exact:true}).click();
  await page.getByRole('button',{name:'Lưu phiên bản xác minh',exact:true}).waitFor();
  if(await page.getByLabel('Đơn vị tính giá',{exact:true}).inputValue()!=='kg'||await page.getByLabel('Đơn vị mua',{exact:true}).inputValue()!=='chai'||await page.getByLabel('Đơn vị tiêu hao / kho',{exact:true}).inputValue()!=='g')throw new Error('Price, purchase and usage units were conflated');
- await page.locator('.material-review-history summary').click();
+ if(await page.locator('.material-review-history').count())throw new Error('Material history must not be displayed');
  await page.screenshot({path:path.join(out,'material-verification-desktop.png'),animations:'disabled'});
  await page.setViewportSize({width:390,height:844});
  if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))throw new Error('Material verification overflows mobile viewport');

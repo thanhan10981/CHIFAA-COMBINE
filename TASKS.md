@@ -1,5 +1,15 @@
 # Theo dõi công việc
 
+## Danh mục vật tư034 — 18/11/2026 (KH-01/10/11)
+
+- [x] Theo làm rõ mới nhất: gỡ khối lịch sử/dữ liệu gốc khỏi giao diện vật tư, giữ DB; kiểm tra lại113 tests/types/lint/build và Chrome không có lịch sử đạt.
+
+- [x] Một nút Sửa, form chỉ cột bảng, không ô chứng từ; cảnh báo chỉ ô trống,0 khác trống.
+- [x] Tồn kho chỉ xem từ sổ Kho theo xác nhận owner, không cho sửa hoặc dùng số tham chiếu thay thế.
+- [x] RPC lưu nguyên tử, append revision giá, giữ đơn vị/quy đổi/history, quyền/version/idempotency; giá sửa chưa tự xác minh.
+- [x]113 tests, typecheck/lint/build và Chrome fixture6 cỡ +503/retry đạt, ảnh bảng/form đã xem.
+- [ ] Owner áp SQL034_READY, rồi phát hành DEV và UAT authenticated; chưa chạy cloud/commit/push ở checkpoint này.
+
 ## Sidebar — 18/11/2026 (KH-10)
 
 - [x] Thêm nút cạnh sidebar desktop để ẩn/mở lại; nội dung mở rộng, tooltip và bàn phím, giữ drawer responsive.

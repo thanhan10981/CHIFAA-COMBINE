@@ -8,3 +8,12 @@
 .material-review-history{margin-top:22px;font-size:12px}.material-review-history summary{cursor:pointer;font-weight:600}.material-review-history pre{max-height:200px;overflow:auto;white-space:pre-wrap;background:#f5f7fa;padding:14px;border-radius:10px;font-size:10px}.material-review-history article{border-top:1px solid #e3eaf1;padding:12px 0}.material-review-history article p{margin:5px 0}.material-dialog textarea{width:100%;min-height:90px;border:1px solid #d6e0eb;border-radius:10px;padding:12px;font:inherit}
 .material-review-form .material-dialog-actions{margin:20px 0 14px;padding:16px 0 0}.material-review-form fieldset>label:not(.material-checkbox){display:grid;gap:7px;margin-top:14px;font-size:11px;font-weight:600;color:#61758a}.material-cost-summary{padding:14px 18px;background:#eff6fa;border:1px solid #d9e7ef;border-radius:10px;font-size:12px;line-height:1.8;margin-bottom:16px;color:#31586e}.material-review-dialog>header{position:sticky;top:-26px;background:#fff;z-index:2}.material-review-dialog .muted{font-size:11px;line-height:1.8}
 @media(max-width:720px){.material-review-dialog>header{top:-22px}}
+
+.material-dialog .material-spec-field{grid-column:1/-1}
+.workspace .material-table{min-width:1050px}
+.material-dialog fieldset,.material-dialog .form-grid>label{min-width:0}
+.material-dialog .form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:720px){.material-dialog .form-grid{grid-template-columns:minmax(0,1fr)}}
+.material-dialog>header{margin:0 0 20px;padding:0 0 16px}
+.material-dialog .material-dialog-actions{margin:20px 0 0;padding:16px 0 0}
+.material-review-dialog>header{top:0}

@@ -46,11 +46,12 @@ export async function checkResponsive(page,base,out,report){
   if([320,390,768,1024,1920].includes(width)){
    await page.goto(base+'/app/materials');
    await page.locator('.material-row-actions').first().getByRole('button',{name:'Sửa',exact:true}).click();await dialogFits('Material edit '+width);
-   await page.locator('.material-row-actions').nth(1).getByRole('button',{name:'Xác minh',exact:true}).click();
+   await page.getByRole('button',{name:'Cài đặt quy đổi',exact:true}).click();
+   await page.getByRole('dialog').getByRole('combobox').selectOption('material-1');
+   await page.getByRole('button',{name:'Xem giá, đơn vị & quy cách',exact:true}).click();
    await page.getByRole('button',{name:'Lưu phiên bản xác minh',exact:true}).waitFor();
    await page.screenshot({path:path.join(out,'material-review-'+width+'.png')});await dialogFits('Material verification '+width);
    await page.getByRole('button',{name:'Cài đặt quy đổi',exact:true}).click();await dialogFits('Conversion '+width);
-   await page.locator('.material-row-actions').first().getByRole('button',{name:'Kiểm kê',exact:true}).click();await dialogFits('Stock count '+width);
    await page.goto(base+'/app/accounts');await page.getByRole('button',{name:'Thêm mới',exact:true}).click();
    const generic=await page.getByRole('dialog').boundingBox();if(!generic||generic.width>width)throw new Error('Generic catalog modal too wide');
    await page.getByRole('button',{name:'Đóng',exact:true}).click();

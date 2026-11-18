@@ -1,3 +1,11 @@
+## 2026-11-18 — Danh mục vật tư gọn (034, KH-01/10/11)
+
+- Theo làm rõ mới nhất: bỏ phần hiển thị dữ liệu gốc/lịch sử khỏi giao diện vật tư, chỉ tải bản gần nhất để điền form; lịch sử DB giữ nguyên. Typecheck/lint/build,113 tests và Chrome fixture xác nhận không có khối lịch sử đạt. Việc ẩn lịch sử không cần thêm SQL.
+
+- Mỗi dòng chỉ còn Sửa; form chỉ dữ liệu bảng, bỏ chứng từ/ngày hiệu lực/checkbox xác minh. Cảnh báo ô trống, giữ số0; tồn chỉ đọc từ Kho, bỏ số tham chiếu và kiểm kê nhanh.
+- Lưu metadata/giá nguyên tử qua RPC034; giữ lịch sử, đơn vị và quy đổi, chặn quyền/stale/replay. Giá thay đổi chưa tự thành giá đã xác minh; metadata-only giữ trạng thái cũ.
+- 113 tests, types/lint/build đạt; Chrome fixture6 cỡ màn hình và gửi lại sau503 đạt, ảnh đã xem. Gói DEV034 đã chuẩn bị ở output/CHIFAA_PATCH_DANH_MUC_VAT_TU_GON_DEV.sql, chưa áp cloud hoặc phát hành.
+
 ## 2026-11-18 — Thu gọn/mở lại sidebar (KH-10)
 
 - Thêm nút mũi tên SVG sát cạnh sidebar desktop, navy/hover cam, tooltip và hỗ trợ bàn phím. Ẩn menu mở rộng nội dung; nút ở mép trái để mở lại. Mobile/tablet giữ drawer.

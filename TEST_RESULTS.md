@@ -1,5 +1,13 @@
 # Kết quả kiểm thử master session
 
+## 18/11/2026 — Danh mục vật tư034
+
+Bổ sung ẩn lịch sử theo làm rõ owner: typecheck/lint/build và113 tests đạt sau sửa MaterialReview. Chrome `--materials` đạt6 cỡ và kiểm tra cài đặt vật tư không còn `.material-review-history`/nhãn Dữ liệu gốc & lịch sử; báo cáo output/material-table-design/report.json, ảnh settings-no-history.png. Chỉ thay giao diện/truy vấn đọc1 bản gần nhất, không sửa/xóa lịch sử DB.
+
+KH-01/10/11: npm test113/113 đạt; db:types94 bảng/60 RPC, typecheck/lint/build đạt. PostgreSQL nhúng kiểm tra save_material_table transaction rollback, giá nhiều revision cùng ngày, lịch sử bất biến, metadata-only giữ verification, quyền sống/version/idempotency, null/zero và quy đổi; gói034 sau033 áp thành công/replay bị chặn.
+
+`node scripts/design-check.mjs --materials`: Chrome fixture offline6 kích thước320/390/768/1024/1440/1920 đạt; một nút Sửa mỗi dòng, không ô chứng từ/ngày hiệu lực/đơn vị kho trong form Sửa, giá resolved có thể sửa với Admin, tồn read-only, cảnh báo ô trống, không tràn ngang form/trang. Mock503 rồi retry payload/key giữ nguyên, số tiền180000 truyền decimal string, không truyền stock/verification/evidence. Báo cáo ignored output/material-table-design/report.json; ảnh bảng1440 và form1440/390 đã xem. Chưa authenticated Supabase cloud UAT hoặc áp SQL/deploy.
+
 Phát hành033: owner xác nhận cả033_READY và033_DATA_READY trong chat. Candidate6a5744d đã đạt109 tests/types/lint/build,50 bố cục +14 popup Nhập liệu và30 bố cục SX. Đẩy riêng chifaa-next-dev; bằng chứng commit/Vercel/HTTP ghi tại ignored output/entry-compact-release-status.json. Chưa UAT authenticated. Không áp SQL cloud từ công cụ.
 
 ## 18/11/2026 — Checkpoint033: nhập liệu gọn và điều chỉnh liên thông
