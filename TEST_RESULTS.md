@@ -2,6 +2,8 @@
 
 ## 18/11/2026 — Nhập liệu liên thông032
 
+- Phát hành tiếp theo: owner đã xác nhận cả032_READY và032_SOURCE_READY. Probe anonymous DEV nhận diện entry_workspace bằng401/42501 permission denied, submit_entry từ chối401; không ghi giao dịch từ công cụ. Theo dõi trạng thái Vercel đúng commit và URL canonical ở output/entry-release-status.json, không coi probe này là authenticated UAT.
+
 - `npm run verify`: **104/104**, generated types93 public tables/58 RPC, typecheck/lint/build đạt. Kiểm tra cuối UI sau giữ ngày liên kết ghi riêng trong output/entry-release-status.json.
 - PostgreSQL: bán100/giao,80 bán,10 thu hồi,10 điểm chịu với giá15.000/CK15% tạo1.147.500 phải thu; thu500.000 còn647.500, retry không tăng quỹ hai lần, không tăng doanh thu khi thu nợ. Phiếu đã quyết toán bị chặn thay đè. Ca23h→7h8giờ, sửa đến8h9giờ giữ đúng1 ca hiệu lực; lương135.000 +phụ cấp ca15.000 +tháng30.000 =180.000, chốt chưa chi quỹ, trả lương chỉ1 lần, tháng posted chặn thêm ca. Trả gốc200.000/lãi nhập1234 không tự tính lãi; vay/phải trả chặn thanh toán vượt. Mục tiêu đòi previous ID; scope/quyền/khóa kỳ/source salary privacy đạt.
 - `validate-entry-source.ts` với HTML thật: hash c15cc8d2cfc64cd46877ba8a09e553c02a7251f17fbce97904d628932503c0b2; nhập hai lần thành132 dòng nguồn,2 khoản vay,29 mục tiêu;0 phát sinh sales/cash/attendance/stock. Báo cáo ignored output/nhap-lieu-import-validation.json. Không thực thi JS HTML, không sửa nguồn/workbook. Gói032 tiến tiếp từ031 và chặn replay.
