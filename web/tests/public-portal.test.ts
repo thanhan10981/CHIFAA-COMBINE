@@ -4,9 +4,16 @@ import {createHash,randomUUID} from 'node:crypto';
 import type {PGlite} from '@electric-sql/pglite';
 import {database,asUser,identities} from './database-fixture';
 import {authTarget} from '../lib/auth/target';
+import {publicOrderShift} from '../features/orders/public-order-shift';
 import {readFile} from 'node:fs/promises';
 import {buildPublicPortalUpdate} from '../lib/deploy/public-portal-update';
 import {buildPublicOrderLinksUpdate} from '../lib/deploy/public-order-links-update';
+
+test('public order shift follows Vietnam local time and changes at noon',()=>{
+ assert.equal(publicOrderShift(new Date('2026-11-18T04:59:00.000Z')),'AM');
+ assert.equal(publicOrderShift(new Date('2026-11-18T05:00:00.000Z')),'PM');
+ assert.equal(publicOrderShift(new Date('2026-11-17T17:00:00.000Z')),'AM');
+});
 
 test('DEV035 package preserves existing authenticated orders and rejects replay',async()=>{
  const db=await database('202611180034_material_table_edit.sql');try{

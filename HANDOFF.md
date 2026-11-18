@@ -1,5 +1,23 @@
 # HANDOFF hiện tại — CHIFAA standalone / Next.js + Supabase
 
+## 18/11/2026 — Gỡ tab “Nhập dữ liệu cũ” khỏi điều hướng (KH-10)
+
+Theo yêu cầu trực tiếp: bỏ `imports` khỏi nhóm tab ngữ cảnh cạnh Nhật ký hoạt động. Tab “Nhật ký hoạt động” vẫn hiện trên trang nhật ký; URL nhập cũ không còn thanh tab ngữ cảnh. Giữ module, URL, quyền và dữ liệu/lịch sử hiện có; không thay đổi luồng nghiệp vụ hay liên kết phân hệ.
+
+Bằng chứng local: `node scripts/navigation-context-check.mjs` đạt; typecheck, lint và production build đạt. `npm test`: 116/118 đạt; hai file `design-contract.test.ts` và `ingredient-warehouse.test.ts` không chạy được do esbuild bị chặn tạo tiến trình con (`spawn EPERM`) trước khi thực thi assertion. Chưa deploy, commit hoặc push.
+
+## 18/11/2026 — Thiết kế lại danh sách tài khoản và phân quyền (KH-10, MASTER_SPEC RBAC)
+
+Theo ảnh giao diện owner gửi: trang `/app/accounts` hiển thị danh sách Supabase Auth với tên/email, vai trò, trạng thái mời/kích hoạt và tìm kiếm; chọn một tài khoản để xem/chỉnh các quyền được thừa kế từ vai trò cùng ghi đè riêng. Quyền từ chối riêng vẫn ưu tiên hơn quyền vai trò. Admin có popup mời nhân viên bằng tên/email; Auth gửi email hoàn tất đăng ký, hồ sơ khởi tạo chưa bật cho tới khi Admin lưu phân quyền. Ghi quyền vẫn qua RPC `admin_assign_user` hiện có để giữ kiểm tra quyền, audit, idempotency và bảo vệ Admin cuối cùng. Luồng mời chỉ tạo tài khoản Auth, chưa tự tạo/liên kết hồ sơ nhân viên nghiệp vụ do schema chưa có FK giữa hai hồ sơ.
+
+Files: `web/features/admin/accounts.tsx`, `web/features/admin/accounts.css`, `supabase/functions/admin-invite/index.ts`, fixture `web/scripts/account-check.mjs` và `web/tests/ui/fixture.tsx`. Edge Function thêm hành động Admin-only liệt kê user/role/quyền và mời email; service-role chỉ ở server. Bằng chứng local: 120/120 tests; typecheck, lint, production build; Chrome fixture xác nhận danh sách, xem quyền role/ghi đè (kể cả deny), lưu đúng account, gửi lời mời, refresh danh sách, popup/mobile và cuộn ma trận trong vùng riêng; public portal fixture cũng đạt các luồng liên quan. Không đổi schema/SQL. Deno/Supabase CLI không có ở môi trường nên Edge Function chưa chạy UAT tại chỗ; cần deploy function lên DEV trước khi trang live có thể list/mời tài khoản. Fixture mock, chưa phải cloud Auth UAT. Chưa deploy, commit hoặc push.
+
+## 18/11/2026 — Ẩn ca giao, tự chọn AM/PM theo giờ Việt Nam (KH-12/01/03/05/10)
+
+Theo xác nhận mới nhất: bỏ ô “Ca giao” khỏi form công khai. Form giữ trường `shift` ẩn, tự lấy `AM` trước 12:00 và `PM` từ 12:00 theo `Asia/Ho_Chi_Minh`; payload chốt ca ngay lúc gửi và lần thử lại giữ nguyên payload/idempotency key. Nhãn ca vẫn khớp giá trị mà liên kết kế hoạch sản xuất hiện có dùng. Đây là quy tắc giao diện được owner xác nhận; chưa có quy định khác về khung giờ trong tài liệu yêu cầu.
+
+Không đổi schema/SQL. Bằng chứng: 120/120 tests; typecheck, lint, production build; Chrome fixture public portal đạt ở 6 cỡ 320–1920px, xác nhận chỉ có input ẩn và AM/PM theo giờ Việt Nam, luồng link điểm bán/duyệt vẫn đạt. Fixture mock toàn bộ ghi dữ liệu, không phải UAT Supabase cloud. Chưa áp SQL cloud, chưa deploy; thay đổi này chưa commit/push.
+
 ## 18/11/2026 — Link đặt hàng theo điểm bán (036)
 
 Theo yêu cầu trực tiếp mới nhất, liên quan KH-12/01/03/04/05/10: bỏ nút “Đơn điểm bán” khỏi đầu trang `/portal`; nút “Cổng đặt hàng” nội bộ mở popup chọn điểm bán/tạo link. Tab “Giao hàng” và “Thu hồi” không còn trong điều hướng của `/app/orders`; phân hệ và dữ liệu giao/thu hồi vẫn được giữ. `/portal/account` cũ chuyển thẳng về `/portal` để dùng luồng link mới.

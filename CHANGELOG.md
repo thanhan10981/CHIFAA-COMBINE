@@ -1,3 +1,19 @@
+## 2026-11-18 — Gỡ tab “Nhập dữ liệu cũ” khỏi điều hướng (KH-10)
+
+- Gỡ tab trang cũ khỏi nhóm điều hướng, giữ tab “Nhật ký hoạt động” trên trang nhật ký; giữ module, URL, quyền và dữ liệu/lịch sử hiện có.
+- Kiểm tra cấu hình điều hướng, typecheck, lint và build đạt. Bộ test đạt 116/118; hai file không chạy do sandbox chặn tiến trình con esbuild (`spawn EPERM`), không phải assertion thất bại.
+
+## 2026-11-18 — Thiết kế lại tài khoản & phân quyền (KH-10)
+
+- Thay trang chọn tài khoản đơn lẻ bằng danh sách Auth có tìm kiếm/trạng thái; chọn nhân viên để xem quyền vai trò và ghi đè, rồi lưu bằng RPC Admin hiện có.
+- Thêm popup mời nhân viên bằng tên/email. Link mời hoàn tất đăng ký qua Supabase Auth; tài khoản mới mặc định chưa kích hoạt/cấp quyền. Giao diện responsive, riêng ma trận quyền cuộn ngang bên trong.
+- 120/120 tests; typecheck/lint/build và Chrome fixture tài khoản + portal đạt. Edge Function chưa được UAT/deploy DEV; chưa có liên kết hồ sơ nhân viên nghiệp vụ và không đổi schema/SQL.
+
+## 2026-11-18 — Tự chọn ca giao ẩn cho cổng đặt hàng (KH-12/01/03/05/10)
+
+- Bỏ ô “Ca giao”; trường ẩn tự gửi `AM` trước 12:00 và `PM` từ 12:00 theo `Asia/Ho_Chi_Minh`. Khi thử gửi lại, payload tiếp tục dùng cùng ca đã chốt.
+- 120 tests, typecheck/lint/build và Chrome fixture 6 cỡ màn hình đạt. Không đổi SQL/schema; fixture chỉ mock, chưa UAT cloud/deploy. Chi tiết `docs/standalone/PUBLIC_ORDER_PORTAL.md`.
+
 ## 2026-11-18 — Link đặt hàng theo điểm bán (036, KH-12/01/03/04/05/10)
 
 - Nút “Cổng đặt hàng” mở popup chọn điểm bán và tạo link; token bí mật gửi trong fragment URL, DB giữ digest, có quyền, audit, idempotency và thu hồi.

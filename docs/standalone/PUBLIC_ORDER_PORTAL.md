@@ -6,7 +6,7 @@ Yêu cầu trực tiếp18/11/2026 (KH-12, KH-01/03/05/10) thay yêu cầu đăn
 
 1. Trong Danh mục món bán, bật **Công bố trên cổng đặt hàng** và lưu. Món không ngừng sử dụng sẽ xuất hiện; bỏ công bố/ngừng sử dụng thì không còn được gửi đơn. Trang đọc lại thực đơn mỗi30 giây hoặc khi quay lại tab/tải lại.
 2. Giá công khai là **giá bán chung** theo ngày giao từ product_prices. Món chưa có giá vẫn hiện “Chưa có giá”, khóa số lượng; không dùng giá0 thay giá thiếu. Không hiển thị giá vốn/công thức hoặc chính sách từng điểm bán.
-3. Khách chọn số lượng, ngày/ca giao; nhập tên, điện thoại, địa chỉ và ghi chú. Tổng là tiền món, không tự bịa phí giao hàng. Gửi online trả mã đơn chờ xác nhận; khi mạng không rõ kết quả, dùng lại cùng mã chống trùng.
+3. Khách chọn số lượng và ngày giao; nhập tên, điện thoại, địa chỉ và ghi chú. Không hiển thị ô ca giao: hệ thống tự gửi ca ẩn `AM` trước 12:00 hoặc `PM` từ 12:00 theo giờ `Asia/Ho_Chi_Minh`. Nếu cần thử gửi lại, ca đã chốt được giữ nguyên cùng payload/idempotency key. Tổng là tiền món, không tự bịa phí giao hàng. Gửi online trả mã đơn chờ xác nhận.
 4. Nội bộ mở **Duyệt đơn đặt hàng**, xem thông tin khách và từng món. Liên hệ xác nhận, gán về điểm bán có sẵn rồi duyệt; cần quyền orders/approve và quyền đọc stores để chọn điểm bán trên UI. Không tự tạo điểm bán hoặc tự tin danh tính do khách nhập. Có thể từ chối với lý do.
 5. Sau duyệt, customer_orders và customer_order_items đi tiếp workflow kế hoạch/giao hàng cũ theo điểm bán đã gán. Giữ snapshot giá bán chung đã gửi; không tự áp giá/CK riêng sau khi gán. Duyệt không tự ghi doanh thu/tiền/kho/kế hoạch.
 

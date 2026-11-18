@@ -11,6 +11,8 @@ import {chromium} from '@playwright/test';
 import {checkResponsive} from './responsive-check.mjs';
 import {checkCommercial} from './commercial-check.mjs';
 import {checkRecipes} from './recipe-check.mjs';
+import {checkAccounts} from './account-check.mjs';
+const accounts=process.argv.includes('--accounts');
 const entries=process.argv.includes('--entries');
 const materialTable=process.argv.includes('--materials');
 const publicPortal=process.argv.includes('--public-portal');
@@ -19,7 +21,7 @@ const production=process.argv.includes('--production');
 const responsive=process.argv.includes('--responsive');
 const commercial=process.argv.includes('--commercial');
 const recipes=process.argv.includes('--recipes');
-const out=path.resolve(publicPortal?'../output/public-portal-design':materialTable?'../output/material-table-design':entries?'../output/entry-design':inventory?'../output/inventory-design':production?'../output/production-design':recipes?'../output/recipe-design':commercial?'../output/commercial-design':responsive?'../output/responsive-design':'../output/design-parity');await fs.mkdir(out,{recursive:true});
+const out=path.resolve(accounts?'../output/account-design':publicPortal?'../output/public-portal-design':materialTable?'../output/material-table-design':entries?'../output/entry-design':inventory?'../output/inventory-design':production?'../output/production-design':recipes?'../output/recipe-design':commercial?'../output/commercial-design':responsive?'../output/responsive-design':'../output/design-parity');await fs.mkdir(out,{recursive:true});
 await build({entryPoints:['tests/ui/fixture.tsx'],outfile:path.join(out,'fixture.js'),bundle:true,format:'iife',platform:'browser',jsx:'automatic',alias:{'next/navigation':path.resolve('tests/ui/router-shim.tsx'),'next/link':path.resolve('tests/ui/router-shim.tsx'),'next/image':path.resolve('tests/ui/image-shim.tsx')},define:{'process.env.NODE_ENV':'"production"','process.env.NEXT_PUBLIC_SUPABASE_URL':'"https://visual-fixture.supabase.co"','process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY':'"sb_publishable_visual_fixture_no_real_auth"'}});
 async function cssFiles(folder){const entries=await fs.readdir(folder,{withFileTypes:true});const values=await Promise.all(entries.map(entry=>entry.isDirectory()?cssFiles(path.join(folder,entry.name)):entry.name.endsWith('.css')?[path.join(folder,entry.name)]:[]));return values.flat();}
 const css=(await Promise.all((await cssFiles(path.resolve('.next/static'))).map(file=>fs.readFile(file,'utf8')))).join('\n').replaceAll('../media/','/_next/static/media/');
@@ -45,7 +47,7 @@ try {
  const context=await browser.newContext({viewport:{width:1440,height:1000},serviceWorkers:'block'});
  await context.route('**/*',route=>route.request().url().startsWith(base)?route.continue():route.abort());
  const page=await context.newPage();page.on('pageerror',error=>report.errors.push(error.message));
- if(publicPortal){await checkPublicPortal(page,base,out,report);}else if(materialTable){await checkMaterialTable(page,base,out,report);}else if(entries){await checkEntries(page,base,out,report);}else if(inventory){await checkInventory(page,base,out,report);}else if(production){await checkProduction(page,base,out,report);}else if(recipes){await checkRecipes(page,base,out,report);}else if(commercial){await checkCommercial(page,base,out,report);}else if(responsive){await checkResponsive(page,base,out,report);}else{
+ if(accounts){await checkAccounts(page,base,out,report);}else if(publicPortal){await checkPublicPortal(page,base,out,report);}else if(materialTable){await checkMaterialTable(page,base,out,report);}else if(entries){await checkEntries(page,base,out,report);}else if(inventory){await checkInventory(page,base,out,report);}else if(production){await checkProduction(page,base,out,report);}else if(recipes){await checkRecipes(page,base,out,report);}else if(commercial){await checkCommercial(page,base,out,report);}else if(responsive){await checkResponsive(page,base,out,report);}else{
  const nav=JSON.parse(await fs.readFile('features/design/workspace-nav.json','utf8'));
  const routes=['','opsdashboard','strategy','materials','stores','products','employees','discounts','inventory','stockmovements','stockhistory','kiosk','reorder','recipes','batches','rice','packaging','cost','production','requirements','counts','variance','consumption','entry','entry-stock','sales','attendance','entry-production','targets','loans','receivables','cash','payroll','assets','orders','admin','audit','accounts','units','departments','warehouses'];
  for(const route of routes){

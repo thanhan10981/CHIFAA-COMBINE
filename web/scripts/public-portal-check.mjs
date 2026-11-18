@@ -19,6 +19,7 @@ export async function checkPublicPortal(page,base,out,report){
   await page.setViewportSize({width,height:1000});await page.goto(base+'/portal');
   if(await page.getByRole('link',{name:'Đơn điểm bán',exact:true}).count())throw new Error('Legacy store-order button is still shown on the public portal');
   await page.getByRole('heading',{name:products[0].name,exact:true}).waitFor();
+  if(width===320){await page.waitForFunction(()=>{const input=document.querySelector('input[type=hidden][name=shift]');const hour=Number(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',hourCycle:'h23'}).format(new Date()));return input?.value===(hour<12?'AM':'PM');});if(await page.getByLabel('Ca giao',{exact:true}).count()||await page.locator('input[type=hidden][name=shift]').count()!==1)throw new Error('Delivery shift must be hidden and derived from Vietnam time');report.checks.push('delivery shift is hidden and derived as AM/PM from Vietnam local time');}
   if(await page.getByRole('button',{name:'Đăng nhập',exact:true}).count()||await page.getByLabel('Điểm bán',{exact:true}).count())throw new Error('Public portal requires linked account');
   await page.getByRole('button',{name:'Tăng '+products[0].name,exact:true}).click();
   await page.getByLabel('Số lượng '+products[1].name,{exact:true}).fill('2');
@@ -37,6 +38,7 @@ export async function checkPublicPortal(page,base,out,report){
  await page.getByRole('button',{name:'Kiểm tra lại lần gửi',exact:true}).click();await page.getByText('Đã nhận đơn #public-s',{exact:true}).waitFor();
  if(requests.length!==2||JSON.stringify(requests[0])!==JSON.stringify(requests[1]))throw new Error('Guest retry changed the request/key');
  if(requests[0].p_items.some(item=>!['15000','25000'].includes(item.price_vnd)))throw new Error('Quote missing from submission');
+ if(!['AM','PM'].includes(requests[0].p_shift))throw new Error('Hidden Vietnam shift is missing from the submitted order');
  report.checks.push('guest503/retry keeps identical request and idempotency key; confirmation only after server success');
  priceChanged=true;
  await page.getByRole('button',{name:'Tăng '+products[0].name,exact:true}).click();
@@ -50,6 +52,7 @@ export async function checkPublicPortal(page,base,out,report){
  await page.getByLabel('Tên người nhận *',{exact:true}).fill('Điểm bán kiểm thử');await page.getByLabel('Số điện thoại *',{exact:true}).fill('0900000038');await page.getByLabel('Địa chỉ / điểm giao *',{exact:true}).fill('Địa chỉ kiểm thử điểm bán');
  await page.getByRole('button',{name:'Gửi đơn đặt hàng',exact:true}).click();await page.getByText('Đã nhận đơn #public-s',{exact:true}).waitFor();
  if(requests.at(-1)?.p_link_token!=='a'.repeat(64))throw new Error('Store link token was not passed to the order RPC');
+ if(!['AM','PM'].includes(requests.at(-1)?.p_shift))throw new Error('Hidden Vietnam shift was not passed with the store order');
  if(!page.url().endsWith('#'+'a'.repeat(64)))throw new Error('Reusable store link was removed after its first order');
  report.checks.push('store-link portal retains the capability token until submit and includes it in the idempotent order request');
  await page.goto(base+'/app/materials');await page.getByRole('button',{name:'Cổng đặt hàng',exact:true}).click();const linkDialog=page.getByRole('dialog',{name:'Tạo link cho điểm bán'});await linkDialog.waitFor();
