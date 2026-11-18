@@ -1,5 +1,11 @@
 # Kết quả kiểm thử master session
 
+## 18/11/2026 — gỡ menu Thu hồi & ki-ốt và sửa enum loại kho
+
+- `npm run verify`:92/92 tests, generated types/typecheck/lint/build đạt. Navigation contract cho phép thay đổi mới nhất của chủ dự án:36 mục, nhóm Kho không còn kiosk.
+- `node scripts/design-check.mjs --inventory`:25 tổ hợp giao diện đạt, không lỗi JS/tràn trang; thêm kiểm tra menu không còn liên kết kiosk và form ba loại kho ingredient/finished/kiosk gửi đúng canonical code qua save_catalog dù nhãn tiếng Việt. Các request ghi chỉ chạy fixture, không ghi cloud.
+- Không thay đổi schema, không cần SQL; route/RPC/chứng từ cũ còn nguyên. Phát hành DEV theo `output/warehouse-menu-release-status.json`; chưa UAT authenticated cloud.
+
 ## Checkpoint030 — kho và nhập/xuất liên thông
 
 - `cd web; npm run verify`: **92/92 tests**, db types (90 bảng / 55 RPC), typecheck, lint và production build đạt.

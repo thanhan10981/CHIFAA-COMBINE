@@ -14,11 +14,11 @@ test('workspace menu preserves the actual legacy groups, order and names without
  assert.equal(workspaceNavigation.groups.length,sections.length);
  for(const [index,[id,label,,items]] of sections.entries()){
   const actual=workspaceNavigation.groups[index];assert.equal(actual.id,'legacy-'+id);assert.equal(actual.label,label);
-  assert.deepEqual(actual.items.map(item=>item.id),items);
+  assert.deepEqual(actual.items.map(item=>item.id),id==='warehouse'?items.filter(item=>item!=='kiosk'):items);
   for(const item of actual.items){assert.equal(item.label,names.get(item.id));const route=referenceRoutes[item.id];assert.ok(route,item.id);assert.ok(modules.some(([slug,,module])=>slug===route.slug&&module===route.module),item.id);}
  }
- const links=[...workspaceNavigation.top,...workspaceNavigation.groups.flatMap(group=>group.items)];assert.equal(links.length,37);assert.equal(new Set(links.map(item=>item.id)).size,37);
- assert.ok(workspaceNavigation.groups.find(group=>group.id==='legacy-warehouse')?.items.some(item=>item.id==='kiosk'));
+ const links=[...workspaceNavigation.top,...workspaceNavigation.groups.flatMap(group=>group.items)];assert.equal(links.length,36);assert.equal(new Set(links.map(item=>item.id)).size,36);
+ assert.ok(!workspaceNavigation.groups.find(group=>group.id==='legacy-warehouse')?.items.some(item=>item.id==='kiosk'));
  assert.ok(workspaceNavigation.groups.find(group=>group.id==='legacy-customers')?.items.some(item=>item.id==='orders'));
  for(const [slug,parent] of Object.entries(navigationParents)){assert.ok(modules.some(([path])=>path===slug));assert.ok(links.some(item=>referenceRoutes[item.id].slug===parent));}
 });

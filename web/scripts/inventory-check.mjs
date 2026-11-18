@@ -23,4 +23,16 @@ export async function checkInventory(page,base,out,report){
  await page.getByRole('button',{name:'Lưu phiếu kho',exact:true}).click();await page.getByText('Đã ghi phiếu. Tồn kho và lịch sử đã được cập nhật.',{exact:true}).waitFor();
  if(count?.p_lines[0].counted_quantity!=='0'||count.p_inventory_version!=='123')throw new Error('Zero count/token not retained');
  report.checks.push('Inventory catalogue, movements, history, reorder, entry at 5 widths; sole warehouse; empty warehouse guidance; decimal receipt retry preserves payload/key; confirmed zero count with captured inventory token');
+ for(const kind of ['ingredient','finished','kiosk']){
+  await page.goto(base+'/app/warehouses');
+  if(await page.locator('.sidebar a[href="/app/kiosk"]').count())throw new Error('Removed kiosk link remains in warehouse sidebar');
+  await page.getByRole('button',{name:'Thêm mới',exact:true}).click();
+  await page.getByLabel('Mã kho',{exact:true}).fill('SYN-'+kind);await page.getByLabel('Tên kho',{exact:true}).fill('Kho kiểm thử '+kind);
+  await page.getByRole('dialog').locator('select').selectOption(kind);let request;
+  await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/save_catalog',async route=>{request=route.request().postDataJSON();await route.fulfill({status:200,contentType:'application/json',body:'{"id":"synthetic-warehouse"}'});});
+  await page.getByRole('button',{name:'Lưu dữ liệu',exact:true}).click();await page.getByText('Đã lưu — database đã xác nhận.',{exact:true}).waitFor();
+  if(request?.p_input.kind!==kind)throw new Error('Translated warehouse label submitted instead of kind code');
+  await page.unroute('https://visual-fixture.supabase.co/rest/v1/rpc/save_catalog');
+ }
+ report.checks.push('Warehouse sidebar excludes kiosk; all three Vietnamese warehouse kind labels submit canonical codes through save_catalog');
 }

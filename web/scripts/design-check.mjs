@@ -47,7 +47,7 @@ try {
   await page.evaluate(()=>document.fonts.ready);
   const state=await page.evaluate(()=>({sidebarWidth:getComputedStyle(document.querySelector('.sidebar')).width,fontFamily:getComputedStyle(document.querySelector('.sidebar')).fontFamily,contentFont:getComputedStyle(document.querySelector('main.content')).fontFamily,headingFont:getComputedStyle(document.querySelector('main.content h1,main.content h2')).fontFamily,groupCount:document.querySelectorAll('.sidebar .navgroup').length,activeCount:document.querySelectorAll('.sidebar [aria-current=page]').length,headerHeight:document.querySelector('.topbar').getBoundingClientRect().height,overflow:document.documentElement.scrollWidth>innerWidth+1}));
   report.pages.push({route,...state});
-  if(state.sidebarWidth!=='300px'||state.groupCount!==7||state.activeCount!==1||state.headerHeight!==75||state.overflow||!state.contentFont.includes('Be Vietnam Pro'))throw new Error('Desktop layout check failed: '+JSON.stringify({route,...state}));
+  if(state.sidebarWidth!=='300px'||state.groupCount!==7||state.activeCount!==(route==='kiosk'?0:1)||state.headerHeight!==75||state.overflow||!state.contentFont.includes('Be Vietnam Pro'))throw new Error('Desktop layout check failed: '+JSON.stringify({route,...state}));
   if(['','opsdashboard','materials','recipes','strategy','kiosk','audit'].includes(route))await page.screenshot({path:path.join(out,(route||'dashboard')+'-desktop.png')});
   const brokenIcons=await page.evaluate(()=>Array.from(document.querySelectorAll('.workspace button:has(>svg),.workspace a:has(>svg)')).flatMap(button=>{
    if(!button.getClientRects().length)return [];
@@ -87,7 +87,7 @@ try {
  if(await page.getByRole('button',{name:'Đăng xuất',exact:true}).locator('svg path').count()!==1)throw new Error('Custom logout SVG missing');
  if(await page.getByText('QUẢN TRỊ & TIỆN ÍCH',{exact:true}).count())throw new Error('Flat utility menu returned');
  const warehouse=page.locator('.reference-nav-section').filter({has:page.getByRole('button',{name:'KHO & TỒN KHO',exact:true})});
- if(await warehouse.locator('a[href="/app/kiosk"]').count()!==1)throw new Error('Kiosk outside its legacy warehouse group');
+ if(await warehouse.locator('a[href="/app/kiosk"]').count()!==0)throw new Error('Kiosk outside its legacy warehouse group');
  const customers=page.locator('.reference-nav-section').filter({has:page.getByRole('button',{name:'KHÁCH HÀNG',exact:true})});
  if(await customers.locator('a[href="/app/orders"]').count()!==1)throw new Error('Orders outside legacy customer group');
  report.checks.push('legacy menu groups, kiosk/customer placement and contextual utilities');

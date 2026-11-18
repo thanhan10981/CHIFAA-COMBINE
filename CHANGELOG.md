@@ -1,3 +1,7 @@
+## 2026-11-18 — Gỡ mục Thu hồi & ki-ốt khỏi Kho và sửa lưu loại kho
+
+Theo yêu cầu mới nhất: bỏ liên kết Thu hồi & ki-ốt trong menu Kho; giữ chứng từ/lịch sử nghiệp vụ. KH-04/10. Sửa select danh mục thiếu value làm gửi nhãn tiếng Việt thay mã enum, gây lỗi lưu kho thành phẩm/ki-ốt. Không đổi schema hoặc cần chạy SQL. Kiểm thử theo TEST_RESULTS.md; theo dõi deploy DEV tại `output/warehouse-menu-release-status.json`.
+
 ## 2026-11-18 — Bảng tồn kho và nhập/xuất030
 
 KH-01/09/10: nối toàn bộ danh mục vật tư vào bảng tồn theo kho, nhập/xuất/kiểm kê từng dòng, lịch sử và đề xuất mua theo kế hoạch cùng ĐVT. Giữ unknown khác số0 đã kiểm kê; không tạo dữ liệu giả. Tự chọn kho duy nhất/hướng dẫn kho trống, làm mới cache liên thông, token kiểm kê và retry giữ payload/key. Regression kho5 trường hợp và Chrome25 tổ hợp đạt. Owner xác nhận SQL030_READY; RPC live chặn anonymous. Chi tiết `docs/standalone/INVENTORY_WORKSPACE.md`; phát hành DEV và kiểm thử cuối theo `output/inventory-release-status.json`/TEST_RESULTS.md. Chưa UAT authenticated hoặc thêm sửa/đảo riêng phiếu nhập/xuất.
