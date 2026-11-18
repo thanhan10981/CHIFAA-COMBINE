@@ -1,3 +1,7 @@
+## 2026-11-18 — Mặc định một kho nguyên liệu
+
+KH-01/09/10: bỏ Danh mục kho khỏi UI, chuyển URL cũ sang Tồn kho. Tự dùng kho nguyên liệu hiện có cho Kho, Sản xuất và Kiểm kê, không cần chọn. Giữ nguyên ID/chứng từ/lịch sử; không gộp hoặc xóa kho cũ. Không cần SQL; trạng thái thiếu/nhiều kho nguyên liệu được báo rõ. Kiểm thử và phát hành theo TEST_RESULTS.md/`output/default-ingredient-release-status.json`.
+
 ## 2026-11-18 — Thu gọn bộ lọc và thao tác Kho
 
 KH-01/09/10: bỏ điều hướng lặp, gom bộ lọc, dải thống kê nhỏ, dòng bảng gọn và số căn phải. Nút Nhập/Xuất/Kiểm kê bằng icon có tên truy cập, tooltip và chú giải; dialog vừa màn hình, focus lượng khi mở. Giữ luồng nghiệp vụ và bảo vệ ghi hiện có. Không cần SQL; bằng chứng kiểm tra và phát hành theo TEST_RESULTS.md/`output/inventory-compact-release-status.json`.

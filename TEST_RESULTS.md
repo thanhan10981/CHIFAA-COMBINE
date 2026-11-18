@@ -1,5 +1,11 @@
 # Kết quả kiểm thử master session
 
+## 18/11/2026 — một kho nguyên liệu mặc định
+
+- `npm run verify`: **93/93 tests**, types/lint/build đạt. Kiểm tra resolver tự lấy ID kho nguyên liệu duy nhất; thiếu/nhiều kho trả trạng thái chưa xác định, không bịa ID/gộp tồn; context tabs không còn Danh mục kho.
+- Chrome fixture: `--inventory` **25/25**, `--production` **30/30**, không lỗi JS/tràn trang. Bảng tự tải không chọn kho; không còn liên kết Danh mục kho, URL cũ mô phỏng chuyển Tồn kho; giữ kiểm tra phiếu kho, kiểm kê0/token/retry, kế hoạch/SX và đối chiếu từ chứng từ. Đã xem ảnh Kho desktop.
+- Không chạy SQL, xóa kho cũ hoặc viết lại lịch sử. UI dùng lại ID kho nguyên liệu hiện có. Nếu legacy có0/nhiều kho nguyên liệu thì cần quản trị xác định cấu hình trước khi ghi; không tự gom các sổ kho. Phát hành DEV theo `output/default-ingredient-release-status.json`; chưa UAT authenticated cloud.
+
 ## 18/11/2026 — giao diện Kho gọn và icon thao tác
 
 - `npm run verify`:92/92 tests, generated types/typecheck/lint/build đạt; lint chạy lại sau thêm focus ô lượng đạt. Build cuối và giao diện kiểm tra lại sau chốt CSS.

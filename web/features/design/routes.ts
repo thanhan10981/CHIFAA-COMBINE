@@ -13,7 +13,7 @@ export const referenceNavigation=source;
 export const workspaceNavigation=workspace;
 export const navigationParents:Record<string,string>={units:'materials',departments:'employees',warehouses:'inventory',deliveries:'orders',returns:'orders',reports:'opsdashboard',imports:'audit',accounts:'cash'};
 export const contextNavigation=[
- ['materials','units'],['employees','departments'],['inventory','stockmovements','stockhistory','reorder','warehouses'],
+ ['materials','units'],['employees','departments'],['inventory','stockmovements','stockhistory','reorder'],
  ['orders','deliveries','returns'],['opsdashboard','reports'],['audit','imports'],['cash','accounts'],
 ];
 export function referencePageForSlug(slug:string){return [...source.top,...source.groups.flatMap(group=>group.items)].find(item=>referenceRoutes[item.id].slug===slug)?.id;}

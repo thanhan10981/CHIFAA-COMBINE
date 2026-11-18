@@ -8,6 +8,7 @@
 .workspace .inventory-workspace label{font-size:12px;gap:6px}
 .workspace .inventory-workspace .inventory-scope .form-grid{display:grid;grid-template-columns:minmax(180px,1.4fr) repeat(2,minmax(160px,1fr)) auto;gap:12px;align-items:end}
 .workspace .inventory-workspace .inventory-refresh{height:40px;white-space:nowrap}
+.inventory-default-warehouse,.pm-default-warehouse{display:grid;gap:6px;align-content:center;min-height:58px;font-size:13px}.inventory-default-warehouse span,.pm-default-warehouse span{font-size:12px;color:var(--muted)}
 .inventory-guide{font-size:12px;color:var(--muted);margin:0 0 8px}
 .inventory-guide summary{display:flex;align-items:center;gap:6px;cursor:pointer;width:fit-content;padding:4px 0}
 .inventory-guide summary::after{content:'+';margin-left:3px}

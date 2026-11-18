@@ -1,4 +1,5 @@
 'use client';
+import {ingredientWarehouseId,IngredientWarehouseStatus} from '@/features/operations/ingredient-warehouse';
 import {ToastNotice,LoadingState} from '@/components/feedback';
 
 import {useState} from 'react';
@@ -12,7 +13,6 @@ type Request = {p_warehouse:string; p_date:string; p_lines:{material_id:string; 
 
 export function StockCount({userId, canPost}:{userId:string; canPost:boolean}) {
  const cache = useQueryClient();
- const [warehouse,setWarehouse] = useState('');
  const [date,setDate] = useState(()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh'}).format(new Date()));
  const [search,setSearch] = useState('');
  const [offset,setOffset] = useState(0);
@@ -24,6 +24,7 @@ export function StockCount({userId, canPost}:{userId:string; canPost:boolean}) {
   if(error) throw new Error('Chưa tải được danh sách kho.');
   return data as {id:string; name:string}[];
  }});
+ const warehouse=ingredientWarehouseId(warehouses.data);
  const snapshot = useQuery({queryKey:[userId,'counts','snapshot',warehouse,date,search,offset],enabled:!!warehouse&&!!date,
   staleTime:Infinity,refetchOnWindowFocus:false,queryFn:async()=>{
    const {data,error}=await browserSupabase().rpc('stock_count_snapshot',{p_warehouse:warehouse,p_date:date,p_search:search,p_offset:offset});
@@ -62,7 +63,7 @@ export function StockCount({userId, canPost}:{userId:string; canPost:boolean}) {
   <div className="panel">{warehouses.isFetching&&<LoadingState compact label="Đang tải danh sách kho…"/>}
    <fieldset disabled={locked||hasDraft}><div className="form-grid">
     <label>Ngày kiểm kê<input type="date" value={date} onChange={e=>{setDate(e.target.value);reset();}}/></label>
-    <label>Kho nguyên liệu<select value={warehouse} onChange={e=>{setWarehouse(e.target.value);setOffset(0);reset();}}><option value="">Chọn kho</option>{warehouses.data?.map(w=><option key={w.id} value={w.id}>{w.name}</option>)}</select></label>
+    <p>Kho: <b>Nguyên liệu</b></p><IngredientWarehouseStatus rows={warehouses.data}/>
    </div><div className="toolbar">
     <input aria-label="Tìm vật tư theo tiền tố mã hoặc tên" placeholder="Tìm mã hoặc tên vật tư…" value={search} maxLength={100} onChange={e=>{setSearch(e.target.value);setOffset(0);reset();}}/>
     <button className="button" disabled={!warehouse||snapshot.isFetching} onClick={()=>{reset();void snapshot.refetch();}}>Tải lại tồn</button>

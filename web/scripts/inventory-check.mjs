@@ -4,7 +4,8 @@ export async function checkInventory(page,base,out,report){
   await page.setViewportSize({width,height:900});
   for(const slug of ['inventory','stockmovements','stockhistory','reorder','entry-stock']){
    await page.goto(base+'/app/'+slug);await page.getByText(slug==='stockhistory'?'Chứng từ nhập kiểm thử':'Vật tư kiểm thử nhập kho',{exact:slug!=='stockhistory'}).waitFor();
-   if(await page.getByLabel('Kho nguyên liệu',{exact:true}).inputValue()!=='inv-w')throw new Error('Sole warehouse was not selected');
+   if(await page.locator('select[aria-label="Kho nguy\u00ean li\u1ec7u"]').count())throw new Error('Warehouse selector remains');
+   if(await page.locator('a[href="/app/warehouses"]').count())throw new Error('Warehouse catalogue link remains');
    if(slug==='inventory'){
     if(await page.locator('.inventory-workspace nav').count())throw new Error('Duplicate warehouse navigation');
     const actions=page.getByRole('row').filter({hasText:'INV-M'}).locator('.inventory-action');
@@ -17,7 +18,7 @@ export async function checkInventory(page,base,out,report){
    await page.screenshot({path:path.join(out,slug+'-'+width+'.png')});report.pages.push({slug,width,overflow:false});
   }
  }
- await page.goto(base+'/app/inventory?empty-warehouse');await page.getByRole('link',{name:'Thiết lập kho nguyên liệu',exact:true}).waitFor();
+ await page.goto(base+'/app/inventory?empty-warehouse');await page.getByRole('status').filter({hasText:'Kho nguy\u00ean li\u1ec7u ch\u01b0a \u0111\u01b0\u1ee3c kh\u1edfi t\u1ea1o'}).waitFor();
  await page.goto(base+'/app/inventory');await page.getByText('Vật tư kiểm thử nhập kho',{exact:true}).waitFor();
  for(const width of [320,1440]){
   await page.setViewportSize({width,height:900});
@@ -42,16 +43,6 @@ export async function checkInventory(page,base,out,report){
  await page.getByRole('button',{name:'Lưu phiếu kho',exact:true}).click();await page.getByText('Đã ghi phiếu. Tồn kho và lịch sử đã được cập nhật.',{exact:true}).waitFor();
  if(count?.p_lines[0].counted_quantity!=='0'||count.p_inventory_version!=='123')throw new Error('Zero count/token not retained');
  report.checks.push('Inventory catalogue, movements, history, reorder, entry at 5 widths; sole warehouse; empty warehouse guidance; decimal receipt retry preserves payload/key; confirmed zero count with captured inventory token; accessible icon actions stay in one row, desktop filters fit one row, no duplicate tabs, three compact dialogs at 320/1440');
- for(const kind of ['ingredient','finished','kiosk']){
-  await page.goto(base+'/app/warehouses');
-  if(await page.locator('.sidebar a[href="/app/kiosk"]').count())throw new Error('Removed kiosk link remains in warehouse sidebar');
-  await page.getByRole('button',{name:'Thêm mới',exact:true}).click();
-  await page.getByLabel('Mã kho',{exact:true}).fill('SYN-'+kind);await page.getByLabel('Tên kho',{exact:true}).fill('Kho kiểm thử '+kind);
-  await page.getByRole('dialog').locator('select').selectOption(kind);let request;
-  await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/save_catalog',async route=>{request=route.request().postDataJSON();await route.fulfill({status:200,contentType:'application/json',body:'{"id":"synthetic-warehouse"}'});});
-  await page.getByRole('button',{name:'Lưu dữ liệu',exact:true}).click();await page.getByText('Đã lưu — database đã xác nhận.',{exact:true}).waitFor();
-  if(request?.p_input.kind!==kind)throw new Error('Translated warehouse label submitted instead of kind code');
-  await page.unroute('https://visual-fixture.supabase.co/rest/v1/rpc/save_catalog');
- }
- report.checks.push('Warehouse sidebar excludes kiosk; all three Vietnamese warehouse kind labels submit canonical codes through save_catalog');
+ await page.goto(base+'/app/warehouses');await page.getByText('V\u1eadt t\u01b0 ki\u1ec3m th\u1eed nh\u1eadp kho',{exact:true}).waitFor();
+ report.checks.push('Warehouse catalogue redirects to inventory; ingredient warehouse is resolved automatically without selector');
 }
