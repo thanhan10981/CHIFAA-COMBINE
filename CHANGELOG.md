@@ -1,3 +1,8 @@
+## 2026-11-18 — Cải thiện form công thức (KH-01/03/10/11)
+
+- Chọn công thức con cùng nhóm; bỏ chữ nháp/trạng thái trùng lặp tại bộ chọn và chi tiết phiên bản.
+- Gỡ ô nhập chứng thực; RPC giữ nhật ký thao tác mà không giả lập chứng từ xác minh.
+- Kiểm tra: typecheck, lint, 121/121 tests, build đạt. Chưa ghi dữ liệu thật lên Supabase DEV do không có phiên đăng nhập để xác thực đúng project; còn chờ nhập và xác minh công thức nguồn.
 ## 2026-11-18 — Gỡ tab “Nhập dữ liệu cũ” khỏi điều hướng (KH-10)
 
 - Gỡ tab trang cũ khỏi nhóm điều hướng, giữ tab “Nhật ký hoạt động” trên trang nhật ký; giữ module, URL, quyền và dữ liệu/lịch sử hiện có.

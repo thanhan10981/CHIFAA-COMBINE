@@ -13,6 +13,13 @@ test('recipe detail retains direct units and linked children while costing the a
  assert.equal(lines[0].type,'recipe');assert.equal(lines[0].quantity,'1.000000');assert.equal(lines[1].unit,'g');assert.equal(Number(lines[1].converted),.2);assert.equal((detail.cost as {total_vnd:string}).total_vnd,'3000');
  const catalog=await call('recipe_catalog',['product','2026-11-17','R-CAT-PARENT',0,25]);assert.equal(catalog.total,1);assert.equal((catalog.rows as Record<string,unknown>[])[0].code,'R-CAT-PARENT');
 });
+test('same-kind child recipes can be linked and recipe revisions do not require manual evidence text',async()=>{
+ const child=await call('save_recipe_revision',[null,null,{...metadata('R-CAT-SAUCE'),kind:'sauce'},[item],'',randomUUID()]);
+ const parent=await call('save_recipe_revision',[null,null,{...metadata('R-CAT-FILLING'),kind:'sauce'},[{material_id:null,child_version_id:child.version_id,quantity:'1',unit_id:portion},item],'',randomUUID()]);
+ const detail=await call('recipe_detail',[parent.version_id,'2026-11-17']);assert.equal((detail.lines as Record<string,unknown>[])[0].type,'recipe');
+ const source=(await db.query<{source_data:{evidence:string|null;audit_source:string}}>("select source_data from private.catalog_sources where entity_id=$1",[parent.version_id])).rows[0].source_data;
+ assert.equal(source.evidence,null);assert.equal(source.audit_source,'recipe_editor');
+});
 test('unresolved imported quantities remain visible and block official BOM/publication without zero replacement',async()=>{
  const row=await save('R-CAT-REVIEW');await db.query("insert into recipe_unresolved_items(recipe_version_id,label,quantity,unit_label,issue,sort_order) values($1,'Unknown source',617,'phần','Source quantity contradicts its label',2)",[row.version_id]);
  const detail=await call('recipe_detail',[row.version_id,'2026-11-17']);assert.equal((detail.lines as unknown[]).length,2);assert.equal((detail.cost as {complete:boolean;total_vnd:null}).complete,false);assert.equal((detail.cost as {total_vnd:null}).total_vnd,null);

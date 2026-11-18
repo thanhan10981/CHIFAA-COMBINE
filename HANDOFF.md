@@ -1,4 +1,13 @@
-# HANDOFF hiện tại — CHIFAA standalone / Next.js + Supabase
+## 18/11/2026 — Cập nhật luồng công thức (KH-01/03/10/11)
+
+Đã cho phép liên kết công thức con cùng nhóm; ẩn nhãn phiên bản/trạng thái nháp lặp lại ở lựa chọn công thức và phần chi tiết; bỏ ô nhập lý do/chứng thực khỏi form. Migration `supabase/migrations/202611180037_recipe_editor_no_evidence_field.sql` giữ quyền, idempotency và lịch sử thao tác, ghi rõ nguồn là `recipe_editor`, không khẳng định có chứng từ xác minh. Kiểm thử thêm liên kết cùng nhóm và lưu với chứng từ rỗng.
+
+Bằng chứng local: typecheck, lint, 121/121 tests và production build đạt. Chưa ghi dữ liệu lên Supabase DEV `chifaa-combine-dev`: môi trường không có phiên app/browser đăng nhập để đối chiếu project và gọi RPC. Việc nhập công thức thực vẫn chờ truy cập DEV. Mỳ trộn được để ngoài lần cập nhật này theo yêu cầu. Nước cost 0 và sản lượng 60 phần là xác nhận riêng; dòng BB 20g và mapping chính xác sang danh mục vẫn cần đối chiếu trước khi công bố.
+## 18/11/2026 — Yêu cầu nhập công thức vào dữ liệu chính thức (KH-01/03/10/11) — đang chờ truy cập
+
+Owner yêu cầu đưa công thức vào dữ liệu chính thức, không để ở bản nháp, và xác định môi trường đích là DEV `chifaa-combine-dev`. Owner đã làm rõ hai điểm nguồn: nước vẫn là thành phần bắt buộc dù được xác nhận cost 0; năng suất mẻ nhân gà phô mai là tham số chia phần để tính cost/phần. Chi tiết giữ trong file riêng bị ignore `output/CONG_THUC_DOI_CHIEU.md`, không chép định lượng riêng vào Git. Còn phải khớp vật tư Nước với danh mục; xác nhận có giữ dòng BB trong công thức nhân phô mai; và nhận thành phần/định lượng Mỳ trộn hoặc loại công thức này khỏi lần công bố. KH-01/11 tiếp tục chặn BOM thiếu thành phần/đơn vị; cost 0 chỉ được dùng cho khoản owner xác nhận, không áp cho các cost 0 chưa rõ khác.
+
+Chưa có thay đổi dữ liệu cloud. CUA vẫn trả về không có trình duyệt/app để đăng nhập và thao tác RPC; `web/.env.local` không xác nhận được project name theo target đã nêu. Dev server khởi động được rồi đã dừng; không gửi RPC/SQL, không công bố công thức và không deploy. Cần phiên app Admin đã đăng nhập có thể truy cập từ công cụ; sau đó đối chiếu đúng project DEV, vật tư/phiên bản hiện hữu trước khi ghi. Không chạy lại gói import cũ nếu trùng hash/mã.
 
 ## 18/11/2026 — Gỡ tab “Nhập dữ liệu cũ” khỏi điều hướng (KH-10)
 
