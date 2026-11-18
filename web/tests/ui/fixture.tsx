@@ -8,9 +8,7 @@ import {FeedbackFixture} from './feedback-fixture';
 import {QueryClient,QueryClientProvider} from '@tanstack/react-query';
 import {AppShell} from '@/components/app-shell';
 import {PortalShell} from '@/components/portal-shell';
-import {PortalShop} from '@/features/orders/portal-shop';
 import {PublicShop} from '@/features/orders/public-shop';
-import {Logout} from '@/components/logout';
 import {MaterialWorkspace} from '@/features/catalog/material-workspace';
 import {CatalogPage} from '@/features/catalog/catalog-page';
 import {CommercialWorkspace} from '@/features/catalog/commercial-workspace';
@@ -30,6 +28,7 @@ import {referencePageForSlug} from '@/features/design/routes';
 const user='visual-fixture',client=new QueryClient({defaultOptions:{queries:{staleTime:Infinity,retry:false,refetchOnWindowFocus:false}}});
 if(window.location.pathname==='/app/assets')window.history.replaceState(null,'','/app/entry');
 if(window.location.pathname==='/app/warehouses')window.history.replaceState(null,'','/app/inventory');
+if(window.location.pathname==='/portal/account')window.history.replaceState({},'','/portal');
 const path=window.location.pathname.split('/').pop()??'',reference=referencePageForSlug(path==='app'?'':path);
 const role=new URLSearchParams(window.location.search).get('role');
 const access={user_id:user,enabled:true,permissions:role==='staff'?[{module:'materials',action:'view'}]:[...new Set(['dashboard',...modules.map(([, ,module])=>module)])].flatMap(module=>['view','create','edit','approve','manage'].map(action=>({module,action})))};
@@ -41,8 +40,10 @@ client.setQueryData([user,'account-roles'],role==='staff'?['accountant']:['admin
 client.setQueryData([user,'activity-log',0,''],{rows:[],total:0});
 client.setQueryData([user,'admin','profiles'],[]);
 client.setQueryData([user,'orders',0],[]);
-if(new URLSearchParams(window.location.search).has('guest-order')){
- client.setQueryData([user,'orders',0],[{id:'guest-fixture',version:'1',store_id:null,customer_id:null,delivery_date:new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh'}).format(new Date()),shift:'AM',status:'submitted',note:'Đơn công khai kiểm thử',guest_name:'Khách kiểm thử',guest_phone:'0900000035',guest_address:'Địa chỉ kiểm thử không phải dữ liệu thật'}]);
+client.setQueryData([user,'public-order-link-stores'],[{id:'store-fixture',code:'GUEST-S',name:'Điểm nhận đơn kiểm thử'}]);
+client.setQueryData([user,'public-order-links'],[]);
+if(new URLSearchParams(window.location.search).has('guest-order')||new URLSearchParams(window.location.search).has('guest-order-linked')){
+ client.setQueryData([user,'orders',0],[{id:'guest-fixture',version:'1',store_id:new URLSearchParams(window.location.search).has('guest-order-linked')?'guest-store':null,customer_id:null,delivery_date:new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh'}).format(new Date()),shift:'AM',status:'submitted',note:'Đơn công khai kiểm thử',guest_name:'Khách kiểm thử',guest_phone:'0900000035',guest_address:'Địa chỉ kiểm thử không phải dữ liệu thật'}]);
  client.setQueryData([user,'order-store-options'],[{id:'guest-store',code:'GUEST-S',name:'Điểm nhận đơn kiểm thử'}]);
  client.setQueryData([user,'order-lines','guest-fixture'],[{id:'guest-line',product_id:'guest-rice',quantity:'2',price_vnd:'15000',discount_rate:'0',product_name:'Cơm nắm kiểm thử',product_code:'CN',sale_unit:'Phần'}]);
 }
@@ -96,4 +97,4 @@ client.setQueryData([user,'counts','snapshot','inv-w',date,'',0],{inventory_vers
 client.setQueryData([user,'inventory','history','inv-w',date,0],[{id:'inv-doc',moved_on:date,kind:'receipt',status:'posted',note:'Chứng từ nhập kiểm thử',source_batch_id:null,reverses_id:null,created_at:date,created_by:user,code:'INV-M',name:'Vật tư kiểm thử nhập kho',unit:'kg',quantity:'10'}]);
 client.setQueryData([user,'dashboard',date],{net_revenue_vnd:null,received_vnd:null,produced:null,production_hours:null,updated_at:new Date().toISOString(),completeness:'Chưa đủ dữ liệu'});
 const content=['entry','sales','attendance','targets','loans','receivables','cash','payroll'].includes(path)?<EntryWorkspace module={path} userId={user} permissions={Object.fromEntries([...new Set(access.permissions.map(p=>p.module))].map(scope=>[scope,access.permissions.filter(p=>p.module===scope).map(p=>p.action)]))}/>:['inventory','stockmovements','stockhistory','reorder','entry-stock'].includes(path)?<InventoryWorkspace slug={path} userId={user} canPost canCount/>:['production','entry-production','entry','requirements','counts','variance','consumption'].includes(path)?<ProductionMaterials slug={path} userId={user} permissions={{plan:true,produce:true,correct:true,count:true,classify:true,ledger:true,freeze:true,history:true}}/>:path==='materials'?<MaterialWorkspace userId={user} canCreate canEdit canApprove canCount canVerify/>:(['stores','products','employees','discounts'] as string[]).includes(path)?<CommercialWorkspace kind={path as 'stores'|'products'|'employees'|'discounts'} userId={user} permissions={Object.fromEntries([...new Set(access.permissions.map(p=>p.module))].map(scope=>[scope,access.permissions.filter(p=>p.module===scope).map(p=>p.action)]))}/>:catalogs[path]?<CatalogPage slug={path} userId={user} canCreate canEdit canApprove/>:['recipes','batches','rice','packaging','cost'].includes(path)?<RecipeWorkspace slug={path} userId={user} canCreate canEdit canApprove canReadCost/>:path==='counts'?<StockCount userId={user} canPost/>:['inventory','production','stockmovements','entry-stock','entry-production'].includes(path)?<OperationEditor kind={path==='production'||path==='entry-production'?'production':'inventory'} userId={user} canPost/>:path==='kiosk'?<Kiosk userId={user} canApprove canSell canUndo/>:path==='audit'?<ActivityLog userId={user}/>:path==='admin'?<Accounts userId={user} canManage/>:path==='orders'?<ReviewOrders userId={user} canApprove/>:path==='app'?<Dashboard userId={user}/>:reference?<BlueprintPage page={reference}/>:<section className="panel"><h1>{modules.find(([slug])=>slug===path)?.[1]}</h1><p>Workflow chưa hoàn tất.</p></section>;
-createRoot(document.getElementById('root')!).render(path==='feedback'?<Providers><FeedbackFixture/></Providers>:<FeedbackProvider><QueryClientProvider client={client}><RequestActivity/>{path==='portal'?<PortalShell accountAction={<a href="/portal/account">Đơn điểm bán</a>}><PublicShop/></PortalShell>:window.location.pathname==='/portal/account'?<PortalShell accountAction={<Logout/>}><PortalShop userId={user}/></PortalShell>:<AppShell access={access} userLabel="Tài khoản kiểm thử">{content}</AppShell>}</QueryClientProvider></FeedbackProvider>);
+createRoot(document.getElementById('root')!).render(path==='feedback'?<Providers><FeedbackFixture/></Providers>:<FeedbackProvider><QueryClientProvider client={client}><RequestActivity/>{path==='portal'?<PortalShell><PublicShop/></PortalShell>:<AppShell access={access} userLabel="Tài khoản kiểm thử">{content}</AppShell>}</QueryClientProvider></FeedbackProvider>);

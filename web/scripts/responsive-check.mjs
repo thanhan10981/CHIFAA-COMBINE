@@ -56,7 +56,7 @@ export async function checkResponsive(page,base,out,report){
    const generic=await page.getByRole('dialog').boundingBox();if(!generic||generic.width>width)throw new Error('Generic catalog modal too wide');
    await page.getByRole('button',{name:'Đóng',exact:true}).click();
   }
-  await page.goto(base+'/portal/account');await page.getByLabel('Điểm bán',{exact:true}).selectOption('store-fixture');await page.getByRole('heading',{name:'Thực đơn theo điểm bán',exact:true}).waitFor();await fits('Ordering portal '+width);
+  await page.goto(base+'/portal/account');await page.waitForFunction(()=>location.pathname==='/portal');await fits('Legacy store portal redirect '+width);
   if([320,768,1440].includes(width))await page.screenshot({path:path.join(out,'portal-'+width+'.png')});
  }
  await page.setViewportSize({width:820,height:900});await page.goto(base+'/app/materials');await page.getByRole('button',{name:'Mở menu',exact:true}).click();

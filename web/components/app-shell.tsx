@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {usePathname} from 'next/navigation';
 import {useEffect,useRef,useState,type ReactNode} from 'react';
-import {ChevronDown,Menu,X,ArrowUpRight,RefreshCw,Icon,navigationIcon} from '@/components/icons';
+import {ChevronDown,Menu,X,RefreshCw,Icon,navigationIcon} from '@/components/icons';
 import {useQuery,useQueryClient} from '@tanstack/react-query';
 import {browserSupabase} from '@/lib/supabase/browser';
 import type {Access} from '@/lib/auth/access';
@@ -11,6 +11,7 @@ import {modules} from '@/lib/navigation';
 import {workspaceNavigation,referenceRoutes,navigationParents,contextNavigation} from '@/features/design/routes';
 import {Logout} from './logout';
 import {accountRoleLabel} from '@/lib/auth/role-label';
+import {PublicOrderLinks} from '@/features/orders/public-order-links';
 
 export function AppShell({children,access,userLabel='Nội bộ'}:{children:ReactNode;access:Access|null;userLabel?:string}) {
  const pathname=usePathname(),queryClient=useQueryClient();
@@ -64,6 +65,6 @@ export function AppShell({children,access,userLabel='Nội bộ'}:{children:Reac
    <button type="button" className="sidebar-close" onClick={()=>setMobile(false)}><X size={17}/>Đóng thanh menu</button>
    <div className="side-bottom"><span className="sidebar-account-icon"><Icon name="people" size={17}/></span><div className="sidebar-account-copy"><strong title={userLabel}>{userLabel}</strong><span className="sidebar-account-state"><span className="dot"/>{access?'Đã xác thực tài khoản':'Chưa xác thực'}</span></div></div>
   </aside>
-  <div className="main"><header className="topbar"><div className="reference-breadcrumb"><button ref={menuButton} className="reference-menu-toggle" aria-label={mobile?'Đóng menu':'Mở menu'} aria-expanded={mobile} aria-controls="workspace-sidebar" onClick={()=>setMobile(!mobile)}>{mobile?<X size={20}/>:<Menu size={20}/>}</button><span className="crumb">CHIFAA COMBINE / <strong>{label}</strong></span></div><div className="top-actions"><button aria-label="Làm mới dữ liệu" title="Làm mới dữ liệu" className="button icon-button reference-refresh" disabled={refreshing} onClick={async()=>{setRefreshing(true);try{await queryClient.invalidateQueries();}finally{setRefreshing(false);}}}><RefreshCw size={18} className={refreshing?'spin':''}/></button><Link className="reference-portal" href="/portal" aria-label="Cổng đặt hàng"><span className="portal-label">Cổng đặt hàng</span> <ArrowUpRight size={14}/></Link><span className="account-role" title={roleLabel} aria-label={'Vai trò: '+roleLabel}><span>{roleLabel}</span></span>{access&&<Logout/>}</div></header><main className="content" id="main-content">{context.length>1&&<nav className="context-tabs" aria-label="Chức năng trong phân hệ">{context.map(([path,title])=><Link href={'/app/'+path} key={path} aria-current={slug===path?'page':undefined}>{title}</Link>)}</nav>}{children}</main></div>
+  <div className="main"><header className="topbar"><div className="reference-breadcrumb"><button ref={menuButton} className="reference-menu-toggle" aria-label={mobile?'Đóng menu':'Mở menu'} aria-expanded={mobile} aria-controls="workspace-sidebar" onClick={()=>setMobile(!mobile)}>{mobile?<X size={20}/>:<Menu size={20}/>}</button><span className="crumb">CHIFAA COMBINE / <strong>{label}</strong></span></div><div className="top-actions"><button aria-label="Làm mới dữ liệu" title="Làm mới dữ liệu" className="button icon-button reference-refresh" disabled={refreshing} onClick={async()=>{setRefreshing(true);try{await queryClient.invalidateQueries();}finally{setRefreshing(false);}}}><RefreshCw size={18} className={refreshing?'spin':''}/></button><PublicOrderLinks userId={access?.user_id??'anonymous'} canCreate={!!access?.enabled&&access.permissions.some(p=>p.module==='orders'&&p.action==='create')&&access.permissions.some(p=>p.module==='stores'&&p.action==='view')}/><span className="account-role" title={roleLabel} aria-label={'Vai trò: '+roleLabel}><span>{roleLabel}</span></span>{access&&<Logout/>}</div></header><main className="content" id="main-content">{context.length>1&&<nav className="context-tabs" aria-label="Chức năng trong phân hệ">{context.map(([path,title])=><Link href={'/app/'+path} key={path} aria-current={slug===path?'page':undefined}>{title}</Link>)}</nav>}{children}</main></div>
  </div>;
 }

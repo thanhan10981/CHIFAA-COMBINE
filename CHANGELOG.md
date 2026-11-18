@@ -1,3 +1,10 @@
+## 2026-11-18 — Link đặt hàng theo điểm bán (036, KH-12/01/03/04/05/10)
+
+- Nút “Cổng đặt hàng” mở popup chọn điểm bán và tạo link; token bí mật gửi trong fragment URL, DB giữ digest, có quyền, audit, idempotency và thu hồi.
+- Đơn gửi từ link được gắn sẵn điểm bán và xuất hiện ở “Đơn đặt hàng” chờ duyệt. Đơn `/portal` chung vẫn cần chọn điểm bán khi duyệt. Không phát sinh doanh thu, thu tiền, sản xuất hay xuất kho khi mới nhận/duyệt.
+- Gỡ “Đơn điểm bán” khỏi cổng công khai; URL cũ `/portal/account` chuyển về `/portal`. Bỏ hai tab “Giao hàng” và “Thu hồi” khỏi màn đơn đặt hàng, giữ nguyên phân hệ và lịch sử.
+- 119 tests, types94 bảng/66 RPC, typecheck/lint/build và Chrome fixture public portal/link/review đạt. Gói `output/CHIFAA_PATCH_LINK_DIEM_BAN_DEV.sql` sau035 đã tạo, chưa áp DEV/cloud hoặc deploy.
+
 ## 2026-11-18 — Cổng đặt hàng công khai035 (KH-12/01/03/05/10)
 
 - Mở `/portal` không đăng nhập, hiển thị món công bố và giá chung, chọn số lượng/tổng tiền, liên hệ/giao hàng và gửi đơn. Cổng điểm bán đã đăng nhập ở `/portal/account`.

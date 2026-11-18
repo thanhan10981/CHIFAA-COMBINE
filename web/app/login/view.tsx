@@ -4,7 +4,7 @@ import {GoogleSubmit} from './submit';
 
 const capabilities=[['Theo dõi vận hành','Sản xuất, nguyên liệu và tồn kho'],['Kiểm soát kinh doanh','Điểm bán, doanh thu và công nợ'],['Quản lý có trách nhiệm','Phân quyền và nhật ký hoạt động']];
 
-export function LoginView({connected,reason,target,action}:{connected:boolean;reason?:string;target:'/portal'|'/app'|'/portal/account';action:(form:FormData)=>void|Promise<void>}) {
+export function LoginView({connected,reason,target,action}:{connected:boolean;reason?:string;target:'/portal'|'/app';action:(form:FormData)=>void|Promise<void>}) {
  return <main id="main-content" className="access-screen">
   <section className="access-brand" aria-labelledby="access-story-title">
    <div className="access-brandmark"><Image src="/logo-chifaa.png" width={80} height={80} alt="Chifaa" priority/><div><strong>CHIFAA <span>COMBINE</span></strong><small>HỆ THỐNG QUẢN TRỊ VẬN HÀNH</small></div></div>

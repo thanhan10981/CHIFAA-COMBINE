@@ -73,6 +73,9 @@ button, input, select, textarea {font-family: inherit;}
 .workspace .crumb strong {font-weight: 600; color: #253b52;}
 .workspace .reference-portal {font-size: 12px; font-weight: 600; color: #315974; white-space: nowrap; border-radius: 10px; padding: 10px 8px;}
 .workspace .reference-portal:hover {background: #edf4f8; color: #153c58;}
+.workspace button.reference-portal {border: 0; background: transparent; font-family: inherit; cursor: pointer;}
+.public-order-link-dialog>header {position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #fff; padding: 2px 0 12px; margin-bottom: 14px; border-bottom: 1px solid var(--line);}
+.public-order-link-dialog>header h2 {margin: 0;}
 .workspace .avatar {background: #eaf1f7; color: #294962; font-weight: 700; font-size: 12px;}
 .workspace .page-heading {margin-bottom: 26px;}
 .workspace .page-heading h1 {font-size: clamp(24px, 2.1vw, 30px); line-height: 1.45; font-weight: 700; letter-spacing: -.8px; margin-bottom: 7px;}

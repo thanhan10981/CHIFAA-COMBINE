@@ -1,11 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {randomUUID} from 'node:crypto';
+import {createHash,randomUUID} from 'node:crypto';
 import type {PGlite} from '@electric-sql/pglite';
 import {database,asUser,identities} from './database-fixture';
 import {authTarget} from '../lib/auth/target';
 import {readFile} from 'node:fs/promises';
 import {buildPublicPortalUpdate} from '../lib/deploy/public-portal-update';
+import {buildPublicOrderLinksUpdate} from '../lib/deploy/public-order-links-update';
 
 test('DEV035 package preserves existing authenticated orders and rejects replay',async()=>{
  const db=await database('202611180034_material_table_edit.sql');try{
@@ -15,6 +16,31 @@ test('DEV035 package preserves existing authenticated orders and rejects replay'
   const order=(await db.query<{customer_id:string;store_id:string;guest_name:string|null}>('select * from customer_orders')).rows[0];
   assert.equal(order.customer_id,identities.a);assert.equal(order.store_id,store);assert.equal(order.guest_name,null);
   await assert.rejects(()=>db.exec(sql),/PATCH_035_ALREADY_PRESENT/);
+ }finally{await db.close();}
+});
+
+test('DEV036 store links are private, idempotent, revocable and route orders to the selected store',async()=>{
+ const db=await database('202611180035_public_order_portal.sql');try{
+  const store=(await db.query<{id:string}>("insert into stores(code,name,active) values('LINK-STORE','Link target',true) returning id")).rows[0].id;
+  const sql=buildPublicOrderLinksUpdate(await readFile('../supabase/migrations/202611180036_store_order_links.sql','utf8'));await db.exec(sql);
+  const createKey=randomUUID(),create=()=>asUser(db,identities.admin,()=>db.query<{result:{link_id:string;token:string;store_id:string}}> ('select create_public_order_link($1,$2) result',[store,createKey]));
+  const first=(await create()).rows[0].result;assert.deepEqual((await create()).rows[0].result,first);assert.equal(first.store_id,store);assert.match(first.token,/^[0-9a-f]{64}$/);
+  assert.equal((await db.query<{token_hash:string}>('select token_hash from private.public_order_links')).rows[0].token_hash,createHash('sha256').update(first.token).digest('hex'));
+  await assert.rejects(()=>anonymous(db,()=>db.query('select * from private.public_order_links')),/permission denied/);
+  await assert.rejects(()=>anonymous(db,()=>db.query('select public_order_links()')),/permission denied/);
+  await assert.rejects(()=>asUser(db,identities.a,()=>db.query('select create_public_order_link($1,$2)',[store,randomUUID()])),/FORBIDDEN/);
+  const product=(await db.query<{id:string}> ("insert into products(code,name,sale_unit,published,archived) values('LINK-PRODUCT','Link product','Phần',true,false) returning id")).rows[0].id;
+  await db.query("insert into product_prices(product_id,price_vnd,effective_from,evidence) values($1,15000,current_date-1,'Synthetic link price')",[product]);
+  const day=(await db.query<{date_value:string}>("select to_char((now() at time zone 'Asia/Ho_Chi_Minh')::date+1,'YYYY-MM-DD') date_value")).rows[0].date_value;
+  const payload=[{product_id:product,quantity:'2',price_vnd:'15000'}],key=randomUUID(),submit=()=>anonymous(db,()=>db.query<{result:{order_id:string;status:string}}> ('select submit_store_link_order($1,$2,$3,$4,$5,$6,$7) result',[day,'AM',{name:'Link visitor',phone:'0900000036',address:'Link delivery address'},payload,'Store order',first.token,key]));
+  const accepted=(await submit()).rows[0].result;assert.deepEqual((await submit()).rows[0].result,accepted);
+  const order=(await db.query<{store_id:string|null;status:string}>('select store_id,status from customer_orders where id=$1',[accepted.order_id])).rows[0];assert.equal(order.store_id,store);assert.equal(order.status,'submitted');
+  await asUser(db,identities.admin,()=>db.query('select revoke_public_order_link($1,$2)',[first.link_id,randomUUID()]));
+  assert.deepEqual((await submit()).rows[0].result,accepted,'an uncertain submission remains safely replayable after link revocation');
+  await assert.rejects(()=>anonymous(db,()=>db.query('select submit_store_link_order($1,$2,$3,$4,$5,$6,$7)',[day,'AM',{name:'Other visitor',phone:'0900000037',address:'Another delivery address'},payload,'Revoked link',first.token,randomUUID()])),/INVALID_LINK/);
+  assert.equal((await db.query<{count:string}>("select count(*)::text count from customer_orders where status='submitted'")).rows[0].count,'1');
+  assert.equal((await db.query<{revoked_at:string|null}>('select revoked_at from private.public_order_links where id=$1',[first.link_id])).rows[0].revoked_at!==null,true);
+  await assert.rejects(()=>db.exec(sql),/PATCH_036_ALREADY_PRESENT/);
  }finally{await db.close();}
 });
 
@@ -86,7 +112,7 @@ test('guest validation, price changes, missing/unpublished dishes, capacity and 
  }finally{await db.close();}
 });
 
-test('login return targets accept the store account route and reject external redirects',()=>{
- assert.equal(authTarget('/portal/account'),'/portal/account');assert.equal(authTarget('/portal'),'/portal');
+test('login return targets accept the public portal and reject obsolete or external redirects',()=>{
+ assert.equal(authTarget('/portal/account'),'/app');assert.equal(authTarget('/portal'),'/portal');
  for(const value of ['https://example.com','//example.com','/portal/../../evil',null])assert.equal(authTarget(value),'/app');
 });

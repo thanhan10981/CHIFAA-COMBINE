@@ -1,5 +1,15 @@
 # HANDOFF hiện tại — CHIFAA standalone / Next.js + Supabase
 
+## 18/11/2026 — Link đặt hàng theo điểm bán (036)
+
+Theo yêu cầu trực tiếp mới nhất, liên quan KH-12/01/03/04/05/10: bỏ nút “Đơn điểm bán” khỏi đầu trang `/portal`; nút “Cổng đặt hàng” nội bộ mở popup chọn điểm bán/tạo link. Tab “Giao hàng” và “Thu hồi” không còn trong điều hướng của `/app/orders`; phân hệ và dữ liệu giao/thu hồi vẫn được giữ. `/portal/account` cũ chuyển thẳng về `/portal` để dùng luồng link mới.
+
+Migration036 tạo link bí mật riêng cho điểm bán: DB chỉ giữ SHA-256, link tạo/list/thu hồi qua RPC kiểm tra quyền `orders/create` + `stores/view`, audit và idempotency. Cổng nhận token ở URL fragment; RPC `submit_store_link_order` tra link đang hoạt động rồi gắn `store_id` lên đơn `submitted` trong `customer_orders`. RPC cũ `submit_public_order` giữ nguyên chữ ký cho phiên cổng công khai đang mở. Đơn vẫn là thông tin người gửi tự cung cấp, phải được CHIFAA duyệt; link không xác thực danh tính, không tạo doanh thu/tiền/kho/kế hoạch. Khách dùng `/portal` chung vẫn gửi đơn chưa gắn điểm bán; nội bộ chọn điểm bán khi duyệt. Quy tắc KH-01/03/04/05 được giữ nguyên: đặt/giao không mặc định là sản xuất/bán/thu tiền, các luồng giao và thu hồi không bị xóa.
+
+File chính: `web/features/orders/public-order-links.tsx`, `web/features/orders/public-shop.tsx`, `web/features/orders/review-orders.tsx`, migration `supabase/migrations/202611180036_store_order_links.sql`, gói `output/CHIFAA_PATCH_LINK_DIEM_BAN_DEV.sql` SHA256 `935b86745091978e0aa8d79b637a2c92d244fd72534091ccfaf34a2fa2907982`.
+
+Bằng chứng:119/119 tests, db:types94 bảng/67 RPC, typecheck/lint/build đạt. Chrome fixture public portal 6 cỡ320–1920 và xác nhận redirect `/portal/account`, tạo/copy link, gửi token, đơn gắn điểm bán, duyệt đơn đã gắn sẵn, đơn guest thường vẫn cần chọn điểm bán, không còn tab giao/thu hồi đạt; report và ảnh fixture tại `output/public-portal-design/report.json`, `order-link-dialog.png`. Đây là fixture local, không phải Supabase cloud UAT. Chưa áp SQL DEV/production, chưa commit/push/deploy; cần owner xác nhận/chạy035 rồi036 trong SQL Editor **DEV** trước khi phát hành frontend và UAT.
+
 ## 18/11/2026 — Cổng đặt hàng công khai035
 
 Theo chỉ dẫn trực tiếp mới nhất, KH-12 +KH-01/03/05/10: `/portal` không gọi currentAccess hoặc yêu cầu đăng nhập/điểm bán liên kết; món published, không archived hiển thị cùng giá chung theo ngày giao. Có tăng/giảm/nhập số lượng, tổng tiền chính xác, thông tin nhận hàng, gửi đơn chờ duyệt. Món thiếu giá hiển thị nhưng không cho đặt. Phân trang100, đọc lại mỗi30giây/focus. Cổng tài khoản cũ ở `/portal/account`, auth target allowlist mở rộng đúng route này; app nội bộ và giá/đơn riêng giữ bảo vệ.

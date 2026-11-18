@@ -85,7 +85,7 @@ try {
  report.checks.push('sidebar section labels fit at 1024/1280/1440; fixed brand and account during menu scrolling');
  await page.setViewportSize({width:1440,height:1000});
  await page.goto(base+'/app/materials');
- const fonts=await page.evaluate(()=>({loaded:[...document.fonts].filter(font=>font.family.includes('Be Vietnam Pro')&&font.status==='loaded').length,portalVisible:!!document.querySelector('a[href="/portal"]')}));
+ const fonts=await page.evaluate(()=>({loaded:[...document.fonts].filter(font=>font.family.includes('Be Vietnam Pro')&&font.status==='loaded').length,portalVisible:!!document.querySelector('.reference-portal[aria-label="Cổng đặt hàng"]')}));
  if(fonts.loaded<2||!fonts.portalVisible)throw new Error('Vietnamese fonts or ordering portal missing: '+JSON.stringify(fonts));
  report.checks.push('self-hosted Vietnamese fonts loaded and ordering portal retained');
  if(await page.locator('.account-role').textContent()!=='Admin')throw new Error('Actual Admin role label missing');
