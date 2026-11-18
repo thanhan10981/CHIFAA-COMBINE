@@ -1,5 +1,15 @@
 # HANDOFF hiện tại — CHIFAA standalone / Next.js + Supabase
 
+## 18/11/2026 — Nút thu gọn/mở lại sidebar
+
+Yêu cầu trực tiếp của owner, liên quan KH-10 (giao diện tiếng Việt, responsive): thêm nút SVG ở mép phải sidebar trên desktop; ẩn hoàn toàn menu để nội dung mở rộng, giữ nút sát mép trái để mở lại. Nút navy, hover cam, có tooltip, aria-expanded/controls và focus bàn phím. Trạng thái giữ trong AppShell khi chuyển trang, tải lại trang trở về mặc định mở. Mobile/tablet tiếp tục dùng drawer hiện có.
+
+File sửa: web/components/app-shell.tsx, web/features/design/sidebar.css, web/features/design/responsive.css. Không thay đổi schema/RPC hoặc quy tắc liên thông nghiệp vụ KH-01..09/11.
+
+Bằng chứng: typecheck, lint, npm test109/109, build đạt; git diff --check đạt. Chrome headless fixture đạt desktop1024/1280/1440/1920: nút đúng mép, ẩn menu/không còn link trong accessibility tree, nội dung mở rộng, aria, Enter mở lại, chuyển sang mobile và trở lại desktop. Mobile/tablet320/390/768/1023: mở/đóng, Escape, trả focus, khóa cuộn, không tràn ngang đạt. Đã xem ảnh desktop mở/ẩn. Báo cáo/ảnh riêng tại ignored output/sidebar-design/report.json, desktop-open.png, desktop-hidden.png, mobile.png; kịch bản tại output/sidebar-ui-check.mjs.
+
+Còn lại: chưa phát hành DEV/production, chưa UAT trên phiên đăng nhập Supabase thật. Kiểm tra giao diện dùng dữ liệu fixture offline, không phải bằng chứng cloud UAT.
+
 Phát hành033: owner xác nhận cả033_READY và033_DATA_READY trong chat. Candidate6a5744d đã đạt109 tests/types/lint/build,50 bố cục +14 popup Nhập liệu và30 bố cục SX. Đẩy riêng chifaa-next-dev; bằng chứng commit/Vercel/HTTP ghi tại ignored output/entry-compact-release-status.json. Chưa UAT authenticated. Không áp SQL cloud từ công cụ.
 
 ## 18/11/2026 — Checkpoint033: nhập liệu gọn và điều chỉnh liên thông

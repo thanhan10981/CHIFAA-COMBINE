@@ -1,3 +1,8 @@
+## 2026-11-18 — Thu gọn/mở lại sidebar (KH-10)
+
+- Thêm nút mũi tên SVG sát cạnh sidebar desktop, navy/hover cam, tooltip và hỗ trợ bàn phím. Ẩn menu mở rộng nội dung; nút ở mép trái để mở lại. Mobile/tablet giữ drawer.
+- Typecheck/lint/build và109 tests đạt; Chrome fixture kiểm tra8 cỡ màn hình320–1920px, đóng/mở/resize/focus/ARIA/không tràn ngang đạt. Bằng chứng ignored output/sidebar-design/report.json và ảnh đã xem. Chưa deploy hoặc cloud UAT.
+
 ## 2026-11-18 — Nhập liệu liên thông032 và nguồn HTML
 
 Phát hành033: owner xác nhận cả033_READY và033_DATA_READY trong chat. Candidate6a5744d đã đạt109 tests/types/lint/build,50 bố cục +14 popup Nhập liệu và30 bố cục SX. Đẩy riêng chifaa-next-dev; bằng chứng commit/Vercel/HTTP ghi tại ignored output/entry-compact-release-status.json. Chưa UAT authenticated. Không áp SQL cloud từ công cụ.

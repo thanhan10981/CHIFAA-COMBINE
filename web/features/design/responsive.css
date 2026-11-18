@@ -16,6 +16,7 @@
 .portal .portal-brand b{overflow-wrap:anywhere}
 .portal main{margin-inline:auto;padding:32px clamp(16px,4vw,48px)}
 @media(min-width:1024px) and (max-width:1279px){
+ .workspace{--sidebar-width:276px}
  .workspace .sidebar{width:276px;flex-basis:276px;padding-inline:12px}
  .workspace .sidebar .reference-navigation .navgroup-label{font-size:11.5px}
  .workspace .sidebar .reference-navigation .navgroup{padding-inline:10px;gap:8px}

@@ -57,6 +57,24 @@
 .workspace .sidebar .side-bottom strong {display:block;font-size:10.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#d2e0eb;}
 .workspace .sidebar-account-state {display:flex;align-items:center;gap:6px;font-size:9px;color:#819eb3;margin-top:4px;}
 .workspace .sidebar-account-state .dot {width:5px;height:5px;margin:0;}
+.workspace .sidebar-edge-toggle {display:none;}
+@media(min-width:1024px){
+ .workspace {--sidebar-width:300px;}
+ .workspace .sidebar {width:var(--sidebar-width);flex-basis:var(--sidebar-width);}
+ .workspace .sidebar-edge-toggle {
+  position:fixed;top:28px;left:calc(var(--sidebar-width) - 16px);z-index:40;
+  display:grid;place-items:center;width:32px;height:36px;padding:0;
+  border:1px solid #395267;border-radius:11px;background:#1e384d;color:#c8dae7;
+  box-shadow:0 3px 12px #10263824;cursor:pointer;
+  transition:background .16s ease,color .16s ease;
+ }
+ .workspace .sidebar-edge-toggle svg {transform:rotate(90deg);}
+ .workspace .sidebar-edge-toggle:hover {background:#c55b22;border-color:#df814c;color:#fff;}
+ .workspace .sidebar-edge-toggle:focus-visible {outline:3px solid #ee9d65;outline-offset:3px;}
+ .workspace.sidebar-hidden .sidebar {display:none;}
+ .workspace.sidebar-hidden .sidebar-edge-toggle {left:0;border-radius:0 11px 11px 0;}
+ .workspace.sidebar-hidden .sidebar-edge-toggle svg {transform:rotate(-90deg);}
+}
 @media(max-width:720px){
  .workspace .sidebar {position:fixed;top:0;left:0;width:min(300px,calc(100vw - 32px));max-width:300px;flex:0 0 auto;padding:22px 14px 16px;}
  .workspace .sidebar.open {transform:translateX(0);}

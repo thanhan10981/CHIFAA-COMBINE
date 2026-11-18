@@ -15,6 +15,7 @@ import {accountRoleLabel} from '@/lib/auth/role-label';
 export function AppShell({children,access,userLabel='Nội bộ'}:{children:ReactNode;access:Access|null;userLabel?:string}) {
  const pathname=usePathname(),queryClient=useQueryClient();
  const [mobile,setMobile]=useState(false),[closed,setClosed]=useState<Record<string,{closed:boolean;path:string}>>({}),[refreshing,setRefreshing]=useState(false);
+ const [sidebarHidden,setSidebarHidden]=useState(false);
  const menuButton=useRef<HTMLButtonElement>(null),sidebar=useRef<HTMLElement>(null);
  useEffect(()=>{
   if(!mobile)return;
@@ -47,7 +48,8 @@ export function AppShell({children,access,userLabel='Nội bộ'}:{children:Reac
   const href='/app'+(route.slug?'/'+route.slug:''),active=activeSlug===route.slug;
   return <Link href={href} key={item.id} className={'navitem'+(active?' active':'')} aria-current={active?'page':undefined} onClick={()=>setMobile(false)}><span className="nav-icon"><Icon name={navigationIcon(item.id)}/></span><span className="nav-label">{item.label}</span>{item.id==='catalog'&&materialCount.data!=null&&<small>{materialCount.data}</small>}</Link>;
  };
- return <div className="workspace">
+ return <div className={'workspace'+(sidebarHidden?' sidebar-hidden':'')}>
+  <button type="button" className="sidebar-edge-toggle" aria-label={sidebarHidden?'Mở thanh điều hướng':'Thu gọn thanh điều hướng'} title={sidebarHidden?'Mở thanh điều hướng':'Thu gọn thanh điều hướng'} aria-expanded={!sidebarHidden} aria-controls="workspace-sidebar" onClick={()=>setSidebarHidden(!sidebarHidden)}><ChevronDown size={18}/></button>
   {mobile&&<button className="reference-backdrop" aria-label="Đóng thanh điều hướng" onClick={()=>setMobile(false)}/>}
   <aside ref={sidebar} className={'sidebar'+(mobile?' open':'')} id="workspace-sidebar" aria-label="Thanh điều hướng CHIFAA">
    <Link href="/app" className="logo" onClick={()=>setMobile(false)}><Image className="brand-photo" src="/logo-chifaa.png" width={54} height={54} alt="Logo CHIFAA chính thức" priority/><div><h1>CHIFAA <span>COMBINE</span></h1><small>QUẢN LÝ VẬN HÀNH F&amp;B</small></div></Link>

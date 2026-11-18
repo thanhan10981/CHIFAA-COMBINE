@@ -1,5 +1,11 @@
 # Theo dõi công việc
 
+## Sidebar — 18/11/2026 (KH-10)
+
+- [x] Thêm nút cạnh sidebar desktop để ẩn/mở lại; nội dung mở rộng, tooltip và bàn phím, giữ drawer responsive.
+- [x] Typecheck/lint/build,109 tests và Chrome fixture8 cỡ màn hình đạt; ảnh mở/ẩn đã xem, bằng chứng output/sidebar-design/report.json (ignored).
+- [ ] Phát hành và UAT authenticated chưa nằm trong checkpoint này.
+
 ## Checkpoint033
 
 - [x] UI gọn, SVG, +/popup, bỏ điều hướng lặp/bằng chứng/tải lại/CSV/trang tài sản.
