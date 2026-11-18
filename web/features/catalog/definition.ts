@@ -1,6 +1,6 @@
 import {z} from 'zod';
 import {materialCategories} from './material-types';
-export function catalogOptionLabel(value:string){return ({...materialCategories,verified:'Đã xác minh',needs_verification:'Cần xác minh',cash:'Tiền mặt',bank:'Ngân hàng',mass:'Khối lượng',volume:'Thể tích',count:'Số lượng',package:'Đóng gói',finished:'Thành phẩm',kiosk:'Ki-ốt'} as Record<string,string>)[value]??value;}
+export function catalogOptionLabel(value:string){return ({...materialCategories,verified:'Đã xác minh',needs_verification:'Cần xác minh',cash:'Tiền mặt',bank:'Ngân hàng',mass:'Khối lượng',volume:'Thể tích',count:'Số lượng',package:'Đóng gói',ingredient:'Nguyên liệu',finished:'Thành phẩm',kiosk:'Ki-ốt'} as Record<string,string>)[value]??value;}
 export type Field={key:string;label:string;type:'text'|'decimal'|'boolean'|'select';required?:boolean;options?:readonly string[];reference?:string};
 const text=(key:string,label:string,required=true):Field=>({key,label,type:'text',required});
 const decimal=(key:string,label:string,required=false):Field=>({key,label,type:'decimal',required});

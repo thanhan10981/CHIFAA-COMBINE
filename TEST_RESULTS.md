@@ -1,5 +1,12 @@
 # Kết quả kiểm thử master session
 
+## Checkpoint030 — kho và nhập/xuất liên thông
+
+- `cd web; npm run verify`: **92/92 tests**, db types (90 bảng / 55 RPC), typecheck, lint và production build đạt.
+- `node scripts/design-check.mjs --inventory`: **25/25** tổ hợp 5 màn × 320/390/768/1024/1440, không lỗi JS/tràn trang. Kiểm tra nhập dấu phẩy và retry cùng payload/key, khóa phiếu chưa xác nhận, kiểm kê0 và token chụp khi mở, tự chọn kho duy nhất và hướng dẫn kho trống. Report `output/inventory-design/report.json`; đã xem ảnh desktop.
+- PostgreSQL nhúng: danh mục tự có trong bảng tồn không cần bảng thành viên; chưa có số liệu khác kiểm kê0; đúng kho; 55 vật tư chia hai trang không mất mã; nhập10+2,5−xuất1=11,5, retry không cộng lại, xuất12 bị chặn; đề xuất3+12−11,5=3,5; quyền/filter/nguồn thiếu; gói030 tiến tiếp từ029 giữ dữ liệu và chặn replay.
+- Owner xác nhận `030_READY`; probe anonymous `inventory_workspace` trả401/42501, không còn lỗi hàm thiếu. Không thực thi cloud SQL hoặc seed từ công cụ. Chưa UAT authenticated trên số liệu thật. Commit/deploy theo `output/inventory-release-status.json`.
+
 ## Checkpoint029 — hoàn thiện sản xuất/nguyên liệu
 
 - `npm run verify`:87/87 tests, typecheck/lint/build đạt; schema90 public tables/53 RPCs. Bộ mới kiểm tra sửa SX130→100 với giao100 và Sales liên kết không đếm hai lần, giữ dòng tài chính nguyên vẹn; chặn90 không đủ giao; hủy số nhập sai về0/đảo đúng kho/replay/sửa lại90; chứng từ đếm và phân loại cho ra thực dùng1,5, không dùng xuất định mức làm thực dùng; source version conflict, immutable source_snapshot, kỳ khóa/quyền; package029 atomic/rollback/replay sau028. Kiểm tra tuần qua tháng/năm, năm nhuận/quý và ngày trống.

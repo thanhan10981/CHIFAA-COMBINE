@@ -1,5 +1,12 @@
 # Theo dõi công việc
 
+## Checkpoint030 — kho liên thông danh mục
+
+- [x] KH-01: toàn bộ vật tư, tồn theo kho/ngày, null/zero, nhóm/trạng thái/phân trang, nhu cầu và đề xuất cùng ĐVT.
+- [x] KH-09/10: nhập thêm/xuất/kiểm kê từng dòng dùng RPC, token, retry, kỳ khóa, âm tồn, lịch sử người/ngày/nguồn.
+- [x] 5 regression kho và Chrome25 tổ hợp đạt; owner xác nhận030_READY, API đã nhận diện.
+- [ ] UAT authenticated số liệu thật sau deploy. Sửa/đảo riêng phiếu nhập/xuất ngoài phạm vi checkpoint này.
+
 ## Checkpoint029 — hoàn thiện để deploy DEV
 
 - [x] KH-01: kiểm kê từ chứng từ, xác nhận hai mốc cuối ngày, phân loại luồng, token nguồn và snapshot; thiếu nguồn chặn, không thay bằng0.

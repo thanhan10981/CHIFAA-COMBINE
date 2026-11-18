@@ -1,3 +1,7 @@
+## 2026-11-18 — Bảng tồn kho và nhập/xuất030
+
+KH-01/09/10: nối toàn bộ danh mục vật tư vào bảng tồn theo kho, nhập/xuất/kiểm kê từng dòng, lịch sử và đề xuất mua theo kế hoạch cùng ĐVT. Giữ unknown khác số0 đã kiểm kê; không tạo dữ liệu giả. Tự chọn kho duy nhất/hướng dẫn kho trống, làm mới cache liên thông, token kiểm kê và retry giữ payload/key. Regression kho5 trường hợp và Chrome25 tổ hợp đạt. Owner xác nhận SQL030_READY; RPC live chặn anonymous. Chi tiết `docs/standalone/INVENTORY_WORKSPACE.md`; phát hành DEV và kiểm thử cuối theo `output/inventory-release-status.json`/TEST_RESULTS.md. Chưa UAT authenticated hoặc thêm sửa/đảo riêng phiếu nhập/xuất.
+
 ## 2026-11-18 — Hoàn thiện đối soát sản xuất029
 
 KH-01/03/09/10: ghép kiểm kê từ phiếu đếm cuối ngày và các luồng kho đã phân loại, lưu token/snapshot nguồn; giữ đường nhập thủ công có bằng chứng. Điều chỉnh SX sau giao/bán bằng journal và đảo định mức, giữ nguyên tài chính, đối chiếu lượng tốt đủ lượng giao và không đếm đôi phiếu bán liên kết giao. Hủy số lượng nhập sai về0 có xác nhận, lịch sử và số0 rõ nguồn. Sửa tuần qua tháng/năm/ngày trống.87 tests + types/lint/build,30 tổ hợp Chrome đạt. Patch029 tiến tiếp sau028, chủ sở hữu báo SQL Success; không nhập lại dữ liệu hoặc áp SQL cloud từ công cụ. Chuẩn bị phát hành nhánh DEV hiện có; bằng chứng deploy/API ở `output/production-release-status.json`.
