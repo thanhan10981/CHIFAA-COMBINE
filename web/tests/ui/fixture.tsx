@@ -27,6 +27,7 @@ import {BlueprintPage} from '@/features/design/blueprint-page';
 import {modules} from '@/lib/navigation';
 import {referencePageForSlug} from '@/features/design/routes';
 const user='visual-fixture',client=new QueryClient({defaultOptions:{queries:{staleTime:Infinity,retry:false,refetchOnWindowFocus:false}}});
+if(window.location.pathname==='/app/assets')window.history.replaceState(null,'','/app/entry');
 if(window.location.pathname==='/app/warehouses')window.history.replaceState(null,'','/app/inventory');
 const path=window.location.pathname.split('/').pop()??'',reference=referencePageForSlug(path==='app'?'':path);
 const role=new URLSearchParams(window.location.search).get('role');

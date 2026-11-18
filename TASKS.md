@@ -1,5 +1,12 @@
 # Theo dõi công việc
 
+## Checkpoint033
+
+- [x] UI gọn, SVG, +/popup, bỏ điều hướng lặp/bằng chứng/tải lại/CSV/trang tài sản.
+- [x] Sửa/xóa có audit, hoàn tác quỹ và cập nhật lương từ ca SX/VP/BH.
+- [x] Verify109 tests,50 bố cục +14 popup nhập liệu và30 bố cục SX;33 dòng quỹ nguồn được nhập thật/replay local.
+- [ ] Owner chạy033_READY và033_DATA_READY trước phát hành DEV; authenticated UAT còn lại.
+
 ## Checkpoint032 — Nhập liệu từ HTML và logic dùng chung
 
 - [x] Đọc AGENTS/khách hàng, map KH-01..10 và kiểm kê nguồn HTML literal, không chạy script trong tệp.
