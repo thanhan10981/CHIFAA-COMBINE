@@ -1,5 +1,11 @@
 # Kết quả kiểm thử master session
 
+## 18/11/2026 — giao diện Kho gọn và icon thao tác
+
+- `npm run verify`:92/92 tests, generated types/typecheck/lint/build đạt; lint chạy lại sau thêm focus ô lượng đạt. Build cuối và giao diện kiểm tra lại sau chốt CSS.
+- Chrome `node scripts/design-check.mjs --inventory`:25 tổ hợp 5 màn × 320/390/768/1024/1440; không lỗi JS/tràn trang. Kiểm tra ba icon có aria-label/title/SVG, cùng hàng; bộ lọc desktop cùng hàng; không điều hướng lặp; sáu ảnh dialog Nhập/Xuất/Kiểm kê tại320/1440, max520px và không cắt màn. Đã xem ảnh desktop/mobile. Giữ kiểm thử nhập dấu phẩy, token kiểm kê0 và retry cùng payload/key.
+- CSS giới hạn Kho/dialog Kho; mobile dùng cỡ chữ nhập16px, thiết bị cảm ứng có nút thao tác44px. Không thay SQL/RPC hoặc số liệu. Phát hành nhánh DEV theo `output/inventory-compact-release-status.json`; chưa UAT authenticated cloud.
+
 ## 18/11/2026 — gỡ menu Thu hồi & ki-ốt và sửa enum loại kho
 
 - `npm run verify`:92/92 tests, generated types/typecheck/lint/build đạt. Navigation contract cho phép thay đổi mới nhất của chủ dự án:36 mục, nhóm Kho không còn kiosk.

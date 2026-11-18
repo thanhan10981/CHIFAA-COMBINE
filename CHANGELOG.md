@@ -1,3 +1,7 @@
+## 2026-11-18 — Thu gọn bộ lọc và thao tác Kho
+
+KH-01/09/10: bỏ điều hướng lặp, gom bộ lọc, dải thống kê nhỏ, dòng bảng gọn và số căn phải. Nút Nhập/Xuất/Kiểm kê bằng icon có tên truy cập, tooltip và chú giải; dialog vừa màn hình, focus lượng khi mở. Giữ luồng nghiệp vụ và bảo vệ ghi hiện có. Không cần SQL; bằng chứng kiểm tra và phát hành theo TEST_RESULTS.md/`output/inventory-compact-release-status.json`.
+
 ## 2026-11-18 — Gỡ mục Thu hồi & ki-ốt khỏi Kho và sửa lưu loại kho
 
 Theo yêu cầu mới nhất: bỏ liên kết Thu hồi & ki-ốt trong menu Kho; giữ chứng từ/lịch sử nghiệp vụ. KH-04/10. Sửa select danh mục thiếu value làm gửi nhãn tiếng Việt thay mã enum, gây lỗi lưu kho thành phẩm/ki-ốt. Không đổi schema hoặc cần chạy SQL. Kiểm thử theo TEST_RESULTS.md; theo dõi deploy DEV tại `output/warehouse-menu-release-status.json`.

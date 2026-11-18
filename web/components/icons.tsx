@@ -13,6 +13,8 @@ const paths:Record<string,string>={
  transfer:'M3 7h17l-4-4 M21 17H4l4 4',
  history:'M4 7a9 9 0 1 1-1 8 M3 3v5h5 M12 7v5l3 2',
  count:'M6 4h3V2h6v2h3v18H6z M9 4v3h6V4 M9 12l1 1 2-2 M14 12h1 M9 17l1 1 2-2 M14 17h1',
+ 'stock-in':'M4 13v7h16v-7 M8 10l4 4 4-4 M12 3v11',
+ 'stock-out':'M4 13v7h16v-7 M8 7l4-4 4 4 M12 3v11',
  order:'M5 3h14v18l-3-2-4 2-4-2-3 2z M8 8h8 M8 12h8 M8 16h4',
  delivery:'M2 5h12v13H2z M14 10h4l4 4v4h-8 M5 18a2 2 0 1 0 4 0 M16 18a2 2 0 1 0 4 0 M18 10v4h4',
  return:'M8 7H3l4-4 M3 7l4 4 M3 7h12a6 6 0 0 1 0 12H8',

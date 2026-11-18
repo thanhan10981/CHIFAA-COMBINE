@@ -1,1 +1,61 @@
-.inventory-workspace{min-width:0}.inventory-workspace>.panel{margin-top:20px}.inventory-workspace .inventory-note{padding:18px;border:1px solid #d4e3ee;border-radius:14px;background:#f1f7fc;line-height:1.7}.inventory-workspace .inventory-actions{display:flex;gap:8px;flex-wrap:wrap}.inventory-workspace table{min-width:1050px}.inventory-workspace td small{display:block;white-space:normal;overflow-wrap:anywhere;color:var(--muted);margin-top:5px}.inventory-workspace .stat{display:flex;flex-direction:column;gap:12px}.inventory-workspace .stat strong{font-size:28px}.inventory-workspace select,.inventory-workspace input{max-width:100%}.inventory-workspace nav{flex-wrap:wrap}.inventory-workspace .table-wrap{overflow:auto}
+.workspace .inventory-workspace{min-width:0}
+.workspace .inventory-workspace .page-heading{margin-bottom:14px;gap:12px}
+.workspace .inventory-workspace .page-heading h1{font-size:28px;line-height:1.25;margin:4px 0 8px}
+.workspace .inventory-workspace .page-heading p{font-size:13px;margin:0}
+.workspace .inventory-workspace>.panel{margin-top:14px;padding:16px}
+.workspace .inventory-workspace .button{min-height:38px;font-size:13px;padding:8px 12px;gap:7px}
+.workspace .inventory-workspace input,.workspace .inventory-workspace select{height:40px;min-height:40px;font-size:13px;padding:8px 11px;max-width:100%;min-width:0}
+.workspace .inventory-workspace label{font-size:12px;gap:6px}
+.workspace .inventory-workspace .inventory-scope .form-grid{display:grid;grid-template-columns:minmax(180px,1.4fr) repeat(2,minmax(160px,1fr)) auto;gap:12px;align-items:end}
+.workspace .inventory-workspace .inventory-refresh{height:40px;white-space:nowrap}
+.inventory-guide{font-size:12px;color:var(--muted);margin:0 0 8px}
+.inventory-guide summary{display:flex;align-items:center;gap:6px;cursor:pointer;width:fit-content;padding:4px 0}
+.inventory-guide summary::after{content:'+';margin-left:3px}
+.inventory-guide[open] summary::after{content:'-'}
+.inventory-guide p{line-height:1.7;max-width:900px;margin:6px 0 10px}
+.workspace .inventory-workspace .inventory-note{padding:14px;border:1px solid #d4e3ee;border-radius:10px;background:#f1f7fc;line-height:1.6}
+.workspace .inventory-workspace .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin:0 0 16px;border-bottom:1px solid var(--border);padding:0 0 14px}
+.workspace .inventory-workspace .stat{display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:10px;padding:4px 16px;min-height:42px;box-shadow:none;border:0;border-radius:0;border-right:1px solid var(--border);background:transparent}
+.workspace .inventory-workspace .stat:first-child{padding-left:0}.workspace .inventory-workspace .stat:last-child{border-right:0;padding-right:0}
+.workspace .inventory-workspace .stat label{font-size:12px;line-height:1.5;margin:0;max-width:125px;color:var(--muted)}
+.workspace .inventory-workspace .stat strong{font-size:23px;line-height:1.3;font-variant-numeric:tabular-nums}
+.workspace .inventory-workspace .inventory-filters{display:grid;grid-template-columns:minmax(220px,1.6fr) repeat(2,minmax(150px,1fr));gap:10px;margin:0 0 10px}
+.workspace .inventory-workspace .inventory-search{position:relative;min-width:0}
+.workspace .inventory-workspace .inventory-search>svg{position:absolute;left:11px;top:11px;color:var(--muted);pointer-events:none}
+.workspace .inventory-workspace .inventory-search input{width:100%;padding-left:37px}
+.workspace .inventory-workspace .inventory-filters select{width:100%;margin:0}
+.workspace .inventory-workspace .inventory-data>.muted{font-size:12px;line-height:1.5;margin:5px 0}
+.workspace .inventory-workspace .inventory-table-meta{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:14px 0 8px;color:var(--muted);font-size:12px}
+.inventory-legend{display:flex;gap:14px;flex-wrap:wrap}.inventory-legend span{display:inline-flex;align-items:center;gap:5px}
+.inventory-legend span:nth-child(1){color:#158064}.inventory-legend span:nth-child(2){color:#bd6220}.inventory-legend span:nth-child(3){color:#366b9d}
+.workspace .inventory-workspace .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:10px}
+.workspace .inventory-workspace .inventory-table{min-width:1020px;font-size:13px;width:100%;margin:0}
+.workspace .inventory-workspace .inventory-table th{font-size:11px;font-weight:600;padding:11px 12px;white-space:nowrap;background:#f5f7fa}
+.workspace .inventory-workspace .inventory-table td{padding:11px 12px;line-height:1.45;vertical-align:middle}
+.workspace .inventory-workspace .inventory-table td:first-child{min-width:175px}
+.workspace .inventory-workspace .inventory-table td:nth-child(2){white-space:nowrap;font-size:12px}
+.workspace .inventory-workspace .inventory-table td small{display:block;white-space:normal;overflow-wrap:anywhere;color:var(--muted);margin-top:3px;font-size:12px}
+.workspace .inventory-workspace .inventory-table:not(.inventory-history) td:nth-child(n+4):nth-child(-n+6),.workspace .inventory-workspace .inventory-table:not(.inventory-history) th:nth-child(n+4):nth-child(-n+6),.workspace .inventory-workspace .inventory-table:not(.inventory-history) td:nth-child(8),.workspace .inventory-workspace .inventory-table:not(.inventory-history) th:nth-child(8){text-align:right;font-variant-numeric:tabular-nums}
+.workspace .inventory-workspace .inventory-actions{display:flex;gap:5px;flex-wrap:nowrap}
+.workspace .inventory-workspace .button.inventory-action{width:34px;height:34px;min-height:34px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;flex-shrink:0}
+.workspace .inventory-workspace .action-receipt{color:#158064;background:#f0faf5;border-color:#d6ecdf}
+.workspace .inventory-workspace .action-issue{color:#bd6220;background:#fff7ef;border-color:#f1dfcb}
+.workspace .inventory-workspace .action-count{color:#366b9d;background:#f1f6fc;border-color:#dce6f3}
+.workspace .inventory-workspace .inventory-action:disabled{opacity:.4;background:#f7f8fa;color:#74869a;border-color:#e4e9ef}
+.workspace .inventory-workspace .inventory-action:focus-visible{outline:2px solid #227da8;outline-offset:2px}
+.inventory-status{display:inline-block;font-size:11px;padding:4px 7px;border-radius:6px;background:#f0f3f7;color:#63758a;white-space:nowrap}
+.inventory-status.status-low{background:#fff0e5;color:#b34b15}.inventory-status.status-ok{background:#ebf7f1;color:#277958}
+.workspace .inventory-workspace .inventory-data>.toolbar{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin:12px 0 0;font-size:12px}
+.workspace .modal.chifaa-action-dialog.inventory-dialog{width:min(100%,520px);max-width:520px;padding:22px;border-radius:16px}
+.workspace .chifaa-action-dialog.inventory-dialog>header{margin-bottom:16px}.workspace .chifaa-action-dialog.inventory-dialog>header h2{font-size:18px;line-height:1.35}
+.workspace .chifaa-action-dialog.inventory-dialog>header .button{width:34px;height:34px;min-height:34px;padding:0;display:grid;place-items:center}
+.workspace .chifaa-action-dialog.inventory-dialog p{font-size:13px;line-height:1.6;margin:8px 0 12px;color:var(--muted)}
+.workspace .chifaa-action-dialog.inventory-dialog fieldset{display:grid;gap:14px}.workspace .chifaa-action-dialog.inventory-dialog label{display:grid;gap:6px;font-size:12px;font-weight:600}
+.workspace .chifaa-action-dialog.inventory-dialog input{min-height:42px;height:42px;font-size:14px;padding:9px 12px}
+.workspace .chifaa-action-dialog.inventory-dialog .toolbar{display:flex;justify-content:flex-end;gap:8px;margin:20px 0 0;padding:14px 0 0;border-top:1px solid var(--border)}
+.workspace .chifaa-action-dialog.inventory-dialog .button{min-height:38px;font-size:13px;padding:8px 14px}
+@media(max-width:1100px){.workspace .inventory-workspace .inventory-scope .form-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.workspace .inventory-workspace .inventory-refresh{grid-column:3;justify-self:end}.workspace .inventory-workspace .stat{padding:4px 10px}}
+@media(max-width:700px){.workspace .inventory-workspace .page-heading{flex-direction:row;align-items:flex-start}.workspace .inventory-workspace .page-heading h1{font-size:23px}.workspace .inventory-workspace .page-heading>.button{flex-shrink:0;padding:8px;font-size:11px}.workspace .inventory-workspace>.panel{padding:12px}.workspace .inventory-workspace .inventory-scope .form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.workspace .inventory-workspace .inventory-scope label:first-child{grid-column:1/-1}.workspace .inventory-workspace .inventory-refresh{grid-column:auto;justify-self:stretch}.workspace .inventory-workspace .inventory-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.inventory-search{grid-column:1/-1}.workspace .inventory-workspace .stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.workspace .inventory-workspace .stat{padding:0 10px!important;border:0}.workspace .inventory-workspace .stat strong{font-size:21px}.workspace .inventory-workspace .inventory-table-meta{align-items:flex-start}.inventory-legend{gap:8px;font-size:11px}.workspace .inventory-workspace .inventory-action{min-width:38px}.workspace .modal.chifaa-action-dialog.inventory-dialog{padding:18px}}
+@media(pointer:coarse){.workspace .inventory-workspace .button.inventory-action{width:44px;height:44px;min-height:44px}}
+
+@media(max-width:700px){.workspace .inventory-workspace input,.workspace .inventory-workspace select,.workspace .chifaa-action-dialog.inventory-dialog input{font-size:16px}}
