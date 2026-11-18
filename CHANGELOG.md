@@ -1,3 +1,11 @@
+## 2026-11-18 — Hoàn thiện đối soát sản xuất029
+
+KH-01/03/09/10: ghép kiểm kê từ phiếu đếm cuối ngày và các luồng kho đã phân loại, lưu token/snapshot nguồn; giữ đường nhập thủ công có bằng chứng. Điều chỉnh SX sau giao/bán bằng journal và đảo định mức, giữ nguyên tài chính, đối chiếu lượng tốt đủ lượng giao và không đếm đôi phiếu bán liên kết giao. Hủy số lượng nhập sai về0 có xác nhận, lịch sử và số0 rõ nguồn. Sửa tuần qua tháng/năm/ngày trống.87 tests + types/lint/build,30 tổ hợp Chrome đạt. Patch029 tiến tiếp sau028, chủ sở hữu báo SQL Success; không nhập lại dữ liệu hoặc áp SQL cloud từ công cụ. Chuẩn bị phát hành nhánh DEV hiện có; bằng chứng deploy/API ở `output/production-release-status.json`.
+
+## 2026-11-18 — Sản xuất và nguyên liệu028
+
+KH-01/03/09/10: thay các màn khung bằng kế hoạch/SX, nhu cầu, kiểm kê và báo cáo thật. Phân kho đơn duyệt; kế hoạch bổ sung/thay thế có lịch sử; chính/thêm/lỗi và giờ SX/ngày giao/ngày nhập riêng; thay ngày bằng đảo phiếu và đợt mới. Gộp BOM, hiển thị thiếu/quy đổi, chỉ đối chiếu ngày đủ kiểm kê và giữ snapshot kỳ. Thêm quyền/token/idempotency/audit, CSV, khóa retry chưa xác nhận và responsive.81 tests + types/lint/build,30 tổ hợp giao diện đạt. Giao patch DEV028 sau027; chưa chạy cloud/deploy. Chứng từ vật lý đang nhập/dẫn chứng thủ công; điều chỉnh ngày có giao/bán posted và hủy cả ngày về0 còn chặn. Chi tiết `docs/standalone/PRODUCTION_MATERIALS.md`.
+
 ## 2026-11-17 — Danh mục công thức theo ảnh chuẩn và nhập sheet nguồn
 
 Hoàn thiện năm mục công thức món, nhân/sốt, cơm chín, bao bì và tổng giá vốn: tìm/lọc/ngày xem, số liệu thật, chi tiết trực tiếp, mở công thức con, tạo/sao chép/sửa thành phiên bản mới, lịch sử, công bố/liên kết món bán và đơn vị riêng mỗi dòng. 027 giữ dòng nguồn chưa rõ, chặn BOM chính thức khi thiếu định lượng/quy đổi và bảo vệ nguồn/giá theo quyền. Chuẩn bị SQL riêng cho21 công thức nháp từ sheet được gửi, giữ dữ liệu gốc/cost tham khảo, không tạo bản sao thử nghiệm trong ảnh, không tự đổi giá danh mục hoặc ghi kho. Đã đối chiếu nguyên tử/replay nguồn cục bộ và kiểm tra responsive5 mục ×5 kích thước. KH-01/03/10/11; chi tiết docs/standalone/RECIPE_CATALOG.md. Chưa chạy SQL cloud; báo cáo nhu cầu/hao hụt theo kỳ vẫn là hạng mục riêng.

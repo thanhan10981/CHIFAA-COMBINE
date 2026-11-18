@@ -1,5 +1,22 @@
 # Theo dõi công việc
 
+## Checkpoint029 — hoàn thiện để deploy DEV
+
+- [x] KH-01: kiểm kê từ chứng từ, xác nhận hai mốc cuối ngày, phân loại luồng, token nguồn và snapshot; thiếu nguồn chặn, không thay bằng0.
+- [x] KH-03/09/10: điều chỉnh SX khi có giao/bán trong giới hạn lượng giao, giữ tài chính; hủy số nhập sai về0 có đảo phiếu/journal/idempotency, số0 có nguồn.
+- [x]87 tests + types/lint/build và30 tổ hợp Chrome fixture đạt. Chủ sở hữu báo patch028/029 đã chạy Success.
+- [ ] UAT authenticated với dữ liệu/quyền thật sau deploy. Trạng thái API/deploy theo `output/production-release-status.json`.
+
+Các mục còn thiếu028 dưới đây đã được xử lý trong phạm vi029; điều kiện đủ hai mốc, đủ chứng từ và không giảm dưới lượng giao là kiểm soát nghiệp vụ, không tự bỏ qua.
+
+## Checkpoint028 — sản xuất/nguyên liệu (18/11/2026)
+
+- [x] KH-01/03/09/10: UI/RPC kế hoạch và phân kho đơn duyệt; SX chính/thêm/lỗi, giờ thực tế/ngày giao; append/thay toàn ngày với đảo phiếu và lịch sử; nhu cầu BOM, quy đổi/thiếu dữ liệu; kiểm kê đối chiếu và báo cáo theo kỳ/snapshot/CSV.81 tests + types/lint/build và30 kiểm tra route/kích thước đạt; xem `PRODUCTION_MATERIALS.md` và `TEST_RESULTS.md`.
+- [x] Đóng gói DEV028 riêng sau027, thử atomic/replay/rollback cục bộ; không chạy cloud.
+- [ ] Chủ sở hữu áp patch028 trên DEV và UAT với quyền/nghiệp vụ thật; kế hoạch đơn cũ cần phân kho.
+- [ ] Tự ghép chứng từ kho vật lý để điền số kiểm kê; hiện nhập đủ các luồng và dẫn chứng thủ công.
+- [ ] Luồng điều chỉnh SX đã có giao/bán posted và hủy toàn bộ SX ngày về0; hiện chặn, không sửa ngầm lịch sử.
+
 KH-11 / phần công thức của KH-01/03/10: đã làm catalogue027 năm route, thành phần đa tầng/đơn vị riêng, phiên bản, tạo/sửa/sao chép, công bố/liên kết món, giá theo ngày và nguồn chưa rõ. Chuẩn bị21 công thức nháp và SQL cập nhật/nhập riêng, kiểm chứng PostgreSQL cục bộ và25 trường hợp route/kích thước; chưa chạy cloud. Mở docs/standalone/RECIPE_CATALOG.md và HANDOFF.md để tiếp tục. KH-01 tổng hợp tiêu hao và đối chiếu kho theo tuần/tháng/quý chưa hoàn thành từ task này; các định lượng/giá chưa rõ được tổng hợp riêng, không tự xác minh.
 
 Đối chiếu dự án cũ theo yêu cầu mới: runtime menu đúng src/client/navigation.js + src/shared/schema.js (7 nhóm/37 mục), bỏ nhóm tự thêm Quản trị & tiện ích, Ki-ốt trong Kho, Orders trong Khách hàng, Admin/Nhật ký trong Quản trị hệ thống, tài sản trong Nhập liệu. Cấu hình phụ chuyển thành context tabs; giữ Portal/font. Thêm ActivityLog đọc audit_logs qua RLS/phân trang. Port Ki-ốt migration021: lô từ sales_lines posted, approve/receive/reject/sell/undo, source/version/period guards, quantity locks, ghi sales/debt/receipt/allocation/cash atomic, hoàn tác chặn linked payments, COGS null. 022 sửa 5 probe audit (3 null version, null approval, aggregate plan capacity) và thêm save_catalog bank_accounts với khóa kind khi có lịch sử. 22 migrations/78 bảng/26 RPC. 47 tests + types/TS/lint/build đạt; Chrome fixture 37 menu + 4 configuration routes và 6 mobile/dialog Ki-ốt/quỹ đạt; 15 test tham chiếu legacy trên mock đạt. Không gọi Apps Script/Sheets runtime, không nhập dữ liệu lịch sử, KHÔNG áp SQL cloud từ công cụ. Chạy web npm run db:kiosk-update sinh output/CHIFAA_PATCH_KIOSK_DEV.sql (021+022, SHA256 aef329d3803ccbe5661d5c30b1e3617dd4f482618a759ac7fc660d1829aab3c8). Owner chạy file này trên DEV hiện có, không chạy lại bootstrap. Đã test giữ record hiện có, guard replay và rollback toàn bộ patch. Chưa UAT authenticated/concurrency cloud. Toàn bộ chức năng cũ CHƯA chuyển đủ, đặc biệt NEW/APPEND/CORRECT, nguồn sales UI, tài sản/lương/report/backup/session. Chi tiết docs/standalone/LEGACY_PARITY.md; bằng chứng output/legacy-kiosk-verify.txt, legacy-kiosk-design-check.txt, legacy-reference-workflows-tests.txt.

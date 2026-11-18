@@ -1,5 +1,9 @@
 # Bằng chứng chức năng hiện tại
 
+Checkpoint029 hoàn thiện ba hạng mục còn lại028 trong phạm vi SX/nguyên liệu: ghép chứng từ kiểm kê có xác nhận/phân loại/nguồn bất biến; sửa SX khi có giao/bán nhưng giữ nguyên tài chính và kiểm tra đủ lượng giao; hủy số nhập sai về0 có đảo phiếu/lịch sử.87 tests và30 tổ hợp giao diện đạt. [Đặc tả029](PRODUCTION_RECONCILIATION.md). Chủ sở hữu báo SQL Success; UAT cloud vẫn cần kiểm tra thực tế.
+
+Checkpoint028 (KH-01/03/09/10): màn kế hoạch/sản xuất, nhu cầu, kiểm kê đối chiếu và báo cáo theo kỳ đã có UI/RPC thật; phân kho kế hoạch đơn, chính/thêm/lỗi, snapshot định mức, thay thế ngày bằng đảo phiếu và lịch sử; báo cáo đối chiếu chỉ so các ngày đủ kiểm kê. Chi tiết [Sản xuất và nguyên liệu](PRODUCTION_MATERIALS.md). **Chưa áp cloud/UAT**; chứng từ vật lý vẫn nhập và dẫn chứng thủ công; điều chỉnh ngày có giao/bán posted và hủy toàn bộ SX về0 còn bị chặn. Các dòng cũ bên dưới là trạng thái trước028.
+
 Danh mục kinh doanh025: điểm bán/món/nhân viên/CK đã thay scaffold bằng UI/RPC tìm/lọc/phân trang, CRUD/ngừng dùng, giá chung/riêng, lương/phụ cấp riêng quyền, liên kết công thức và CK theo món/ngày/lịch sử. SQL riêng nguồn11/11/5/121 ô CK đã thử local với replay, chưa nhập cloud;44 dòng trống tên không kích hoạt. Chi tiết [danh mục kinh doanh](COMMERCIAL_CATALOGS.md). Các mục “giá theo điểm/pay rates/quản trị giá” trong ghi chú cũ bên dưới đã có UI trong checkpoint này; bảng lương/chấm công trả tiền và UAT cloud vẫn chưa hoàn tất.
 
 Cơ sở giá migration024: tách price/purchase/usage/package, Admin xác minh theo phiên bản có nguyên bản nguồn/lịch sử. BOM, công thức, snapshot sản xuất và kho dùng cơ sở đã xác minh theo ngày; giá chưa xác minh giữ NULL. Đã chuẩn bị SQL sửa63 sau giải thích chủ sở hữu, kiểm tra fresh/repair và giữ ID/lịch sử; 23 mã chờ xác minh. **Chưa áp024/nhập điều chỉnh lên cloud, chưa nghiệm thu toàn bộ phân hệ còn thiếu bên dưới.**
