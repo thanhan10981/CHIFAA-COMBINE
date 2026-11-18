@@ -3,6 +3,7 @@ import {ingredientWarehouseId,IngredientWarehouseStatus} from '@/features/operat
 import {ToastNotice,LoadingState} from '@/components/feedback';
 
 import {useState,useEffect} from 'react';
+import {useSearchParams} from 'next/navigation';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {browserSupabase} from '@/lib/supabase/browser';
@@ -12,8 +13,8 @@ type Snapshot = {inventory_version:string; rows:CountRow[]};
 type Request = {p_warehouse:string; p_date:string; p_lines:{material_id:string; counted_quantity:string}[]; p_inventory_version:string; p_key:string};
 
 export function StockCount({userId, canPost,businessDate,onDirty}:{userId:string; canPost:boolean;businessDate?:string;onDirty?:(dirty:boolean)=>void}) {
- const cache = useQueryClient();
- const [ownDate,setDate] = useState(()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh'}).format(new Date()));
+ const cache = useQueryClient(),params=useSearchParams();
+ const [ownDate,setDate] = useState(()=>/^\d{4}-\d\d-\d\d$/.test(params.get('date')??'')?params.get('date')!:new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh'}).format(new Date()));
  const date=businessDate??ownDate;
  const [search,setSearch] = useState('');
  const [offset,setOffset] = useState(0);

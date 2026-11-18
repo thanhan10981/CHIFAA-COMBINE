@@ -1,0 +1,4 @@
+export function buildEntryUpdate(migration:string){
+ if(!/^begin;/i.test(migration.trim())||!/commit;$/i.test(migration.trim()))throw new Error('Expected transaction');
+ return `-- DEV032 AFTER031. Run whole file as postgres. No business rows in this patch.\ndo $patch032$ begin\n if current_user not in ('postgres','supabase_admin') then raise exception 'SQL_EDITOR_OWNER_REQUIRED';end if;\n perform pg_advisory_xact_lock(170032);\n if to_regprocedure('public.production_plan_requirements(uuid,date,uuid,text,jsonb)') is null then raise exception 'PATCH_031_REQUIRED';end if;\n if to_regclass('public.entry_journal') is not null then raise exception 'PATCH_032_ALREADY_PRESENT';end if;\n execute $migration032$${migration.trim().replace(/^begin;/i,'').replace(/commit;$/i,'')}$migration032$;\nend $patch032$;\nnotify pgrst,'reload schema';\nselect '032_READY' as status;\n`;
+}

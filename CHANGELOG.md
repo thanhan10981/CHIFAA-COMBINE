@@ -1,3 +1,7 @@
+## 2026-11-18 — Nhập liệu liên thông032 và nguồn HTML
+
+KH-01..10 trong phạm vi Nhập liệu: thay các màn khung bằng biểu mẫu và chứng từ PostgreSQL; nối bán–phải thu–thu tiền–quỹ, vay/trả vay và phải trả NCC, ca/phụ cấp–lương–chi quỹ; dùng lại Kho/SX/thu hồi hiện có. Thêm journal, quyền nguồn/lương, snapshot/token/chống trùng và khóa kỳ. Tạo gói DEV riêng từ HTML literal:132 dòng nguồn,2 khoản vay,29 mục tiêu,33 dòng quỹ lịch sử chỉ đọc; không bịa giao dịch từ bảng trống, không nhập chồng danh mục.104 tests +50 tổ hợp Chrome; chưa áp SQL cloud. Giới hạn điều chỉnh tài chính sau thu/chi và chi tiết trong docs/standalone/CONNECTED_ENTRY.md/HANDOFF.
+
 ## 2026-11-18 — Kế hoạch nối nhu cầu và kiểm kê chung031
 
 KH-01/03/09/10: nhập kế hoạch xem ngay nguyên liệu từ BOM PostgreSQL, tổng theo vật tư/ĐVT, quy đổi đã xác minh và thiếu so tồn. Tách kế hoạch khỏi ghi sản xuất thực tế; kế hoạch không trừ kho. Kiểm kê Kho/Sản xuất dùng chung phiếu đếm, đối chiếu lấy lại chứng từ thay vì nhập lại tồn đầu/cuối. Giữ snapshot, quyền, token và retry. Owner xác nhận031_READY; verify97 tests, Chrome30 tổ hợp, types/lint/build đạt. Chi tiết và giới hạn tại docs/standalone/PLANNING_COUNT_FLOW.md, TEST_RESULTS.md.

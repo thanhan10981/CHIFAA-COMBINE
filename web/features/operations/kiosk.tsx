@@ -2,6 +2,7 @@
 import {CurrencyInput} from '@/components/currency-input';
 import {ToastNotice,LoadingState} from '@/components/feedback';
 import {useState} from 'react';
+import {useSearchParams} from 'next/navigation';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
 import {RefreshCw,X} from '@/components/icons';
 import {browserSupabase} from '@/lib/supabase/browser';
@@ -18,8 +19,9 @@ const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh'}).f
 const labels:Record<string,string>={pending:'Chờ duyệt',approved:'Đã duyệt · chưa nhận',received:'Đã thực nhận',rejected:'Đã từ chối',posted:'Đã bán',reversed:'Đã hoàn tác'};
 const actionLabels:Record<string,string>={approve:'Duyệt hàng thu hồi',receive:'Xác nhận thực nhận',reject:'Từ chối nhận',sell:'Ghi nhận bán tại ki-ốt',undo_approval:'Hoàn tác duyệt',undo_receive:'Hoàn tác thực nhận',undo_reject:'Hoàn tác từ chối',undo_sale:'Hoàn tác bán'};
 export function Kiosk({userId,canApprove,canSell,canUndo}:{userId:string;canApprove:boolean;canSell:boolean;canUndo:boolean}){
- const client=useQueryClient(),[from,setFrom]=useState(today),[to,setTo]=useState(today),[offset,setOffset]=useState(0),[inventoryOffset,setInventoryOffset]=useState(0);
- const [selection,setSelection]=useState<Selection|null>(null),[date,setDate]=useState(today),[note,setNote]=useState(''),[warehouse,setWarehouse]=useState(''),[store,setStore]=useState(''),[quantity,setQuantity]=useState(''),[price,setPrice]=useState(''),[cash,setCash]=useState('0'),[bank,setBank]=useState('0'),[cashAccount,setCashAccount]=useState(''),[bankAccount,setBankAccount]=useState(''),[pending,setPending]=useState<Request|null>(null),[message,setMessage]=useState('');
+ const params=useSearchParams(),initialDate=/^\d{4}-\d\d-\d\d$/.test(params.get('date')??'')?params.get('date')!:today();
+ const client=useQueryClient(),[from,setFrom]=useState(initialDate),[to,setTo]=useState(initialDate),[offset,setOffset]=useState(0),[inventoryOffset,setInventoryOffset]=useState(0);
+ const [selection,setSelection]=useState<Selection|null>(null),[date,setDate]=useState(initialDate),[note,setNote]=useState(''),[warehouse,setWarehouse]=useState(''),[store,setStore]=useState(''),[quantity,setQuantity]=useState(''),[price,setPrice]=useState(''),[cash,setCash]=useState('0'),[bank,setBank]=useState('0'),[cashAccount,setCashAccount]=useState(''),[bankAccount,setBankAccount]=useState(''),[pending,setPending]=useState<Request|null>(null),[message,setMessage]=useState('');
  const report=useQuery({queryKey:[userId,'kiosk',from,to,offset,inventoryOffset],queryFn:async({signal})=>{const {data,error}=await browserSupabase().rpc('kiosk_report',{p_from:from,p_to:to,p_offset:offset,p_inventory_offset:inventoryOffset}).abortSignal(signal);if(error){if(error.code==='PGRST202')throw new Error('DEV chưa cài bản cập nhật Ki-ốt. Cần chạy CHIFAA_PATCH_KIOSK_DEV.sql trong Supabase SQL Editor trước khi sử dụng.');throw new Error(error.message.includes('KIOSK_SOURCE_CHANGED')?'Phiếu nguồn đã thay đổi. Cần đối soát lô thu hồi trước khi thao tác.':'Chưa tải được dữ liệu. Kiểm tra quyền Ki-ốt, Điểm bán và Món bán.');}return data as Report;}});
  const lookups=useQuery<Options>({queryKey:[userId,'kiosk-options'],enabled:canApprove||canSell,queryFn:async()=>{
   const api=browserSupabase(),[warehouses,stores,accounts]=await Promise.all([api.from('warehouses').select('id,name').eq('kind','kiosk').eq('active',true).order('name'),api.from('stores').select('id,name').eq('active',true).order('name'),api.from('bank_accounts').select('id,name,kind').eq('archived',false).order('name')]);

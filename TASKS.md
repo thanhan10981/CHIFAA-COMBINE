@@ -1,5 +1,14 @@
 # Theo dõi công việc
 
+## Checkpoint032 — Nhập liệu từ HTML và logic dùng chung
+
+- [x] Đọc AGENTS/khách hàng, map KH-01..10 và kiểm kê nguồn HTML literal, không chạy script trong tệp.
+- [x] Hub +9 mục dùng chung nguồn Kho/SX và các RPC bán/nợ/quỹ, ca/lương, vay, mục tiêu; snapshot, quyền, khóa kỳ, chống trùng và journal.
+- [x] Gói SQL032 sau031 và import nguồn riêng; thử hai lần:132 dòng nguồn,2 vay,29 mục tiêu,33 dòng quỹ chỉ đọc, không tự tạo phiếu trống/demo.
+- [x] Verify104 tests; Chrome50 tổ hợp; typecheck/lint/build cuối đạt. Chi tiết TEST_RESULTS.md, docs/standalone/CONNECTED_ENTRY.md.
+- [ ] Owner chạy032_READY rồi032_SOURCE_READY; kiểm chứng API và phát hành DEV, UAT authenticated.
+- [ ] UI điều chỉnh/đảo riêng chứng từ tài chính đã thu/chi, mở lại lương đã thanh toán còn ngoài checkpoint; các trường hợp này chặn sửa đè, chưa coi KH-09 toàn hệ thống hoàn tất.
+
 ## Checkpoint030 — kho liên thông danh mục
 
 - [x] KH-01: toàn bộ vật tư, tồn theo kho/ngày, null/zero, nhóm/trạng thái/phân trang, nhu cầu và đề xuất cùng ĐVT.

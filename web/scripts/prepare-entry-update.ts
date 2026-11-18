@@ -1,0 +1,10 @@
+import fs from 'node:fs/promises';
+import {extractDraftEntry,buildEntrySourceImport} from '../lib/deploy/draft-entry-source';
+import {buildEntryUpdate} from '../lib/deploy/entry-update';
+const filename=process.argv[2];if(!filename)throw new Error('Pass supplied HTML path');
+const source=extractDraftEntry(await fs.readFile(filename,'utf8')),result=buildEntrySourceImport(source);
+await fs.mkdir('../output',{recursive:true});
+await fs.writeFile('../output/CHIFAA_PATCH_NHAP_LIEU_DEV.sql',buildEntryUpdate(await fs.readFile('../supabase/migrations/202611180032_connected_entry.sql','utf8')));
+await fs.writeFile('../output/CHIFAA_DU_LIEU_PHAT_THAO_DEV.sql',result.sql);
+await fs.writeFile('../output/nhap-lieu-source-report.json',JSON.stringify({hash:source.hash,counts:result.counts,rows:result.rows,cloudExecuted:false},null,2));
+console.log(JSON.stringify({hash:source.hash,counts:result.counts,cloudExecuted:false}));

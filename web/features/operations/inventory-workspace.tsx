@@ -1,6 +1,7 @@
 'use client';
 import {ingredientWarehouseId,IngredientWarehouseStatus} from '@/features/operations/ingredient-warehouse';
 import {useState,useEffect,useRef} from 'react';
+import {useSearchParams} from 'next/navigation';
 import Link from 'next/link';
 import Decimal from 'decimal.js';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
@@ -17,7 +18,8 @@ type Request={action:string;args:Record<string,unknown>};
 const labels:Record<string,string>={unknown:'Chưa có số liệu tồn',low:'Dưới tối thiểu',ok:'Đủ tối thiểu',minimum_missing:'Chưa đặt tối thiểu',unit_missing:'Chưa có ĐVT chuẩn',receipt:'Nhập kho',issue:'Xuất kho',adjustment:'Điều chỉnh',reversal:'Đảo phiếu'};
 const nextDay=(date:string)=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return '';const d=new Date(date+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+1);return d.toISOString().slice(0,10);};
 export function InventoryWorkspace({slug,userId,canPost,canCount}:{slug:string;userId:string;canPost:boolean;canCount:boolean}){
- const cache=useQueryClient(),[date,setDate]=useState(localDate),[needDate,setNeedDate]=useState(''),[search,setSearch]=useState(''),[category,setCategory]=useState(''),[status,setStatus]=useState(slug==='reorder'?'attention':'all'),[offset,setOffset]=useState(0);
+ const params=useSearchParams(),initialDate=/^\d{4}-\d\d-\d\d$/.test(params.get('date')??'')?params.get('date')!:localDate();
+ const cache=useQueryClient(),[date,setDate]=useState(initialDate),[needDate,setNeedDate]=useState(''),[search,setSearch]=useState(''),[category,setCategory]=useState(''),[status,setStatus]=useState(slug==='reorder'?'attention':'all'),[offset,setOffset]=useState(0);
  const [editor,setEditor]=useState<{row:Row;kind:string;version:string}|null>(null),[quantity,setQuantity]=useState(''),[note,setNote]=useState(''),[pending,setPending]=useState<Request|null>(null),[message,setMessage]=useState('');
  const historyMode=slug==='stockhistory',reorder=slug==='reorder',needsOn=needDate||nextDay(date);
  const warehouses=useQuery({queryKey:[userId,'inventory','warehouses'],queryFn:async()=>{const {data,error}=await browserSupabase().from('warehouses').select('id,name').eq('active',true).eq('kind','ingredient').order('name');if(error)throw new Error('Không tải được kho. Kiểm tra kết nối và quyền xem Kho.');return data as {id:string;name:string}[];}});
