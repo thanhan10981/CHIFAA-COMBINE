@@ -1,3 +1,7 @@
+## 2026-11-18 — Kế hoạch nối nhu cầu và kiểm kê chung031
+
+KH-01/03/09/10: nhập kế hoạch xem ngay nguyên liệu từ BOM PostgreSQL, tổng theo vật tư/ĐVT, quy đổi đã xác minh và thiếu so tồn. Tách kế hoạch khỏi ghi sản xuất thực tế; kế hoạch không trừ kho. Kiểm kê Kho/Sản xuất dùng chung phiếu đếm, đối chiếu lấy lại chứng từ thay vì nhập lại tồn đầu/cuối. Giữ snapshot, quyền, token và retry. Owner xác nhận031_READY; verify97 tests, Chrome30 tổ hợp, types/lint/build đạt. Chi tiết và giới hạn tại docs/standalone/PLANNING_COUNT_FLOW.md, TEST_RESULTS.md.
+
 ## 2026-11-18 — Mặc định một kho nguyên liệu
 
 KH-01/09/10: bỏ Danh mục kho khỏi UI, chuyển URL cũ sang Tồn kho. Tự dùng kho nguyên liệu hiện có cho Kho, Sản xuất và Kiểm kê, không cần chọn. Giữ nguyên ID/chứng từ/lịch sử; không gộp hoặc xóa kho cũ. Không cần SQL; trạng thái thiếu/nhiều kho nguyên liệu được báo rõ. Kiểm thử và phát hành theo TEST_RESULTS.md/`output/default-ingredient-release-status.json`.

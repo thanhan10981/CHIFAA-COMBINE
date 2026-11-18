@@ -60,3 +60,5 @@
 @media(pointer:coarse){.workspace .inventory-workspace .button.inventory-action{width:44px;height:44px;min-height:44px}}
 
 @media(max-width:700px){.workspace .inventory-workspace input,.workspace .inventory-workspace select,.workspace .chifaa-action-dialog.inventory-dialog input{font-size:16px}}
+
+.inventory-heading-links{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.workspace .inventory-workspace .page-heading{flex-wrap:wrap}

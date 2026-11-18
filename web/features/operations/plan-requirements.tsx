@@ -1,0 +1,25 @@
+'use client';
+import {useEffect,useState} from 'react';
+import Decimal from 'decimal.js';
+import {useQuery} from '@tanstack/react-query';
+import {browserSupabase} from '@/lib/supabase/browser';
+import {LoadingState,ToastNotice} from '@/components/feedback';
+import {formatQuantity as fmt} from '@/lib/format';
+export type PlannedMaterial={material_id:string;code:string;name:string;unit_id:string;unit:string;quantity:string|null;stock:string|null;package?:{unit:string|null;usage_per_package:string|null;verified:boolean}};
+type Preview={products:{product_id:string;name:string;unit:string;quantity:string}[];materials:PlannedMaterial[];sources:{material_id?:string;product_id:string;product_name?:string;quantity?:string;issue?:string}[];complete:boolean};
+const issueLabels:Record<string,string>={PUBLISHED_PRODUCT_RECIPE_REQUIRED:'Chưa có công thức đã công bố cho ngày này',UNIT_NEEDS_VERIFICATION:'Quy đổi đơn vị chưa xác minh',RECIPE_NEEDS_REVIEW:'Công thức còn thành phần cần xác minh',CHILD_OUTPUT_UNIT_MISMATCH:'Đơn vị công thức con chưa khớp',EMPTY_RECIPE:'Công thức chưa có thành phần'};
+export function PlannedMaterialsTable({rows}:{rows:PlannedMaterial[]}){return <div className="table-wrap"><table className="pm-needs-table"><thead><tr><th>Mã / nguyên liệu</th><th>Lượng cần chuẩn bị</th><th>Quy đổi đóng gói</th><th>Tồn theo sổ</th><th>Còn sau dự kiến</th><th>Cần mua thêm cho kế hoạch</th></tr></thead><tbody>{rows.map(m=>{
+ const remaining=m.stock!==null&&m.quantity!==null?new Decimal(m.stock).minus(m.quantity):null;
+ return <tr key={m.material_id+m.unit_id}><td><b>{m.name}</b><small>{m.code}</small></td><td><b>{fmt(m.quantity)} {m.unit}</b></td><td>{m.package?.verified&&m.package.usage_per_package&&m.quantity!==null?<>{fmt(new Decimal(m.quantity).div(m.package.usage_per_package).toDecimalPlaces(6).toFixed())} {m.package.unit}<small>1 {m.package.unit} = {fmt(m.package.usage_per_package)} {m.unit}</small></>:'Chưa xác minh quy đổi'}</td><td>{m.stock===null?'Chưa có số liệu tồn':fmt(m.stock)+' '+m.unit}</td><td>{remaining===null?'—':fmt(remaining.toFixed())+' '+m.unit}</td><td>{remaining===null?'Chưa đủ tồn để tính':fmt(Decimal.max(0,remaining.negated()).toFixed())+' '+m.unit}</td></tr>;
+ })}</tbody></table>{!rows.length&&<p className="empty">Chưa có nguyên liệu để tính. Nhập lượng món và kiểm tra công thức đã công bố.</p>}</div>;}
+export function PlanRequirements({warehouse,date,previous,mode,lines,userId,dirty}:{warehouse:string;date:string;previous:string|null;mode:string;lines:{product_id:string;quantity:string}[];userId:string;dirty:boolean}){
+ const serialized=JSON.stringify(lines),[settled,setSettled]=useState(serialized);
+ useEffect(()=>{const timer=setTimeout(()=>setSettled(serialized),250);return()=>clearTimeout(timer);},[serialized]);
+ const valid=lines.every(l=>/^\d+(?:\.\d{1,6})?$/.test(l.quantity)&&new Decimal(l.quantity).lt('1e14'));
+ const query=useQuery({queryKey:[userId,'production-plan-preview',warehouse,date,previous,mode,settled],enabled:!!warehouse&&!!date&&valid&&settled===serialized,queryFn:async()=>{const {data,error}=await browserSupabase().rpc('production_plan_requirements',{p_warehouse:warehouse,p_date:date,p_previous:previous,p_mode:mode,p_lines:JSON.parse(settled)});if(error)throw new Error(error.message.includes('VERSION_CONFLICT')?'Kế hoạch đã thay đổi. Tải lại trước khi tiếp tục.':'Chưa tính được nguyên liệu. Cần patch031 và quyền xem Sản xuất, Nhu cầu, Kho.');return data as Preview;}});
+ const current=valid&&settled===serialized?query.data:undefined;
+ return <section className="pm-plan-needs"><h2>Nguyên liệu cần chuẩn bị {dirty?'· Xem trước chưa lưu':'· Theo kế hoạch đã lưu'}</h2><p>Nhập lượng món phía trên để tính theo công thức nhiều tầng. Lập kế hoạch chưa trừ tồn kho. Sản xuất thực tế sẽ ghi xuất định mức riêng.</p>
+ {!valid&&<p className="pm-warning">Nhập số lượng không âm hợp lệ cho tất cả các món đã sửa.</p>}{(query.isFetching||settled!==serialized)&&<LoadingState compact label="Đang tính nguyên liệu theo kế hoạch…"/>}{query.isError&&valid&&<ToastNotice tone="error" message={query.error.message}/>}
+ {current&&<><div className="pm-plan-products">{current.products.map(p=><span key={p.product_id}><b>{fmt(p.quantity)} {p.unit}</b> {p.name}</span>)}</div>{!current.complete&&<div className="pm-note">Công thức còn thiếu hoặc quy đổi chưa xác minh. Tổng dưới đây chưa đủ toàn bộ kế hoạch.{current.sources.filter(s=>s.issue).map((s,i)=><p key={i}>{s.product_name??current.products.find(p=>p.product_id===s.product_id)?.name}: {issueLabels[s.issue!]??'Cần kiểm tra công thức'}</p>)}</div>}<PlannedMaterialsTable rows={current.materials}/><details><summary>Chi tiết mỗi món đóng góp nguyên liệu</summary>{current.sources.filter(s=>s.material_id).map((s,i)=><p key={i}>{s.product_name} · {current.materials.find(m=>m.material_id===s.material_id)?.name}: {fmt(s.quantity)} {current.materials.find(m=>m.material_id===s.material_id)?.unit}</p>)}</details></>}
+ </section>;
+}

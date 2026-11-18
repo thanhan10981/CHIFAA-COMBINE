@@ -2,7 +2,7 @@
 import {ingredientWarehouseId,IngredientWarehouseStatus} from '@/features/operations/ingredient-warehouse';
 import {ToastNotice,LoadingState} from '@/components/feedback';
 
-import {useState} from 'react';
+import {useState,useEffect} from 'react';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {browserSupabase} from '@/lib/supabase/browser';
@@ -11,9 +11,10 @@ type CountRow = {id:string; code:string; name:string; unit_id:string; unit_code:
 type Snapshot = {inventory_version:string; rows:CountRow[]};
 type Request = {p_warehouse:string; p_date:string; p_lines:{material_id:string; counted_quantity:string}[]; p_inventory_version:string; p_key:string};
 
-export function StockCount({userId, canPost}:{userId:string; canPost:boolean}) {
+export function StockCount({userId, canPost,businessDate,onDirty}:{userId:string; canPost:boolean;businessDate?:string;onDirty?:(dirty:boolean)=>void}) {
  const cache = useQueryClient();
- const [date,setDate] = useState(()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh'}).format(new Date()));
+ const [ownDate,setDate] = useState(()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh'}).format(new Date()));
+ const date=businessDate??ownDate;
  const [search,setSearch] = useState('');
  const [offset,setOffset] = useState(0);
  const [counts,setCounts] = useState<Record<string,string>>({});
@@ -35,7 +36,7 @@ export function StockCount({userId, canPost}:{userId:string; canPost:boolean}) {
   let request=pending;
   if(!request) {
    const rows=(snapshot.data?.rows??[]).slice(0,50);
-   const lines=rows.filter(row=>counts[row.id]!==undefined&&counts[row.id]!=='').map(row=>({material_id:row.id,counted_quantity:counts[row.id]}));
+   const lines=rows.filter(row=>counts[row.id]!==undefined&&counts[row.id]!=='').map(row=>({material_id:row.id,counted_quantity:counts[row.id].trim().replace(',','.')}));
    if(!lines.length||!lines.every(line=>/^\d+(?:\.\d{1,6})?$/.test(line.counted_quantity))||!snapshot.data) throw new Error('Nhập số đếm thực tế cho ít nhất một vật tư. Số 0 được chấp nhận; ô trống được bỏ qua.');
    request={p_warehouse:warehouse,p_date:date,p_lines:lines,p_inventory_version:snapshot.data.inventory_version,p_key:crypto.randomUUID()};
    setPending(request);
@@ -52,17 +53,19 @@ export function StockCount({userId, canPost}:{userId:string; canPost:boolean}) {
  },onSuccess:()=>{
   setPending(null);setCounts({});setMessage('Đã ghi kiểm kê và điều chỉnh kho trong cùng giao dịch.');
   void cache.invalidateQueries({queryKey:[userId,'inventory']});
-  void cache.invalidateQueries({queryKey:[userId,'counts']});
+  void cache.invalidateQueries({queryKey:[userId,'counts']});void cache.invalidateQueries({queryKey:[userId,'usage-evidence']});void cache.invalidateQueries({queryKey:[userId,'production-materials']});
   void cache.invalidateQueries({queryKey:[userId,'dashboard']});
  },onError:error=>setMessage(error.message)});
  const locked=save.isPending||!!pending;
  const hasDraft=Object.values(counts).some(value=>value!=='');
+ useEffect(()=>{onDirty?.(hasDraft||locked);},[hasDraft,locked,onDirty]);
  const reset=()=>{setCounts({});setMessage('');};
- return <section>
-  <div className="page-heading"><div><p className="eyebrow">CHIFAA / KHO</p><h1>Kiểm kê nguyên liệu</h1><p>Nhập số đếm theo đơn vị chuẩn. Chỉ các dòng đã nhập được ghi nhận; ô trống không được coi là 0.</p></div></div>
+ const Heading=businessDate?'h2':'h1';
+ return <section className={businessDate?'pm-shared-count':undefined}>
+  <div className="page-heading"><div><p className="eyebrow">CHIFAA / KHO</p><Heading>Phiếu kiểm kê nguyên liệu</Heading><p>Nhập số đếm theo đơn vị chuẩn. Chỉ các dòng đã nhập được ghi nhận; ô trống không được coi là 0.</p></div></div>
   <div className="panel">{warehouses.isFetching&&<LoadingState compact label="Đang tải danh sách kho…"/>}
    <fieldset disabled={locked||hasDraft}><div className="form-grid">
-    <label>Ngày kiểm kê<input type="date" value={date} onChange={e=>{setDate(e.target.value);reset();}}/></label>
+    {!businessDate&&<label>Ngày kiểm kê<input type="date" value={date} onChange={e=>{setDate(e.target.value);reset();}}/></label>}
     <p>Kho: <b>Nguyên liệu</b></p><IngredientWarehouseStatus rows={warehouses.data}/>
    </div><div className="toolbar">
     <input aria-label="Tìm vật tư theo tiền tố mã hoặc tên" placeholder="Tìm mã hoặc tên vật tư…" value={search} maxLength={100} onChange={e=>{setSearch(e.target.value);setOffset(0);reset();}}/>

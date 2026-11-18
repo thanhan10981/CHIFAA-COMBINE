@@ -1,5 +1,13 @@
 # Kết quả kiểm thử master session
 
+## 18/11/2026 — kế hoạch, nhu cầu và kiểm kê chung031
+
+- `npm run verify`: **97/97 tests**, generated types90 bảng/56 RPC, typecheck/lint/build đạt. Chạy lại typecheck/lint/build sau các chỉnh UI cuối đều đạt.
+- PostgreSQL nhúng:100 phần công thức tổng hợp thử nghiệm bung công thức con ra5kg gạo/1kg xúc xích/100 bao; xem trước không tạo kế hoạch hoặc phát sinh kho. Lưu100, bổ sung30→130, thay90→90; stale head bị chặn, thiếu công thức không giả nhu cầu0, quyền được kiểm tra. Số liệu này chỉ là fixture tổng hợp.
+- Hai phiếu đếm chung được chứng nhận, sản xuất chỉ ghi kho một lần khi retry; đối chiếu lấy đúng hai ID nguồn và phát sinh, thực dùng6 so định mức5 chênh1; lưu đối chiếu không tạo phiếu đếm thứ ba.031 thử tiến tiếp từ030 và chặn chạy lại.
+- Chrome fixture `node scripts/design-check.mjs --production`: **30/30** tổ hợp6 màn ×5 kích thước320/390/768/1024/1440, không lỗi JS/tràn trang. Kiểm tra preview kế hoạch100+30→130, thay SX toàn ngày, công thức thiếu, phiếu đếm chung dấu phẩy9,4 và retry cùng payload/key, source token đối chiếu không gửi bốn lượng phía client, hủy nhập sai không bịa giờ/lượng. Đã xem ảnh desktop; report `output/production-design/report.json`.
+- Owner xác nhận `031_READY`. Read-only anonymous probe DEV:401/42501, function production_plan_requirements đã tồn tại và từ chối anonymous. Đây không phải authenticated cloud UAT. Phát hành nhánh DEV theo `output/planning-flow-release-status.json`; cần đối chiếu công thức đã công bố và tồn thật khi đăng nhập.
+
 ## 18/11/2026 — một kho nguyên liệu mặc định
 
 - `npm run verify`: **93/93 tests**, types/lint/build đạt. Kiểm tra resolver tự lấy ID kho nguyên liệu duy nhất; thiếu/nhiều kho trả trạng thái chưa xác định, không bịa ID/gộp tồn; context tabs không còn Danh mục kho.
