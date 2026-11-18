@@ -1,5 +1,12 @@
 # Theo dõi công việc
 
+## Cổng đặt hàng công khai035 — KH-12/01/03/05/10
+
+- [x] Public portal không login, món đã công bố +giá chung/ngày giao, số lượng/tổng tiền/địa chỉ/liên hệ; giữ cổng điểm bán riêng.
+- [x] Anonymous RPC giới hạn dữ liệu, chống giá giả/gửi trùng/spam, giữ RLS nội bộ và snapshot; duyệt guest gán điểm bán nối workflow cũ.
+- [x]118 tests, typecheck/lint/build, Chrome6 cỡ +503/retry/giá đổi/empty/duyệt và probe HTTP không login đạt.
+- [ ] Owner cài034 rồi035_READY; chưa áp SQL cloud/commit/push/deploy hoặc UAT thật trong checkpoint này.
+
 ## Danh mục vật tư034 — 18/11/2026 (KH-01/10/11)
 
 - [x] Theo làm rõ mới nhất: gỡ khối lịch sử/dữ liệu gốc khỏi giao diện vật tư, giữ DB; kiểm tra lại113 tests/types/lint/build và Chrome không có lịch sử đạt.

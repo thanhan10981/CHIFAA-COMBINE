@@ -1,5 +1,11 @@
 # Kết quả kiểm thử master session
 
+## 18/11/2026 — Public portal035
+
+118/118 tests đạt, typecheck/lint/build đạt, generated94 bảng/63 RPC. PostgreSQL nhúng: anon chỉ thấy published active với common price, không đọc bảng hoặc giá riêng; publish/unpublish đổi ngay; gửi guest snapshot/replay/giá server/contact/quyền/capacity/rate/rollback đúng; duyệt guest chọn store giữ giá, không money/stock/plan; package035 sau034 giữ đơn cũ/replay bị chặn, auth redirect allowlist không chấp nhận external URL.
+
+`node scripts/design-check.mjs --public-portal`: Chrome6 cỡ320/390/768/1024/1440/1920 đạt, không login hoặc chọn điểm bán để xem món, số lượng/tổng65000 chính xác, thiếu giá khóa đặt, không tràn;503/retry giữ key/payload, giá đổi yêu cầu chọn lại, empty rõ, nội bộ xem guest/items và gán store trước duyệt. Ảnh desktop/mobile/guest-review đã xem; report ignored output/public-portal-design/report.json. Production Next local3417 `/portal` HTTP200 có thực đơn và form, không Location; `/portal/account` RSC redirect login, không có heading đơn điểm bán. Server local đã dừng. Chưa Supabase cloud UAT/áp SQL035/deploy.
+
 ## 18/11/2026 — Danh mục vật tư034
 
 Bổ sung ẩn lịch sử theo làm rõ owner: typecheck/lint/build và113 tests đạt sau sửa MaterialReview. Chrome `--materials` đạt6 cỡ và kiểm tra cài đặt vật tư không còn `.material-review-history`/nhãn Dữ liệu gốc & lịch sử; báo cáo output/material-table-design/report.json, ảnh settings-no-history.png. Chỉ thay giao diện/truy vấn đọc1 bản gần nhất, không sửa/xóa lịch sử DB.

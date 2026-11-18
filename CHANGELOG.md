@@ -1,3 +1,9 @@
+## 2026-11-18 — Cổng đặt hàng công khai035 (KH-12/01/03/05/10)
+
+- Mở `/portal` không đăng nhập, hiển thị món công bố và giá chung, chọn số lượng/tổng tiền, liên hệ/giao hàng và gửi đơn. Cổng điểm bán đã đăng nhập ở `/portal/account`.
+- Anonymous chỉ catalog/submit RPC, không đọc bảng/đơn/dữ liệu nội bộ. Server kiểm tra giá/món/cutoff/công suất, chống trùng và giới hạn gửi. Nhân viên xem chi tiết và gán điểm bán khi duyệt guest; không tự tạo doanh thu/tiền/kho.
+- 118 tests, types/lint/build và Chrome6 cỡ +retry/giá đổi/empty/duyệt đạt; local `/portal` không redirect login. Gói SQL035 đã chuẩn bị, chưa áp cloud/phát hành. Chi tiết docs/standalone/PUBLIC_ORDER_PORTAL.md.
+
 ## 2026-11-18 — Danh mục vật tư gọn (034, KH-01/10/11)
 
 - Theo làm rõ mới nhất: bỏ phần hiển thị dữ liệu gốc/lịch sử khỏi giao diện vật tư, chỉ tải bản gần nhất để điền form; lịch sử DB giữ nguyên. Typecheck/lint/build,113 tests và Chrome fixture xác nhận không có khối lịch sử đạt. Việc ẩn lịch sử không cần thêm SQL.

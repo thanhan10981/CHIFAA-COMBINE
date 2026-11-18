@@ -1,5 +1,15 @@
 # HANDOFF hiện tại — CHIFAA standalone / Next.js + Supabase
 
+## 18/11/2026 — Cổng đặt hàng công khai035
+
+Theo chỉ dẫn trực tiếp mới nhất, KH-12 +KH-01/03/05/10: `/portal` không gọi currentAccess hoặc yêu cầu đăng nhập/điểm bán liên kết; món published, không archived hiển thị cùng giá chung theo ngày giao. Có tăng/giảm/nhập số lượng, tổng tiền chính xác, thông tin nhận hàng, gửi đơn chờ duyệt. Món thiếu giá hiển thị nhưng không cho đặt. Phân trang100, đọc lại mỗi30giây/focus. Cổng tài khoản cũ ở `/portal/account`, auth target allowlist mở rộng đúng route này; app nội bộ và giá/đơn riêng giữ bảo vệ.
+
+SQL035 bổ sung guest contact vào customer_orders và snapshot tên/mã/ĐVT ở items, idempotency private, RPC catalog/submit công khai giới hạn trường. Không cấp SELECT bảng cho anon, không lộ nội bộ/giá riêng/dữ liệu khách. Kiểm tra giá/món server, cutoff/công suất hiện có, giới hạn5 đơn/điện thoại/phút và60/phút toàn cổng. Nhân viên orders/approve xem món/liên hệ, chọn điểm bán sẵn có rồi duyệt qua review_public_order; giá chung snapshot giữ nguyên. Submit/duyệt chưa tạo tiền/doanh thu/kho/kế hoạch. UI chọn điểm bán cần quyền stores/view; khách nhập thông tin chưa phải danh tính đã xác minh. Chi tiết docs/standalone/PUBLIC_ORDER_PORTAL.md.
+
+Bằng chứng:118/118 tests, db:types94 bảng/63 RPC, typecheck/lint/build đạt. PostgreSQL nhúng kiểm tra anon chỉ catalog/submit, private/unpublished/archived/giá riêng không lộ, publish đổi có hiệu lực, price tampering/đổi giá/món thiếu/số lượng/giới hạn/quyền/version/replay/rollback; package035 giữ đơn cũ và chặn replay. Chrome fixture6 cỡ320/390/768/1024/1440/1920 +503/retry/price changed/empty +duyệt guest có điểm bán đạt; ảnh đã xem tại ignored output/public-portal-design. Local production Next `/portal` HTTP200, có menu/form không login; `/portal/account` có RSC redirect login, không render dữ liệu đơn. Không phải cloud UAT.
+
+Đã tạo output/CHIFAA_PATCH_CONG_DAT_HANG_CONG_KHAI_DEV.sql sau034, owner chạy toàn bộ trong SQL Editor DEV →035_READY; SHA256451918129bdd19f4837653046ecdd893ccc8bf818c22d14856cc9e6b97fde7e5. Chưa có xác nhận034/035 đã áp cloud, chưa commit/push/deploy ở checkpoint này. Cần cài SQL035 trước frontend và UAT thật công bố món→khách gửi→nội bộ duyệt→giao/đối soát. Không tự áp SQL/production.
+
 ## 18/11/2026 — Danh mục vật tư gọn (034)
 
 Bổ sung theo làm rõ của owner: không hiển thị lịch sử trên giao diện vật tư. Đã gỡ hẳn khối “Dữ liệu gốc & lịch sử” khỏi MaterialReview, chỉ đọc1 bản gần nhất với các cột cần điền form, không tải danh sách50 bản hoặc raw source. Lịch sử/audit trong DB vẫn giữ nguyên theo KH-10; việc ẩn giao diện không cần SQL mới. Kiểm tra lại typecheck/lint/build và113 tests đạt; Chrome fixture6 cỡ + assertion không có khối lịch sử ở cài đặt đạt, báo cáo output/material-table-design/report.json. Chưa push/deploy.

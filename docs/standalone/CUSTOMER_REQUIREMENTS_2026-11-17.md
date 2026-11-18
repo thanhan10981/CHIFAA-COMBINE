@@ -154,6 +154,13 @@ Nghiệm thu: nhập sáng + bổ sung chiều cộng đúng; thay thế toàn n
 - Dữ liệu nguồn thiếu/mâu thuẫn phải giữ để đối chiếu, không tự dùng giá0 hoặc tổng mô phỏng làm giá vốn chính thức. Tôn trọng KH-01/KH-10 và xác minh giá vật tư dùng chung.
 - Theo dõi triển khai và hướng dẫn SQL ở `RECIPE_CATALOG.md`; việc có tài liệu không tự xác nhận đã nhập dữ liệu cloud.
 
+## KH-12 — Cổng đặt hàng công khai (bổ sung18/11/2026)
+
+- Theo chỉ dẫn trực tiếp mới nhất của owner: ai có liên kết `/portal` cũng truy cập và gửi đơn được, không cần đăng nhập. Yêu cầu này thay phần bắt đăng nhập cho cổng công khai trong đặc tả cũ.
+- Món được công bố trong Danh mục món bán và còn sử dụng phải hiển thị ở cổng; khách chọn số lượng. Dùng giá bán chung có hiệu lực, không công bố giá vốn, công thức, giá/chiết khấu riêng hoặc danh sách khách/điểm bán.
+- Đơn gửi từ cổng công khai cần chờ nhân viên duyệt; không tự thành doanh thu, tiền thu, sản xuất hoặc xuất kho. Thông tin người đặt tự cung cấp không phải tài khoản/điểm bán đã xác thực.
+- Tiếp tục KH-01/03/05/10: giữ snapshot giá/đơn vị, kiểm tra món công bố và giá ở server, chống gửi trùng, phân quyền duyệt và bảo vệ dữ liệu nội bộ. Kênh điểm bán có tài khoản có thể giữ riêng quyền xem đơn/giá của mình.
+
 ### Trạng thái checkpoint tài liệu ban đầu
 
 Đã ghi nhận toàn bộ nhóm yêu cầu và đặt quy tắc đọc tự động tại `AGENTS.md`. Chưa triển khai thêm schema, RPC hay giao diện cho các yêu cầu mới trong checkpoint tài liệu này. 026 đã có phụ cấp tháng; không xem đó là đã có phụ cấp ngày/ca. Kết quả các checkpoint code trước nằm ở `HANDOFF.md` và `TEST_RESULTS.md`.
