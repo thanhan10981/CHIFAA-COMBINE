@@ -1,3 +1,8 @@
+## 2026-11-19 — Sửa phản hồi sau khi lưu công thức (KH-01/10)
+
+- Sau khi lưu, workspace chọn đúng `version_id` RPC vừa tạo thay vì giữ phiên bản cũ trong cache.
+- Kiểm tra: typecheck, lint, 121/121 tests và build đạt. Chưa chạy authenticated cloud UAT.
+
 ## 2026-11-18 — Cải thiện form công thức (KH-01/03/10/11)
 
 - Chọn công thức con cùng nhóm; bỏ chữ nháp/trạng thái trùng lặp tại bộ chọn và chi tiết phiên bản.

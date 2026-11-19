@@ -1,3 +1,7 @@
+## 19/11/2026 — Làm mới ngay phiên bản công thức sau khi sửa (KH-01/10)
+
+Recipe RPC trả về `version_id` mới, nhưng giao diện trước đây chỉ chọn `recipe_id` rồi xóa lựa chọn phiên bản. Cache có thể tiếp tục hiển thị phiên bản cũ sau toast thành công. Form nay trả cả `recipe_id` và `version_id`; workspace chuyển thẳng sang phiên bản vừa lưu và làm mới chi tiết. Bằng chứng local: typecheck, lint, 121/121 tests, production build đạt. Không ghi cloud DB. Chưa xác minh trên Supabase authenticated UAT.
+
 ## 18/11/2026 — Cập nhật luồng công thức (KH-01/03/10/11)
 
 Đã cho phép liên kết công thức con cùng nhóm; ẩn nhãn phiên bản/trạng thái nháp lặp lại ở lựa chọn công thức và phần chi tiết; bỏ ô nhập lý do/chứng thực khỏi form. Migration `supabase/migrations/202611180037_recipe_editor_no_evidence_field.sql` giữ quyền, idempotency và lịch sử thao tác, ghi rõ nguồn là `recipe_editor`, không khẳng định có chứng từ xác minh. Kiểm thử thêm liên kết cùng nhóm và lưu với chứng từ rỗng.
