@@ -710,3 +710,10 @@ Focused PGlite regression passed again after selecting the most recent active ta
 ## Material verification database basis fallback - 2026-11-19
 
 KH-01: address the server still returning `PRICE_BASIS_REQUIRED` after the UI supplied a price. New forward migration `202611190041_material_verification_defaults_basis_to_purchase.sql` makes `resolve_material` use the selected purchase unit only when the explicit price basis is missing; it keeps the entered amount, Admin permissions, version check, idempotency and immutable audit/history intact. Added a PGlite regression case for 12,000 VND with a missing basis and selected purchase unit. Cloud migration/deployment not performed; the migration must be applied to the intended DEV database before the live form can behave differently.
+## 19/11/2026 — Nối dữ liệu Dashboard vận hành (KH-05/06/07/08/09/10)
+
+Dashboard vận hành `/app/opsdashboard` thay nội dung blueprint tĩnh bằng bộ lọc ngày/tuần/tháng/quý/năm, tải snapshot theo dải ngày từ PostgreSQL, so sánh tuần trước/cùng thứ, bảng doanh thu từng ngày, KPI doanh thu/thực thu/mục tiêu/sản lượng/giờ công/năng suất, trạng thái tồn và các phần Food cost, điểm bán, P&L/dòng tiền có liên kết tới phân hệ nguồn. Ngày không có phiếu tiếp tục là NULL; tổng kỳ ghi rõ số ngày có phiếu. Sản lượng/năng suất chỉ cộng khi đơn vị sản phẩm thống nhất; Food cost trên doanh thu thuần chỉ ghi là tỷ lệ tham khảo do mẫu số KH-05 cần xác nhận. Báo cáo điểm bán chi tiết, trả/hủy/lỗi theo mục tiêu và P&L đầy đủ vẫn cần nguồn tương ứng.
+
+Migration `202611190043_dashboard_operating_period.sql` thêm RPC đọc kỳ, yêu cầu quyền Dashboard, giới hạn kỳ tối đa 366 ngày và giữ quyền từng chỉ tiêu thông qua `dashboard_summary`. Không áp migration lên Supabase/cloud.
+
+Bằng chứng local: `npm run typecheck`, `npm run lint`, `npm test` (129/129), `npm run build`, test PGlite `executive-dashboard.test.ts` (2/2), `git diff --check` đạt. Lần chạy test/build đầu bị Windows sandbox chặn tiến trình con (`spawn EPERM`); chạy lại ở quyền được duyệt đạt. Chưa có UAT kết nối Supabase cloud.

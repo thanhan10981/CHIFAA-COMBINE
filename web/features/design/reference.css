@@ -241,6 +241,20 @@
 .workspace .v15-barprev,.workspace .v15-barnow{width:17px;border-radius:5px 5px 0 0;min-height:2px;max-height:110px}
 .workspace .v15-barprev{background:#a6bbcb}.workspace .v15-barnow{background:#e77d31}
 .workspace .v15-baritem small{color:#8294a8;font-size:11px}
+.workspace .ops-dashboard{margin:0;padding:18px;border:0;background:transparent;box-shadow:none}
+.workspace .ops-dashboard .v15-topline h2{font-size:21px;color:#173651;margin:5px 0 4px}
+.workspace .ops-dashboard .ops-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:15px 0}
+.workspace .ops-dashboard .ops-tabs button{border:1px solid #dce5ee;background:#fff;color:#526a80;border-radius:10px;padding:10px 13px;font-size:12px;font-weight:750;cursor:pointer}
+.workspace .ops-dashboard .ops-tabs button.active{background:#20405a;border-color:#20405a;color:#fff}
+.workspace .ops-dashboard .v15-panel{margin-bottom:14px}
+.workspace .ops-dashboard .v15-mini{font-size:12px;color:#75899d;line-height:1.6;margin:14px 0 0}
+.workspace .ops-dashboard .v15-body.v15-quick{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}
+.workspace .ops-dashboard .v15-body.v15-quick>div{background:#f7f9fb;border:1px solid #e4ebf2;border-radius:11px;padding:13px}
+.workspace .ops-dashboard .v15-body.v15-quick small,.workspace .ops-dashboard .v15-body.v15-quick b{display:block}
+.workspace .ops-dashboard .v15-body.v15-quick small{font-size:11px;color:#71869a;line-height:1.5}
+.workspace .ops-dashboard .v15-body.v15-quick b{font-size:16px;color:#1d3b55;margin-top:7px}
+.workspace .ops-dashboard select{border:1px solid #d7e2ec;border-radius:9px;background:white;padding:9px 11px;color:#38526a}
+@media(max-width:700px){.workspace .ops-dashboard{padding:12px}.workspace .ops-dashboard .v15-grid2{grid-template-columns:1fr}.workspace .ops-dashboard .v15-topline h2{font-size:18px}}
 .workspace .v15-legend{display:flex;justify-content:center;gap:20px;font-size:11px;color:#657b8f;margin:13px 0 0}
 .workspace .v15-dot{height:9px;width:9px;border-radius:3px;display:inline-block;margin-right:5px}
 .workspace .v15-select-day{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
