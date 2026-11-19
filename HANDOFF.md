@@ -1,3 +1,9 @@
+## 19/11/2026 — Rút gọn xác minh vật tư và nhập quy đổi (KH-01)
+
+Form xác minh vật tư được rút thành đơn vị mua/dùng, giá cùng cơ sở giá, quy đổi đóng gói một dòng “1 đơn vị = số lượng đơn vị nhỏ”, và ngày hiệu lực. Bỏ các checkbox xác nhận thủ công, ô vấn đề và bằng chứng; đơn giá được xác minh khi có số tiền và cơ sở giá, quy đổi khi có số lượng hợp lệ và hai đơn vị khác nhau. Để trống quy đổi thì không tạo tỷ lệ; vẫn giữ nguyên giá trị chưa xác minh khi còn thiếu dữ liệu.
+
+Bằng chứng local: `npm run typecheck`, `npm run lint`, 125/125 tests, `npm run build`, `node scripts/design-check.mjs --materials` (fixture-only, 6 kích thước màn hình) và `git diff --check` đạt. Chưa ghi cloud DB hoặc triển khai.
+
 ## 19/11/2026 — Recipe-line cost exemption and visible material verification (KH-01/10/11)
 
 Recipe editor now lets an editor explicitly mark a direct ingredient or child-recipe line as “Không tính giá”. The recipe item keeps its quantity and unit for BOM, production demand, and stock; only its cost contribution is zero for that recipe revision. This does not change or verify the shared material price. The decision is stored on the versioned recipe item and included in the private recipe source/audit payload. Default remains cost-bearing. BOM aggregation uses weighted unit cost so exempt and cost-bearing quantities of the same material remain exact. Material catalog rows with a known but pending price now show “Chờ xác minh” and a direct “Xác minh giá” action; users without approval scope see it disabled with the required permission identified. Historical/published recipe revisions and production snapshots remain unchanged.
@@ -657,3 +663,8 @@ Fixed the standalone verify failure: the migration adds `recipe_items.cost_exemp
 For KH-01 material/recipe cost workflow, removed the mandatory free-text evidence prompt from Admin material price verification. `resolve_material` still requires Admin/manage and materials/approve, keeps effective dating, idempotency, version checks, immutable resolution history and audit; missing evidence is stored as an empty optional field. Zero-price verification remains valid when a price basis unit is selected. The form now gives a specific correction when package conversion values are invalid (including matching package/content units or text in the numeric quantity field). Added migration `202611190040_material_verification_no_evidence.sql` and regression coverage.
 
 Evidence: typecheck, lint, 125/125 tests, material UI fixture at 320/390/768/1024/1440/1920 widths, production build passed. Cloud migration and deployment not performed; apply to intended DEV through release path before UAT.
+## Material verification quick-entry UI - 2026-11-19
+
+Follow-up to the owner's usability request (KH-01): grouped price and price basis, reduced conversion to one compact `1 [unit] = [quantity] [unit]` row, and removed both confirmation checkboxes and the free-text issue field. Entering a price with its basis confirms price; entering a valid conversion ratio confirms the conversion. Empty values remain unverified. Quantity must be numeric and the two units must differ. Historical records remain immutable; no database schema or RPC changes in this UI follow-up.
+
+Verify local typecheck, lint, 125 tests, material UI fixture at 320/390/768/1024/1440/1920 widths, and production build before closing. No cloud migration or deployment performed.

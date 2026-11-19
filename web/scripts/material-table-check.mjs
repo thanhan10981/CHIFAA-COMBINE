@@ -33,7 +33,7 @@ export async function checkMaterialTable(page,base,out,report){
  await page.getByRole('button',{name:'Cài đặt quy đổi',exact:true}).click();
  await page.getByRole('dialog').getByRole('combobox').selectOption('material-1');
  await page.getByRole('button',{name:'Xem giá, đơn vị & quy cách',exact:true}).click();
- await page.getByRole('button',{name:'Lưu phiên bản xác minh',exact:true}).waitFor();
+ await page.getByRole('button',{name:'Lưu xác minh',exact:true}).waitFor();
  if(await page.locator('.material-review-history').count()||await page.getByRole('dialog').getByText(/Dữ liệu gốc.*lịch sử/).count())throw new Error('Material history still visible');
  await page.screenshot({path:path.join(out,'settings-no-history.png')});
  await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();
@@ -41,10 +41,10 @@ export async function checkMaterialTable(page,base,out,report){
  const requests=[];
  await page.locator('.material-row-actions').nth(5).getByRole('button',{name:'Xác minh giá',exact:true}).click();
  const reviewDialog=page.getByRole('dialog');await reviewDialog.waitFor();
- if(!(await reviewDialog.innerText()).includes('CHỜ XÁC MINH')||!await reviewDialog.getByRole('button',{name:'Lưu phiên bản xác minh',exact:true}).isVisible())throw new Error('Direct verification action did not open the price verification form');
- if((await reviewDialog.innerText()).includes('Bằng chứng')||(await reviewDialog.locator('textarea').count())!==0)throw new Error('Admin verification should not require free-text evidence');
+ if(!(await reviewDialog.innerText()).includes('CHỜ XÁC MINH')||!await reviewDialog.getByRole('button',{name:'Lưu xác minh',exact:true}).isVisible())throw new Error('Direct verification action did not open the price verification form');
+ if((await reviewDialog.innerText()).includes('Bằng chứng')||(await reviewDialog.locator('textarea').count())!==0||await reviewDialog.locator('.material-conversion-row').count()!==1||await reviewDialog.locator('input[type="checkbox"]').count()!==0)throw new Error('Material verification should use a compact conversion row without confirmation checkboxes or evidence fields');
  await reviewDialog.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();
- report.checks.push('pending price opens verification dialog directly without requiring evidence text');
+ report.checks.push('pending price opens compact verification dialog with one-line conversion and no confirmation/evidence fields');
  await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/save_material_table',async route=>{
   requests.push(route.request().postDataJSON());
   await route.fulfill({status:requests.length===1?503:200,contentType:'application/json',body:requests.length===1?'{}':'{"id":"material-1","version":"2"}'});
