@@ -3,9 +3,10 @@ import {ToastNotice} from '@/components/feedback';
 import Link from 'next/link';
 import {useQuery} from '@tanstack/react-query';
 import {useState} from 'react';
+import Decimal from 'decimal.js';
 import {Icon} from '@/components/icons';
 import {browserSupabase} from '@/lib/supabase/browser';
-import {formatVnd} from '@/lib/format';
+import {formatVndCurrency} from '@/lib/format';
 
 type Snapshot={
  date:string;net_revenue_vnd:string|null;revenue_yesterday_vnd:string|null;received_vnd:string|null;
@@ -15,7 +16,7 @@ type Snapshot={
  targets:Record<string,string>;inventory_low_count:number|null;inventory_unknown_count:number|null;updated_at:string;completeness:string;
 };
 const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh'}).format(new Date());
-const money=(value:string|null|undefined)=>value==null?null:`${formatVnd(value)} đ`;
+const money=(value:string|null|undefined)=>value==null?null:`${formatVndCurrency(value)} đ`;
 const percent=(amount:string|null|undefined,base:string|null|undefined)=>{
  if(amount==null||base==null||Number(base)<=0)return null;
  return Number(amount)/Number(base)*100;
@@ -34,13 +35,13 @@ export function Dashboard({userId}:{userId:string}) {
  const foodRatio=percent(data?.food_cost_vnd,data?.net_revenue_vnd);
  const laborRatio=percent(data?.production_labor_estimate_vnd,data?.net_revenue_vnd);
  const revenueTarget=data?.revenue_target_daily_vnd;
- const revenueDelta=data?.net_revenue_vnd!=null&&data.revenue_yesterday_vnd!=null?Number(data.net_revenue_vnd)-Number(data.revenue_yesterday_vnd):null;
+ const revenueDelta=data?.net_revenue_vnd!=null&&data.revenue_yesterday_vnd!=null?new Decimal(data.net_revenue_vnd).minus(data.revenue_yesterday_vnd).toString():null;
  const revenueProgress=percent(data?.net_revenue_vnd,revenueTarget);
  const profitParts=[data?.food_cost_vnd,data?.production_labor_estimate_vnd,data?.office_expense_vnd,data?.fixed_expense_vnd,data?.marketing_expense_vnd,data?.recovery_expense_vnd,data?.other_expense_vnd,data?.depreciation_vnd];
  const estimateProfit=data?.net_revenue_vnd!=null&&profitParts.every(value=>value!=null)
-  ?(Number(data.net_revenue_vnd)-profitParts.reduce((sum,value)=>sum+Number(value),0)).toString():null;
+  ?profitParts.reduce((total,value)=>total.minus(value!),new Decimal(data.net_revenue_vnd)).toString():null;
  const metrics=[
-  {label:'Doanh thu thuần ngày xem',value:money(data?.net_revenue_vnd),note:`Mục tiêu ngày: ${money(revenueTarget)??'Chưa cài'} · Hôm trước: ${money(data?.revenue_yesterday_vnd)??'chưa có dữ liệu'}${revenueDelta==null?'':` · ${revenueDelta>=0?'+':''}${formatVnd(String(revenueDelta))} đ`}`,href:'/app/sales'},
+  {label:'Doanh thu thuần ngày xem',value:money(data?.net_revenue_vnd),note:`Mục tiêu ngày: ${money(revenueTarget)??'Chưa cài'} · Hôm trước: ${money(data?.revenue_yesterday_vnd)??'chưa có dữ liệu'}${revenueDelta==null?'':` · ${new Decimal(revenueDelta).gte(0)?'+':''}${formatVndCurrency(revenueDelta)} đ`}`,href:'/app/sales'},
   {label:'Số dư tiền mặt + ngân hàng',value:money(data?.cash_balance_vnd),note:'Sổ quỹ đến hết ngày xem; cần số dư đầu kỳ đã xác nhận',href:'/app/cash'},
   {label:'Food cost / doanh thu',value:showPercent(foodRatio),note:`Mục tiêu tối đa: ${targetPercent(data?.targets,'foodCost')==null?'Chưa cài':showPercent(targetPercent(data?.targets,'foodCost'))}`,href:'/app/recipes'},
   {label:'Nhân sự SX / doanh thu',value:showPercent(laborRatio),note:`Ước tính từ ca SX và mức lương đã lưu · trần ${targetPercent(data?.targets,'productionLabor')==null?'chưa cài':showPercent(targetPercent(data?.targets,'productionLabor'))}`,href:'/app/attendance'},

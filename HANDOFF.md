@@ -717,3 +717,34 @@ Dashboard vận hành `/app/opsdashboard` thay nội dung blueprint tĩnh bằng
 Migration `202611190043_dashboard_operating_period.sql` thêm RPC đọc kỳ, yêu cầu quyền Dashboard, giới hạn kỳ tối đa 366 ngày và giữ quyền từng chỉ tiêu thông qua `dashboard_summary`. Không áp migration lên Supabase/cloud.
 
 Bằng chứng local: `npm run typecheck`, `npm run lint`, `npm test` (129/129), `npm run build`, test PGlite `executive-dashboard.test.ts` (2/2), `git diff --check` đạt. Lần chạy test/build đầu bị Windows sandbox chặn tiến trình con (`spawn EPERM`); chạy lại ở quyền được duyệt đạt. Chưa có UAT kết nối Supabase cloud.
+## 19/11/2026 — Làm tròn hiển thị tiền Dashboard vận hành (KH-06/07/10)
+
+Card kế hoạch doanh thu từng cộng các mục tiêu ngày được chia từ tổng kỳ, nên giá trị số học có phần lẻ lặp dài và UI hiển thị chuỗi thập phân. Thêm formatter tiền VND làm tròn đồng gần nhất (half-up) và dùng cho các khoản tiền trên Dashboard vận hành; formatter số lượng/giá có độ chính xác khác giữ nguyên. Test xác nhận `260000000.00000000006` hiển thị `260.000.000` và làm tròn âm/dương đúng.
+## 19/11/2026 — Sửa căn hàng popup chỉnh vật tư (KH-01/10)
+
+Popup kéo cao ô chọn Nhóm vật tư vì CSS grid stretch các label để khớp với hàng có dòng hướng dẫn xuống dòng. Đặt các ô trong `.material-dialog .form-grid` về chiều cao nội tại và canh nội dung từ trên; không đổi trường hoặc nghiệp vụ.
+
+Kiểm tra fixture `node scripts/design-check.mjs --materials` đạt trên sáu kích thước (320–1920px); fixture không phải kiểm tra cloud. Chưa commit/push.
+
+## 19/11/2026 — Same purchase and usage unit needs no conversion (KH-01/KH-10)
+
+Updated material verification so when purchase and usage/storage units match (for example, a label bought and used by piece), the form explains that no package conversion is needed and submits null package conversion fields. The price remains tied to the selected price basis. Different units still require a positive ratio between distinct units. No schema or historical rows changed.
+
+Local evidence: `npm run typecheck`, `npm run lint`, `npm test` (129/129), and `npm run build` passed. The material UI fixture passed at 320/390/768/1024/1440/1920 widths after updating its same-unit assertion. `git diff --check` passed. No cloud SQL or deployment.
+
+## 19/11/2026 — Fix new material save when a price is entered (KH-01/KH-10)
+
+Reproduced the form payload (new material, selected purchase unit, amount 11, same price basis, minimum 1) against local PostgreSQL/PGlite. `save_material_table` raised SQLSTATE `55000`: its create branch evaluated fields on the unassigned `current_price` record. Added forward migration `202611190044_material_table_create_price_record_fix.sql`, which compares scalar price fields only on edits and handles create separately. The UI now explains this server error and retains the same idempotency request for retry after DEV receives the migration. Regression coverage verifies the material, unit, price basis, minimum, and unverified price are saved correctly.
+
+Evidence: `npm run typecheck`, `npm run lint`, `npm test` (130/130), `npm run build`, material UI fixture at 320/390/768/1024/1440/1920, and `git diff --check` passed. Migration not applied to Supabase/DEV; server behavior changes only after the migration is applied. No deploy.
+## 19/11/2026 — Admin account list error state (KH-10)
+
+When `admin-invite` list invocation fails, the employee account panel previously displayed “0 tài khoản” even though no list had loaded. Changed the count to an unavailable marker and explicit “Chưa tải được danh sách tài khoản” status while the existing retry/error panel remains visible. This prevents an outage from being mistaken for missing or deleted Auth users.
+
+Evidence: inspected `web/features/admin/accounts.tsx`; the query calls `admin-invite` with `action: list`, and the toast is a generic wrapper for any Edge Function invocation error. The source Edge Function exists; historical audit notes record an OPTIONS 404, but I could not verify the current DEV endpoint because this workspace has no configured Supabase URL. No tests run. No Edge Function deployment or cloud changes made; the list still requires the DEV function to respond successfully.
+
+## 19/11/2026 — Connect business strategy to saved operating data (KH-05/06/07/08/10)
+
+Replaced the strategy page's static reference panel with a live dashboard backed by `dashboard_period_summary`: date/week/month/quarter/year selection, current and prior equal-length periods, posted net sales, posted receipts, daily revenue/target chart, recorded ingredient cost and production-labor ratios, and a daily source table. Missing profit and cancellation rates remain explicitly unavailable because current summary sources do not establish complete cost coverage or confirmed cancellation denominators. Production totals are withheld when units cannot be confirmed consistent. Main executive dashboard financial values now use VND half-up rounding, including revenue change and estimated profit; estimated profit arithmetic uses Decimal.
+
+Evidence: `npm run typecheck` passed; `npm run lint` passed; `git diff --check` passed. `npm run build` stopped with Windows `spawn EPERM` while Next.js created the production build, so build and live Supabase UAT remain unverified. No migration or cloud deployment performed. This UI depends on `dashboard_period_summary` (migration 202611190043) being present in the target database. Store/product breakdown, cancellation rate, and full profit calculation remain future work until their source coverage and denominator definitions are available.

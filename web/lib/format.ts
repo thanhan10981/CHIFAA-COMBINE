@@ -1,8 +1,15 @@
+import Decimal from 'decimal.js';
+
 export function formatVnd(value:string|null|undefined){
  if(value==null)return '—';
  const match=/^(-?)(\d+)(?:\.(\d+))?$/.exec(value);if(!match)return value;
  const fraction=match[3]?.replace(/0+$/,'');
  return match[1]+new Intl.NumberFormat('vi-VN').format(BigInt(match[2]))+(fraction?','+fraction:'');
+}
+export function formatVndCurrency(value:string|null|undefined){
+ if(value==null)return '—';
+ try{return formatVnd(new Decimal(value).toDecimalPlaces(0,Decimal.ROUND_HALF_UP).toFixed(0));}
+ catch{return value;}
 }
 export function formatQuantity(value:string|null|undefined){return formatVnd(value);}
 export function moneyInputValue(value:string){if(!value)return '';const [whole,fraction]=value.split('.');return formatVnd(whole)+(value.includes('.')?','+fraction:'');}

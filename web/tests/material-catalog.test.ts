@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {database,asUser,identities} from './database-fixture';
 import {buildMaterialImport,type MaterialImportRow} from '../lib/deploy/material-import';
-import {formatVnd,moneyInputValue,parseMoneyInput} from '../lib/format';
+import {formatVnd,formatVndCurrency,moneyInputValue,parseMoneyInput} from '../lib/format';
 const hash='a'.repeat(64),day='2026-11-17';
 const rows:MaterialImportRow[]=[{position:1,code:'TEST-A',name:'Vật tư kiểm tra',category:'ingredient',unit:'kg',amount:'16000',minimum:'0',reference:null,specification:'1 kg = 1.000 g'},{position:2,code:'ĐV',name:'Mã có dấu',category:'packaging',unit:'túi',amount:'0',minimum:null,reference:'1',specification:'Theo đơn vị danh mục'},{position:3,code:'DV',name:'Mã không dấu',category:'ingredient',unit:'kg',amount:null,minimum:'1.5',reference:null,specification:'1 kg = 1.000 g'}];
 
@@ -44,6 +44,19 @@ test('material save atomically versions prices, rejects stale/null versions and 
  }finally{await db.close();}
 });
 
+test('material table accepts a new item with a price and minimum in the selected purchase unit',async()=>{
+ const db=await database();try{
+  await db.exec(buildMaterialImport(rows,hash,day));
+  const unit=(await db.query<{id:string}>("select id from material_units where code='kg'")).rows[0];
+  assert.ok(unit,'Fixture requires the kg unit');
+  const input={code:'TEST-NEW-BI',name:'Test danh muc vat tu',category:'ingredient',purchase_unit_id:unit.id,basis_unit_id:unit.id,minimum_quantity:'1',specification:'',price_amount:'11'};
+  const result=await asUser(db,identities.admin,()=>db.query<{result:{id:string}}>('select save_material_table($1,$2,$3,$4) result',[null,null,input,crypto.randomUUID()]));
+  const id=result.rows[0].result.id;
+  const saved=(await db.query<{purchase_unit_id:string;usage_unit_id:string;amount:string;verification:string;basis_unit_id:string}>('select m.purchase_unit_id,m.usage_unit_id,r.amount::text,r.verification,r.basis_unit_id from materials m join material_resolutions r on r.material_id=m.id where m.id=$1',[id])).rows[0];
+  assert.equal(saved.purchase_unit_id,unit.id);assert.equal(saved.usage_unit_id,unit.id);assert.equal(saved.amount,'11.000000');assert.equal(saved.basis_unit_id,unit.id);assert.equal(saved.verification,'needs_verification');
+ }finally{await db.close();}
+});
+
 test('material API uses live permissions, hides ledger values without inventory scope, and failed imports roll back',async()=>{
  const db=await database();try{
   await db.exec(buildMaterialImport(rows,hash,day));
@@ -70,6 +83,8 @@ test('Vietnamese money presentation remains exact for bigint/decimal amounts and
  assert.equal(formatVnd('9007199254740993'),'9.007.199.254.740.993');
  assert.equal(formatVnd('16000.000000'),'16.000');assert.equal(formatVnd('0'),'0');assert.equal(formatVnd(null),'—');
  assert.equal(formatVnd('16000.125000'),'16.000,125');assert.equal(formatVnd('-0.5'),'-0,5');
+ assert.equal(formatVndCurrency('260000000.00000000006'),'260.000.000');
+ assert.equal(formatVndCurrency('12.5'),'13');assert.equal(formatVndCurrency('-12.5'),'-13');
  assert.equal(moneyInputValue('260000.50'),'260.000,50');assert.equal(parseMoneyInput('260.000,50 đ'),'260000.50');
  assert.equal(parseMoneyInput(''),'');assert.equal(parseMoneyInput('1.000'),'1000');assert.equal(parseMoneyInput('-1'),null);
 });

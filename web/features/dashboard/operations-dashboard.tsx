@@ -4,7 +4,7 @@ import {useMemo,useState} from 'react';
 import {useQuery} from '@tanstack/react-query';
 import Decimal from 'decimal.js';
 import {browserSupabase} from '@/lib/supabase/browser';
-import {formatVnd} from '@/lib/format';
+import {formatVndCurrency} from '@/lib/format';
 import {ToastNotice} from '@/components/feedback';
 
 type Day={date:string;net_revenue_vnd:string|null;revenue_yesterday_vnd:string|null;received_vnd:string|null;produced:string|null;production_hours:string|null;cash_balance_vnd:string|null;food_cost_vnd:string|null;production_labor_estimate_vnd:string|null;office_expense_vnd:string|null;fixed_expense_vnd:string|null;marketing_expense_vnd:string|null;recovery_expense_vnd:string|null;other_expense_vnd:string|null;depreciation_vnd:string|null;revenue_target_daily_vnd:string|null;targets:Record<string,string>;inventory_low_count:number|null;inventory_unknown_count:number|null;completeness:string};
@@ -13,7 +13,7 @@ type Mode='day'|'week'|'month'|'quarter'|'year';
 const dateText=(d:Date)=>d.toISOString().slice(0,10);
 const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh'}).format(new Date());
 const shift=(date:string,n:number)=>{const d=new Date(`${date}T00:00:00Z`);d.setUTCDate(d.getUTCDate()+n);return dateText(d);};
-const money=(v:string|null|undefined)=>v==null?'Chưa có dữ liệu':`${formatVnd(v)} đ`;
+const money=(v:string|null|undefined)=>v==null?'Chưa có dữ liệu':`${formatVndCurrency(v)} đ`;
 const sum=(days:Day[],key:keyof Day)=>{const values=days.map(d=>d[key] as string|null).filter((v):v is string=>v!=null);return values.length?values.reduce((a,v)=>new Decimal(a).plus(v).toString(),'0'):null;};
 const shown=(v:string|null)=>v==null?'Chưa có dữ liệu':money(v);
 const fmtDate=(d:string)=>d.split('-').reverse().join('/');
