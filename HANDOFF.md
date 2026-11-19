@@ -743,6 +743,10 @@ When `admin-invite` list invocation fails, the employee account panel previously
 
 Evidence: inspected `web/features/admin/accounts.tsx`; the query calls `admin-invite` with `action: list`, and the toast is a generic wrapper for any Edge Function invocation error. The source Edge Function exists; historical audit notes record an OPTIONS 404, but I could not verify the current DEV endpoint because this workspace has no configured Supabase URL. No tests run. No Edge Function deployment or cloud changes made; the list still requires the DEV function to respond successfully.
 
+## 19/11/2026 — Điều tra danh sách tài khoản Admin chưa tải được (KH-10)
+
+So sánh lịch sử xác nhận giao diện cũ tải danh sách trực tiếp từ `profiles` qua RLS, còn bản mới làm toàn bộ danh sách phụ thuộc `admin-invite` để lấy thêm email/Auth. Đây là hồi quy ở client: Edge Function lỗi làm ẩn cả các hồ sơ có sẵn. Đã khôi phục truy vấn `profiles`, `user_roles`, `role_permissions` trực tiếp làm nguồn chính; `admin-invite` chỉ làm giàu email/trạng thái Auth. Nếu Edge Function lỗi, hồ sơ và quyền vẫn hiện; email/trạng thái xác nhận báo chưa tải được. Evidence: `npm run typecheck`, `npm run lint`, `git diff --check` đạt. Chưa chạy test suite, chưa probe lại endpoint live, chưa deploy/commit/push; sửa UI cần được đưa lên Vercel để có hiệu lực trên trang đang mở.
+
 ## 19/11/2026 — Connect business strategy to saved operating data (KH-05/06/07/08/10)
 
 Replaced the strategy page's static reference panel with a live dashboard backed by `dashboard_period_summary`: date/week/month/quarter/year selection, current and prior equal-length periods, posted net sales, posted receipts, daily revenue/target chart, recorded ingredient cost and production-labor ratios, and a daily source table. Missing profit and cancellation rates remain explicitly unavailable because current summary sources do not establish complete cost coverage or confirmed cancellation denominators. Production totals are withheld when units cannot be confirmed consistent. Main executive dashboard financial values now use VND half-up rounding, including revenue change and estimated profit; estimated profit arithmetic uses Decimal.
@@ -754,3 +758,10 @@ Evidence: `npm run typecheck` passed; `npm run lint` passed; `git diff --check` 
 Mở rộng `/app/strategy` thành lưới biểu đồ theo mẫu: đường xu hướng doanh thu 12 tháng, khung hòa vốn, xếp hạng điểm bán theo doanh thu, trạng thái tỷ lệ hủy chưa đủ nguồn, xếp hạng doanh thu theo món, donut tỷ trọng các nhóm chi phí đã có chứng từ, cột doanh thu/chi phí đã ghi nhận 12 tháng và mô phỏng doanh thu gộp theo giả định do người dùng nhập. Thêm RPC chỉ đọc `strategy_sales_breakdown` và migration `202611190045_strategy_sales_breakdown.sql` để tổng hợp doanh thu thuần theo điểm bán/món trong kỳ, chỉ trên phiếu posted; tên điểm bán/món theo quyền đọc tương ứng. Lượng trả vẫn riêng, không được gọi là hủy. Không tạo số lãi, điểm hòa vốn hoặc tỷ lệ chi phí trên 100đ doanh thu khi thiếu đầy đủ cơ sở; mô phỏng không thay đổi dữ liệu và không trừ giá vốn/chi phí.
 
 Evidence cục bộ: `npm run db:types` thực thi toàn bộ 94 migration và sinh kiểu từ 69 RPC, gồm RPC mới; `npm run typecheck`, `npm run lint` và `git diff --check` đạt. `npm run build` chưa chạy qua do Windows trả `spawn EPERM` ở bước Next tạo tiến trình. Chưa chạy test suite, chưa áp migration lên Supabase/DEV và chưa kiểm tra UAT dữ liệu thật. Cần áp migration 045 lên DEV trước khi biểu đồ điểm bán/món hoạt động ở môi trường đó; các chart lãi/hòa vốn/hủy còn chờ nguồn nghiệp vụ đầy đủ.
+
+
+## 20/11/2026 - Simplify inventory movement form (KH-01/KH-10)
+
+Removed the required source/document/reason textbox from the quick receipt and issue dialog. The posting RPC still receives an automatically generated movement label and business date; user, timestamp, material, quantity, permission checks, idempotency and the immutable inventory ledger remain intact. Stock count behavior is unchanged.
+
+Evidence: `npm run typecheck`, `npm run lint`, and `git diff --check` passed. No test suite run. No database changes, commit, push or deployment performed.
