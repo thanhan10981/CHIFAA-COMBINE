@@ -20,6 +20,17 @@ test('same-kind child recipes can be linked and recipe revisions do not require 
  const source=(await db.query<{source_data:{evidence:string|null;audit_source:string}}>("select source_data from private.catalog_sources where entity_id=$1",[parent.version_id])).rows[0].source_data;
  assert.equal(source.evidence,null);assert.equal(source.audit_source,'recipe_editor');
 });
+test('saving a repaired child recipe refreshes editable parent links and makes parent cost current',async()=>{
+ const child=await save('R-CAT-CHILD-REFRESH',[item]);
+ await db.query("insert into recipe_unresolved_items(recipe_version_id,label,quantity,unit_label,issue,sort_order) values($1,'Unknown source',1,'g','Missing source code',2)",[child.version_id]);
+ const parent=await save('R-CAT-PARENT-REFRESH',[{material_id:null,child_version_id:child.version_id,quantity:'1',unit_id:portion}]);
+ assert.equal((await call('recipe_cost',[parent.version_id,'2','2026-11-17'])).complete,false);
+ const repaired=await save('R-CAT-CHILD-REFRESH',[item],child.recipe_id as string,'1','2026-11-18');
+ const linked=(await db.query<{child_version_id:string}>('select child_version_id from recipe_items where recipe_version_id=$1',[parent.version_id])).rows[0];
+ assert.equal(linked.child_version_id,repaired.version_id);
+ assert.equal((await call('recipe_cost',[parent.version_id,'2','2026-11-18'])).complete,true);
+ assert.equal((await db.query('select * from recipe_unresolved_items where recipe_version_id=$1',[child.version_id])).rows.length,1);
+});
 test('unresolved imported quantities remain visible and block official BOM/publication without zero replacement',async()=>{
  const row=await save('R-CAT-REVIEW');await db.query("insert into recipe_unresolved_items(recipe_version_id,label,quantity,unit_label,issue,sort_order) values($1,'Unknown source',617,'phần','Source quantity contradicts its label',2)",[row.version_id]);
  const detail=await call('recipe_detail',[row.version_id,'2026-11-17']);assert.equal((detail.lines as unknown[]).length,2);assert.equal((detail.cost as {complete:boolean;total_vnd:null}).complete,false);assert.equal((detail.cost as {total_vnd:null}).total_vnd,null);

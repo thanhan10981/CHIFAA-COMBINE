@@ -1,3 +1,9 @@
+## 19/11/2026 — Công thức cha nháp theo phiên bản con mới nhất (KH-01/10/11)
+
+Đã tìm nguyên nhân cảnh báo kéo dài: `recipe_items.child_version_id` cố định vào bản con cũ dù bản sửa mới đã đủ dữ liệu. Migration `202611190038_recipe_child_links_follow_latest_draft.sql` chuyển liên kết của công thức cha còn nháp sang phiên bản con vừa lưu nếu đơn vị đầu ra còn khớp, đồng thời ghi audit `recipe:link-refresh`. Công thức đã công bố và snapshot sản xuất giữ nguyên tham chiếu. Giao diện bỏ bộ chọn phiên bản cũ để luôn mở bản hiệu lực mới nhất.
+
+Bằng chứng local: typecheck, lint, 122/122 tests, build và `git diff --check` đạt. Ca kiểm thử xác nhận sửa công thức con lỗi thành đủ dữ liệu làm mới liên kết cha nháp và cost tính lại; bản con cũ giữ nguyên dữ liệu chưa rõ. Chưa áp migration lên cloud DEV/production và chưa xác nhận UAT.
+
 ## 19/11/2026 — Làm mới ngay phiên bản công thức sau khi sửa (KH-01/10)
 
 Recipe RPC trả về `version_id` mới, nhưng giao diện trước đây chỉ chọn `recipe_id` rồi xóa lựa chọn phiên bản. Cache có thể tiếp tục hiển thị phiên bản cũ sau toast thành công. Form nay trả cả `recipe_id` và `version_id`; workspace chuyển thẳng sang phiên bản vừa lưu và làm mới chi tiết. Bằng chứng local: typecheck, lint, 121/121 tests, production build đạt. Không ghi cloud DB. Chưa xác minh trên Supabase authenticated UAT.
