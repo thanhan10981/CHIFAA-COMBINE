@@ -31,6 +31,8 @@ Migration `202611170027_recipe_catalog.sql` nâng hệ thống lên84 bảng pub
 
 Root cost được tính sau gộp vật tư và làm tròn từng dòng vật tư tại database. Dòng công thức con là chi tiết tham khảo; cộng các dòng đã làm tròn ở từng tầng có thể lệch so với tổng BOM gộp, vì vậy tổng chính thức luôn lấy từ cùng RPC `recipe_cost`.
 
+Với dòng thành phần được chủ động đánh dấu `cost_exempt`, chỉ cost của dòng đó (hoặc toàn bộ nhánh công thức con) được tính là 0 trong phiên bản công thức tương ứng. Định lượng và đơn vị vẫn được giữ khi bung BOM, tính nhu cầu và ghi snapshot sản xuất; giá dùng chung của vật tư không bị sửa hoặc xác minh. Mặc định dòng vẫn tính giá như trước. Khi cùng vật tư xuất hiện ở cả dòng miễn cost và dòng tính cost, đơn giá gộp là trung bình gia quyền theo định lượng để tổng cost không bị đội lên.
+
 ## Nhập nguồn riêng tư
 
 Nguồn trong lượt này là `Pasted text.txt` sao chép sheet Excel, không phải workbook XLSX mới. Không sửa hai workbook gốc. Parser giữ toàn bộ hàng/cột thô, số tham khảo và các dòng mâu thuẫn trong vùng riêng tư.

@@ -4,8 +4,9 @@ export async function checkMaterialTable(page,base,out,report){
  for(const width of [320,390,768,1024,1440,1920]){
   await page.setViewportSize({width,height:900});await page.goto(base+'/app/materials');
   await page.locator('.material-row-actions').first().waitFor();
-  for(const actions of await page.locator('.material-row-actions').all()){
-   if(await actions.getByRole('button').count()!==1||await actions.innerText()!=='Sửa')throw new Error('Row must have just Edit');
+  for(const [index,actions] of (await page.locator('.material-row-actions').all()).entries()){
+   const expected=index===5?2:1;
+   if(await actions.getByRole('button').count()!==expected||!(await actions.innerText()).includes('Sửa')||(index===5&&!(await actions.innerText()).includes('Xác minh giá')))throw new Error('Pending-price row must expose direct verification action');
   }
   if(await page.locator('.material-table').getByText(/Cần xác minh|Cần đối chiếu/).count())throw new Error('Review warnings remain');
   const firstWarnings=await page.locator('.material-table tbody tr').first().locator('td').nth(9).innerText();
@@ -26,7 +27,7 @@ export async function checkMaterialTable(page,base,out,report){
   if([390,1440].includes(width))await page.screenshot({path:path.join(out,'edit-'+width+'.png')});
   await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();
   if(width===1440)await page.screenshot({path:path.join(out,'table-1440.png')});
-  report.checks.push('material table/editor '+width+': single Edit, column fields, blank warnings, editable resolved price, stock read-only, no overflow');
+  report.checks.push('material table/editor '+width+': direct verification action on pending price, column fields, blank warnings, editable resolved price, stock read-only, no overflow');
  }
  await page.setViewportSize({width:1440,height:900});await page.goto(base+'/app/materials');
  await page.getByRole('button',{name:'Cài đặt quy đổi',exact:true}).click();
@@ -38,6 +39,11 @@ export async function checkMaterialTable(page,base,out,report){
  await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();
  report.checks.push('material settings show current values without a history section');
  const requests=[];
+ await page.locator('.material-row-actions').nth(5).getByRole('button',{name:'Xác minh giá',exact:true}).click();
+ const reviewDialog=page.getByRole('dialog');await reviewDialog.waitFor();
+ if(!(await reviewDialog.innerText()).includes('CHỜ XÁC MINH')||!await reviewDialog.getByRole('button',{name:'Lưu phiên bản xác minh',exact:true}).isVisible())throw new Error('Direct verification action did not open the price verification form');
+ await reviewDialog.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();
+ report.checks.push('pending price opens verification dialog directly from its material row');
  await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/save_material_table',async route=>{
   requests.push(route.request().postDataJSON());
   await route.fulfill({status:requests.length===1?503:200,contentType:'application/json',body:requests.length===1?'{}':'{"id":"material-1","version":"2"}'});

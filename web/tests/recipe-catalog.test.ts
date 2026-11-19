@@ -20,6 +20,18 @@ test('same-kind child recipes can be linked and recipe revisions do not require 
  const source=(await db.query<{source_data:{evidence:string|null;audit_source:string}}>("select source_data from private.catalog_sources where entity_id=$1",[parent.version_id])).rows[0].source_data;
  assert.equal(source.evidence,null);assert.equal(source.audit_source,'recipe_editor');
 });
+test('explicit recipe-line cost exemption completes cost without removing the ingredient from BOM quantity',async()=>{
+ const unpriced=randomUUID();await db.query("insert into materials(id,code,name,purchase_unit_id,usage_unit_id) values($1,'R-CAT-FREE','Synthetic free ingredient',$2,$2)",[unpriced,kg]);
+ const row=await save('R-CAT-COST-EXEMPT',[{material_id:unpriced,child_version_id:null,quantity:'300',unit_id:g,cost_exempt:true}]);
+ const cost=await call('recipe_cost',[row.version_id,'2','2026-11-17']);assert.equal(cost.complete,true);assert.equal(cost.total_vnd,'0');
+ const bom=await asUser(db,identities.admin,()=>db.query<{quantity:string}>('select quantity::text from public.recipe_bom($1,2,$2)',[row.version_id,'2026-11-17']));assert.equal(bom.rows[0].quantity,'0.300000000000000000000000000000000000');
+ const detail=await call('recipe_detail',[row.version_id,'2026-11-17']);assert.equal((detail.lines as Record<string,unknown>[])[0].cost_exempt,true);
+});
+test('mixed exempt and cost-bearing quantities of the same material keep the aggregate total exact',async()=>{
+ const row=await save('R-CAT-COST-MIXED',[{...item,cost_exempt:true},{...item,cost_exempt:false}]);
+ const cost=await call('recipe_cost',[row.version_id,'2','2026-11-17']);assert.equal(cost.complete,true);assert.equal(cost.total_vnd,'2000');
+ const bom=await asUser(db,identities.admin,()=>db.query<{quantity:string;unit_cost:string}>('select quantity::text,unit_cost::text from public.recipe_bom($1,2,$2)',[row.version_id,'2026-11-17']));assert.equal(bom.rows[0].quantity,'0.400000000000000000000000000000000000');assert.equal(Number(bom.rows[0].unit_cost),5000);
+});
 test('saving a repaired child recipe refreshes editable parent links and makes parent cost current',async()=>{
  const child=await save('R-CAT-CHILD-REFRESH',[item]);
  await db.query("insert into recipe_unresolved_items(recipe_version_id,label,quantity,unit_label,issue,sort_order) values($1,'Unknown source',1,'g','Missing source code',2)",[child.version_id]);

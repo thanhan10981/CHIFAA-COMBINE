@@ -17,3 +17,5 @@
 .material-dialog>header{margin:0 0 20px;padding:0 0 16px}
 .material-dialog .material-dialog-actions{margin:20px 0 0;padding:16px 0 0}
 .material-review-dialog>header{top:0}
+
+.material-price-status{display:block;margin-top:2px;font-size:9px;font-weight:600}.material-price-status.pending{color:#b45309}.material-price-status.verified{color:#16804a}.workspace .material-verify-button{border-color:#f4c89a;color:#a44b10}.workspace .material-verify-button:disabled{opacity:.55;cursor:not-allowed}
