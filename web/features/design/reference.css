@@ -345,3 +345,15 @@
 @media(max-width:1330px){.workspace .stg-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:1060px){.workspace .stg-grid{grid-template-columns:1fr}.workspace .stg-donut-row{grid-template-columns:minmax(150px,40%) minmax(0,1fr)}}@media(max-width:650px){.workspace .stg-title{padding:19px}.workspace .stg-title h2{font-size:21px}.workspace .stg-filters{padding:12px}.workspace .stg-filters>div{width:100%}.workspace .stg-source-switch .stg-switch,.workspace .stg-period-switch .stg-switch{display:flex;justify-content:space-between}.workspace .stg-switch button{flex:1;font-size:11px;padding:8px 5px}.workspace .stg-datebox>div input{max-width:none;flex:1}.workspace .stg-kpis{gap:9px}.workspace .stg-kpi{padding:13px}.workspace .stg-kpi strong{font-size:19px}.workspace .stg-panel-top{padding:14px}.workspace .stg-panel-body{padding:12px}.workspace .stg-bar-row{grid-template-columns:minmax(100px,36%) minmax(35px,1fr) 55px;gap:6px}.workspace .stg-donut-row{grid-template-columns:1fr 1.1fr}.workspace .stg-donut-legend>div{grid-template-columns:9px 1fr 35px;font-size:9px}.workspace .stg-scenario-inputs{grid-template-columns:1fr 1fr}.workspace .stg-scenario-inputs label:last-child{grid-column:1/-1}.workspace .stg-result-grid strong{font-size:14px}}
 
 
+/* Executive dashboard live indicator and source-alert rows. */
+.workspace .v16-indicators,.workspace .v16-alerts{padding:4px 18px 14px}
+.workspace .v16-indicator,.workspace .v16-alert{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid #edf1f6}
+.workspace .v16-indicator:last-child,.workspace .v16-alert:last-child{border-bottom:0}
+.workspace .v16-indicator>div,.workspace .v16-alert>div{display:grid;gap:5px;min-width:0}
+.workspace .v16-indicator b,.workspace .v16-alert b{font-size:12px;color:#29445f}
+.workspace .v16-indicator small,.workspace .v16-alert p{margin:0;font-size:11px;color:#8293a4;line-height:1.5}
+.workspace .v16-indicator>div:last-child{justify-items:end;text-align:right}
+.workspace .v16-alert{align-items:flex-start}
+.workspace .v16-alert .v16-btn{flex-shrink:0;padding:7px 10px}
+.workspace .v16-ratio .v16-flag.bad{background:#ffe8e7;color:#bd3c3c}
+@media(max-width:490px){.workspace .v16-indicators,.workspace .v16-alerts{padding:4px 12px 12px}.workspace .v16-indicator,.workspace .v16-alert{gap:8px}}

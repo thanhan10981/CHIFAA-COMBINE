@@ -699,6 +699,14 @@ Follow-up to the owner's usability request (KH-01): grouped price and price basi
 
 Verify local typecheck, lint, 125 tests, material UI fixture at 320/390/768/1024/1440/1920 widths, and production build before closing. No cloud migration or deployment performed.
 
+## Executive dashboard connected to live modules - 2026-11-19
+
+KH-07/KH-08 and cross-module KH-01/02/05/06/09: expanded the day-view `dashboard_summary` RPC to read posted sales/receipts, cash balances only when all active accounts have confirmed opening balances, production output and ingredient issues, production attendance/pay snapshots, posted expense categories, depreciation, active targets and stock below minimum. The page now renders source-backed KPIs, target comparisons and actionable data alerts. Missing inputs remain unknown; labor is labeled estimated from saved attendance/pay snapshots, and preliminary profit is hidden until every cost group is available. Added PGlite regression coverage proving dashboard revenue and targets come from the source tables. No cloud migration or deployment performed.
+
+Evidence: `npm run typecheck`, `npm run lint`, `npm test` (128/128), `npm run build`, and `git diff --check` passed. Migration `202611190042_executive_dashboard_live_sources.sql` must be applied to the intended DEV database before the updated page can load the new RPC fields.
+
+Focused PGlite regression passed again after selecting the most recent active target period when periods overlap. Cloud migration/deployment remains pending.
+
 ## Material verification database basis fallback - 2026-11-19
 
 KH-01: address the server still returning `PRICE_BASIS_REQUIRED` after the UI supplied a price. New forward migration `202611190041_material_verification_defaults_basis_to_purchase.sql` makes `resolve_material` use the selected purchase unit only when the explicit price basis is missing; it keeps the entered amount, Admin permissions, version check, idempotency and immutable audit/history intact. Added a PGlite regression case for 12,000 VND with a missing basis and selected purchase unit. Cloud migration/deployment not performed; the migration must be applied to the intended DEV database before the live form can behave differently.
