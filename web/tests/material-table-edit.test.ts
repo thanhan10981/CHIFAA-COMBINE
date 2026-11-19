@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {database,asUser,identities} from './database-fixture';
 import {buildMaterialImport} from '../lib/deploy/material-import';
 import {materialMissingFields} from '../features/catalog/material-table';
-import type {MaterialRow} from '../features/catalog/material-types';
+import {ensurePriceBasis,type MaterialRow} from '../features/catalog/material-types';
 import {readFile} from 'node:fs/promises';
 import {buildMaterialTableUpdate} from '../lib/deploy/material-table-update';
 
@@ -71,4 +71,9 @@ test('catalog warnings describe empty columns only; zero and unverified filled v
  assert.deepEqual(materialMissingFields(row),[]);
  assert.deepEqual(materialMissingFields({...row,price_amount:null,minimum_quantity:null,stock_quantity:null,specification:'  '}),['Đơn giá','Tồn tối thiểu','Tồn hiện tại','Quy cách']);
  assert.deepEqual(materialMissingFields({...row,stock_quantity:null,stock_reference:'0'}),['Tồn hiện tại']);
+});
+test('retrying a saved material verification draft fills a missing price basis from the purchase unit',()=>{
+ const stale={purchase_unit_id:'bag-id',usage_unit_id:'piece-id',basis_unit_id:null,amount:'12000',verification:'verified'};
+ assert.deepEqual(ensurePriceBasis(stale,'bag-id'),{...stale,basis_unit_id:'bag-id'});
+ assert.deepEqual(ensurePriceBasis({...stale,basis_unit_id:'piece-id'},'bag-id'),{...stale,basis_unit_id:'piece-id'});
 });

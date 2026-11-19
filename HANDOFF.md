@@ -1,14 +1,20 @@
+## 19/11/2026 — Tự sửa và gửi lại cơ sở giá khi máy chủ báo thiếu (KH-01)
+
+Người dùng xác nhận form vẫn nhận `PRICE_BASIS_REQUIRED` dù đang hiện 12.000 đ/túi và 1 túi = 100 cái. Luồng lưu nay bổ sung đơn vị mua vào payload đã lưu khi bấm thử lại nếu payload cũ thiếu cơ sở giá; nếu RPC vẫn trả lỗi này, tự gửi lại một lần với đơn vị mua làm cơ sở, giữ nguyên idempotency key. Kiểm thử xác nhận request thử lại có cơ sở túi và cùng key; thêm kiểm thử helper với payload cũ thiếu cơ sở. Chưa có phiên trình duyệt/app kết nối môi trường của người dùng để kiểm tra request thật hoặc ghi dữ liệu cloud.
+
+Bằng chứng local: `npm run lint`, `npm run typecheck`, `npm test` (126/126), `npm run build`, `node scripts/design-check.mjs --materials` (fixture xác nhận lần RPC thử hai có cơ sở mua và cùng idempotency key), `git diff --check` đạt. Fixture dùng RPC giả, chưa xác minh request thật trên Supabase của người dùng.
+
 ## 19/11/2026 — Làm gọn hộp thoại cài đặt quy đổi vật tư (KH-01)
 
 Hộp thoại bước đầu chọn vật tư có bố cục gọn hơn: giảm chiều rộng ở trạng thái chưa chọn, thêm lời dẫn một bước, làm rõ nhãn chọn vật tư và tách giải thích quy đổi thành ghi chú dễ đọc. Không đổi nghiệp vụ, dữ liệu hoặc quyền. Fixture kiểm tra bước đầu và các trạng thái khác của danh mục vật tư ở sáu kích thước.
 
-Bằng chứng: `npm run lint`, `npm run typecheck`, `npm test` (125/125), `npm run build`, `node scripts/design-check.mjs --materials`, `git diff --check` đạt. Chưa commit/push.
+Bằng chứng: `npm run lint`, `npm run typecheck`, `npm test` (125/125), `npm run build`, `node scripts/design-check.mjs --materials`, `git diff --check` đạt. Đã commit/push trong `493f4ec`.
 
 ## 19/11/2026 — Tự lấy đơn vị mua làm cơ sở giá mặc định (KH-01)
 
 Sửa lỗi form xác minh báo thiếu đơn vị tính giá khi người dùng đã chọn đơn vị mua và nhập giá. Nếu ô cơ sở giá để trống, form tự dùng đơn vị mua (ví dụ: 12.000 đ/túi); người dùng vẫn chọn được cơ sở khác. Payload gửi RPC luôn có cơ sở giá khi xác minh đơn giá. Bổ sung fixture nhập giá và quy đổi 1 đơn vị mua = 100 đơn vị dùng, để trống cơ sở giá, rồi xác nhận payload tự gửi đơn vị mua; fixture chỉ bắt request, không ghi dữ liệu.
 
-Bằng chứng: `npm run lint`, `npm run typecheck`, `npm test` (125/125), `npm run build`, `node scripts/design-check.mjs --materials` (fixture qua 6 kích thước và xác nhận payload 1:100), `git diff --check` đạt. Không áp dữ liệu/SQL cloud, chưa commit/push.
+Bằng chứng: `npm run lint`, `npm run typecheck`, `npm test` (125/125), `npm run build`, `node scripts/design-check.mjs --materials` (fixture qua 6 kích thước và xác nhận payload 1:100), `git diff --check` đạt. Không áp dữ liệu/SQL cloud; đã commit/push trong `493f4ec`.
 
 ## 19/11/2026 — Làm rõ đơn vị mua, cơ sở giá và chiều quy đổi vật tư (KH-01)
 
