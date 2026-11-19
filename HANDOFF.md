@@ -649,3 +649,6 @@ Added authenticated owner-scoped requestStatus returning only journal state (no 
 ## MASTER M09 checkpoint - 2026-11-17
 
 273/273 local tests; syntax83/build pass. Financial completeness guards, request-local static configuration batching, visible-page sync60s/focus refresh and backup verification feedback. See docs/MASTER_M09_2026-11-17.md. Candidate built; verified DEV31 remains live until final source readback and rollout.
+## Recipe cost-exempt CI follow-up - 2026-11-19
+
+Fixed the standalone verify failure: the migration adds `recipe_items.cost_exempt`, so regenerated `web/lib/database/generated.ts` and included the new field. Related requirement: KH-01 (recipe BOM/cost). Validation: `npm run db:types`, typecheck, lint, 124/124 PostgreSQL tests and production build passed. CI's generated-file equality check will pass once this generated diff is committed. No cloud migration or deployment performed.
