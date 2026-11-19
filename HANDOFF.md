@@ -1,3 +1,15 @@
+## 19/11/2026 — Làm gọn hộp thoại cài đặt quy đổi vật tư (KH-01)
+
+Hộp thoại bước đầu chọn vật tư có bố cục gọn hơn: giảm chiều rộng ở trạng thái chưa chọn, thêm lời dẫn một bước, làm rõ nhãn chọn vật tư và tách giải thích quy đổi thành ghi chú dễ đọc. Không đổi nghiệp vụ, dữ liệu hoặc quyền. Fixture kiểm tra bước đầu và các trạng thái khác của danh mục vật tư ở sáu kích thước.
+
+Bằng chứng: `npm run lint`, `npm run typecheck`, `npm test` (125/125), `npm run build`, `node scripts/design-check.mjs --materials`, `git diff --check` đạt. Chưa commit/push.
+
+## 19/11/2026 — Tự lấy đơn vị mua làm cơ sở giá mặc định (KH-01)
+
+Sửa lỗi form xác minh báo thiếu đơn vị tính giá khi người dùng đã chọn đơn vị mua và nhập giá. Nếu ô cơ sở giá để trống, form tự dùng đơn vị mua (ví dụ: 12.000 đ/túi); người dùng vẫn chọn được cơ sở khác. Payload gửi RPC luôn có cơ sở giá khi xác minh đơn giá. Bổ sung fixture nhập giá và quy đổi 1 đơn vị mua = 100 đơn vị dùng, để trống cơ sở giá, rồi xác nhận payload tự gửi đơn vị mua; fixture chỉ bắt request, không ghi dữ liệu.
+
+Bằng chứng: `npm run lint`, `npm run typecheck`, `npm test` (125/125), `npm run build`, `node scripts/design-check.mjs --materials` (fixture qua 6 kích thước và xác nhận payload 1:100), `git diff --check` đạt. Không áp dữ liệu/SQL cloud, chưa commit/push.
+
 ## 19/11/2026 — Làm rõ đơn vị mua, cơ sở giá và chiều quy đổi vật tư (KH-01)
 
 Danh mục gọi rõ “Đơn vị mua/nhập” thay nhãn ĐVT, và “Giá này tính theo đơn vị” thay “Đơn vị tính giá”; bảng cũng ghi “Đơn vị mua”. Form xác minh giải thích quy đổi bao bì sang đơn vị dùng/kho, cho chọn cả hai đầu, nhập số lượng, và xem trước dạng `1 túi = … cái`. Không tự đặt tỷ lệ. Giữ nguyên các trường lưu và RPC hiện có.

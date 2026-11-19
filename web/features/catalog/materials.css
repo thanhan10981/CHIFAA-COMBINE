@@ -23,3 +23,15 @@
 .material-price-status{display:block;margin-top:2px;font-size:9px;font-weight:600}.material-price-status.pending{color:#b45309}.material-price-status.verified{color:#16804a}.workspace .material-verify-button{border-color:#f4c89a;color:#a44b10}.workspace .material-verify-button:disabled{opacity:.55;cursor:not-allowed}
 /* Plain-language notes for independent material units and conversion direction. */
 .material-unit-help{grid-column:1/-1;margin:0;padding:10px 12px;border-radius:8px;background:#f5f8fb;font-size:11px;line-height:1.6}.material-review-form .material-conversion-preview{font-weight:700;color:#385b7b}
+.material-settings-empty-dialog.chifaa-action-dialog{width:min(620px,100%);max-width:620px}
+.material-settings-start{display:grid;gap:18px;padding:4px 0 2px}
+.material-settings-lead{display:flex;align-items:center;gap:13px;padding:15px 16px;border:1px solid #f2dfd1;border-radius:13px;background:linear-gradient(110deg,#fff8f2,#fffdfb)}
+.material-settings-lead>span{display:grid;place-items:center;width:38px;height:38px;flex:0 0 38px;border-radius:12px;background:#fce9dc;color:#b9551d;font-size:12px;font-weight:700}
+.material-settings-lead strong{display:block;color:#293e53;font-size:13px;font-weight:700}
+.material-settings-lead p{margin:4px 0 0;color:#718397;font-size:11px;line-height:1.6}
+.material-settings-picker{display:grid;gap:8px;color:#536b80;font-size:11px;font-weight:600}
+.material-settings-picker select{min-height:48px;padding:0 14px;border-radius:11px;background-color:#fff;font-size:13px}
+.material-settings-hint{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid #e5edf3;border-radius:11px;background:#f7fafc}
+.material-settings-hint>span{display:grid;place-items:center;flex:0 0 20px;height:20px;border-radius:50%;background:#e4edf4;color:#52728a;font-size:12px;font-weight:700}
+.material-settings-hint p{margin:0;color:#718397;font-size:11px;line-height:1.7}
+@media(max-width:600px){.material-settings-start{gap:14px}.material-settings-lead{padding:13px}.material-settings-picker select{min-height:46px}}
