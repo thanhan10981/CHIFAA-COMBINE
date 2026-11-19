@@ -42,7 +42,8 @@ export async function checkMaterialTable(page,base,out,report){
  await page.locator('.material-row-actions').nth(5).getByRole('button',{name:'Xác minh giá',exact:true}).click();
  const reviewDialog=page.getByRole('dialog');await reviewDialog.waitFor();
  if(!(await reviewDialog.innerText()).includes('CHỜ XÁC MINH')||!await reviewDialog.getByRole('button',{name:'Lưu xác minh',exact:true}).isVisible())throw new Error('Direct verification action did not open the price verification form');
- if((await reviewDialog.innerText()).includes('Bằng chứng')||(await reviewDialog.locator('textarea').count())!==0||await reviewDialog.locator('.material-conversion-row').count()!==1||await reviewDialog.locator('input[type="checkbox"]').count()!==0)throw new Error('Material verification should use a compact conversion row without confirmation checkboxes or evidence fields');
+ if((await reviewDialog.innerText()).includes('Bằng chứng')||(await reviewDialog.locator('textarea').count())!==0||await reviewDialog.locator('.material-conversion-row').count()!==1||!((await reviewDialog.innerText()).includes('Quy đổi bao bì sang đơn vị dùng/kho')&&(await reviewDialog.innerText()).includes('chọn túi → cái hoặc bì → lá'))||await reviewDialog.locator('input[type="checkbox"]').count()!==0)throw new Error('Material verification should explain unit-conversion direction in a compact form');
+ await reviewDialog.getByLabel('Quy đổi từ đơn vị mua').selectOption('chai');await reviewDialog.getByLabel('Quy đổi ra đơn vị dùng/kho').selectOption('g');await reviewDialog.getByLabel('Số đơn vị dùng trong một đơn vị mua').fill('6');if(!(await reviewDialog.locator('.material-conversion-preview').innerText()).includes('1 chai = 6 g'))throw new Error('Material conversion preview should show the selected source, quantity and target');
  await reviewDialog.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();
  report.checks.push('pending price opens compact verification dialog with one-line conversion and no confirmation/evidence fields');
  await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/save_material_table',async route=>{
@@ -50,6 +51,7 @@ export async function checkMaterialTable(page,base,out,report){
   await route.fulfill({status:requests.length===1?503:200,contentType:'application/json',body:requests.length===1?'{}':'{"id":"material-1","version":"2"}'});
  });
  await page.locator('.material-row-actions').nth(1).getByRole('button',{name:'Sửa',exact:true}).click();
+ const editDialog=page.getByRole('dialog');if(!((await editDialog.innerText()).includes('Đơn vị mua/nhập *')&&(await editDialog.innerText()).includes('Giá này tính theo đơn vị')&&(await editDialog.innerText()).includes('12.000 đ/túi')))throw new Error('Material edit should distinguish purchase unit from price basis');
  await page.getByLabel('Đơn giá (đ)',{exact:true}).fill('180.000');
  await page.getByRole('button',{name:'Lưu vật tư',exact:true}).click();
  await page.getByRole('button',{name:'Kiểm tra lại lần gửi',exact:true}).click();

@@ -21,3 +21,5 @@
 .material-review-dialog>header{top:0}
 
 .material-price-status{display:block;margin-top:2px;font-size:9px;font-weight:600}.material-price-status.pending{color:#b45309}.material-price-status.verified{color:#16804a}.workspace .material-verify-button{border-color:#f4c89a;color:#a44b10}.workspace .material-verify-button:disabled{opacity:.55;cursor:not-allowed}
+/* Plain-language notes for independent material units and conversion direction. */
+.material-unit-help{grid-column:1/-1;margin:0;padding:10px 12px;border-radius:8px;background:#f5f8fb;font-size:11px;line-height:1.6}.material-review-form .material-conversion-preview{font-weight:700;color:#385b7b}

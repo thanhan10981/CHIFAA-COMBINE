@@ -1,3 +1,15 @@
+## 19/11/2026 — Làm rõ đơn vị mua, cơ sở giá và chiều quy đổi vật tư (KH-01)
+
+Danh mục gọi rõ “Đơn vị mua/nhập” thay nhãn ĐVT, và “Giá này tính theo đơn vị” thay “Đơn vị tính giá”; bảng cũng ghi “Đơn vị mua”. Form xác minh giải thích quy đổi bao bì sang đơn vị dùng/kho, cho chọn cả hai đầu, nhập số lượng, và xem trước dạng `1 túi = … cái`. Không tự đặt tỷ lệ. Giữ nguyên các trường lưu và RPC hiện có.
+
+Bằng chứng: `npm run typecheck`, `npm run lint`, `npm test` (125/125), `npm run build`, `node scripts/design-check.mjs --materials`, và `git diff --check` đạt. Không áp DB cloud, chưa commit/push.
+
+## 19/11/2026 — Căn hàng checkbox miễn tính giá trong công thức (KH-01/10)
+
+Checkbox “Không tính giá” của dòng thành phần bị thấp hơn các ô nhập do label flex có chiều cao nhỏ hơn các label chứa trường nhập trong grid căn đáy. Căn lại checkbox với hàng điều khiển ở desktop; bỏ dịch chuyển ở màn hình hẹp khi form chuyển sang nhiều hàng. Chỉ sửa CSS, không đổi dữ liệu hay nghiệp vụ.
+
+Bằng chứng: `npm run lint`, `npm run typecheck`, `npm test` (125/125), `npm run build`, và `git diff --check` đạt. `node scripts/design-check.mjs --recipes` dừng ở kiểm tra tràn ngang tại viewport 320px trước khi kiểm tra form; cần xử lý/đánh giá riêng. Chưa commit/push theo yêu cầu.
+
 ## 19/11/2026 — Rút gọn xác minh vật tư và nhập quy đổi (KH-01)
 
 Form xác minh vật tư được rút thành đơn vị mua/dùng, giá cùng cơ sở giá, quy đổi đóng gói một dòng “1 đơn vị = số lượng đơn vị nhỏ”, và ngày hiệu lực. Bỏ các checkbox xác nhận thủ công, ô vấn đề và bằng chứng; đơn giá được xác minh khi có số tiền và cơ sở giá, quy đổi khi có số lượng hợp lệ và hai đơn vị khác nhau. Để trống quy đổi thì không tạo tỷ lệ; vẫn giữ nguyên giá trị chưa xác minh khi còn thiếu dữ liệu.
