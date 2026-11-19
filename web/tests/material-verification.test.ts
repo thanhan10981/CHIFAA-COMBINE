@@ -68,6 +68,17 @@ test('Admin can confirm a zero-price material without entering evidence text',as
   assert.equal(Number(cost.usage_cost_vnd),0);assert.equal(cost.official_ready,true);
  }finally{await db.close();}
 });
+test('Admin verification defaults a missing price basis to the selected purchase unit',async()=>{
+ const db=await setup();try{
+  const m=(await db.query<{id:string;version:string}>("select * from materials where code='TEST-LEAF'")).rows[0];
+  const resolution=(await db.query<Record<string,unknown>>('select * from material_resolutions where material_id=$1',[m.id])).rows[0];
+  const purchase=resolution.purchase_unit_id as string;
+  const input={purchase_unit_id:purchase,usage_unit_id:resolution.usage_unit_id,basis_unit_id:null,amount:'12000',verification:'verified',package_unit_id:null,package_content_unit_id:null,package_quantity:null,package_verified:false,issue:''};
+  await asUser(db,identities.admin,()=>db.query('select resolve_material($1,$2,$3,$4,$5)',[m.id,m.version,'2026-11-18',input,crypto.randomUUID()]));
+  const saved=(await db.query<{basis_unit_id:string;amount:string}>('select basis_unit_id,amount::text from material_resolutions where material_id=$1 order by revision desc limit 1',[m.id])).rows[0];
+  assert.equal(saved.basis_unit_id,purchase);assert.equal(saved.amount,'12000.000000');
+ }finally{await db.close();}
+});
 test('reconciliation preserves posted stock units/costs and quarantines new unverified ledger costs',async()=>{
  const db=await database();try{
   await db.exec(buildMaterialImport(originals,'a'.repeat(64),day));

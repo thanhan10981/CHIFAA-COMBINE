@@ -698,3 +698,7 @@ Evidence: typecheck, lint, 125/125 tests, material UI fixture at 320/390/768/102
 Follow-up to the owner's usability request (KH-01): grouped price and price basis, reduced conversion to one compact `1 [unit] = [quantity] [unit]` row, and removed both confirmation checkboxes and the free-text issue field. Entering a price with its basis confirms price; entering a valid conversion ratio confirms the conversion. Empty values remain unverified. Quantity must be numeric and the two units must differ. Historical records remain immutable; no database schema or RPC changes in this UI follow-up.
 
 Verify local typecheck, lint, 125 tests, material UI fixture at 320/390/768/1024/1440/1920 widths, and production build before closing. No cloud migration or deployment performed.
+
+## Material verification database basis fallback - 2026-11-19
+
+KH-01: address the server still returning `PRICE_BASIS_REQUIRED` after the UI supplied a price. New forward migration `202611190041_material_verification_defaults_basis_to_purchase.sql` makes `resolve_material` use the selected purchase unit only when the explicit price basis is missing; it keeps the entered amount, Admin permissions, version check, idempotency and immutable audit/history intact. Added a PGlite regression case for 12,000 VND with a missing basis and selected purchase unit. Cloud migration/deployment not performed; the migration must be applied to the intended DEV database before the live form can behave differently.
