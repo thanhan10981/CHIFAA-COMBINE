@@ -56,6 +56,18 @@ test('Admin verification is versioned/idempotent, checks live authority and prot
   await assert.rejects(()=>run(identities.admin,m.version,crypto.randomUUID()),/VERSION_CONFLICT/);
  }finally{await db.close();}
 });
+test('Admin can confirm a zero-price material without entering evidence text',async()=>{
+ const db=await setup();try{
+  const m=(await db.query<{id:string;version:string}>("select * from materials where code='TEST-EGG'")).rows[0];
+  const resolution=(await db.query<Record<string,unknown>>('select * from material_resolutions where material_id=$1',[m.id])).rows[0];
+  const input={purchase_unit_id:resolution.purchase_unit_id,usage_unit_id:resolution.usage_unit_id,basis_unit_id:resolution.usage_unit_id,amount:'0',verification:'verified',package_unit_id:null,package_content_unit_id:null,package_quantity:null,package_verified:false,issue:''};
+  await asUser(db,identities.admin,()=>db.query('select resolve_material($1,$2,$3,$4,$5)',[m.id,m.version,'2026-11-18',input,crypto.randomUUID()]));
+  const saved=(await db.query<{amount:string;evidence:string}>('select amount::text,evidence from material_resolutions where material_id=$1 order by revision desc limit 1',[m.id])).rows[0];
+  assert.equal(saved.amount,'0.000000');assert.equal(saved.evidence,'');
+  const cost=(await asUser(db,identities.admin,()=>db.query<{cost:{usage_cost_vnd:string;official_ready:boolean}}>('select material_cost_basis($1,$2) cost',[m.id,'2026-11-18']))).rows[0].cost;
+  assert.equal(Number(cost.usage_cost_vnd),0);assert.equal(cost.official_ready,true);
+ }finally{await db.close();}
+});
 test('reconciliation preserves posted stock units/costs and quarantines new unverified ledger costs',async()=>{
  const db=await database();try{
   await db.exec(buildMaterialImport(originals,'a'.repeat(64),day));

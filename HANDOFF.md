@@ -652,3 +652,8 @@ Added authenticated owner-scoped requestStatus returning only journal state (no 
 ## Recipe cost-exempt CI follow-up - 2026-11-19
 
 Fixed the standalone verify failure: the migration adds `recipe_items.cost_exempt`, so regenerated `web/lib/database/generated.ts` and included the new field. Related requirement: KH-01 (recipe BOM/cost). Validation: `npm run db:types`, typecheck, lint, 124/124 PostgreSQL tests and production build passed. CI's generated-file equality check will pass once this generated diff is committed. No cloud migration or deployment performed.
+## Material verification without evidence text - 2026-11-19
+
+For KH-01 material/recipe cost workflow, removed the mandatory free-text evidence prompt from Admin material price verification. `resolve_material` still requires Admin/manage and materials/approve, keeps effective dating, idempotency, version checks, immutable resolution history and audit; missing evidence is stored as an empty optional field. Zero-price verification remains valid when a price basis unit is selected. The form now gives a specific correction when package conversion values are invalid (including matching package/content units or text in the numeric quantity field). Added migration `202611190040_material_verification_no_evidence.sql` and regression coverage.
+
+Evidence: typecheck, lint, 125/125 tests, material UI fixture at 320/390/768/1024/1440/1920 widths, production build passed. Cloud migration and deployment not performed; apply to intended DEV through release path before UAT.

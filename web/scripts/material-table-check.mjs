@@ -42,8 +42,9 @@ export async function checkMaterialTable(page,base,out,report){
  await page.locator('.material-row-actions').nth(5).getByRole('button',{name:'Xác minh giá',exact:true}).click();
  const reviewDialog=page.getByRole('dialog');await reviewDialog.waitFor();
  if(!(await reviewDialog.innerText()).includes('CHỜ XÁC MINH')||!await reviewDialog.getByRole('button',{name:'Lưu phiên bản xác minh',exact:true}).isVisible())throw new Error('Direct verification action did not open the price verification form');
+ if((await reviewDialog.innerText()).includes('Bằng chứng')||(await reviewDialog.locator('textarea').count())!==0)throw new Error('Admin verification should not require free-text evidence');
  await reviewDialog.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();
- report.checks.push('pending price opens verification dialog directly from its material row');
+ report.checks.push('pending price opens verification dialog directly without requiring evidence text');
  await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/save_material_table',async route=>{
   requests.push(route.request().postDataJSON());
   await route.fulfill({status:requests.length===1?503:200,contentType:'application/json',body:requests.length===1?'{}':'{"id":"material-1","version":"2"}'});
