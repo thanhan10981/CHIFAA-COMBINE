@@ -1,3 +1,9 @@
+## 2026-11-20 — Excel tồn kho (KH-01/09/10)
+
+- Bảng kho hiển thị giá nhập trung bình; xuất Excel toàn bộ tồn kèm mẫu cột nhập thêm.
+- Nhập `.xlsx` xem trước, cập nhật vật tư theo mã và chỉ cộng cột số lượng nhập thêm qua phiếu kho bất biến, idempotent; lịch sử hiển thị từng mặt hàng/tệp.
+- Xác minh local: db:types 95 bảng/73 RPC, typecheck, lint, 137/137 tests, build, inventory fixture 25 trang/kích thước và `git diff --check` đạt. Migration 049 chưa áp cloud/DEV.
+
 ## 2026-11-20 — Hiển thị điểm bán trong danh sách duyệt đơn (KH-05/10/12)
 
 - Thêm cột Điểm bán để thấy mã/tên điểm bán đã gắn; đơn từ cổng chung chưa gán hiện “Chưa gắn điểm bán”. Chi tiết đơn cũng hiện thông tin này.

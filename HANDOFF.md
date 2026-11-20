@@ -1,3 +1,13 @@
+## 20/11/2026 — Excel xuất tồn và nhập bổ sung từ file (KH-01/09/10)
+
+Ở Tồn kho, bảng có thêm giá nhập trung bình theo kho/ngày đang xem. Nút Xuất Excel tải toàn bộ vật tư theo quyền `inventory/export`; workbook có các cột mã, tên, nhóm, ĐVT chuẩn, tồn hiện tại, tối thiểu, giá trung bình, số lượng nhập thêm và giá nhập thêm. Trang Hướng dẫn trong workbook nói rõ tồn hiện tại/giá trung bình chỉ để xem, còn lượng nhập thêm là dữ liệu được ghi.
+
+Nhập Excel có bước xem trước, đọc file `.xlsx`, tối đa 200 mã một lần. Mã đã có cập nhật tên/nhóm/ĐVT chuẩn/mức tối thiểu theo quyền danh mục; mã mới tạo vật tư từ đơn vị chuẩn đã có. Chỉ cột Số lượng nhập thêm tạo lượng tồn; không ghi đè số dư hiện hữu. Mỗi lần có số lượng tạo một phiếu receipt bất biến có tên file trong ghi chú, nên lịch sử kho hiện đúng mã, lượng, giá, ngày và người ghi. RPC PostgreSQL giao dịch nguyên tử, kiểm tra đơn vị/mã trùng/kỳ mở/quyền, giữ idempotency khi retry; import sai không ghi dở dang. Thay đổi ĐVT có tồn hoặc công thức bị chặn theo quy tắc hiện tại.
+
+Liên kết nghiệp vụ: KH-01 và MASTER_SPEC 5.4 giữ sổ chuyển động kho làm nguồn chuẩn, tồn chưa có vẫn `NULL`, giá trung bình chỉ xác định khi mọi phiếu nhập trong kỳ có giá; KH-09/10 giữ lịch sử và chống gửi trùng. Không đổi workbook gốc hay giá tham chiếu/công thức đã xác minh.
+
+Bằng chứng cục bộ: `npm run db:types` (95 bảng/73 RPC), `npm run typecheck`, `npm run lint`, `npm test` (137/137), `npm run build`, `node scripts/design-check.mjs --inventory` (25 trang/kích thước 320–1440px, không tràn), `git diff --check`; test Excel xác nhận giữ mã có số 0 đầu, parse giá trị, cộng tồn, retry không nhân đôi, lưu lịch sử và rollback khi đơn vị sai. Chưa áp migration `202611200049_inventory_excel_import_export.sql` lên Supabase/DEV; cần áp theo release path và authenticated UAT trước khi dùng trên cloud. Không deploy/commit/push.
+
 ## 20/11/2026 — Hiển thị điểm bán trên hàng duyệt đơn (KH-05/10/12)
 
 Theo phản hồi từ ảnh màn hình: bảng duyệt trước chỉ ghi “đã gắn điểm bán” nhưng không cho biết điểm bán cụ thể. Thêm cột Điểm bán, hiển thị mã và tên thật của điểm bán đã gắn; đơn từ cổng chung chưa được gán hiện “Chưa gắn điểm bán”. Chi tiết đơn cũng nêu điểm bán. Không coi thông tin người gửi tự khai là danh tính điểm bán.

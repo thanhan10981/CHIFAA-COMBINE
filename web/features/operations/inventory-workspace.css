@@ -30,13 +30,13 @@
 .inventory-legend{display:flex;gap:14px;flex-wrap:wrap}.inventory-legend span{display:inline-flex;align-items:center;gap:5px}
 .inventory-legend span:nth-child(1){color:#158064}.inventory-legend span:nth-child(2){color:#bd6220}.inventory-legend span:nth-child(3){color:#366b9d}
 .workspace .inventory-workspace .table-wrap{overflow:auto;border:1px solid var(--border);border-radius:10px}
-.workspace .inventory-workspace .inventory-table{min-width:1020px;font-size:13px;width:100%;margin:0}
+.workspace .inventory-workspace .inventory-table{min-width:1160px;font-size:13px;width:100%;margin:0}
 .workspace .inventory-workspace .inventory-table th{font-size:11px;font-weight:600;padding:11px 12px;white-space:nowrap;background:#f5f7fa}
 .workspace .inventory-workspace .inventory-table td{padding:11px 12px;line-height:1.45;vertical-align:middle}
 .workspace .inventory-workspace .inventory-table td:first-child{min-width:175px}
 .workspace .inventory-workspace .inventory-table td:nth-child(2){white-space:nowrap;font-size:12px}
 .workspace .inventory-workspace .inventory-table td small{display:block;white-space:normal;overflow-wrap:anywhere;color:var(--muted);margin-top:3px;font-size:12px}
-.workspace .inventory-workspace .inventory-table:not(.inventory-history) td:nth-child(n+4):nth-child(-n+6),.workspace .inventory-workspace .inventory-table:not(.inventory-history) th:nth-child(n+4):nth-child(-n+6),.workspace .inventory-workspace .inventory-table:not(.inventory-history) td:nth-child(8),.workspace .inventory-workspace .inventory-table:not(.inventory-history) th:nth-child(8){text-align:right;font-variant-numeric:tabular-nums}
+.workspace .inventory-workspace .inventory-table:not(.inventory-history) td:nth-child(n+4):nth-child(-n+7),.workspace .inventory-workspace .inventory-table:not(.inventory-history) th:nth-child(n+4):nth-child(-n+7),.workspace .inventory-workspace .inventory-table:not(.inventory-history) td:nth-child(9),.workspace .inventory-workspace .inventory-table:not(.inventory-history) th:nth-child(9){text-align:right;font-variant-numeric:tabular-nums}
 .workspace .inventory-workspace .inventory-actions{display:flex;gap:5px;flex-wrap:nowrap}
 .workspace .inventory-workspace .button.inventory-action{width:34px;height:34px;min-height:34px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;flex-shrink:0}
 .workspace .inventory-workspace .action-receipt{color:#158064;background:#f0faf5;border-color:#d6ecdf}
@@ -64,3 +64,12 @@
 @media(max-width:700px){.workspace .inventory-workspace input,.workspace .inventory-workspace select,.workspace .chifaa-action-dialog.inventory-dialog input{font-size:16px}}
 
 .inventory-heading-links{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.workspace .inventory-workspace .page-heading{flex-wrap:wrap}
+.workspace .inventory-workspace .inventory-excel-button{font-size:12px;min-height:34px;padding:6px 9px;white-space:nowrap;color:var(--text);background:#fff}
+.workspace .inventory-workspace .inventory-excel-button:disabled{opacity:.5}
+.workspace .inventory-workspace .inventory-file-input{display:none}
+.workspace .inventory-workspace .inventory-import-history{margin:6px 0;font-size:13px}
+.workspace .modal.chifaa-action-dialog.inventory-import-dialog{width:min(100%,760px);max-width:760px}
+.workspace .inventory-import-preview{max-height:min(45vh,360px);overflow:auto}
+.workspace .inventory-import-preview .inventory-table{min-width:680px}
+.workspace .inventory-import-preview .muted{padding:0 12px 10px}
+@media(max-width:700px){.workspace .inventory-workspace .inventory-table-meta{flex-wrap:wrap}.workspace .inventory-workspace .inventory-legend{width:100%;align-items:center;gap:7px}.workspace .inventory-workspace .inventory-excel-button{font-size:11px;padding:6px}.workspace .inventory-workspace .inventory-legend>span{display:none}}
