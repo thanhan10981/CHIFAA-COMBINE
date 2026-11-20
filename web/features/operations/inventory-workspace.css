@@ -53,6 +53,8 @@
 .workspace .chifaa-action-dialog.inventory-dialog p{font-size:13px;line-height:1.6;margin:8px 0 12px;color:var(--muted)}
 .workspace .chifaa-action-dialog.inventory-dialog fieldset{display:grid;gap:14px}.workspace .chifaa-action-dialog.inventory-dialog label{display:grid;gap:6px;font-size:12px;font-weight:600}
 .workspace .chifaa-action-dialog.inventory-dialog input{min-height:42px;height:42px;font-size:14px;padding:9px 12px}
+.workspace .chifaa-action-dialog.inventory-dialog label small{font-size:11px;font-weight:400;line-height:1.45;color:var(--muted)}
+.workspace .inventory-history-link{display:block;margin-top:4px;font-size:11px;font-weight:600;color:var(--accent)}
 .workspace .chifaa-action-dialog.inventory-dialog .toolbar{display:flex;justify-content:flex-end;gap:8px;margin:20px 0 0;padding:14px 0 0;border-top:1px solid var(--border)}
 .workspace .chifaa-action-dialog.inventory-dialog .button{min-height:38px;font-size:13px;padding:8px 14px}
 @media(max-width:1100px){.workspace .inventory-workspace .inventory-scope .form-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.workspace .inventory-workspace .inventory-refresh{grid-column:3;justify-self:end}.workspace .inventory-workspace .stat{padding:4px 10px}}

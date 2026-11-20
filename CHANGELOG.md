@@ -1,3 +1,9 @@
+## 2026-11-20 — Receipt-level inventory pricing and correction (KH-01/09/10)
+
+- Receipt entry now stores its own unit price and quantity; unit cost is normalized to the standard inventory unit when a verified conversion is used. The material catalog displays the quantity-weighted average of priced receipts separately from the verified recipe/reference price. Inventory history shows each receipt's date, quantity, unit price and line value.
+- Users with inventory edit/create rights can correct a posted receipt from history with a reason. A linked reversal and replacement preserve the original ledger row, with audit, optimistic version checks and idempotent retry.
+- Local validation passed: 95 migrated tables/70 RPCs generated; typecheck, lint, build, 131 tests, inventory UI fixture at 320/390/768/1024/1440px, and `git diff --check`. Migration 046 was not applied to Supabase/DEV; no deploy or authenticated cloud UAT.
+
 ## 2026-11-19 — Công thức cha nháp theo phiên bản con mới nhất (KH-01/10/11)
 
 Đã tìm nguyên nhân cảnh báo kéo dài: `recipe_items.child_version_id` cố định vào bản con cũ dù bản sửa mới đã đủ dữ liệu. Migration `202611190038_recipe_child_links_follow_latest_draft.sql` chuyển liên kết của công thức cha còn nháp sang phiên bản con vừa lưu nếu đơn vị đầu ra còn khớp, đồng thời ghi audit `recipe:link-refresh`. Công thức đã công bố và snapshot sản xuất giữ nguyên tham chiếu. Giao diện bỏ bộ chọn phiên bản cũ để luôn mở bản hiệu lực mới nhất.

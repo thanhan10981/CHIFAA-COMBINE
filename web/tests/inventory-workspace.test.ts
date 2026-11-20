@@ -5,7 +5,7 @@ import fs from 'node:fs/promises';
 import type {PGlite} from '@electric-sql/pglite';
 import {database,asUser,identities} from './database-fixture';
 import {buildInventoryUpdate} from '../lib/deploy/inventory-update';
-let db:PGlite;const kg=randomUUID(),warehouse=randomUUID(),other=randomUUID(),mat=randomUUID(),zero=randomUUID(),missing=randomUUID(),product=randomUUID();
+let db:PGlite;const kg=randomUUID(),warehouse=randomUUID(),other=randomUUID(),mat=randomUUID(),priced=randomUUID(),zero=randomUUID(),missing=randomUUID(),product=randomUUID();
 type Row={id:string;quantity:string|null;needed:string|null;suggested:string|null;status:string};
 const rpc=async<T=Record<string,unknown>>(name:string,args:unknown[],user=identities.admin)=>(await asUser(db,user,()=>db.query<{r:T}>(`select public.${name}(${args.map((_,i)=>'$'+(i+1)).join(',')}) r`,args))).rows[0].r;
 const read=(scope=warehouse,status='all',search='')=>rpc<{rows:Row[];total:number;needs_complete:boolean}>('inventory_workspace',[scope,'2026-11-18','2026-11-19',search,'',status,0]);
@@ -33,6 +33,28 @@ test('KH-09 receipts add once under retry, issues reject negative closing, histo
  assert.equal(Number((await read()).rows.find(r=>r.id===mat)?.quantity),11.5);
  await assert.rejects(()=>rpc('post_inventory',[warehouse,'2026-11-18','issue',[{material_id:mat,unit_id:kg,quantity:'-12'}],'Synthetic overdraw',randomUUID()]),/INSUFFICIENT_STOCK/);
  const history=await rpc<{quantity:string;note:string;created_by:string}[]>('inventory_history',[warehouse,'2026-11-18',mat,0]);assert.equal(history.length,3);assert.ok(history.every(r=>r.created_by===identities.admin));assert.ok(history.some(r=>r.quantity==='-1.000000'));
+});
+test('receipt prices stay on each dated posting and the catalogue uses quantity-weighted receipt average',async()=>{
+ await db.query("insert into materials(id,code,name,usage_unit_id) values($1,'INV-COST','Synthetic priced material',$2)",[priced,kg]);
+ await db.query("insert into material_prices(material_id,basis_unit_id,amount,effective_from,verification) values($1,$2,12000,'2026-11-01','verified')",[priced,kg]);
+ const firstKey=randomUUID(),first=[warehouse,'2026-11-17','receipt',[{material_id:priced,unit_id:kg,quantity:'2',unit_cost:'3000'}],'First priced purchase',firstKey];
+ await rpc('post_inventory',first);await rpc('post_inventory',first);
+ await rpc('post_inventory',[warehouse,'2026-11-18','receipt',[{material_id:priced,unit_id:kg,quantity:'1',unit_cost:'6000'}],'Second priced purchase',randomUUID()]);
+ let catalog=await rpc<{rows:{id:string;stock_quantity:string|null;stock_average_unit_cost:string|null;stock_receipt_count:string|null;stock_unpriced_receipt_count:string|null;price_amount:string|null}[]}>('material_catalog',['2026-11-18','','',0,100]);
+ let item=catalog.rows.find(row=>row.id===priced)!;assert.equal(item.stock_quantity,'3.000000');assert.equal(item.stock_average_unit_cost,'4000.000000');assert.equal(item.stock_receipt_count,'2');assert.equal(item.stock_unpriced_receipt_count,'0');assert.equal(item.price_amount,'12000.000000');
+ const history=await rpc<{id:string;line_id:string;movement_version:string;line_version:string;moved_on:string;quantity:string;unit_cost:string|null;line_value:string|null;unit_cost_source:string}[]>('inventory_history',[warehouse,'2026-11-18',priced,0]);
+ assert.equal(history.length,2);assert.equal(history[0].moved_on,'2026-11-18');assert.equal(history[0].unit_cost,'6000.000000');assert.equal(history[0].line_value,'6000.000000');assert.equal(history[0].unit_cost_source,'receipt_input');assert.equal(history[1].unit_cost,'3000.000000');assert.equal(history[1].line_value,'6000.000000');
+ const original=history.find(row=>row.moved_on==='2026-11-17')!,key=randomUUID(),args=[original.id,original.line_id,original.movement_version,original.line_version,'3','2500','Correct receipt price and quantity',key];
+ const correction=await rpc<{original_movement_id:string;reversal_movement_id:string;replacement_movement_id:string}>('correct_inventory_receipt',args);const retry=await rpc<{replacement_movement_id:string}>('correct_inventory_receipt',args);assert.equal(retry.replacement_movement_id,correction.replacement_movement_id);
+ const correctedHistory=await rpc<{id:string;kind:string;status:string;reverses_id:string|null;moved_on:string;quantity:string;unit_cost:string|null}[]>('inventory_history',[warehouse,'2026-11-18',priced,0]);
+ assert.equal(correctedHistory.find(row=>row.id===original.id)?.status,'reversed');assert.equal(correctedHistory.find(row=>row.id===correction.reversal_movement_id)?.reverses_id,original.id);assert.equal(correctedHistory.find(row=>row.id===correction.replacement_movement_id)?.unit_cost,'2500.000000');
+ catalog=await rpc('material_catalog',['2026-11-18','','',0,100]);item=catalog.rows.find(row=>row.id===priced)!;assert.equal(item.stock_quantity,'4.000000');assert.equal(item.stock_average_unit_cost,'3375.000000');assert.equal(item.stock_receipt_count,'2');assert.equal(item.price_amount,'12000.000000');
+ const linked=await asUser(db,identities.admin,()=>db.query<{reason:string;replacement_movement_id:string}>('select reason,replacement_movement_id from inventory_receipt_corrections where original_movement_id=$1',[original.id]));assert.equal(linked.rows[0].reason,'Correct receipt price and quantity');assert.equal(linked.rows[0].replacement_movement_id,correction.replacement_movement_id);
+ const mapped=await asUser(db,identities.admin,()=>db.query<{correction_source_line_id:string}>('select correction_source_line_id from inventory_movement_lines where movement_id=$1 and correction_source_line_id=$2',[correction.replacement_movement_id,original.line_id]));assert.equal(mapped.rows.length,1);
+ await assert.rejects(()=>rpc('correct_inventory_receipt',[...args.slice(0,-1),randomUUID()]),/VERSION_CONFLICT/);
+ await rpc('post_inventory',[warehouse,'2026-11-18','receipt',[{material_id:priced,unit_id:kg,quantity:'1'}],'Unpriced purchase',randomUUID()]);
+ catalog=await rpc('material_catalog',['2026-11-18','','',0,100]);item=catalog.rows.find(row=>row.id===priced)!;assert.equal(item.stock_average_unit_cost,null);assert.equal(item.stock_unpriced_receipt_count,'1');
+ await assert.rejects(()=>rpc('post_inventory',[warehouse,'2026-11-18','receipt',[{material_id:priced,unit_id:kg,quantity:'1',unit_cost:'-1'}],'Invalid price',randomUUID()]),/INVALID_RECEIPT_PRICE/);
 });
 test('KH-01 proposal uses same-unit planned demand and minimum, retains null minima, filters and permissions',async()=>{
  await db.query("insert into products(id,code,name,sale_unit) values($1,'INV-P','Synthetic inventory product','portion')",[product]);

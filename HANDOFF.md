@@ -765,3 +765,11 @@ Evidence cục bộ: `npm run db:types` thực thi toàn bộ 94 migration và s
 Removed the required source/document/reason textbox from the quick receipt and issue dialog. The posting RPC still receives an automatically generated movement label and business date; user, timestamp, material, quantity, permission checks, idempotency and the immutable inventory ledger remain intact. Stock count behavior is unchanged.
 
 Evidence: `npm run typecheck`, `npm run lint`, and `git diff --check` passed. No test suite run. No database changes, commit, push or deployment performed.
+
+## 20/11/2026 — Receipt-level inventory pricing and correction (KH-01/KH-09/KH-10)
+
+Migration `202611200046_inventory_receipt_prices.sql` stores each receipt's entered unit cost as a line snapshot, normalizes it to the standard inventory unit when the receipt uses a verified purchase-unit conversion, exposes dated receipt quantity/unit price/line value in inventory history, and adds a quantity-weighted receipt average to the material catalog. The catalog's verified recipe/reference price remains a separate field. The average is unavailable if any posted receipt through the selected date has unknown/legacy price.
+
+Authorized users can correct a posted receipt's quantity and price from its history row with a reason. The original remains in the ledger; the RPC creates a linked reversal and replacement, stores the relationship/reason in `inventory_receipt_corrections`, uses version checks and idempotency, and respects closed periods and live inventory permissions. The UI fixture covers the filtered history and correction payload at 320–1440px.
+
+Evidence: `npm run db:types` generated 95 migrated tables/70 RPCs; `npm run typecheck`, `npm run lint`, `npm run build`, `npm test` (131/131), `node scripts/design-check.mjs --inventory` and `git diff --check` passed. No SQL was applied to Supabase/DEV; no deploy or authenticated cloud UAT was performed. Apply migration 046 to the intended DEV database before using the new fields/RPC there.

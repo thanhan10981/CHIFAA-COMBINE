@@ -62,8 +62,8 @@ test('material API uses live permissions, hides ledger values without inventory 
   await db.exec(buildMaterialImport(rows,hash,day));
   await assert.rejects(()=>asUser(db,identities.a,()=>db.query('select material_catalog($1)',[day])),/FORBIDDEN/);
   await db.query("insert into user_permissions values($1,'materials','view',true)",[identities.a]);
-  const result=await asUser(db,identities.a,()=>db.query<{catalog:{rows:{stock_quantity:string|null;stock_reference:string|null}[]}}>('select material_catalog($1) catalog',[day]));
-  assert.ok(result.rows[0].catalog.rows.every(row=>row.stock_quantity===null&&row.stock_reference===null));
+  const result=await asUser(db,identities.a,()=>db.query<{catalog:{rows:{stock_quantity:string|null;stock_reference:string|null;stock_average_unit_cost:string|null;stock_receipt_count:string|null}[]}}>('select material_catalog($1) catalog',[day]));
+  assert.ok(result.rows[0].catalog.rows.every(row=>row.stock_quantity===null&&row.stock_reference===null&&row.stock_average_unit_cost===null&&row.stock_receipt_count===null));
   const material=(await db.query<{id:string;version:string;purchase_unit_id:string}>('select * from materials where code=$1',['TEST-A'])).rows[0];
   const input={code:'TEST-A',name:'Material',category:'ingredient',purchase_unit_id:material.purchase_unit_id,usage_unit_id:material.purchase_unit_id};
   await db.query("insert into user_permissions values($1,'materials','edit',true)",[identities.a]);

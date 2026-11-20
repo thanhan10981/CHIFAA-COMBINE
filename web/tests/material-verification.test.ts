@@ -79,7 +79,7 @@ test('Admin verification defaults a missing price basis to the selected purchase
   assert.equal(saved.basis_unit_id,purchase);assert.equal(saved.amount,'12000.000000');
  }finally{await db.close();}
 });
-test('reconciliation preserves posted stock units/costs and quarantines new unverified ledger costs',async()=>{
+test('reconciliation preserves posted ledger costs and receipts keep their entered price separate from catalog prices',async()=>{
  const db=await database();try{
   await db.exec(buildMaterialImport(originals,'a'.repeat(64),day));
   const m=(await db.query<{id:string;usage_unit_id:string}>("select * from materials where code='TEST-EGG'")).rows[0];
@@ -91,9 +91,9 @@ test('reconciliation preserves posted stock units/costs and quarantines new unve
   assert.equal((await db.query<{verification:string}>('select verification from private.effective_material_price($1,$2)',[m.id,day])).rows[0].verification,'needs_verification');
   await asUser(db,identities.admin,()=>db.query('select post_inventory($1,$2,$3,$4,$5,$6)',[w,day,'receipt',[{material_id:m.id,unit_id:m.usage_unit_id,quantity:'1',unit_cost:'999'}],'Test receipt',crypto.randomUUID()]));
   const costs=(await db.query<{unit_cost:string|null}>('select unit_cost from inventory_movement_lines where material_id=$1 order by created_at,id',[m.id])).rows;
-  assert.equal(costs.length,2);assert.ok(costs.some(row=>row.unit_cost===null));assert.ok(costs.some(row=>Number(row.unit_cost)===999));
+  assert.equal(costs.length,2);assert.ok(costs.every(row=>Number(row.unit_cost)===999));
   const mass=(await db.query<{id:string;usage_unit_id:string}>("select id,usage_unit_id from materials where code='TEST-MASS'")).rows[0];
   await asUser(db,identities.admin,()=>db.query('select post_inventory($1,$2,$3,$4,$5,$6)',[w,day,'receipt',[{material_id:mass.id,unit_id:mass.usage_unit_id,quantity:'1',unit_cost:'999999'}],'Verified cost receipt',crypto.randomUUID()]));
-  assert.equal(Number((await db.query<{unit_cost:string}>('select unit_cost from inventory_movement_lines where material_id=$1',[mass.id])).rows[0].unit_cost),100);
+  assert.equal(Number((await db.query<{unit_cost:string}>('select unit_cost from inventory_movement_lines where material_id=$1',[mass.id])).rows[0].unit_cost),999999);
  }finally{await db.close();}
 });
