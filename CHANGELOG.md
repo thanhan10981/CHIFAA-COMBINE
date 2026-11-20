@@ -503,3 +503,9 @@ Danh mục món bán bỏ cost lấy từ dữ liệu nguồn cũ; hiển thị 
 Bỏ nút “Thêm mới” ở trang chấm công. Trang hiển thị danh sách nhân viên theo ngày; chọn giờ vào/ra và nghỉ giữa ca, sau đó tích “Đã làm” để ghi ca. Giờ kết thúc sớm hơn giờ bắt đầu được lưu sang ngày kế tiếp. Có thể chọn ngày cũ để sửa giờ; sửa và bỏ chấm công đều đi qua RPC chứng từ hiện có để giữ liên kết kiểm toán. Mức lương và phụ cấp tiếp tục chỉ hiển thị theo quyền lương. Điện thoại dùng thẻ nhân viên, desktop dùng bảng.
 
 Đã kiểm tra bằng 132/132 test, typecheck, lint, build và fixture responsive 50 bố cục ở 320–1440px; fixture kiểm tra sửa ca, giữ nguyên idempotency khi retry và ca qua đêm. Không sửa schema, không áp SQL lên Supabase/DEV và chưa deploy.
+
+## 20/11/2026 — Định dạng số file Excel tồn kho (KH-01/KH-09)
+
+Các cột tồn hiện tại, tối thiểu và giá trung bình trong workbook được ghi thành ô số, áp dụng định dạng `#,##0.######`. Excel hiển thị số nguyên không có sáu số 0 dư, vẫn giữ phần thập phân khi có; mã vật tư vẫn là văn bản để bảo toàn số 0 đầu mã.
+
+Đã xác nhận bằng 137/137 test, typecheck, lint và build. Lần chạy test đầu bị Windows chặn tiến trình esbuild trong sandbox; chạy lại với quyền khởi chạy tiến trình và toàn bộ test đạt. Không thay đổi dữ liệu/schema, không áp migration lên Supabase/DEV và chưa deploy.

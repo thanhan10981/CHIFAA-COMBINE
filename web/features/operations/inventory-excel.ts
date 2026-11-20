@@ -18,6 +18,12 @@ export type InventoryImportRow={code:string;name:string;category:string;unit_cod
 
 const categoryByLabel=new Map(Object.entries(materialCategories).flatMap(([key,label])=>[[key.toLocaleLowerCase(),key],[label.toLocaleLowerCase(),key]]));
 
+function excelNumber(value:string|null){
+ if(value===null)return '';
+ const number=Number(value);
+ return Number.isFinite(number)?number:value;
+}
+
 export async function createInventoryWorkbook(rows:InventoryExcelRow[]){
  const ExcelJS=(await import('exceljs')).default;
  const workbook=new ExcelJS.Workbook();
@@ -38,7 +44,7 @@ export async function createInventoryWorkbook(rows:InventoryExcelRow[]){
  ];
  const header=sheet.getRow(1);header.height=30;header.eachCell(cell=>{cell.font={bold:true,color:{argb:'FFFFFFFF'}};cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF173349'}};cell.alignment={vertical:'middle',wrapText:true};});
  for(const row of rows){
-  sheet.addRow({code:row.code,name:row.name,category:materialCategories[row.category as keyof typeof materialCategories]??row.category,unit:row.unit??'',quantity:row.quantity??'',minimum:row.minimum??'',average:row.average??'',added:'',unitCost:''});
+  sheet.addRow({code:row.code,name:row.name,category:materialCategories[row.category as keyof typeof materialCategories]??row.category,unit:row.unit??'',quantity:excelNumber(row.quantity),minimum:excelNumber(row.minimum),average:excelNumber(row.average),added:'',unitCost:''});
  }
  sheet.autoFilter={from:'A1',to:'I'+Math.max(rows.length+1,1)};
  const instructions=workbook.addWorksheet('Hướng dẫn');

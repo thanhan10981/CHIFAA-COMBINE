@@ -3,13 +3,13 @@ import assert from 'node:assert/strict';
 import ExcelJS from 'exceljs';
 import {createInventoryWorkbook,parseInventoryWorkbook,type InventoryExcelRow} from '../features/operations/inventory-excel';
 
-const sample:InventoryExcelRow[]=[{code:'0012',name:'Gạo thơm',category:'ingredient',unit:'kg',quantity:'12.5',minimum:'2',average:'31000.5'}];
+const sample:InventoryExcelRow[]=[{code:'0012',name:'Gạo thơm',category:'ingredient',unit:'kg',quantity:'12.500000',minimum:'2.000000',average:'31000.500000'}];
 
 test('inventory workbook exports a snapshot with separate additive quantity and receipt price columns',async()=>{
  const blob=await createInventoryWorkbook(sample),workbook=new ExcelJS.Workbook();
  await workbook.xlsx.load(await blob.arrayBuffer());
  const sheet=workbook.getWorksheet('Tồn kho');assert.ok(sheet);
- assert.equal(sheet.getCell('A2').value,'0012');assert.equal(sheet.getCell('E2').value,'12.5');assert.equal(sheet.getCell('G2').value,'31000.5');assert.equal(sheet.getCell('H2').value,'');assert.equal(sheet.getCell('I2').value,'');
+ assert.equal(sheet.getCell('A2').value,'0012');assert.equal(sheet.getCell('E2').value,12.5);assert.equal(sheet.getCell('F2').value,2);assert.equal(sheet.getCell('G2').value,31000.5);assert.equal(sheet.getCell('E2').numFmt,'#,##0.######');assert.equal(sheet.getCell('F2').numFmt,'#,##0.######');assert.equal(sheet.getCell('H2').value,'');assert.equal(sheet.getCell('I2').value,'');
  assert.ok(workbook.getWorksheet('Hướng dẫn'));
 });
 
