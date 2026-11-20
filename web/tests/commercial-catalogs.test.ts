@@ -72,6 +72,25 @@ test('recipe links require a published effective revision and units with transac
  const history=await rpc('commercial_history',['recipe',ids.product]);assert.ok(JSON.stringify(history).includes('COMM-R'));assert.ok(JSON.stringify(history).includes('Confirmed recipe link'));
  await assert.rejects(()=>db.exec('update product_prices set price_vnd=1'),/TERMS_IMMUTABLE/);
 });
+test('KH-01/KH-11 product catalog computes dated menu cost from its linked recipe and verified material prices',async()=>{
+ const unit=randomUUID(),material=randomUUID(),recipe=randomUUID(),recipeVersion=randomUUID(),product=randomUUID(),unlinkedProduct=randomUUID();
+ await db.query("insert into products(id,code,name,sale_unit) values($1,'COMM-COST-P','Synthetic cost menu','portion'),($2,'COMM-UNLINKED-P','Synthetic unlinked menu','portion')",[product,unlinkedProduct]);
+ await db.query("insert into material_units(id,code,name,dimension) values($1,'COMM-COST-U','Synthetic cost unit','count')",[unit]);
+ await db.query("insert into materials(id,code,name,purchase_unit_id,usage_unit_id) values($1,'COMM-COST-M','Synthetic cost material',$2,$2)",[material,unit]);
+ await db.query("insert into material_prices(material_id,basis_unit_id,amount,effective_from,effective_to,verification) values($1,$2,500,'2026-11-17','2026-11-18','verified'),($1,$2,750,'2026-11-19',null,'verified')",[material,unit]);
+ await db.query("insert into recipes(id,code,name,kind) values($1,'COMM-COST-R','Synthetic actual recipe','product')",[recipe]);
+ await db.query("insert into recipe_versions(id,recipe_id,revision,effective_from,output_quantity,output_unit_id) values($1,$2,1,'2026-11-17',1,$3)",[recipeVersion,recipe,unit]);
+ await db.query('insert into recipe_items(recipe_version_id,material_id,quantity,unit_id) values($1,$2,2,$3)',[recipeVersion,material,unit]);
+ await rpc('publish_recipe',[recipeVersion,'1',null,null,randomUUID()]);
+ await terms('recipe',product,{date:'2026-11-17',recipe_version_id:recipeVersion,quantity:'1',evidence:'Synthetic confirmed menu recipe'});
+ await db.query("insert into private.catalog_sources(entity,entity_id,source_hash,source_data) values('products',$1,'synthetic-legacy-cost','{\"cost\":777777}'::jsonb)",[product]);
+ const atFirstPrice=await rpc('commercial_catalog',['products','2026-11-18','','',0,25]);
+ const firstRows=atFirstPrice.rows as Record<string,unknown>[];const linked=firstRows.find(row=>row.id===product)!;
+ assert.equal(linked.recipe_cost_status,'ready');assert.equal(linked.recipe_cost_complete,true);assert.equal(linked.recipe_cost_vnd,'1000');assert.equal('legacy_cost' in linked,false);
+ const atNextPrice=await rpc('commercial_catalog',['products','2026-11-20','','',0,25]);
+ const nextRows=atNextPrice.rows as Record<string,unknown>[];assert.equal(nextRows.find(row=>row.id===product)?.recipe_cost_vnd,'1500');
+ const unlinked=nextRows.find(row=>row.id===unlinkedProduct)!;assert.equal(unlinked.recipe_cost_status,'unlinked');assert.equal(unlinked.recipe_cost_vnd,null);
+});
 test('one-statement source import preserves raw values and UUIDs, skips blank names and replays without business postings',async()=>{
  const source=parseCommercialSource(syntheticSource());assert.equal(source.products.length,11);assert.equal(source.skipped.length,2);assert.equal(source.discounts[0].rate,'0.150');
  const sql=buildCommercialImport(source,'a'.repeat(64),'2026-11-17');const statement=sql.slice(0,sql.indexOf('select key,value'));await db.exec(statement);

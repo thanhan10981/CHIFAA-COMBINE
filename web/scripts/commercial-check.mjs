@@ -24,7 +24,8 @@ export async function checkCommercial(page,base,out,report){
     if(kind==='employees'&&await page.getByLabel('Bộ phận',{exact:true}).inputValue()!=='')throw new Error('Unknown department was invented');
     await close();
    }
-   const captions=kind==='stores'?['Giá riêng','Chiết khấu']:kind==='products'?['Giá bán','Công thức']:kind==='employees'?['Lương giờ']:['Chi tiết / lịch sử'];
+   const captions=kind==='stores'?['Giá riêng','Chiết khấu']:kind==='products'?['Giá bán']:kind==='employees'?['Lương giờ']:['Chi tiết / lịch sử'];
+   if(kind==='products'&&await page.getByRole('button',{name:'Công thức',exact:true}).count())throw new Error('Redundant product recipe action is still rendered');
    for(const caption of captions){
     await page.getByRole('button',{name:caption,exact:true}).first().click();await page.getByText('Nguồn kiểm thử tổng hợp',{exact:true}).waitFor();await dialog(kind+' history');
     await page.getByRole('button',{name:'Thêm phiên bản',exact:true}).click();await page.getByRole('button',{name:'Lưu phiên bản mới',exact:true}).waitFor();await dialog(kind+' '+caption);
@@ -45,5 +46,5 @@ export async function checkCommercial(page,base,out,report){
  await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/save_commercial_terms',async route=>{requests.push(route.request().postDataJSON());await route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({code:'NETWORK',message:'Synthetic uncertain response'})});});
  await page.goto(base+'/app/products');await page.getByRole('button',{name:'Giá bán',exact:true}).click();await page.getByRole('button',{name:'Thêm phiên bản',exact:true}).click();await page.getByLabel('Nguồn / lý do *',{exact:true}).fill('Synthetic new quote');await page.getByRole('button',{name:'Lưu phiên bản mới',exact:true}).click();await page.getByRole('button',{name:'Kiểm tra lại lần lưu',exact:true}).waitFor();await page.getByRole('button',{name:'Kiểm tra lại lần lưu',exact:true}).click();await page.waitForFunction(()=>document.querySelectorAll('.chifaa-toast').length>0);
  if(requests.length!==2||requests[0].p_key!==requests[1].p_key||requests[0].p_input.amount!=='15000')throw new Error('Uncertain retry lost key or exact VND amount');
- report.checks.push('4 commercial catalogues ×5 widths, metadata/price/pay/store-price/recipe/discount dialogs, Vietnamese money, unknown department retained, discount checkboxes, hidden salary/actions and same-key uncertain retry; synthetic offline fixture');
+ report.checks.push('4 commercial catalogues ×5 widths, metadata/price/pay/store-price/discount dialogs, Vietnamese money, unknown department retained, discount checkboxes, removed redundant recipe action, hidden salary/actions and same-key uncertain retry; synthetic offline fixture');
 }

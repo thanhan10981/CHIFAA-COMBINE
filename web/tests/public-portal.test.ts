@@ -51,6 +51,19 @@ test('DEV036 store links are private, idempotent, revocable and route orders to 
  }finally{await db.close();}
 });
 
+test('order review queue shows the assigned store with orders:view and does not require stores:view',async()=>{
+ const db=await database();try{
+  const store=(await db.query<{id:string}>("insert into stores(code,name) values('QUEUE-STORE','Review queue store') returning id")).rows[0].id;
+  const order=(await db.query<{id:string}> ("insert into customer_orders(store_id,delivery_date,shift,guest_name,guest_phone,guest_address) values($1,current_date,'PM','Synthetic guest','0900000048','Queue test address') returning id",[store])).rows[0].id;
+  await db.query("insert into public.user_permissions(user_id,module,action,allowed) values($1,'orders','view',true),($1,'stores','view',false)",[identities.a]);
+  const rows=await asUser(db,identities.a,()=>db.query<{id:string;store_code:string;store_name:string;guest_name:string}>('select * from public.order_review_queue(0,25)'));
+  assert.equal(rows.rows.length,1);assert.equal(rows.rows[0].id,order);assert.equal(rows.rows[0].guest_name,'Synthetic guest');assert.equal(rows.rows[0].store_code,'QUEUE-STORE');assert.equal(rows.rows[0].store_name,'Review queue store');
+  await assert.rejects(()=>anonymous(db,()=>db.query('select * from public.order_review_queue(0,25)')),/permission denied/);
+  await assert.rejects(()=>asUser(db,identities.b,()=>db.query('select * from public.order_review_queue(0,25)')),/FORBIDDEN/);
+  await assert.rejects(()=>asUser(db,identities.a,()=>db.query('select * from public.order_review_queue(-1,25)')),/INVALID_FILTER/);
+ }finally{await db.close();}
+});
+
 async function anonymous<T>(db:PGlite,run:()=>Promise<T>){await db.exec('begin;set local role anon;');await db.query("select set_config('request.jwt.claim.sub','',true)");try{const result=await run();await db.exec('commit');return result;}catch(error){await db.exec('rollback');throw error;}}
 async function setup(){
  const db=await database();

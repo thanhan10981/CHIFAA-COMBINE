@@ -64,13 +64,13 @@ export async function checkPublicPortal(page,base,out,report){
  await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();await page.goto(base+'/app/orders');
  if(await page.getByRole('navigation',{name:'Chức năng trong phân hệ'}).count())throw new Error('Delivery/return tabs remain on the order page');
  report.checks.push('admin popup creates a store-specific link; order page has no delivery/return context tabs');
- await page.goto(base+'/app/orders?guest-order-linked');await page.getByRole('button',{name:'Xem đơn',exact:true}).click();
+ await page.goto(base+'/app/orders?guest-order-linked');await page.getByText('Synthetic linked store',{exact:true}).waitFor();report.checks.push('review list shows the actual assigned store name for a linked portal order');await page.getByRole('button',{name:'Xem đơn',exact:true}).click();
  await page.getByText('Đơn đã gắn với điểm bán từ link đặt hàng.',{exact:false}).waitFor();
  if(await page.getByLabel('Điểm bán tiếp nhận đơn',{exact:true}).count())throw new Error('A store-link order asked the reviewer to reassign its linked store');
  await page.getByRole('button',{name:'Xác nhận duyệt đơn',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
  if(reviewed?.p_store!=='guest-store')throw new Error('Review lost the store preassigned by the link');
  report.checks.push('orders created from a store link arrive preassigned and preserve that store on approval');
- await page.setViewportSize({width:1440,height:1000});await page.goto(base+'/app/orders?guest-order');
+ await page.setViewportSize({width:1440,height:1000});await page.goto(base+'/app/orders?guest-order');await page.getByText('Chưa gắn điểm bán',{exact:true}).waitFor();report.checks.push('general portal orders clearly show that no store has been assigned yet');
  await page.getByRole('button',{name:'Xem đơn',exact:true}).click();
  await page.getByLabel('Điểm bán tiếp nhận đơn',{exact:true}).selectOption('guest-store');
  await page.screenshot({path:path.join(out,'guest-review.png')});

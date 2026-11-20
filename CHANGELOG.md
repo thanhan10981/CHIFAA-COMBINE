@@ -1,3 +1,9 @@
+## 2026-11-20 — Hiển thị điểm bán trong danh sách duyệt đơn (KH-05/10/12)
+
+- Thêm cột Điểm bán để thấy mã/tên điểm bán đã gắn; đơn từ cổng chung chưa gán hiện “Chưa gắn điểm bán”. Chi tiết đơn cũng hiện thông tin này.
+- Thêm RPC đọc hàng duyệt có kiểm tra `orders/view`; RPC chỉ kèm tên điểm bán theo từng đơn và không yêu cầu quyền xem toàn bộ danh bạ điểm bán.
+- Kiểm tra local: db:types 95 bảng/71 RPC, typecheck, lint, 133/133 tests, build, fixture UI đơn điểm bán/cổng chung và `git diff --check` đạt. Chưa áp migration 048 lên cloud/DEV hoặc deploy.
+
 ## 2026-11-20 — Receipt-level inventory pricing and correction (KH-01/09/10)
 
 - Receipt entry now stores its own unit price and quantity; unit cost is normalized to the standard inventory unit when a verified conversion is used. The material catalog displays the quantity-weighted average of priced receipts separately from the verified recipe/reference price. Inventory history shows each receipt's date, quantity, unit price and line value.
@@ -479,3 +485,15 @@ Added authenticated owner-scoped requestStatus returning only journal state (no 
 ## MASTER M09 checkpoint - 2026-11-17
 
 273/273 local tests; syntax83/build pass. Financial completeness guards, request-local static configuration batching, visible-page sync60s/focus refresh and backup verification feedback. See docs/MASTER_M09_2026-11-17.md. Candidate built; verified DEV31 remains live until final source readback and rollout.
+
+## 20/11/2026 — Giá vốn món bán theo công thức thực tế (KH-01/KH-11)
+
+Danh mục món bán bỏ cost lấy từ dữ liệu nguồn cũ; hiển thị giá vốn tính từ công thức liên kết và giá vật tư đã xác minh theo ngày chọn. Chưa liên kết công thức hoặc thiếu giá thì không thay bằng số cũ. Bỏ hai nút thao tác công thức/công bố liên kết theo yêu cầu; RPC backend giữ nguyên.
+
+Đã xác nhận bằng 132/132 test, typecheck, lint, build, kiểm tra responsive danh mục thương mại và công thức ở 320–1440px. Migration 047 chưa áp dụng DEV/Supabase; chưa deploy.
+
+## 20/11/2026 — Danh sách chấm công theo nhân viên (KH-02/KH-09/KH-10)
+
+Bỏ nút “Thêm mới” ở trang chấm công. Trang hiển thị danh sách nhân viên theo ngày; chọn giờ vào/ra và nghỉ giữa ca, sau đó tích “Đã làm” để ghi ca. Giờ kết thúc sớm hơn giờ bắt đầu được lưu sang ngày kế tiếp. Có thể chọn ngày cũ để sửa giờ; sửa và bỏ chấm công đều đi qua RPC chứng từ hiện có để giữ liên kết kiểm toán. Mức lương và phụ cấp tiếp tục chỉ hiển thị theo quyền lương. Điện thoại dùng thẻ nhân viên, desktop dùng bảng.
+
+Đã kiểm tra bằng 132/132 test, typecheck, lint, build và fixture responsive 50 bố cục ở 320–1440px; fixture kiểm tra sửa ca, giữ nguyên idempotency khi retry và ca qua đêm. Không sửa schema, không áp SQL lên Supabase/DEV và chưa deploy.
