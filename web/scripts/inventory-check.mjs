@@ -51,15 +51,15 @@ export async function checkInventory(page,base,out,report){
  const workbook=new ExcelJS.Workbook(),sheet=workbook.addWorksheet('Tồn kho');
  sheet.addRow(['Mã / vật tư','Tên vật tư','Nhóm','ĐVT chuẩn','Tồn hiện tại','Tối thiểu','Giá trung bình (đ / ĐVT chuẩn)','Số lượng nhập thêm','Giá nhập thêm (đ / ĐVT chuẩn)']);
  sheet.addRows([
-  ['INV-M','Vật tư kiểm thử nhập kho','Nguyên liệu','kg','','3','3000','2.5','0'],
-  ['INV-U','Vật tư nhập chưa rõ giá','Phụ liệu','kg','','','','1.25',''],
+  ['INV-M','Vật tư kiểm thử nhập kho','Nguyên liệu','kg','','3','3000','1.2','0'],
+  ['INV-U','Vật tư nhập chưa rõ giá','Phụ liệu','kg','','','','3.32',''],
   ['INV-C','Vật tư chỉ cập nhật danh mục','Nguyên liệu','kg','','','','',''],
  ]);
  const importFile={name:'nhap-ton-kiem-thu.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:Buffer.from(await workbook.xlsx.writeBuffer())},importSent=[];
  await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/import_inventory_excel',async route=>{importSent.push(route.request().postDataJSON());await route.fulfill({status:200,contentType:'application/json',body:'{"movement_id":"synthetic-excel-receipt","materials_created":1,"materials_updated":2,"receipt_lines":2}'});});
  await page.locator('input[aria-label="Chọn file Excel tồn kho"]').setInputFiles(importFile);
  const importDialog=page.getByRole('dialog');await page.getByText('Tồn cũ không bị ghi đè.',{exact:false}).waitFor();
- if(!(await importDialog.getByText('3,75 kg',{exact:true}).count())||!(await importDialog.getByText('1 dòng nhập chưa có giá.',{exact:false}).count()))throw new Error('Import preview totals or missing-price warning are missing');
+ if(!(await importDialog.getByText('4,52 kg',{exact:true}).count())||!(await importDialog.getByText('1 dòng nhập chưa có giá.',{exact:false}).count()))throw new Error('Import preview totals or missing-price warning are missing');
  const zeroPriceRow=importDialog.locator('tbody tr').filter({hasText:'INV-M'});if(!(await zeroPriceRow.innerText()).includes('0 đ'))throw new Error('An explicit zero receipt price is not distinguished from an unknown price');
  for(const width of [320,1440]){
   await page.setViewportSize({width,height:900});
@@ -70,8 +70,8 @@ export async function checkInventory(page,base,out,report){
  }
  await importDialog.getByRole('button',{name:'Xác nhận nhập kho',exact:true}).click();
  await page.getByText('Đã nhập Excel: 1 mã mới, 2 mã đã có, 2 vật tư được cộng tồn.',{exact:true}).waitFor();
- if(importSent.length!==1||importSent[0].p_lines.length!==3||importSent[0].p_lines[0].unit_cost!=='0'||importSent[0].p_lines[1].unit_cost!==null||importSent[0].p_lines[2].added_quantity!==null)throw new Error('Excel confirmation changed the explicit-zero, unknown-price or catalog-only lines');
- report.checks.push('Excel import confirmation preview shows all material/receipt counts, per-unit additive totals, unknown price warning and explicit 0 price; responsive modal fits at 320/1440, no page overflow, and confirmation preserves additive quantity, null/zero price distinction and catalog-only line');
+ if(importSent.length!==1||importSent[0].p_lines.length!==3||importSent[0].p_lines[0].added_quantity!=='1.2'||importSent[0].p_lines[1].added_quantity!=='3.32'||importSent[0].p_lines[0].unit_cost!=='0'||importSent[0].p_lines[1].unit_cost!==null||importSent[0].p_lines[2].added_quantity!==null)throw new Error('Excel confirmation changed fractional additive quantities, explicit-zero/unknown price or catalog-only lines');
+ report.checks.push('Excel import preview accepts and totals decimal additions 1.2 and 3.32; confirmation preserves both quantities, null/zero price distinction and catalog-only line; responsive modal fits at 320/1440 with no page overflow');
  report.checks.push('Inventory catalogue, movements, material-filtered receipt price history, reorder, entry at 5 widths; sole warehouse; empty warehouse guidance; decimal receipt plus per-entry price retry preserves payload/key; receipt price/quantity correction retains selected line and reason at 320/1440; confirmed zero count with captured inventory token; accessible icon actions stay in one row, desktop filters fit one row, no duplicate tabs, three compact dialogs at 320/1440');
  await page.goto(base+'/app/warehouses');await page.getByText('V\u1eadt t\u01b0 ki\u1ec3m th\u1eed nh\u1eadp kho',{exact:true}).waitFor();
  report.checks.push('Warehouse catalogue redirects to inventory; ingredient warehouse is resolved automatically without selector');

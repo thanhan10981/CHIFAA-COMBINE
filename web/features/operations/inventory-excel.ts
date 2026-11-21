@@ -36,11 +36,11 @@ export async function createInventoryWorkbook(rows:InventoryExcelRow[]){
   {header:inventoryExcelHeaders[1],key:'name',width:32},
   {header:inventoryExcelHeaders[2],key:'category',width:20},
   {header:inventoryExcelHeaders[3],key:'unit',width:16},
-  {header:inventoryExcelHeaders[4],key:'quantity',width:18,style:{numFmt:'#,##0.######'}},
-  {header:inventoryExcelHeaders[5],key:'minimum',width:16,style:{numFmt:'#,##0.######'}},
-  {header:inventoryExcelHeaders[6],key:'average',width:27,style:{numFmt:'#,##0.######'}},
-  {header:inventoryExcelHeaders[7],key:'added',width:22,style:{numFmt:'#,##0.######'}},
-  {header:inventoryExcelHeaders[8],key:'unitCost',width:30,style:{numFmt:'#,##0.######'}},
+  {header:inventoryExcelHeaders[4],key:'quantity',width:18,style:{numFmt:'General'}},
+  {header:inventoryExcelHeaders[5],key:'minimum',width:16,style:{numFmt:'General'}},
+  {header:inventoryExcelHeaders[6],key:'average',width:27,style:{numFmt:'General'}},
+  {header:inventoryExcelHeaders[7],key:'added',width:22,style:{numFmt:'General'}},
+  {header:inventoryExcelHeaders[8],key:'unitCost',width:30,style:{numFmt:'General'}},
  ];
  const header=sheet.getRow(1);header.height=30;header.eachCell(cell=>{cell.font={bold:true,color:{argb:'FFFFFFFF'}};cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF173349'}};cell.alignment={vertical:'middle',wrapText:true};});
  for(const row of rows){
@@ -56,7 +56,7 @@ export async function createInventoryWorkbook(rows:InventoryExcelRow[]){
   ['ĐVT chuẩn','Dùng mã đơn vị đã có trong danh mục. Với mã đã có, không đổi ĐVT chuẩn nếu đã phát sinh tồn hoặc công thức.'],
   ['Tồn hiện tại / Giá trung bình','Số xem tại ngày xuất file. Hai cột này chỉ để tham khảo, không được dùng để ghi đè hay cộng tồn.'],
   ['Tối thiểu','Mức tồn tối thiểu. Để trống nếu chưa thiết lập.'],
-  ['Số lượng nhập thêm','Nhập lượng cần cộng thêm vào tồn. Để trống nếu chỉ thêm/cập nhật thông tin vật tư. Mỗi lần nhập tạo một dòng chứng từ mới.'],
+  ['Số lượng nhập thêm','Nhập lượng cần cộng thêm vào tồn; cho phép số lẻ tối đa 6 chữ số, ví dụ 1.2 hoặc 3.32 (dùng dấu thập phân theo Excel trên máy). Để trống nếu chỉ thêm/cập nhật thông tin vật tư. Mỗi lần nhập tạo một dòng chứng từ mới.'],
   ['Giá nhập thêm','Đơn giá của chính lần nhập này theo ĐVT chuẩn. Có thể để trống nếu chưa rõ; khi thiếu giá, giá trung bình sẽ chưa xác định.'],
   ['Lưu và nhập','Giữ nguyên hàng tiêu đề. Nhập tối đa 200 dòng mỗi lần. Mỗi mã chỉ xuất hiện một lần trong file. Lưu .xlsx rồi chọn Nhập Excel.'],
  ]);

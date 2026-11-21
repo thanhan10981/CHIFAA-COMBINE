@@ -515,3 +515,9 @@ Các cột tồn hiện tại, tối thiểu và giá trung bình trong workbook
 Làm lại hộp thoại rà soát file với tổng mã vật tư, số dòng cộng tồn, dòng chỉ cập nhật danh mục, dòng chưa có giá và tổng lượng theo từng ĐVT. Bảng cuộn xem đủ các dòng, phân biệt dòng cộng tồn với dòng danh mục; cảnh báo rõ giá trống không phải 0đ. Nút xác nhận nêu đúng tác động của file; bố cục hỗ trợ mobile và desktop.
 
 Đã xác nhận bằng 137/137 test, typecheck, lint, build và fixture Chromium kho tại 320–1440px; modal kiểm thử ở 320px/1440px, không tràn trang, payload giữ riêng giá 0, giá chưa rõ và dòng không nhập thêm. Không thay đổi schema/dữ liệu, không áp migration lên Supabase/DEV và chưa deploy.
+
+## 21/11/2026 — Nhập số lẻ tồn kho bằng Excel (KH-01/KH-09/KH-10)
+
+Chỉnh định dạng số trong workbook để số nguyên không hiện dấu chấm dư; hướng dẫn cột nhập tồn nêu rõ số lẻ tối đa 6 chữ số (ví dụ `1.2`, `3.32`). Kiểm tra parser, preview và RPC giữ đúng lượng nhập lẻ, cộng tồn và ghi lịch sử.
+
+Đã đạt 138/138 test, typecheck, lint, build, kiểm tra kho riêng và fixture giao diện responsive. Không đổi schema/dữ liệu, không áp migration Supabase/DEV và chưa deploy.

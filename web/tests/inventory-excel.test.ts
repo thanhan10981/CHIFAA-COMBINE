@@ -9,8 +9,19 @@ test('inventory workbook exports a snapshot with separate additive quantity and 
  const blob=await createInventoryWorkbook(sample),workbook=new ExcelJS.Workbook();
  await workbook.xlsx.load(await blob.arrayBuffer());
  const sheet=workbook.getWorksheet('Tồn kho');assert.ok(sheet);
- assert.equal(sheet.getCell('A2').value,'0012');assert.equal(sheet.getCell('E2').value,12.5);assert.equal(sheet.getCell('F2').value,2);assert.equal(sheet.getCell('G2').value,31000.5);assert.equal(sheet.getCell('E2').numFmt,'#,##0.######');assert.equal(sheet.getCell('F2').numFmt,'#,##0.######');assert.equal(sheet.getCell('H2').value,'');assert.equal(sheet.getCell('I2').value,'');
+ assert.equal(sheet.getCell('A2').value,'0012');assert.equal(sheet.getCell('E2').value,12.5);assert.equal(sheet.getCell('F2').value,2);assert.equal(sheet.getCell('G2').value,31000.5);assert.ok(!sheet.getCell('E2').numFmt||sheet.getCell('E2').numFmt==='General');assert.ok(!sheet.getCell('F2').numFmt||sheet.getCell('F2').numFmt==='General');assert.equal(sheet.getCell('H2').value,'');assert.equal(sheet.getCell('I2').value,'');
  assert.ok(workbook.getWorksheet('Hướng dẫn'));
+});
+
+test('inventory workbook accepts numeric fractional receipt quantities such as 1.2 and 3.32',async()=>{
+ const blob=await createInventoryWorkbook(sample),workbook=new ExcelJS.Workbook();await workbook.xlsx.load(await blob.arrayBuffer());
+ const sheet=workbook.getWorksheet('Tồn kho')!;sheet.getCell('H2').value=1.2;sheet.getCell('I2').value=12000;
+ sheet.addRow(['0003','Muối','Phụ liệu','kg','','','',3.32,750.5]);
+ const rows=await parseInventoryWorkbook(await workbook.xlsx.writeBuffer() as ArrayBuffer);
+ assert.deepEqual(rows.map(row=>({code:row.code,added_quantity:row.added_quantity,unit_cost:row.unit_cost})),[
+  {code:'0012',added_quantity:'1.2',unit_cost:'12000'},
+  {code:'0003',added_quantity:'3.32',unit_cost:'750.5'},
+ ]);
 });
 
 test('inventory workbook parser reads add-only rows and keeps leading-zero codes and decimal comma',async()=>{

@@ -60,7 +60,7 @@ test('Excel inventory import updates catalog, appends priced stock, keeps histor
  const excelMat=randomUUID();await db.query("insert into materials(id,code,name,usage_unit_id,minimum_quantity) values($1,'INV-EXCEL-EXIST','Original Excel stock material',$2,3)",[excelMat,kg]);
  await rpc('post_inventory',[warehouse,'2026-11-18','receipt',[{material_id:excelMat,unit_id:kg,quantity:'4',unit_cost:'1000'}],'Opening receipt for Excel import test',randomUUID()]);
  const lines=[
-  {code:'INV-EXCEL-EXIST',name:'Updated stock material',category:'ingredient',unit_code:'kg',minimum_quantity:'2.5',added_quantity:'3',unit_cost:'3000'},
+  {code:'INV-EXCEL-EXIST',name:'Updated stock material',category:'ingredient',unit_code:'kg',minimum_quantity:'2.5',added_quantity:'3.32',unit_cost:'3000'},
   {code:'INV-EXCEL-NEW',name:'New Excel material',category:'packaging',unit_code:'kg',minimum_quantity:'1',added_quantity:'2',unit_cost:'500'},
  ];
  const args=[warehouse,'2026-11-18',lines,'ton-kho-test.xlsx',randomUUID()];
@@ -69,12 +69,12 @@ test('Excel inventory import updates catalog, appends priced stock, keeps histor
  assert.deepEqual(retry,first);assert.equal(first.materials_created,1);assert.equal(first.materials_updated,1);assert.equal(first.receipt_lines,2);
  const page=await rpc<{rows:{id:string;code:string;name:string;quantity:string|null;minimum:string|null;stock_average_unit_cost:string|null}[]}>('inventory_workspace',[warehouse,'2026-11-18','2026-11-19','','','all',0]);
  const existing=page.rows.find(row=>row.id===excelMat)!;const added=page.rows.find(row=>row.code==='INV-EXCEL-NEW')!;
- assert.equal(existing.name,'Updated stock material');assert.equal(existing.minimum,'2.500000');assert.equal(existing.quantity,'7.000000');assert.equal(existing.stock_average_unit_cost,'1857.142857');
+ assert.equal(existing.name,'Updated stock material');assert.equal(existing.minimum,'2.500000');assert.equal(existing.quantity,'7.320000');assert.equal(existing.stock_average_unit_cost,'1907.103825');
  assert.equal(added.quantity,'2.000000');assert.equal(added.stock_average_unit_cost,'500.000000');
- const exported=await rpc<{total:number;rows:{code:string;stock_average_unit_cost:string|null}[]}>('inventory_excel_export',[warehouse,'2026-11-18',0,500]);assert.equal(exported.rows.find(row=>row.code==='INV-EXCEL-EXIST')?.stock_average_unit_cost,'1857.142857');
+ const exported=await rpc<{total:number;rows:{code:string;stock_average_unit_cost:string|null}[]}>('inventory_excel_export',[warehouse,'2026-11-18',0,500]);assert.equal(exported.rows.find(row=>row.code==='INV-EXCEL-EXIST')?.stock_average_unit_cost,'1907.103825');
  await assert.rejects(()=>rpc('inventory_excel_export',[warehouse,'2026-11-18',0,500],identities.a),/FORBIDDEN/);
  const history=await rpc<{note:string;quantity:string;unit_cost:string|null}[]>('inventory_history',[warehouse,'2026-11-18',excelMat,0]);
- assert.ok(history.some(row=>row.note==='Nhập Excel · ton-kho-test.xlsx'&&row.quantity==='3.000000'&&row.unit_cost==='3000.000000'));
+ assert.ok(history.some(row=>row.note==='Nhập Excel · ton-kho-test.xlsx'&&row.quantity==='3.320000'&&row.unit_cost==='3000.000000'));
  await assert.rejects(()=>rpc('import_inventory_excel',[warehouse,'2026-11-18',[{code:'INV-EXCEL-FAIL-1',name:'Should roll back',category:'ingredient',unit_code:'kg',minimum_quantity:null,added_quantity:'1',unit_cost:'1'},{code:'INV-EXCEL-FAIL-2',name:'Bad unit row',category:'ingredient',unit_code:'missing-unit',minimum_quantity:null,added_quantity:'1',unit_cost:'1'}],'bad-unit.xlsx',randomUUID()]),/IMPORT_UNIT_NOT_FOUND/);
  const failed=await asUser(db,identities.admin,()=>db.query("select id from materials where code in ('INV-EXCEL-FAIL-1','INV-EXCEL-FAIL-2')"));assert.equal(failed.rows.length,0);
 });
