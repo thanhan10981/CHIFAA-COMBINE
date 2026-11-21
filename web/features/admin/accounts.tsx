@@ -9,7 +9,7 @@ import {modules} from '@/lib/navigation';
 
 const actions=[['view','Xem'],['create','Thêm'],['edit','Sửa'],['approve','Duyệt'],['export','Xuất'],['manage','Quản lý']] as const;
 const roleOptions=[['admin','Quản trị'],['accountant','Kế toán'],['manager','Quản lý'],['production','Sản xuất'],['warehouse','Kho'],['sales','Bán hàng'],['customer','Khách hàng']] as const;
-type Account={id:string;display_name:string;email:string;enabled:boolean;created_at:string;email_confirmed_at:string|null;last_sign_in_at:string|null;roles:string[]};
+type Account={id:string;display_name:string;enabled:boolean;created_at:string;roles:string[]};
 type RolePermission={role_id:string;module:string;action:string};
 type AccountsData={users:Account[];rolePermissions:RolePermission[]};
 type Permission={module:string;action:string;allowed:boolean};
@@ -39,16 +39,9 @@ export function Accounts({userId,canManage}:{userId:string;canManage:boolean}){
   const roleByUser=new Map<string,string[]>();
   for(const row of (rolesResult.data??[]) as {user_id:string;role_id:string}[])roleByUser.set(row.user_id,[...(roleByUser.get(row.user_id)??[]),row.role_id]);
   const users=((profilesResult.data??[]) as {id:string;display_name:string;enabled:boolean;created_at:string}[]).map(profile=>{
-   return {id:profile.id,display_name:profile.display_name,email:'',enabled:profile.enabled,created_at:profile.created_at,email_confirmed_at:null,last_sign_in_at:null,roles:roleByUser.get(profile.id)??[]};
+   return {id:profile.id,display_name:profile.display_name,enabled:profile.enabled,created_at:profile.created_at,roles:roleByUser.get(profile.id)??[]};
   });
-  return {users:users.sort((a,b)=>(a.display_name||a.email).localeCompare(b.display_name||b.email,'vi')),rolePermissions:(permissionsResult.data??[]) as RolePermission[]} satisfies AccountsData;
- }});
- const authAccounts=useQuery({queryKey:[userId,'admin','auth-identities'],enabled:canManage,retry:false,staleTime:60_000,queryFn:async()=>{
-  try{
-   const {data,error}=await browserSupabase().functions.invoke('admin-invite',{body:{action:'list'}});
-   const response=data as unknown as {users?:Account[];role_permissions?:RolePermission[]}|null;
-   return !error&&response&&Array.isArray(response.users)&&Array.isArray(response.role_permissions)?response.users:null;
-  }catch{return null;}
+  return {users:users.sort((a,b)=>(a.display_name||a.id).localeCompare(b.display_name||b.id,'vi')),rolePermissions:(permissionsResult.data??[]) as RolePermission[]} satisfies AccountsData;
  }});
  const save=useMutation({retry:false,mutationFn:async()=>{
   if(!selected)throw new Error('Chọn tài khoản trước khi lưu quyền.');
@@ -87,12 +80,10 @@ export function Accounts({userId,canManage}:{userId:string;canManage:boolean}){
   finally{if(generation===selectionGeneration.current)setLoading(false);}
  }
 
- const authById=new Map((authAccounts.data??[]).map(account=>[account.id,account]));
- const authDetailsLoaded=Array.isArray(authAccounts.data);
- const users=(accounts.data?.users??[]).map(account=>{const auth=authById.get(account.id);return auth?{...account,email:auth.email,display_name:account.display_name||auth.display_name,email_confirmed_at:auth.email_confirmed_at,last_sign_in_at:auth.last_sign_in_at}:account;});
- const filtered=users.filter(account=>normalize([account.display_name,account.email].join(' ')).includes(normalize(search)));
- const activeCount=authDetailsLoaded?users.filter(account=>account.enabled&&!!account.email_confirmed_at).length:null;
- const waitingCount=authDetailsLoaded?users.filter(account=>!account.email_confirmed_at).length:null;
+ const users=accounts.data?.users??[];
+ const filtered=users.filter(account=>normalize([account.display_name,account.id].join(' ')).includes(normalize(search)));
+ const activeCount=users.filter(account=>account.enabled).length;
+ const disabledCount=users.filter(account=>!account.enabled).length;
  const selectedAccount=users.find(account=>account.id===selected);
  const inherited=new Set((accounts.data?.rolePermissions??[]).filter(permission=>roles.includes(permission.role_id)).map(permission=>permission.module+':'+permission.action));
  const effectiveCount=moduleRows.reduce((sum,[module])=>sum+actions.reduce((count,[action])=>count+((grants[module+':'+action]??(inherited.has(module+':'+action)||roles.includes('admin')))?1:0),0),0);
@@ -105,25 +96,23 @@ export function Accounts({userId,canManage}:{userId:string;canManage:boolean}){
   {message&&<div className={'accounts-notice '+messageTone} role={messageTone==='error'?'alert':'status'}><Icon name={messageTone==='error'?'warning':'success'} size={18}/><span>{message}</span><button type="button" aria-label="Đóng thông báo" onClick={()=>setMessage('')}><Icon name="close" size={16}/></button></div>}
   {!canManage&&<div className="panel accounts-denied"><Icon name="lock" size={24}/><div><strong>Chỉ quản trị viên mới có thể xem danh sách tài khoản</strong><p>Liên hệ Admin để được cấp quyền quản lý tài khoản.</p></div></div>}
   {canManage&&<>
-   <div className="accounts-metrics"><article className="panel"><span><Icon name="people" size={19}/>Tài khoản đã đăng ký</span><strong>{accounts.data?.users.length??'—'}</strong><small>{authDetailsLoaded?'Đọc từ Supabase Auth':'Hồ sơ đã lưu trong database'}</small></article><article className="panel"><span><Icon name="success" size={19}/>Đang hoạt động</span><strong>{activeCount??'—'}</strong><small>Đã xác nhận email và được bật quyền</small></article><article className="panel"><span><Icon name="clock" size={19}/>Chờ xác nhận email</span><strong>{waitingCount??'—'}</strong><small>Đã gửi lời mời, chưa hoàn tất đăng ký</small></article></div>
-   {accounts.data&&authAccounts.isFetched&&!authDetailsLoaded&&<div className="accounts-notice error" role="status"><Icon name="info" size={18}/><span>Danh sách hồ sơ và vai trò đã tải từ database. Chưa lấy được email/trạng thái xác nhận từ Supabase Auth; kiểm tra Edge Function admin-invite.</span></div>}
+   <div className="accounts-metrics"><article className="panel"><span><Icon name="people" size={19}/>Tài khoản trong database</span><strong>{accounts.data?.users.length??'—'}</strong><small>Đọc từ hồ sơ profiles</small></article><article className="panel"><span><Icon name="success" size={19}/>Đã bật quyền</span><strong>{accounts.isPending?'—':activeCount}</strong><small>profiles.enabled = true</small></article><article className="panel"><span><Icon name="clock" size={19}/>Chưa bật quyền</span><strong>{accounts.isPending?'—':disabledCount}</strong><small>profiles.enabled = false</small></article></div>
    <div className="accounts-layout">
     <aside className="panel accounts-directory" aria-label="Danh sách tài khoản">
      <header><div><h2>Tài khoản nhân viên</h2><p>{accounts.isError?'Chưa tải được danh sách tài khoản':`${users.length} tài khoản trong hệ thống`}</p></div><span className="accounts-count">{accounts.isError?'—':filtered.length}</span></header>
-     <label className="accounts-search"><Icon name="search" size={18}/><span className="sr-only">Tìm theo tên hoặc email</span><input aria-label="Tìm theo tên hoặc email" placeholder="Tìm tên hoặc email…" value={search} onChange={event=>setSearch(event.target.value)}/></label>
-     {accounts.isPending?<LoadingState compact label="Đang tải danh sách tài khoản…"/>:accounts.isError?<div className="accounts-load-error" role="alert"><Icon name="warning" size={20}/><p>{accounts.error.message}</p><button className="button" onClick={()=>void accounts.refetch()}>Thử tải lại</button></div>:filtered.length===0?<div className="accounts-empty"><Icon name={search?'search':'people'} size={26}/><strong>{search?'Không tìm thấy tài khoản':'Chưa có tài khoản nào'}</strong><p>{search?'Thử tìm bằng email hoặc tên khác.':'Mời nhân viên bằng nút ở góc trên.'}</p></div>:<div className="accounts-list" role="list">{filtered.map(account=>{
-      const name=account.display_name||account.email||'Tài khoản chưa đặt tên';
-      const authLoaded=authDetailsLoaded;
-      const status=authLoaded&&!account.email_confirmed_at?'Chờ xác nhận':account.enabled?'Đang hoạt động':'Chưa kích hoạt';
-      const tone=authLoaded&&!account.email_confirmed_at?'waiting':account.enabled?'active':'disabled';
+     <label className="accounts-search"><Icon name="search" size={18}/><span className="sr-only">Tìm theo tên hoặc mã tài khoản</span><input aria-label="Tìm theo tên hoặc mã tài khoản" placeholder="Tìm tên hoặc mã tài khoản…" value={search} onChange={event=>setSearch(event.target.value)}/></label>
+     {accounts.isPending?<LoadingState compact label="Đang tải danh sách tài khoản…"/>:accounts.isError?<div className="accounts-load-error" role="alert"><Icon name="warning" size={20}/><p>{accounts.error.message}</p><button className="button" onClick={()=>void accounts.refetch()}>Thử tải lại</button></div>:filtered.length===0?<div className="accounts-empty"><Icon name={search?'search':'people'} size={26}/><strong>{search?'Không tìm thấy tài khoản':'Chưa có tài khoản nào'}</strong><p>{search?'Thử tìm tên hoặc mã tài khoản khác.':'Mời nhân viên bằng nút ở góc trên.'}</p></div>:<div className="accounts-list" role="list">{filtered.map(account=>{
+      const name=account.display_name||'Tài khoản chưa đặt tên';
+      const status=account.enabled?'Đã bật quyền':'Chưa bật quyền';
+      const tone=account.enabled?'active':'disabled';
       return <button type="button" className={'account-item'+(selected===account.id?' selected':'')} key={account.id} aria-current={selected===account.id?'true':undefined} onClick={()=>void choose(account.id)}>
-       <span className="account-avatar">{initials(name)}</span><span className="account-item-copy"><strong>{name}</strong><small>{account.email||'Chưa có email đăng nhập'}</small><span className="account-item-roles">{account.roles.slice(0,2).map(role=><i key={role}>{roleLabel(role)}</i>)}{account.roles.length>2&&<i>+{account.roles.length-2}</i>}{!account.roles.length&&<i>Chưa cấp vai trò</i>}</span><span className={'account-status '+tone}><i/>{status}</span></span><Icon className="account-chevron" name="chevron" size={16}/>
+       <span className="account-avatar">{initials(name)}</span><span className="account-item-copy"><strong>{name}</strong><small>Mã tài khoản · {account.id.slice(0,8)}</small><span className="account-item-roles">{account.roles.slice(0,2).map(role=><i key={role}>{roleLabel(role)}</i>)}{account.roles.length>2&&<i>+{account.roles.length-2}</i>}{!account.roles.length&&<i>Chưa cấp vai trò</i>}</span><span className={'account-status '+tone}><i/>{status}</span></span><Icon className="account-chevron" name="chevron" size={16}/>
       </button>;
      })}</div>}
     </aside>
     <section className="panel account-details" aria-label="Chi tiết và phân quyền tài khoản">
      {!selected?<div className="account-details-empty"><span><Icon name="shield" size={28}/></span><h2>Chọn một tài khoản</h2><p>Quyền hiện tại sẽ hiện tại đây. Bạn có thể chỉnh vai trò, từng quyền và trạng thái tài khoản.</p></div>:<>
-      <header className="account-detail-heading"><span className="account-avatar large">{initials(selectedAccount?.display_name||selectedAccount?.email||'NV')}</span><div><p className="eyebrow">CHI TIẾT TÀI KHOẢN</p><h2>{selectedAccount?.display_name||selectedAccount?.email||'Tài khoản nhân viên'}</h2><p>{selectedAccount?.email||'Email Auth chưa tải được'} · Tạo {selectedAccount?new Date(selectedAccount.created_at).toLocaleDateString('vi-VN'):'—'}</p></div><span className={'account-status '+(authDetailsLoaded&&!selectedAccount?.email_confirmed_at?'waiting':selectedAccount?.enabled?'active':'disabled')}><i/>{authDetailsLoaded&&!selectedAccount?.email_confirmed_at?'Chờ xác nhận':selectedAccount?.enabled?'Đang hoạt động':'Chưa kích hoạt'}</span></header>
+      <header className="account-detail-heading"><span className="account-avatar large">{initials(selectedAccount?.display_name||'NV')}</span><div><p className="eyebrow">CHI TIẾT TÀI KHOẢN</p><h2>{selectedAccount?.display_name||'Tài khoản nhân viên'}</h2><p>Hồ sơ trong database · Tạo {selectedAccount?new Date(selectedAccount.created_at).toLocaleDateString('vi-VN'):'—'}</p></div><span className={'account-status '+(selectedAccount?.enabled?'active':'disabled')}><i/>{selectedAccount?.enabled?'Đã bật quyền':'Chưa bật quyền'}</span></header>
       <div className="account-detail-summary"><span><Icon name="info" size={17}/><span>Quyền riêng ưu tiên hơn vai trò. Bỏ một quyền sẽ từ chối quyền đó, kể cả với Admin.</span></span><b>{effectiveCount}/{moduleRows.length*actions.length}<small> quyền hiệu lực</small></b></div>
       {selectionError&&<div className="accounts-load-error inline" role="alert"><Icon name="warning" size={18}/>{selectionError}</div>}
       <fieldset disabled={!canManage||!!pending||save.isPending||loading||!!selectionError} className="account-editor">
@@ -131,7 +120,7 @@ export function Accounts({userId,canManage}:{userId:string;canManage:boolean}){
        <div className="account-permissions-heading"><div><h3>Quyền theo phân hệ</h3><p>Bật đúng hành động nhân viên được phép thực hiện.</p></div><span><Icon name="lock" size={15}/> Database xác thực mọi thao tác</span></div>
        <div className="table-wrap account-permissions-wrap"><table className="account-permissions"><thead><tr><th scope="col">Phân hệ</th>{actions.map(([action,label])=><th scope="col" key={action}>{label}</th>)}</tr></thead><tbody>{moduleRows.map(([module,label])=><tr key={module}><th scope="row">{label}</th>{actions.map(([action,actionLabel])=>{const key=module+':'+action;return <td key={action}><label className="account-permission-cell"><input aria-label={label+' '+actionLabel} type="checkbox" checked={grants[key]??(inherited.has(key)||roles.includes('admin'))} onChange={event=>setGrants(current=>({...current,[key]:event.target.checked}))}/><span className="sr-only">{label} · {actionLabel}</span></label></td>;})}</tr>)}</tbody></table></div>
       </fieldset>
-      <footer className="account-savebar"><span>{!authDetailsLoaded?'Chưa xác minh trạng thái email từ Supabase Auth':selectedAccount?.email_confirmed_at?'Tài khoản đã xác nhận email':'Tài khoản cần nhận lời mời qua email trước khi đăng nhập'}</span><button className="button primary" disabled={!canManage||loading||!!selectionError||save.isPending} onClick={()=>save.mutate()}><Icon name="check" size={16}/>{save.isPending?'Đang lưu…':pending?'Kiểm tra lại lần lưu':'Lưu phân quyền'}</button></footer>
+      <footer className="account-savebar"><span>Vai trò, quyền và trạng thái bật/tắt được đọc và lưu trực tiếp trong database.</span><button className="button primary" disabled={!canManage||loading||!!selectionError||save.isPending} onClick={()=>save.mutate()}><Icon name="check" size={16}/>{save.isPending?'Đang lưu…':pending?'Kiểm tra lại lần lưu':'Lưu phân quyền'}</button></footer>
      </>}
     </section>
    </div>

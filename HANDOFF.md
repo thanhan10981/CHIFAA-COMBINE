@@ -821,3 +821,9 @@ Evidence: `npm run typecheck`, `npm run lint`, `npm test` (137/137), `npm run bu
 Workbook dùng định dạng số mặc định của Excel cho tồn, tối thiểu, giá và ô nhập để số nguyên không còn hiện dấu chấm thập phân thừa. Sheet Hướng dẫn nói rõ cột “Số lượng nhập thêm” nhận số lẻ tối đa 6 chữ số, ví dụ 1.2 và 3.32. Parser giữ nguyên số lẻ trong preview và RPC; chứng từ nhập vẫn cộng thêm, có idempotency và lịch sử.
 
 Bằng chứng: `npm test` 138/138, `npm run typecheck`, `npm run lint`, `npm run build`, kiểm tra riêng parser/database 11/11 và `node scripts/design-check.mjs --inventory` đạt; fixture xác nhận preview tổng 1.2 + 3.32 = 4.52 và payload giữ từng số lượng. Không đổi schema/dữ liệu, không áp migration Supabase/DEV, không deploy/cloud UAT. Lần chạy sandbox đầu bị chặn tiến trình con (`spawn EPERM`); các kiểm tra được chạy lại và đạt.
+
+## 21/11/2026 — Quản lý role tài khoản trực tiếp từ database (KH-10)
+
+Trang Tài khoản & phân quyền chỉ dùng `profiles`, `user_roles`, `role_permissions` và `user_permissions` để liệt kê hồ sơ, role, quyền và trạng thái bật/tắt. Bỏ truy vấn liệt kê người dùng Auth gây cảnh báo và số đếm `—`; tìm kiếm theo tên/mã hồ sơ. Lưu quyền vẫn dùng `admin_assign_user`, giữ kiểm tra quyền server, audit, idempotency và bảo vệ Admin cuối cùng. Nút mời email vẫn dùng Edge Function vì đó là thao tác Auth riêng.
+
+Bằng chứng: `npm test` 138/138, `npm run typecheck`, `npm run lint`, `npm run build`, và `node scripts/design-check.mjs --accounts` đạt. Fixture cho Auth list trả lỗi và xác nhận trang không gọi endpoint đó; role/quyền vẫn tải từ database, lưu qua RPC, mời mới làm mới danh sách profile và bố cục mobile đạt. Email/xác nhận Auth không được hiển thị trong màn phân quyền; schema không có cột email trong `profiles`. Không đổi schema, không áp migration cloud hay deploy; chưa UAT Supabase thật.

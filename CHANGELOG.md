@@ -521,3 +521,9 @@ Làm lại hộp thoại rà soát file với tổng mã vật tư, số dòng c
 Chỉnh định dạng số trong workbook để số nguyên không hiện dấu chấm dư; hướng dẫn cột nhập tồn nêu rõ số lẻ tối đa 6 chữ số (ví dụ `1.2`, `3.32`). Kiểm tra parser, preview và RPC giữ đúng lượng nhập lẻ, cộng tồn và ghi lịch sử.
 
 Đã đạt 138/138 test, typecheck, lint, build, kiểm tra kho riêng và fixture giao diện responsive. Không đổi schema/dữ liệu, không áp migration Supabase/DEV và chưa deploy.
+
+## 21/11/2026 — Phân quyền tài khoản lấy trực tiếp từ database (KH-10)
+
+Bỏ phụ thuộc vào việc liệt kê Supabase Auth khi mở trang Tài khoản & phân quyền. Danh sách, số liệu bật/tắt, role và quyền lấy từ database; thao tác lưu role/quyền tiếp tục qua RPC `admin_assign_user`. Chức năng gửi lời mời email vẫn dùng Edge Function.
+
+Đã đạt 138/138 test, typecheck, lint, build và fixture Chromium `--accounts`, gồm trường hợp Auth list lỗi nhưng trang vẫn tải, xem và lưu role/quyền được. Không đổi schema, chưa áp dụng cloud hay deploy.

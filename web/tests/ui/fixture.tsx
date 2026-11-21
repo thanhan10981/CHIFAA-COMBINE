@@ -39,8 +39,8 @@ client.setQueryData([user,'catalog','materials','count'],rows.length);
 client.setQueryData([user,'account-roles'],role==='staff'?['accountant']:['admin']);
 client.setQueryData([user,'activity-log',0,''],{rows:[],total:0});
 client.setQueryData([user,'admin','profiles'],{users:[
- {id:'account-employee-1',display_name:'Tĩnh Trương',email:'tinh.truong@example.test',enabled:true,created_at:'2026-10-10T00:00:00.000Z',email_confirmed_at:'2026-10-10T00:00:00.000Z',last_sign_in_at:'2026-11-17T02:00:00.000Z',roles:['manager']},
- {id:'account-employee-2',display_name:'Võ Thanh An',email:'vo.thanh.an@example.test',enabled:false,created_at:'2026-11-17T00:00:00.000Z',email_confirmed_at:null,last_sign_in_at:null,roles:[]},
+ {id:'account-employee-1',display_name:'Tĩnh Trương',enabled:true,created_at:'2026-10-10T00:00:00.000Z',roles:['manager']},
+ {id:'account-employee-2',display_name:'Võ Thanh An',enabled:false,created_at:'2026-11-17T00:00:00.000Z',roles:[]},
 ],rolePermissions:[{role_id:'manager',module:'cash',action:'view'},{role_id:'manager',module:'inventory',action:'view'}]});
 client.setQueryData([user,'orders',0],[]);
 client.setQueryData([user,'public-order-link-stores'],[{id:'store-fixture',code:'GUEST-S',name:'Điểm nhận đơn kiểm thử'}]);
