@@ -73,3 +73,82 @@
 .workspace .inventory-import-preview .inventory-table{min-width:680px}
 .workspace .inventory-import-preview .muted{padding:0 12px 10px}
 @media(max-width:700px){.workspace .inventory-workspace .inventory-table-meta{flex-wrap:wrap}.workspace .inventory-workspace .inventory-legend{width:100%;align-items:center;gap:7px}.workspace .inventory-workspace .inventory-excel-button{font-size:11px;padding:6px}.workspace .inventory-workspace .inventory-legend>span{display:none}}
+
+.workspace .modal.chifaa-action-dialog.inventory-import-dialog{width:min(960px,calc(100vw - 32px));max-width:960px;max-height:calc(100dvh - 32px);display:flex;flex-direction:column;overflow:hidden;padding:22px 24px 16px;border-radius:20px;box-shadow:0 24px 80px #10283c38}
+.workspace .chifaa-action-dialog.inventory-import-dialog>header{flex:none;margin:0 0 16px;padding:0 0 14px;border-bottom:1px solid #e8edf2}
+.workspace .chifaa-action-dialog.inventory-import-dialog>header h2{font-size:21px;letter-spacing:-.35px}
+.workspace .inventory-import-body{display:grid;gap:14px;min-height:0;overflow:auto;padding:0 4px 8px 0;overscroll-behavior:contain}
+.workspace .inventory-import-file{display:grid;grid-template-columns:44px minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:13px 15px;border:1px solid #dce6ed;border-radius:14px;background:linear-gradient(110deg,#f3f8fc 0%,#fffaf5 100%)}
+.workspace .inventory-import-file-icon{width:42px;height:42px;display:grid;place-items:center;border-radius:12px;background:#e4f2eb;color:#198061}
+.workspace .inventory-import-file-name,.workspace .inventory-import-date{display:grid;gap:4px;min-width:0}
+.workspace .inventory-import-file-name>span,.workspace .inventory-import-date>span{font-size:9px;font-weight:700;letter-spacing:.8px;color:#718295}
+.workspace .inventory-import-file-name strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;color:#20384b}
+.workspace .inventory-import-date strong{font-size:12px;font-variant-numeric:tabular-nums;color:#20384b}
+.workspace .inventory-import-step{padding:6px 9px;border-radius:999px;background:#fff0e5;color:#b74f16;font-size:9px;font-weight:700;letter-spacing:.55px;white-space:nowrap}
+.workspace .inventory-import-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.workspace .inventory-import-summary article{display:grid;gap:4px;min-width:0;padding:12px 13px;border:1px solid #e5eaf0;border-radius:12px;background:#fff}
+.workspace .inventory-import-summary article:first-child{border-top:3px solid #4e7592}
+.workspace .inventory-import-summary article.summary-receipt{border-top:3px solid #29916e}
+.workspace .inventory-import-summary article.summary-unpriced{border-top:3px solid #d48a2c;background:#fffaf2}
+.workspace .inventory-import-summary article>span{font-size:10px;line-height:1.4;color:#697c8f}
+.workspace .inventory-import-summary article>strong{font-size:24px;line-height:1.1;color:#1d3548;font-variant-numeric:tabular-nums}
+.workspace .inventory-import-summary article>small{font-size:10px;line-height:1.4;color:#8190a0}
+.workspace .inventory-import-totals{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 13px;border-radius:10px;background:#f5f7fa}
+.workspace .inventory-import-totals>span{font-size:11px;font-weight:600;color:#576b7e}
+.workspace .inventory-import-totals>div{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:7px}
+.workspace .inventory-import-totals strong{padding:5px 9px;border:1px solid #dce6ed;border-radius:999px;background:#fff;color:#20384b;font-size:12px;font-variant-numeric:tabular-nums}
+.workspace .inventory-import-totals small{font-size:10px;color:#6c7f90}
+.workspace .inventory-import-callout{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid #dbe8f0;border-radius:10px;background:#f3f8fc}
+.workspace .inventory-import-callout.warning{border-color:#f0d6a9;background:#fff8ec}
+.workspace .inventory-import-callout-icon{flex:none;width:25px;height:25px;display:grid;place-items:center;border-radius:8px;background:#e4eff7;color:#386887}
+.workspace .inventory-import-callout.warning .inventory-import-callout-icon{background:#ffedc8;color:#a76513}
+.workspace .chifaa-action-dialog.inventory-import-dialog .inventory-import-callout p{margin:1px 0 0;color:#435a6d;font-size:11px;line-height:1.55}
+.workspace .inventory-import-callout strong{color:#213b50}
+.workspace .inventory-import-table-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:2px}
+.workspace .inventory-import-table-heading h3{margin:0;font-size:14px;color:#21384b}
+.workspace .chifaa-action-dialog.inventory-import-dialog .inventory-import-table-heading p{margin:3px 0 0;font-size:10px;line-height:1.4}
+.workspace .inventory-import-table-heading>span{padding:5px 9px;border-radius:999px;background:#f0f3f7;color:#586c7d;font-size:10px;font-weight:600;white-space:nowrap}
+.workspace .inventory-import-preview{max-height:min(36vh,320px);overflow:auto;border-color:#dfe6ed;border-radius:11px}
+.workspace .inventory-import-preview .inventory-table{min-width:800px;font-size:11px}
+.workspace .inventory-import-preview .inventory-table th{position:sticky;top:0;z-index:1;padding:9px 10px;background:#f1f5f8;color:#506477;font-size:10px}
+.workspace .inventory-import-preview .inventory-table td{padding:8px 10px;font-size:11px}
+.workspace .inventory-import-preview .inventory-table th:nth-child(4),.workspace .inventory-import-preview .inventory-table th:nth-child(5),.workspace .inventory-import-preview .inventory-table td:nth-child(4),.workspace .inventory-import-preview .inventory-table td:nth-child(5){text-align:right;font-variant-numeric:tabular-nums}
+.workspace .inventory-import-material{display:grid;gap:2px;min-width:150px}
+.workspace .inventory-import-material strong{color:#20384b;font-size:11px}
+.workspace .inventory-import-material small{color:#7b8997;font-size:10px}
+.workspace .inventory-import-unknown{color:#a76513;font-weight:600}
+.workspace .inventory-import-badge{display:inline-block;padding:4px 7px;border-radius:999px;background:#f0f3f7;color:#627488;font-size:9px;font-weight:600;white-space:nowrap}
+.workspace .inventory-import-badge.badge-receipt{background:#e9f6ef;color:#207552}
+.workspace .inventory-import-actions{display:flex;align-items:center;justify-content:space-between;gap:14px;flex:none;margin-top:12px;padding-top:12px;border-top:1px solid #e6ebf0;background:#fff}
+.workspace .inventory-import-actions>span{font-size:11px;line-height:1.4;color:#6b7b8a}
+.workspace .inventory-import-actions>div{display:flex;justify-content:flex-end;gap:8px;flex:none}
+.workspace .inventory-import-actions .button{min-height:40px;padding:8px 15px;font-size:12px}
+@media(max-width:700px){
+ .workspace .modal.chifaa-action-dialog.inventory-import-dialog{width:calc(100vw - 48px);max-height:calc(100dvh - 16px);padding:14px 13px 12px;border-radius:15px}
+ .workspace .chifaa-action-dialog.inventory-import-dialog>header{margin-bottom:12px;padding-bottom:10px}
+ .workspace .chifaa-action-dialog.inventory-import-dialog>header h2{font-size:17px}
+ .workspace .inventory-import-body{gap:11px;padding-right:1px}
+ .workspace .inventory-import-file{grid-template-columns:38px minmax(0,1fr);gap:8px;padding:10px}
+ .workspace .inventory-import-file-icon{width:36px;height:36px}
+ .workspace .inventory-import-file-name strong{font-size:11px}
+ .workspace .inventory-import-date{grid-column:2;display:flex;align-items:center;gap:8px}
+ .workspace .inventory-import-date>span{font-size:8px}
+ .workspace .inventory-import-date strong{font-size:10px}
+ .workspace .inventory-import-step{display:none}
+ .workspace .inventory-import-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ .workspace .inventory-import-summary article{padding:9px 10px}
+ .workspace .inventory-import-summary article>strong{font-size:21px}
+ .workspace .inventory-import-totals{align-items:flex-start;flex-direction:column;gap:7px}
+ .workspace .inventory-import-totals.totals-single-unit{align-items:center;flex-direction:row;gap:8px}
+ .workspace .inventory-import-totals.totals-single-unit>span{font-size:10px}
+ .workspace .inventory-import-totals.totals-single-unit strong{font-size:11px;padding:4px 7px}
+ .workspace .inventory-import-totals>div{justify-content:flex-start}
+ .workspace .inventory-import-callout{gap:8px;padding:9px}
+ .workspace .inventory-import-table-heading h3{font-size:13px}
+ .workspace .chifaa-action-dialog.inventory-import-dialog .inventory-import-table-heading p{display:none}
+ .workspace .inventory-import-preview{max-height:32vh}
+ .workspace .inventory-import-actions{align-items:stretch;flex-direction:column;gap:8px;margin-top:9px;padding-top:10px}
+ .workspace .inventory-import-actions>span{font-size:10px}
+ .workspace .inventory-import-actions>div{width:100%}
+ .workspace .inventory-import-actions .button{flex:1;min-height:42px;padding:8px 9px;font-size:11px}
+}

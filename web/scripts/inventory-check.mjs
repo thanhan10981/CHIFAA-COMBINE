@@ -1,4 +1,5 @@
 import path from 'node:path';
+import ExcelJS from 'exceljs';
 export async function checkInventory(page,base,out,report){
  for(const width of [320,390,768,1024,1440]){
   await page.setViewportSize({width,height:900});
@@ -46,6 +47,31 @@ export async function checkInventory(page,base,out,report){
  await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/post_stock_count',async route=>{count=route.request().postDataJSON();await route.fulfill({status:200,contentType:'application/json',body:'{"count_id":"synthetic-zero"}'});});
  await page.getByRole('button',{name:'Lưu phiếu kho',exact:true}).click();await page.getByText('Đã ghi phiếu. Tồn kho và lịch sử đã được cập nhật.',{exact:true}).waitFor();
  if(count?.p_lines[0].counted_quantity!=='0'||count.p_inventory_version!=='123')throw new Error('Zero count/token not retained');
+ await page.goto(base+'/app/inventory');
+ const workbook=new ExcelJS.Workbook(),sheet=workbook.addWorksheet('Tồn kho');
+ sheet.addRow(['Mã / vật tư','Tên vật tư','Nhóm','ĐVT chuẩn','Tồn hiện tại','Tối thiểu','Giá trung bình (đ / ĐVT chuẩn)','Số lượng nhập thêm','Giá nhập thêm (đ / ĐVT chuẩn)']);
+ sheet.addRows([
+  ['INV-M','Vật tư kiểm thử nhập kho','Nguyên liệu','kg','','3','3000','2.5','0'],
+  ['INV-U','Vật tư nhập chưa rõ giá','Phụ liệu','kg','','','','1.25',''],
+  ['INV-C','Vật tư chỉ cập nhật danh mục','Nguyên liệu','kg','','','','',''],
+ ]);
+ const importFile={name:'nhap-ton-kiem-thu.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:Buffer.from(await workbook.xlsx.writeBuffer())},importSent=[];
+ await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/import_inventory_excel',async route=>{importSent.push(route.request().postDataJSON());await route.fulfill({status:200,contentType:'application/json',body:'{"movement_id":"synthetic-excel-receipt","materials_created":1,"materials_updated":2,"receipt_lines":2}'});});
+ await page.locator('input[aria-label="Chọn file Excel tồn kho"]').setInputFiles(importFile);
+ const importDialog=page.getByRole('dialog');await page.getByText('Tồn cũ không bị ghi đè.',{exact:false}).waitFor();
+ if(!(await importDialog.getByText('3,75 kg',{exact:true}).count())||!(await importDialog.getByText('1 dòng nhập chưa có giá.',{exact:false}).count()))throw new Error('Import preview totals or missing-price warning are missing');
+ const zeroPriceRow=importDialog.locator('tbody tr').filter({hasText:'INV-M'});if(!(await zeroPriceRow.innerText()).includes('0 đ'))throw new Error('An explicit zero receipt price is not distinguished from an unknown price');
+ for(const width of [320,1440]){
+  await page.setViewportSize({width,height:900});
+  const bounds=await importDialog.boundingBox();
+  if(!bounds||bounds.x<0||bounds.x+bounds.width>width+1||bounds.y<0||bounds.y+bounds.height>901)throw new Error('Excel import preview is clipped at '+width+': '+JSON.stringify(bounds));
+  if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))throw new Error('Excel import preview causes page overflow at '+width);
+  await page.screenshot({path:path.join(out,'import-preview-'+width+'.png')});
+ }
+ await importDialog.getByRole('button',{name:'Xác nhận nhập kho',exact:true}).click();
+ await page.getByText('Đã nhập Excel: 1 mã mới, 2 mã đã có, 2 vật tư được cộng tồn.',{exact:true}).waitFor();
+ if(importSent.length!==1||importSent[0].p_lines.length!==3||importSent[0].p_lines[0].unit_cost!=='0'||importSent[0].p_lines[1].unit_cost!==null||importSent[0].p_lines[2].added_quantity!==null)throw new Error('Excel confirmation changed the explicit-zero, unknown-price or catalog-only lines');
+ report.checks.push('Excel import confirmation preview shows all material/receipt counts, per-unit additive totals, unknown price warning and explicit 0 price; responsive modal fits at 320/1440, no page overflow, and confirmation preserves additive quantity, null/zero price distinction and catalog-only line');
  report.checks.push('Inventory catalogue, movements, material-filtered receipt price history, reorder, entry at 5 widths; sole warehouse; empty warehouse guidance; decimal receipt plus per-entry price retry preserves payload/key; receipt price/quantity correction retains selected line and reason at 320/1440; confirmed zero count with captured inventory token; accessible icon actions stay in one row, desktop filters fit one row, no duplicate tabs, three compact dialogs at 320/1440');
  await page.goto(base+'/app/warehouses');await page.getByText('V\u1eadt t\u01b0 ki\u1ec3m th\u1eed nh\u1eadp kho',{exact:true}).waitFor();
  report.checks.push('Warehouse catalogue redirects to inventory; ingredient warehouse is resolved automatically without selector');

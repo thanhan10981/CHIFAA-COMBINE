@@ -509,3 +509,9 @@ Bỏ nút “Thêm mới” ở trang chấm công. Trang hiển thị danh sác
 Các cột tồn hiện tại, tối thiểu và giá trung bình trong workbook được ghi thành ô số, áp dụng định dạng `#,##0.######`. Excel hiển thị số nguyên không có sáu số 0 dư, vẫn giữ phần thập phân khi có; mã vật tư vẫn là văn bản để bảo toàn số 0 đầu mã.
 
 Đã xác nhận bằng 137/137 test, typecheck, lint và build. Lần chạy test đầu bị Windows chặn tiến trình esbuild trong sandbox; chạy lại với quyền khởi chạy tiến trình và toàn bộ test đạt. Không thay đổi dữ liệu/schema, không áp migration lên Supabase/DEV và chưa deploy.
+
+## 21/11/2026 — Hoàn thiện xem trước và xác nhận nhập Excel kho (KH-01/KH-09/KH-10)
+
+Làm lại hộp thoại rà soát file với tổng mã vật tư, số dòng cộng tồn, dòng chỉ cập nhật danh mục, dòng chưa có giá và tổng lượng theo từng ĐVT. Bảng cuộn xem đủ các dòng, phân biệt dòng cộng tồn với dòng danh mục; cảnh báo rõ giá trống không phải 0đ. Nút xác nhận nêu đúng tác động của file; bố cục hỗ trợ mobile và desktop.
+
+Đã xác nhận bằng 137/137 test, typecheck, lint, build và fixture Chromium kho tại 320–1440px; modal kiểm thử ở 320px/1440px, không tràn trang, payload giữ riêng giá 0, giá chưa rõ và dòng không nhập thêm. Không thay đổi schema/dữ liệu, không áp migration lên Supabase/DEV và chưa deploy.
