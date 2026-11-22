@@ -527,3 +527,15 @@ Chỉnh định dạng số trong workbook để số nguyên không hiện dấ
 Bỏ phụ thuộc vào việc liệt kê Supabase Auth khi mở trang Tài khoản & phân quyền. Danh sách, số liệu bật/tắt, role và quyền lấy từ database; thao tác lưu role/quyền tiếp tục qua RPC `admin_assign_user`. Chức năng gửi lời mời email vẫn dùng Edge Function.
 
 Đã đạt 138/138 test, typecheck, lint, build và fixture Chromium `--accounts`, gồm trường hợp Auth list lỗi nhưng trang vẫn tải, xem và lưu role/quyền được. Không đổi schema, chưa áp dụng cloud hay deploy.
+
+## 2026-11-22 — Nhập xuất Excel danh mục vật tư (KH-01/KH-09/KH-10)
+
+- Thêm nút xuất/nhập Excel ở Danh mục vật tư. File xuất có 10 dòng trống để thêm mã; nhập có xem trước, nhận diện bản ghi bằng ID/phiên bản ẩn, và không chứa tồn kho hay thao tác xóa vật tư.
+- Migration `202611220050_material_catalog_excel.sql` thêm export theo quyền và import 200 dòng/giao dịch, có kiểm tra phiên bản, audit, idempotency; giá sửa chuyển sang chờ xác minh, không tạo phiếu kho.
+- Typecheck, lint, 141/141 test, build và fixture Chromium tại 320/390/1440px đạt. Chưa áp SQL lên Supabase/DEV, chưa deploy hoặc UAT cloud.
+
+## 2026-11-22 — Sắp xếp danh mục vật tư (KH-01/KH-10)
+
+- Bổ sung bộ chọn thứ tự mặc định, tên A–Z, tên Z–A, mới nhất và cũ nhất. Truy vấn PostgreSQL sắp xếp trước phân trang; đổi thứ tự sẽ quay về trang đầu. “Mới nhất/cũ nhất” dùng thời điểm tạo vật tư, với mã và ID làm tiêu chí ổn định khi trùng.
+- Migration `202611220051_material_catalog_sort.sql` giữ RPC cũ cho client hiện tại và tạo `material_catalog_sorted` với cùng quyền, bộ lọc và dữ liệu danh mục. Không thay đổi giá, tồn hoặc lịch sử nghiệp vụ.
+- Typecheck, lint, 142/142 test, build và fixture Chromium danh mục tại 320–1920px đạt; fixture xác nhận 4 lựa chọn gửi đúng tham số RPC. Chưa áp SQL lên Supabase/DEV, chưa deploy hoặc UAT cloud.
