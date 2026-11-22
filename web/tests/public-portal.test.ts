@@ -85,7 +85,7 @@ test('anonymous catalog exposes only published active dishes and common prices; 
   const result=(await catalog()).rows[0].result;
   assert.equal(result.total,'2');assert.equal(result.rows.find(row=>row.code==='PUBLIC-A')?.price_vnd,'15000');
   assert.equal(result.rows.find(row=>row.code==='NO-PRICE')?.price_vnd,null);
-  assert.ok(result.rows.every(row=>Object.keys(row).sort().join(',')==='code,name,price_vnd,product_id,sale_unit'));
+  assert.ok(result.rows.every(row=>Object.keys(row).sort().join(',')==='code,image_path,name,price_vnd,product_id,sale_unit'));
   await db.query('update products set published=true where id=$1',[ids['PRIVATE-B']]);assert.equal((await catalog()).rows[0].result.total,'3');
   await db.query('update products set published=false where id=$1',[ids['PUBLIC-A']]);assert.ok(!(await catalog()).rows[0].result.rows.some(row=>row.code==='PUBLIC-A'));
   for(const table of ['products','product_prices','store_product_prices','stores','customer_orders','customer_order_items','materials','audit_logs'])await assert.rejects(()=>anonymous(db,()=>db.query('select * from public.'+table)),/permission denied/);

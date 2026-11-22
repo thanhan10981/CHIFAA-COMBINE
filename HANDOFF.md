@@ -925,3 +925,12 @@ Bằng chứng local: `npm run typecheck`, `npm run lint`, `npm run build`, `git
 ## 22/11/2026 — Sửa GitHub verify cho định dạng số (KH-01/KH-10/KH-11)
 
 GitHub Actions run `45043505733` thất bại duy nhất ở `npm test`: test định dạng tiền vẫn mong đợi ba chữ số thập phân (`16.000,125`) sau khi giao diện được chuẩn hóa tối đa hai số. Cập nhật kỳ vọng thành `16.000,13`, đồng thời giữ kiểm tra độ chính xác bigint và parse/giá trị nhập. Bằng chứng local: `npm run verify` đạt — sinh kiểu DB không đổi (97 bảng/81 RPC), typecheck, lint, 150/150 test và production build. Commit `d1b59aa` đã push; GitHub Actions run `45044902023` đạt đủ `db:types`, diff sinh kiểu, typecheck, lint, tests và build. Không sửa schema/dữ liệu, không áp migration hoặc deploy.
+
+
+## 2026-11-23 ? T?ng h?p ??n ??t h?ng, portal ?nh m?n v? giao h?ng (KH-12/01/03/04/05/10)
+
+- Th?m RPC t?ng h?p theo ng?y: t?ng ??n c? m?, ?i?m b?n/?i?n tho?i, ng?y giao, s? l??ng, chi?t kh?u, chi ti?t, t?ng ph?i tr?, kho?n thu ?? c? v? ghi ch?; b?ng ma tr?n s? l??ng theo m?n ? ?i?m b?n. UI c? popup chi ti?t, Excel hai sheet v? in ngang c? logo.
+- Danh m?c m?n cho t?i/x?a ?nh; portal c?ng khai ch? nh?n ?nh c?a m?n ?? c?ng b?. Th?m xem nhu c?u nguy?n li?u theo ??n approved/scheduled, t?nh qua BOM ?? c?ng b?, so v?i t?n ledger ?? hi?n thi?u. ??y l? d? b?o, kh?ng ph?i phi?u xu?t; nguy?n li?u v?n tr? l?c s?n xu?t.
+- Giao ho?n t?t t?o ch?ng t? b?n h?ng li?n k?t v?i delivery v? kho?n ph?i thu t? snapshot gi?/chi?t kh?u, kh?a giao h?ng ch?ng tr?ng; th?c thu v?n b?ng ch?ng t? thu ri?ng. C?c quy?n sales/receivables c?n c? m?i b?t thao t?c giao.
+- `npm run verify` ??t: sinh ki?u t? 97 b?ng/84 RPC, typecheck, lint, 152/152 test v? production build. `npm --prefix web run test:orders` ??t fixture responsive viewport 390px, kh?ng tr?n; ch? d?ng ph?n h?i fixture. CSDL d?ng c?c b? t? migrations; kh?ng ?p SQL Supabase/cloud, kh?ng deploy.
+- C?n l?i: lu?ng h?ng h?y/h? tr? v? nh?n h?ng v?t l? v?o kiosk, gi? nh?n l?i v? c?n tr? n? ??n c? ch?a ???c n?i v? D04/D16 c?n ch?t. Hi?n summary hi?n th? ch?a ghi nh?n khi thi?u ch?ng t?, return support hi?n h?u kh?ng nh?p kho/kh?ng ghi thu chi/b? tr?.

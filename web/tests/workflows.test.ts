@@ -85,7 +85,7 @@ test('order delivery consumes finished goods once and return support never resto
  const deliveryOrder=String((await rpc('submit_order',[ids.storeA,today,'AM',[{product_id:ids.product,quantity:100}],'Delivery fixture',randomUUID()],identities.a)).rows[0].result.order_id);
  await rpc('review_order',[deliveryOrder,1,true,'',randomUUID()]);
  const beforeMovements=(await db.query('select * from inventory_movements')).rows.length,key=randomUUID(),orderVersion=Number((await db.query<{version:string}>('select version from customer_orders where id=$1',[deliveryOrder])).rows[0].version),args=[deliveryOrder,orderVersion,key];
- const delivered=(await rpc('fulfill_order_delivery',args)).rows[0].result;
+ const delivered=(await rpc('fulfill_order_delivery',args)).rows[0].result as {status:string;delivery_id:string;sales_document_id:string;receivable_id:string;revenue_vnd:string};
  assert.equal(delivered.status,'fulfilled');
  assert.deepEqual((await rpc('fulfill_order_delivery',args)).rows[0].result,delivered);
  assert.equal((await db.query<{status:string}>('select status from customer_orders where id=$1',[deliveryOrder])).rows[0].status,'fulfilled');
@@ -104,7 +104,9 @@ test('order delivery consumes finished goods once and return support never resto
  const afterReverse=(await rpc('order_delivery_detail',[deliveryOrder])).rows[0].result as {items:{returned_quantity:string}[]};
  assert.equal(afterReverse.items[0].returned_quantity,'0');
  assert.equal(Number((await db.query<{balance:string}>('select private.finished_goods_balance($1,$2) balance',[ids.product,today])).rows[0].balance),available-100);
- assert.equal((await db.query('select * from sales_documents')).rows.length,0);
+ assert.equal((await db.query('select * from sales_documents where delivery_id=$1 and status=\'posted\'',[detail.delivery.id])).rows.length,1);
+ assert.equal((await db.query('select * from receivables where id=$1',[delivered.receivable_id])).rows.length,1);
+ assert.equal((await db.query('select * from sales_lines where document_id=$1 and net_revenue_vnd=$2',[delivered.sales_document_id,Number(delivered.revenue_vnd)])).rows.length,1);
  assert.equal((await db.query('select * from cash_ledger')).rows.length,0);
 });
 test('Portal capacity and unavailable-product validation roll back the entire order',async()=>{

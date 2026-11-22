@@ -57,6 +57,34 @@ test('product creation does not grant publication to customers',async()=>{
  await assert.rejects(()=>asUser(db,identities.accountant,()=>db.query("select save_catalog('products',null,null,'{\"code\":\"UNAPPROVED\",\"name\":\"Unapproved\",\"sale_unit\":\"phần\",\"published\":true}',$1)",[randomUUID()])),/FORBIDDEN_PUBLICATION/);
 });
 
+test('KH-12 published product images, order summaries, and completed delivery connect to one sale and receivable',async()=>{
+ const product=randomUUID(),store=randomUUID(),order=randomUUID(),warehouse=randomUUID(),recipe=randomUUID(),recipeVersion=randomUUID(),batch=randomUUID(),unit=randomUUID(),image=`${product}/${randomUUID()}.png`,key=randomUUID();
+ await db.query("insert into products(id,code,name,sale_unit,published) values($1,$2,'Synthetic order product','phần',true)",[product,'ORD-'+product.slice(0,8)]);
+ await db.query("insert into storage.objects(bucket_id,name) values('product-images',$1)",[image]);
+ const savedImage=(await asUser(db,identities.admin,()=>db.query<{r:{image_path:string;version:string}}>('select public.save_product_image($1,1,$2,$3) r',[product,image,key]))).rows[0].r;
+ assert.equal(savedImage.image_path,image);assert.equal(savedImage.version,'2');
+ const publicCatalog=(await asUser(db,identities.admin,()=>db.query<{r:{rows:{image_path:string}[]}}>('select public.public_order_catalog(current_date,0,100) r'))).rows[0].r;
+ assert.ok(publicCatalog.rows.some(row=>row.image_path===image));
+ await db.query("insert into stores(id,code,name,contact) values($1,$2,'Synthetic store','0900000000')",[store,'ORD-'+store.slice(0,8)]);
+ await db.query("insert into customer_orders(id,store_id,customer_id,delivery_date,shift,status) values($1,$2,$3,current_date,'AM','approved')",[order,store,identities.admin]);
+ await db.query("insert into customer_order_items(order_id,product_id,quantity,price_vnd,discount_rate,product_name,product_code,sale_unit) values($1,$2,2,1000,0.15,'Synthetic order product','ORD','phần')",[order,product]);
+ await db.query("insert into material_units(id,code,name,dimension) values($1,'ORD-UNIT','Order test unit','count')",[unit]);
+ await db.query("insert into recipes(id,code,name,kind) values($1,'ORD-RECIPE','Order test recipe','product')",[recipe]);
+ await db.query("insert into recipe_versions(id,recipe_id,revision,effective_from,output_quantity,output_unit_id,status) values($1,$2,1,current_date,1,$3,'published')",[recipeVersion,recipe,unit]);
+ await db.query("insert into warehouses(id,code,name,kind) values($1,'ORD-WH','Order test finished stock','finished')",[warehouse]);
+ await db.query("insert into production_batches(id,produced_on,delivery_date,warehouse_id,status) values($1,current_date,current_date,$2,'posted')",[batch,warehouse]);
+ await db.query("insert into production_batch_lines(batch_id,product_id,recipe_version_id,main_quantity) values($1,$2,$3,5)",[batch,product,recipeVersion]);
+ const fulfillKey=randomUUID();
+ const fulfilled=(await asUser(db,identities.admin,()=>db.query<{r:{revenue_vnd:string;delivery_id:string;receivable_id:string}}>('select public.fulfill_order_delivery($1,1,$2) r',[order,fulfillKey]))).rows[0].r;
+ assert.equal(fulfilled.revenue_vnd,'1700');
+ const replay=(await asUser(db,identities.admin,()=>db.query<{r:typeof fulfilled}>('select public.fulfill_order_delivery($1,1,$2) r',[order,fulfillKey]))).rows[0].r;
+ assert.equal(replay.delivery_id,fulfilled.delivery_id);
+ assert.equal((await db.query<{n:number}>('select count(*)::int n from sales_documents where delivery_id=$1 and status=\'posted\'',[fulfilled.delivery_id])).rows[0].n,1);
+ const summary=(await asUser(db,identities.admin,()=>db.query<{r:{orders:{discount_vnd:string;order_total_vnd:string;outstanding_vnd:string}[];products:{total_quantity:string;by_store:Record<string,string>}[]}}>('select public.order_customer_summary(current_date) r'))).rows[0].r;
+ assert.equal(summary.orders[0].discount_vnd,'300');assert.equal(summary.orders[0].order_total_vnd,'1700');assert.equal(summary.orders[0].outstanding_vnd,'1700');
+ assert.equal(summary.products[0].total_quantity,'2.000000');assert.equal(summary.products[0].by_store[store],'2.000000');
+});
+
 test('KH-02 custom department codes link employees, role rates, attendance and payroll',async()=>{
  const employee=randomUUID(),code='ROT-'+employee.slice(0,8),departmentCode='KHO-'+employee.slice(0,8).toUpperCase();
  await db.query("insert into departments(code,name) values('SX','Production') on conflict(code) do nothing");

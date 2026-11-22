@@ -47,6 +47,8 @@ const paths:Record<string,string>={
  clock:'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20 M12 6v6l4 2',
  scale:'M12 3v18 M7 21h10 M4 7h16 M6 7l-4 8h8z M18 7l-4 8h8z',
  asset:'M4 4h16v12H4z M8 20h8 M12 16v4',
+ download:'M12 3v12 M7 10l5 5 5-5 M4 20h16',
+ print:'M6 8V3h12v5 M6 17H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2 M6 14h12v7H6z',
 };
 type Props=SVGProps<SVGSVGElement>&{size?:number;name?:string};
 export function Icon({name='box',size=18,...props}:Props){return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.65} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}><path d={paths[name]??paths.box}/></svg>;}
