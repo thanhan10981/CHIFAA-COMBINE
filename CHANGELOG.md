@@ -595,3 +595,7 @@ Bỏ phụ thuộc vào việc liệt kê Supabase Auth khi mở trang Tài kho�
 - Thêm chọn bộ phận thực tế theo từng ca và mức lương hiệu lực riêng theo nhân viên/bộ phận. Chặn lưu khi bộ phận đó chưa có mức lương.
 - Giữ snapshot bộ phận chính, bộ phận thực tế và lương đã áp dụng trên ca; bảng lương hiển thị bộ phận, mức lương theo ca, và nhãn “Đổi vị trí trong ca” cùng vị trí chính trong chi tiết.
 - Kiểm tra local: 144/144 test, typecheck, lint, production build và browser fixture attendance/payroll. Migration 053 chưa áp cloud/DEV; chưa deploy.
+## 2026-11-22 — Gọn bảng tổng hợp giá vốn (KH-01/KH-10/KH-11)
+
+- Bỏ cột cost nguồn tham khảo và nhãn trạng thái bản nháp khỏi bảng `/app/cost`; giữ giá vốn tính từ BOM, trạng thái đủ/thiếu cost và lý do thiếu.
+- Chỉ đổi cách trình bày. Không đổi trạng thái phiên bản, dữ liệu nguồn, lịch sử hay database. `npm run check`, `npm run lint`, `npm run build` và `git diff --check` đạt; không chạy test/fixture.
