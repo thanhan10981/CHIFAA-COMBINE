@@ -735,6 +735,14 @@ Dashboard vận hành `/app/opsdashboard` thay nội dung blueprint tĩnh bằng
 Migration `202611190043_dashboard_operating_period.sql` thêm RPC đọc kỳ, yêu cầu quyền Dashboard, giới hạn kỳ tối đa 366 ngày và giữ quyền từng chỉ tiêu thông qua `dashboard_summary`. Không áp migration lên Supabase/cloud.
 
 Bằng chứng local: `npm run typecheck`, `npm run lint`, `npm test` (129/129), `npm run build`, test PGlite `executive-dashboard.test.ts` (2/2), `git diff --check` đạt. Lần chạy test/build đầu bị Windows sandbox chặn tiến trình con (`spawn EPERM`); chạy lại ở quyền được duyệt đạt. Chưa có UAT kết nối Supabase cloud.
+## 2026-11-21 — Căn chỉnh nút ngưỡng Dashboard (KH-06/07/10)
+
+Đưa liên kết “Cài ngưỡng mục tiêu” từ hàng riêng lên cùng hàng tiêu đề bảng đối chiếu để bỏ khoảng trống thừa và thống nhất cấp bậc thị giác. Nút có icon dạng điều chỉnh, mũi tên, trạng thái hover/focus và chiếm hàng riêng trên màn hẹp. Không đổi dữ liệu, quyền, kỳ báo cáo hay công thức ngưỡng.
+
+Đã đối chiếu KH-06/KH-07/KH-08 và quy tắc liên thông KH-05/KH-06/KH-10: so sánh tiếp tục dùng mục tiêu đang hiệu lực và dữ liệu kỳ hiện tại; phần thiếu vẫn giữ trạng thái chưa đủ dữ liệu. Typecheck, lint, 138/138 tests và build đạt. Fixture `node scripts/design-check.mjs --threshold-action` đạt tại 320/390/768/1440px, xác nhận nút ở trong header, đúng màu và không tràn; đã xem ảnh desktop/mobile trong `output/dashboard-threshold-design/`.
+
+Giới hạn kiểm tra: fixture responsive tổng hợp dừng ở Strategy bị tràn ngang tại 320px (Dashboard trước đó đạt 320px); fixture design tổng hợp dừng ở form xác minh vật tư do timeout chờ nút lưu, sau khi các route desktop gồm Dashboard đã qua. Đây là lỗi ngoài phạm vi thay đổi hiện tại. Chưa có UAT xác thực với Supabase cloud.
+
 ## 19/11/2026 — Làm tròn hiển thị tiền Dashboard vận hành (KH-06/07/10)
 
 Card kế hoạch doanh thu từng cộng các mục tiêu ngày được chia từ tổng kỳ, nên giá trị số học có phần lẻ lặp dài và UI hiển thị chuỗi thập phân. Thêm formatter tiền VND làm tròn đồng gần nhất (half-up) và dùng cho các khoản tiền trên Dashboard vận hành; formatter số lượng/giá có độ chính xác khác giữ nguyên. Test xác nhận `260000000.00000000006` hiển thị `260.000.000` và làm tròn âm/dương đúng.
@@ -841,3 +849,9 @@ Bằng chứng: `npm run db:types` sinh kiểu từ 95 bảng/75 RPC; typecheck,
 Thêm sắp xếp thứ tự mặc định, tên A–Z, tên Z–A, mới nhất và cũ nhất trong bảng danh mục. RPC `material_catalog_sorted` sắp xếp trên toàn bộ tập kết quả đã lọc trước khi phân trang; đổi sắp xếp tự về trang đầu. Thời gian tạo vật tư quyết định “mới nhất/cũ nhất”; mã và ID phân định thứ tự khi trùng. RPC cũ được giữ lại; giá, tồn, quyền và lịch sử không đổi.
 
 Bằng chứng: `npm run db:types` sinh 76 RPC; typecheck, lint, `npm test` (142/142), build, `node scripts/design-check.mjs --materials` và `git diff --check` đạt. PGlite kiểm tra thứ tự, phân trang trên thứ tự toàn cục, lọc, giá trị sort không hợp lệ, quyền và việc không lộ `created_at`; fixture Chromium kiểm tra lựa chọn gọi đúng RPC, reset offset và hiển thị từ 320 đến 1920px. Chưa áp migration `202611220051_material_catalog_sort.sql` lên Supabase/DEV; chưa deploy hoặc UAT cloud. Cần migration 051 và bản frontend mới trên môi trường dùng thật.
+
+## 22/11/2026 — Quy cách vật tư bằng gam khi có lịch sử (KH-01/KH-10)
+
+Vật tư có dòng kho hoặc công thức đã lưu không cho đổi đơn vị dùng/kho chuẩn ngay. Migration `202611220052_material_unit_lock_status.sql` bổ sung vào RPC cơ sở giá đơn vị chuẩn hiện tại và cờ khóa theo đúng điều kiện máy chủ; quyền xem vật tư vẫn được kiểm tra. Biểu mẫu khóa trường đơn vị chuẩn, giải thích lý do, đồng thời cho chọn gam làm đơn vị chứa của quy cách bao bì. Ví dụ `1 túi = 100 g` được quy đổi về đơn vị kho kg khi tính tồn/công thức. Quy tắc chặn đổi đơn vị chuẩn và các dòng lịch sử vẫn giữ nguyên.
+
+Bằng chứng: `npm run verify` đạt, gồm type generation, typecheck, lint, 143/143 PGlite tests và production build. `node scripts/design-check.mjs --materials` đạt; fixture xác nhận trường kho bị khóa và xem trước `1 túi = 100 g`. Chưa áp migration lên Supabase/DEV, chưa deploy hoặc UAT cloud. Đổi hẳn đơn vị chuẩn của vật tư đã có lịch sử vẫn cần quy trình chuyển đổi/đối chiếu riêng.

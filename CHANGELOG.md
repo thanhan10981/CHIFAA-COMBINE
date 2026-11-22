@@ -1,3 +1,14 @@
+## 2026-11-22 — Giữ đơn vị kho khi khai báo quy cách bằng gam (KH-01/KH-10)
+
+- Vật tư có lịch sử kho hoặc công thức giữ nguyên đơn vị chuẩn; biểu mẫu hiện lý do và vẫn cho khai báo quy cách như `1 túi = 100 g`.
+- Migration `202611220052_material_unit_lock_status.sql` bổ sung trạng thái lịch sử có phạm vi quyền vào cơ sở giá. Quy đổi bao bì tiếp tục chuyển về đơn vị kho chuẩn; không sửa chứng từ cũ.
+- Đạt typecheck, lint, 143/143 test, build và fixture Chromium `--materials`. Chưa áp migration lên Supabase/DEV, chưa deploy hoặc UAT cloud.
+
+## 2026-11-21 — Căn chỉnh nút cài ngưỡng trên Dashboard (KH-06/07/10)
+
+- Chuyển nút “Cài ngưỡng mục tiêu” vào hàng tiêu đề bảng đối chiếu; thêm icon điều chỉnh, mũi tên, hover/focus rõ ràng và bố cục co giãn cho màn nhỏ.
+- Chỉ thay giao diện; nguồn dữ liệu, kỳ và quy tắc ngưỡng giữ nguyên. Typecheck, lint, 138/138 tests, build và fixture riêng desktop/mobile tại 320/390/768/1440px đạt; đã xem ảnh fixture. Bộ responsive tổng hợp còn lỗi tràn ngang ở Strategy 320px; không thuộc phạm vi nút Dashboard.
+
 ## 2026-11-20 — Excel tồn kho (KH-01/09/10)
 
 - Bảng kho hiển thị giá nhập trung bình; xuất Excel toàn bộ tồn kèm mẫu cột nhập thêm.
