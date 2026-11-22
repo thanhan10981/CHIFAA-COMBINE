@@ -550,3 +550,9 @@ Bỏ phụ thuộc vào việc liệt kê Supabase Auth khi mở trang Tài kho�
 - Bổ sung bộ chọn thứ tự mặc định, tên A–Z, tên Z–A, mới nhất và cũ nhất. Truy vấn PostgreSQL sắp xếp trước phân trang; đổi thứ tự sẽ quay về trang đầu. “Mới nhất/cũ nhất” dùng thời điểm tạo vật tư, với mã và ID làm tiêu chí ổn định khi trùng.
 - Migration `202611220051_material_catalog_sort.sql` giữ RPC cũ cho client hiện tại và tạo `material_catalog_sorted` với cùng quyền, bộ lọc và dữ liệu danh mục. Không thay đổi giá, tồn hoặc lịch sử nghiệp vụ.
 - Typecheck, lint, 142/142 test, build và fixture Chromium danh mục tại 320–1920px đạt; fixture xác nhận 4 lựa chọn gửi đúng tham số RPC. Chưa áp SQL lên Supabase/DEV, chưa deploy hoặc UAT cloud.
+
+## 2026-11-22 — Chấm công luân phiên bộ phận, lương theo vị trí (KH-02/KH-07/KH-10)
+
+- Thêm chọn bộ phận thực tế theo từng ca và mức lương hiệu lực riêng theo nhân viên/bộ phận. Chặn lưu khi bộ phận đó chưa có mức lương.
+- Giữ snapshot bộ phận chính, bộ phận thực tế và lương đã áp dụng trên ca; bảng lương hiển thị bộ phận, mức lương theo ca, và nhãn “Đổi vị trí trong ca” cùng vị trí chính trong chi tiết.
+- Kiểm tra local: 144/144 test, typecheck, lint, production build và browser fixture attendance/payroll. Migration 053 chưa áp cloud/DEV; chưa deploy.

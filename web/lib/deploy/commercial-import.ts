@@ -53,7 +53,7 @@ begin
   if found_row is null then insert into public.employees(code,name,phone,note,department_id) values(r->>'code',r->>'name',nullif(r->>'phone',''),nullif(r->>'note',''),null) returning id into target;
   else target=(found_row->>'id')::uuid;if found_row->>'name'<>r->>'name' or coalesce(found_row->>'phone','')<>coalesce(r->>'phone','') or not(found_row->>'active')::boolean then raise exception 'EXISTING_EMPLOYEE_REVIEW: %',r->>'code';end if;end if;
   if exists(select 1 from public.employee_pay_rates where employee_id=target and effective_from=${literal(date)}::date and(hourly_vnd<>(r->>'hourly')::bigint or daily_allowance_vnd<>0)) then raise exception 'EXISTING_PAY_REVIEW: %',r->>'code';end if;
-  insert into public.employee_pay_rates(employee_id,hourly_vnd,daily_allowance_vnd,effective_from) values(target,(r->>'hourly')::bigint,0,${literal(date)}::date) on conflict(employee_id,effective_from) do nothing;
+  insert into public.employee_pay_rates(employee_id,hourly_vnd,daily_allowance_vnd,effective_from) values(target,(r->>'hourly')::bigint,0,${literal(date)}::date) on conflict do nothing;
   select id into strict term_id from public.employee_pay_rates where employee_id=target and effective_from=${literal(date)}::date;
   insert into private.catalog_sources(entity,entity_id,source_hash,source_data) values('terms:pay',term_id,'${hash}',jsonb_build_object('original',r,'evidence','Danh mục gốc do chủ sở hữu cung cấp; phụ cấp chưa có trong nguồn; SHA256 ${hash}'));
   insert into private.catalog_sources(entity,entity_id,source_hash,source_data) values('employees',target,'${hash}',r);

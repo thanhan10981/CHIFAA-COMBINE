@@ -56,3 +56,23 @@ test('product creation does not grant publication to customers',async()=>{
  await asUser(db,identities.accountant,()=>db.query("select save_catalog('products',null,null,'{\"code\":\"DRAFT-PRODUCT\",\"name\":\"Draft\",\"sale_unit\":\"phần\",\"published\":false}',$1)",[randomUUID()]));
  await assert.rejects(()=>asUser(db,identities.accountant,()=>db.query("select save_catalog('products',null,null,'{\"code\":\"UNAPPROVED\",\"name\":\"Unapproved\",\"sale_unit\":\"phần\",\"published\":true}',$1)",[randomUUID()])),/FORBIDDEN_PUBLICATION/);
 });
+
+test('KH-02 temporary department changes use that role rate and preserve both role and wage in payroll',async()=>{
+ const employee=randomUUID(),code='ROT-'+employee.slice(0,8);
+ await db.query("insert into departments(code,name) values('SX','Production'),('VP','Office') on conflict(code) do nothing");
+ await db.query("insert into employees(id,code,name,department_id) select $1,$2,'Synthetic rotation',id from departments where code='SX'",[employee,code]);
+ await db.query("insert into employee_pay_rates(employee_id,hourly_vnd,effective_from) values($1,15000,'2020-01-01')",[employee]);
+ const input={note:'Synthetic rotation test',employee_id:employee,starts_at:'2026-11-18T00:00:00+07:00',ends_at:'2026-11-18T08:00:00+07:00',break_minutes:'0',department:'VP',daily:'0',support:'0',advance:'0',deduction:'0'};
+ const submit=(value:Record<string,unknown>)=>asUser(db,identities.admin,()=>db.query<{r:Record<string,unknown>}>('select public.submit_entry($1,$2,$3::jsonb,null,$4) r',['attendance','2026-11-18',JSON.stringify(value),randomUUID()]));
+ await assert.rejects(()=>submit(input),/PAY_RATE_MISSING_FOR_DEPARTMENT/);
+ const vp=(await db.query<{id:string}>("select id from departments where code='VP'")).rows[0].id;
+ await asUser(db,identities.admin,()=>db.query('select public.save_commercial_terms($1,$2,$3,$4::jsonb,$5)',['pay',employee,1,JSON.stringify({date:'2020-01-01',evidence:'Synthetic rotation rate',amount:'28000',department_id:vp}),randomUUID()]));
+ const history=(await asUser(db,identities.admin,()=>db.query<{r:Record<string,unknown>[]}>('select public.commercial_history($1,$2) r',['pay',employee]))).rows[0].r;
+ assert.ok(history.some(rate=>rate.department_code==='VP'&&rate.hourly_vnd==='28000'));
+ const saved=(await submit(input)).rows[0].r,workspace=(await asUser(db,identities.admin,()=>db.query<{r:{rows:Record<string,unknown>[];shifts:Record<string,unknown>[]}}>('select public.entry_workspace($1,$2) r',['payroll','2026-11-18']))).rows[0].r;
+ const row=workspace.rows.find(r=>r.employee_id===employee&&r.department==='VP'),detail=workspace.shifts.find(s=>s.employee_id===employee);
+ assert.ok(row);assert.equal(row.role_changed,true);assert.equal(row.base_vnd,'224000');assert.equal((row.rate_details as Record<string,unknown>[])[0].hourly_vnd,'28000');assert.equal(Number((row.rate_details as Record<string,unknown>[])[0].hours),8);
+ assert.ok(detail);assert.equal(detail.department,'VP');assert.equal(detail.home_department,'SX');assert.equal(detail.role_changed,true);assert.equal(detail.hourly_vnd,'28000');
+ const snapshot=await db.query<{department_snapshot:string;home_department_snapshot:string;hourly_rate_vnd:string;home_hourly_rate_vnd:string}>("select s.department_snapshot,s.home_department_snapshot,p.hourly_rate_vnd::text,p.home_hourly_rate_vnd::text from attendance_shifts s join attendance_pay_snapshots p on p.shift_id=s.id where s.id=$1",[saved.shift_id]);
+ assert.deepEqual(snapshot.rows[0],{department_snapshot:'VP',home_department_snapshot:'SX',hourly_rate_vnd:'28000',home_hourly_rate_vnd:'15000'});
+});
