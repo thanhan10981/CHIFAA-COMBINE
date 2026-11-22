@@ -7,3 +7,5 @@
 /* Keep the optional checkbox aligned with the input controls on desktop rows. */
 .recipe-form .recipe-edit-line .recipe-cost-exempt{transform:translateY(-16px)}
 @media(max-width:900px){.recipe-form .recipe-edit-line .recipe-cost-exempt{transform:none}}
+.recipe-catalog .cost-report .card-head p{margin:4px 0 0;color:#647b90;font-size:12px}.recipe-catalog .cost-summary-total{align-items:center}.recipe-catalog .cost-status-note{display:block;max-width:360px;margin-top:5px;color:#647b90;font-size:11px;line-height:1.45;white-space:normal}.recipe-catalog .cost-pagination{justify-content:space-between;gap:12px;padding:14px 0}.recipe-catalog .cost-pagination>div{display:flex;gap:8px}.recipe-catalog .cost-report>.note{margin-top:12px}
+@media(max-width:600px){.recipe-catalog .cost-summary-total{align-items:flex-start;flex-direction:column}.recipe-catalog .cost-pagination{align-items:flex-start;flex-direction:column}.recipe-catalog .cost-pagination>div{width:100%;justify-content:space-between}}

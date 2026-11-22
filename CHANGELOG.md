@@ -1,3 +1,10 @@
+## 2026-11-22 — Hoàn thiện tổng hợp giá vốn (KH-01/KH-10/KH-11)
+
+- Bảng tổng hợp tính và hiển thị giá vốn theo mẻ, theo đơn vị bán; giá bán lẻ theo định lượng được làm tròn đến đồng. Có phân trang và trạng thái kèm lý do thiếu dữ liệu.
+- Bỏ danh sách món và chi tiết công thức bên dưới trang tổng hợp. Giá nguồn tiếp tục được ghi rõ là tham khảo; không lấy thay cost BOM.
+- Typecheck, lint, production build và `git diff --check` đạt. Không chạy test/fixture; không đổi database/migration hoặc deploy.
+- Công thức Mì trộn chưa thể có cost chính thức vì nguồn chưa có định lượng thành phần được đối chiếu. Không tự tạo giá hoặc lượng.
+
 ## 2026-11-22 — Làm tròn định lượng thành phần công thức (KH-01/KH-10/KH-11)
 
 - Trình sửa công thức chỉ hiển thị/lưu tối đa 2 chữ số thập phân ở số lượng thành phần; làm tròn nửa lên (ví dụ `1.125` → `1.13`). Sản lượng/mẻ và các phiên bản công thức cũ giữ nguyên.

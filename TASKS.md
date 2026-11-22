@@ -1,5 +1,12 @@
 # Theo dõi công việc
 
+## Tổng hợp giá vốn công thức — 2026-11-22 (KH-01/KH-10/KH-11)
+
+- [x] Hiển thị cost/mẻ và cost/đơn vị bán từ toàn bộ BOM đã có, làm tròn giá bán đến đồng; có phân trang.
+- [x] Trình bày trạng thái/lý do cost chưa đủ; giữ cost nguồn là tham khảo; bỏ khung danh sách và chi tiết món dưới trang `/app/cost`.
+- [x] Typecheck, lint, production build, `git diff --check` đạt. Không chạy test/fixture; không tạo migration hoặc áp dụng database cloud.
+- [ ] Nhập và đối chiếu BOM thực tế cho các món thiếu dữ liệu (đặc biệt Mì trộn: nguồn chỉ có cost tham khảo 7.000); xác minh giá và quy đổi vật tư rồi kiểm tra lại cost trên DEV.
+
 ## Định dạng số lượng thành phần công thức — 2026-11-22 (KH-01/10/11)
 
 - [x] Trong form thêm/sửa/sao chép, hiển thị số lượng thành phần tối đa 2 chữ số thập phân và làm tròn nửa lên khi mở, rời ô hoặc gửi; sản lượng/mẻ không đổi.

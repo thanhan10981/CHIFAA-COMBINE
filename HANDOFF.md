@@ -1,3 +1,12 @@
+## 2026-11-22 — Hoàn thiện tổng hợp giá vốn (KH-01/KH-10/KH-11)
+
+- `/app/cost` dùng dữ liệu `recipe_catalog` và `recipe_cost` hiện có để hiển thị cost/mẻ và cost/đơn vị bán cho từng món theo ngày. Giá/đơn vị bán được làm tròn đến đồng; phân trang hoạt động cho toàn bộ danh sách.
+- Bảng nêu tình trạng cost theo từng công thức và lý do khi thiếu giá vật tư đã xác minh, thiếu quy đổi, công thức cần đối chiếu, lệch đơn vị công thức con, chưa có phiên bản hiệu lực hoặc thiếu định lượng. Cost nguồn chỉ hiển thị là tham khảo.
+- Gỡ danh sách/chọn món và khung chi tiết công thức khỏi bên dưới trang tổng hợp; trang này không gọi RPC tải chi tiết công thức. Không sửa công thức, chứng từ, lịch sử hoặc công thức tính ở database.
+- Dữ liệu Mì trộn trong nguồn hiện chỉ có cost tham khảo 7.000, chưa có định lượng BOM được đối chiếu; không suy ra giá cost chính thức. Cần nhập thành phần/số lượng thực tế và xác minh giá/quy đổi vật tư trước khi cost có thể đủ.
+- Bằng chứng local: `npm run typecheck`, `npm run lint`, `npm run build`, `git diff --check` đạt. Không chạy test/fixture theo chỉ dẫn phiên này. Không tạo migration, chưa áp SQL cloud, chưa deploy/UAT thật.
+- Còn lại: hoàn tất dữ liệu BOM/giá thực tế cho các công thức được đánh dấu thiếu; xác nhận giao diện trên DEV sau khi đồng bộ frontend hiện tại.
+
 ## 2026-11-22 — Làm gọn số lượng thành phần trong trình sửa công thức (KH-01/KH-10/KH-11)
 
 - Trình sửa công thức hiển thị định lượng thành phần với tối đa 2 chữ số thập phân; làm tròn nửa lên khi mở giá trị cũ, rời ô hoặc lưu, ví dụ `1.125` thành `1.13`, `100.000000` thành `100`. Nếu cần độ chính xác nhỏ hơn, chọn đơn vị nhỏ hơn.
