@@ -1,3 +1,23 @@
+## 2026-11-22 — Giao đơn đặt hàng và hỗ trợ hàng hoàn (KH-01/KH-03/KH-04/KH-05/KH-10)
+
+- Đơn đã duyệt/lên kế hoạch có thể xác nhận giao đủ. RPC giao dịch tạo đúng một chứng từ deliveries, cập nhật đơn sang fulfilled, kiểm tra tồn thành phẩm và hỗ trợ gửi lại idempotent. Tồn khả dụng được tính từ thành phẩm tốt đã sản xuất trừ chứng từ giao và lượng bán chưa gắn giao. Nguyên liệu tiếp tục trừ tại sản xuất, không trừ lần hai khi giao.
+- Hàng hoàn của đơn lưu ở chứng từ hỗ trợ riêng: nhập số lượng và giá hỗ trợ/đơn vị, máy chủ tính tổng, chặn vượt lượng đã giao, khóa theo kỳ và cho đảo có lý do/audit. Không cộng hàng hoàn lại tồn, không tự tạo doanh thu, thu tiền hay bù trừ công nợ.
+- Xác minh cục bộ: 97 bảng/80 RPC sinh kiểu; typecheck, lint, 147/147 kiểm thử và production build đạt. Kiểm thử workflow xác nhận thiếu tồn bị chặn, giao chỉ ghi một lần, không phát sinh xuất nguyên liệu lần hai, giá hỗ trợ chính xác, vượt lượng hoàn bị chặn và đảo hỗ trợ không đổi tồn. Fixture Playwright `npm run test:orders` xác nhận nhập giá hỗ trợ và giao diện 390px; fixture tổng đi qua tuyến orders không lỗi/tràn. `npm run test:design` tổng thể dừng ở kiểm tra nút xác minh vật tư (Lưu phiên bản xác minh), ngoài luồng đơn hàng.
+- Chưa áp migration 202611220056_order_delivery_return_support.sql lên Supabase/DEV, chưa deploy hoặc UAT bằng tài khoản thật. Cần phát hành migration theo release path, cấp quyền deliveries/returns/production phù hợp và kiểm tra giao thực tế cùng quyền xem tồn.
+## 22/11/2026 — Cho sửa đơn vị/quy đổi vật tư có lịch sử (KH-01/KH-09/KH-10/KH-11)
+
+Theo phản hồi chủ ứng dụng, đơn vị vật tư và quy cách cần sửa được kể cả khi từng dùng trong kho/công thức; tồn hiện tại vẫn chỉ được ghi bởi nhập/xuất kho và kiểm kê. Biểu mẫu cho phép đổi đơn vị mua, đơn vị dùng/kho và tỷ lệ quy cách. Đổi đơn vị kho chỉ lưu khi có tỷ lệ vật lý hoặc quy đổi đã xác minh; mức tồn tối thiểu được chuyển theo cùng tỷ lệ. Sổ kho và dòng công thức cũ giữ nguyên đơn vị/số lượng đã ghi. Số tồn dẫn xuất được quy đổi sang đơn vị kho hiện tại; nếu thiếu tỷ lệ thì trả chưa xác định thay vì đoán.
+
+Migration `202611220055_material_units_editable.sql` cho sửa quy đổi chung sau khi đã dùng, đồng thời lưu tỷ lệ cũ theo ngày hiệu lực để tra công thức/lịch sử giá. RPC lưu công thức từ chối đơn vị thành phần chưa quy đổi được sang chuẩn vật tư. Chi tiết công thức hiển thị lượng khối lượng nhỏ theo đơn vị đọc dễ hơn (0,1 kg → 100 g; 1 kg vẫn là 1 kg); công thức lưu, chi phí và giá đơn vị gốc không đổi.
+
+Bằng chứng local: `npm run db:types` sinh 95 bảng/76 RPC; typecheck và lint đạt; `npm test` 146/146 PGlite tests đạt; production build cuối đạt. `node scripts/design-check.mjs --materials` đạt tại 320–1920px, gồm kiểm tra đơn vị kho mở, tồn chỉ đọc và quy cách; `--recipes` đạt 5 tuyến × 5 kích thước, có kiểm tra 0,1 kg → 100 g. Fixture chỉ dùng dữ liệu giả. Chưa áp migration 055 lên Supabase/DEV, chưa deploy hoặc authenticated UAT.
+
+## 22/11/2026 — Nhập mã bộ phận tùy chỉnh và liên kết chấm công/lương (KH-02/KH-10)
+
+Danh mục Bộ phận nhận mã dạng văn bản (tối đa 20 ký tự chữ/số, `-`, `_`, tự viết hoa) để thêm nhiều bộ phận. Nhân viên, mức lương theo bộ phận, chọn bộ phận khi chấm công, bộ lọc và chi tiết bảng lương dùng cùng bảng `departments`; giao diện hiển thị mã kèm tên. Migration `202611220054_dynamic_department_codes.sql` gỡ giới hạn bộ mã cố định khỏi danh mục và ảnh chụp ca, đồng thời giữ dữ liệu cũ. Giữ nguyên quy tắc báo cáo: chỉ ca mã `SX` được tính KPI nhân sự sản xuất; chưa thêm loại nhóm/KPI mới.
+
+Bằng chứng local: `npm run verify` đạt (db:types 95 bảng/76 RPC, typecheck, lint, 145/145 tests, build); fixture `--entries` đạt 50 bố cục/5 kích thước và gửi mã `KHO` qua chấm công; fixture `--commercial` đạt 4 danh mục/5 kích thước, kiểm tra nhập text tự viết hoa và mã/tên trong hồ sơ, bộ chọn nhân viên, lịch sử và bộ chọn lương; `git diff --check` đạt. Test PostgreSQL tạo mã bộ phận bằng `save_catalog`, gắn mã vào nhân viên/mức lương, ghi cả bộ phận làm và vị trí chính vào ca, trả mã/tên ở lịch sử và bảng lương. Fixture dùng dữ liệu giả; chưa áp migration 054 lên Supabase/DEV, chưa deploy hoặc authenticated UAT; cần chạy theo release path rồi kiểm tra trên môi trường đăng nhập.
+
 ## 20/11/2026 — Excel xuất tồn và nhập bổ sung từ file (KH-01/09/10)
 
 Ở Tồn kho, bảng có thêm giá nhập trung bình theo kho/ngày đang xem. Nút Xuất Excel tải toàn bộ vật tư theo quyền `inventory/export`; workbook có các cột mã, tên, nhóm, ĐVT chuẩn, tồn hiện tại, tối thiểu, giá trung bình, số lượng nhập thêm và giá nhập thêm. Trang Hướng dẫn trong workbook nói rõ tồn hiện tại/giá trung bình chỉ để xem, còn lượng nhập thêm là dữ liệu được ghi.

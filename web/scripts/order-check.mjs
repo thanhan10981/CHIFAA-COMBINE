@@ -1,0 +1,30 @@
+export async function checkOrders(page,base,out,report){
+ const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh'}).format(new Date());
+ const orderId='90000000-0000-4000-8000-000000000001',deliveryId='90000000-0000-4000-8000-000000000002',deliveryItemId='90000000-0000-4000-8000-000000000003',orderItemId='90000000-0000-4000-8000-000000000004',productId='90000000-0000-4000-8000-000000000005';
+ let delivered=false,supportRequest=null;
+ const order=()=>({id:orderId,version:delivered?2:1,store_id:'90000000-0000-4000-8000-000000000006',customer_id:'90000000-0000-4000-8000-000000000007',delivery_date:today,shift:'AM',status:delivered?'fulfilled':'approved',note:null,guest_name:null,guest_phone:null,guest_address:null,store_code:'STORE-1',store_name:'Điểm bán kiểm thử'});
+ await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/order_review_queue',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([order()])}));
+ await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/order_delivery_detail',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({order_id:orderId,order_status:delivered?'fulfilled':'approved',delivery:delivered?{id:deliveryId,delivery_date:today,status:'posted',version:'1'}:null,items:[{order_item_id:orderItemId,product_id:productId,product_code:'MON-1',product_name:'Món kiểm thử',sale_unit:'phần',ordered_quantity:'10',price_vnd:'25000',available_quantity:delivered?'15':'25',delivery_item_id:delivered?deliveryItemId:null,delivered_quantity:delivered?'10':'0',returned_quantity:'0'}],return_supports:[]})}));
+ await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/fulfill_order_delivery',async route=>{const request=route.request().postDataJSON();if(request.p_order!==orderId||!request.p_key)throw new Error('Delivery RPC did not send the selected order/idempotency key');delivered=true;await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({order_id:orderId,delivery_id:deliveryId,delivery_date:today,status:'fulfilled'})});});
+ await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/record_order_return_support',async route=>{supportRequest=route.request().postDataJSON();await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({support_id:'90000000-0000-4000-8000-000000000008',delivery_id:deliveryId,total_support_vnd:'27000',status:'posted',inventory_returned:false,automatically_paid:false})});});
+ await page.goto(base+'/app/orders');await page.evaluate(()=>document.fonts.ready);
+ await page.getByRole('button',{name:'Xem đơn',exact:true}).waitFor();await page.getByRole('button',{name:'Xem đơn',exact:true}).click();
+ await page.getByRole('button',{name:'Xác nhận đã giao đủ',exact:true}).waitFor();
+ if(!(await page.getByRole('dialog').innerText()).includes('Tồn thành phẩm'))throw new Error('Order detail does not show available finished goods');
+ await page.getByRole('button',{name:'Xác nhận đã giao đủ',exact:true}).click();
+ await page.getByRole('button',{name:'Ghi nhận hoàn hàng',exact:true}).waitFor();
+ const heading=await page.locator('.page-heading').innerText();if(!heading.includes('không trừ lần hai'))throw new Error('Order page does not explain the ingredient stock timing: '+heading);
+ await page.getByRole('button',{name:'Ghi nhận hoàn hàng',exact:true}).click();
+ await page.getByLabel('Lý do hoàn hàng').fill('Hỗ trợ khách trả lại một phần đơn');
+ await page.getByLabel('Số lượng hoàn Món kiểm thử').fill('2');
+ await page.getByLabel('Giá hỗ trợ Món kiểm thử').fill('13500');
+ await page.screenshot({path:out+'/order-return-support-desktop.png',animations:'disabled'});
+ await page.setViewportSize({width:390,height:844});
+ if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))throw new Error('Order return-support form overflows mobile viewport');
+ await page.screenshot({path:out+'/order-return-support-mobile.png',animations:'disabled'});
+ await page.getByRole('button',{name:'Lưu hàng hoàn và giá hỗ trợ',exact:true}).click();
+ await page.getByText(/Đã ghi nhận hàng hoàn và giá hỗ trợ/).waitFor();
+ if(supportRequest?.p_delivery!==deliveryId||supportRequest?.p_lines?.[0]?.quantity!=='2'||supportRequest?.p_lines?.[0]?.support_unit_price_vnd!=='13500')throw new Error('Return-support form did not submit the entered quantity and unit price');
+ report.pages.push({route:'orders',width:390,orderId,deliveryConfirmed:delivered,supportSubmitted:true,overflow:false});
+ report.checks.push('order details show finished stock, full delivery submits once, return support captures a custom unit price and stays within mobile viewport; fixture-only network responses');
+}

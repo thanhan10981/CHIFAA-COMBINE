@@ -12,7 +12,9 @@ import {checkResponsive} from './responsive-check.mjs';
 import {checkCommercial} from './commercial-check.mjs';
 import {checkRecipes} from './recipe-check.mjs';
 import {checkAccounts} from './account-check.mjs';
+import {checkOrders} from './order-check.mjs';
 const accounts=process.argv.includes('--accounts');
+const orders=process.argv.includes('--orders');
 const entries=process.argv.includes('--entries');
 const materialTable=process.argv.includes('--materials');
 const publicPortal=process.argv.includes('--public-portal');
@@ -60,7 +62,7 @@ try {
    if(width===390||width===1440){await page.locator('.v14-dashpanel').scrollIntoViewIfNeeded();await page.screenshot({path:path.join(out,`dashboard-threshold-${width}.png`),animations:'disabled'});}
   }
   report.checks.push('target setup action stays in the dashboard threshold header, matches the primary style and fits at 320/390/768/1440px');
- }else if(accounts){await checkAccounts(page,base,out,report);}else if(publicPortal){await checkPublicPortal(page,base,out,report);}else if(materialTable){await checkMaterialTable(page,base,out,report);}else if(entries){await checkEntries(page,base,out,report);}else if(inventory){await checkInventory(page,base,out,report);}else if(production){await checkProduction(page,base,out,report);}else if(recipes){await checkRecipes(page,base,out,report);}else if(commercial){await checkCommercial(page,base,out,report);}else if(responsive){await checkResponsive(page,base,out,report);}else{
+ }else if(orders){await checkOrders(page,base,out,report);}else if(accounts){await checkAccounts(page,base,out,report);}else if(publicPortal){await checkPublicPortal(page,base,out,report);}else if(materialTable){await checkMaterialTable(page,base,out,report);}else if(entries){await checkEntries(page,base,out,report);}else if(inventory){await checkInventory(page,base,out,report);}else if(production){await checkProduction(page,base,out,report);}else if(recipes){await checkRecipes(page,base,out,report);}else if(commercial){await checkCommercial(page,base,out,report);}else if(responsive){await checkResponsive(page,base,out,report);}else{
  const nav=JSON.parse(await fs.readFile('features/design/workspace-nav.json','utf8'));
  const routes=['','opsdashboard','strategy','materials','stores','products','employees','discounts','inventory','stockmovements','stockhistory','kiosk','reorder','recipes','batches','rice','packaging','cost','production','requirements','counts','variance','consumption','entry','entry-stock','sales','attendance','entry-production','targets','loans','receivables','cash','payroll','assets','orders','admin','audit','accounts','units','departments','warehouses'];
  for(const route of routes){

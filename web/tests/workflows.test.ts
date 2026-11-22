@@ -49,11 +49,11 @@ test('count adjusts stock without rewriting history; stale inventory version and
  const version=Number((await db.query<{version:string}>("select version from data_versions where module='inventory'")).rows[0].version),before=(await db.query('select * from inventory_movements')).rows.length;
  await rpc('post_stock_count',[ids.warehouse,'2026-11-17',[{material_id:ids.rice,counted_quantity:4700}],version,randomUUID()]);assert.equal((await db.query('select * from inventory_movements')).rows.length,before+1);
  await assert.rejects(()=>rpc('post_stock_count',[ids.warehouse,'2026-11-17',[{material_id:ids.rice,counted_quantity:4600}],version,randomUUID()]),/INVENTORY_VERSION_CONFLICT/);
- await db.exec("insert into accounting_periods(starts_on,ends_on,status) values('2026-11-01','2026-11-30','closed')");await assert.rejects(()=>rpc('post_inventory',[ids.warehouse,'2026-11-17','receipt',[{material_id:ids.rice,unit_id:ids.g,quantity:1}],'Locked',randomUUID()]),/PERIOD_CLOSED/);
+ await db.exec("insert into accounting_periods(starts_on,ends_on,status) values('2026-11-17','2026-11-17','closed')");await assert.rejects(()=>rpc('post_inventory',[ids.warehouse,'2026-11-17','receipt',[{material_id:ids.rice,unit_id:ids.g,quantity:1}],'Locked',randomUUID()]),/PERIOD_CLOSED/);
 });
-test('historical conversions and verified price rows cannot be overwritten through catalog updates',async()=>{
+test('material conversions keep date history and verified price rows cannot be overwritten',async()=>{
  const conversion=(await db.query<{id:string;version:string}>('select id,version from unit_conversions where material_id=$1',[ids.rice])).rows[0],price=(await db.query<{id:string;version:string}>('select id,version from material_prices where material_id=$1 order by effective_from limit 1',[ids.rice])).rows[0];
- await assert.rejects(()=>rpc('save_catalog',['unit_conversions',conversion.id,Number(conversion.version),{factor:900},randomUUID()]),/UNIT_MIGRATION_REQUIRED/);
+ await assert.rejects(()=>rpc('save_catalog',['unit_conversions',conversion.id,Number(conversion.version),{factor:900},randomUUID()]),/UNIT_RATIO_MISMATCH/);
  await assert.rejects(()=>rpc('save_catalog',['material_prices',price.id,Number(price.version),{amount:1},randomUUID()]),/PRICE_VERSION_IMMUTABLE/);
  await assert.rejects(()=>rpc('save_catalog',['materials',null,null,{code:'MISSING-PRICE',name:'Missing',price_status:'verified'},randomUUID()]),/VERIFIED_PRICE_ROW_REQUIRED/);
  await assert.rejects(()=>db.query("insert into material_prices(material_id,basis_unit_id,amount,effective_from,verification) values($1,$2,null,'2099-01-01','verified')",[ids.rice,ids.kg]),/check constraint/);
@@ -71,6 +71,41 @@ test('approval/scheduling audit statuses but never creates revenue or double-add
  await rpc('review_order',[orderA,1,true,'',randomUUID()]);await db.query("insert into production_plans(id,delivery_date,production_date,shift) values($1,'2090-01-01','2089-12-31','AM')",[ids.plan]);await db.query('insert into production_plan_lines(plan_id,product_id,planned_quantity) values($1,$2,100)',[ids.plan,ids.product]);
  const key=randomUUID();await rpc('schedule_order',[orderA,ids.plan,key]);await rpc('schedule_order',[orderA,ids.plan,key]);assert.equal(Number((await db.query<{planned_quantity:string}>('select planned_quantity from production_plan_lines where plan_id=$1',[ids.plan])).rows[0].planned_quantity),100);
  await assert.rejects(()=>rpc('schedule_order',[orderA,ids.plan,randomUUID()]),/ORDER_ALREADY_LINKED/);assert.equal((await db.query('select * from sales_documents')).rows.length,0);assert.equal((await db.query('select * from cash_ledger')).rows.length,0);assert.equal((await db.query('select * from order_status_history where order_id=$1',[orderA])).rows.length,3);
+});
+test('order delivery consumes finished goods once and return support never restores stock or posts money',async()=>{
+ const today=(await db.query<{date:string}>("select (now() at time zone 'Asia/Ho_Chi_Minh')::date::text date")).rows[0].date;
+ const batch=(await db.query<{id:string}>('insert into production_batches(warehouse_id,produced_on,delivery_date,status) values($1,$2,$2,$3) returning id',[ids.warehouse,today,'posted'])).rows[0].id;
+ await db.query('insert into production_batch_lines(batch_id,product_id,recipe_version_id,main_quantity,extra_quantity,rejected_quantity) values($1,$2,$3,100,0,0)',[batch,ids.product,productVersion]);
+ const available=Number((await db.query<{balance:string}>('select private.finished_goods_balance($1,$2) balance',[ids.product,today])).rows[0].balance),overQuantity=available+1;
+ const overOrder=String((await rpc('submit_order',[ids.storeA,today,'PM',[{product_id:ids.product,quantity:overQuantity}],'Over-stock fixture',randomUUID()],identities.a)).rows[0].result.order_id);
+ assert.equal(Number((await db.query<{quantity:string}>('select quantity from customer_order_items where order_id=$1',[overOrder])).rows[0].quantity),overQuantity);
+ await rpc('review_order',[overOrder,1,true,'',randomUUID()]);
+ await assert.rejects(()=>rpc('fulfill_order_delivery',[overOrder,2,randomUUID()]),/INSUFFICIENT_FINISHED_GOODS/);
+ assert.equal((await db.query('select * from deliveries where order_id=$1',[overOrder])).rows.length,0);
+ const deliveryOrder=String((await rpc('submit_order',[ids.storeA,today,'AM',[{product_id:ids.product,quantity:100}],'Delivery fixture',randomUUID()],identities.a)).rows[0].result.order_id);
+ await rpc('review_order',[deliveryOrder,1,true,'',randomUUID()]);
+ const beforeMovements=(await db.query('select * from inventory_movements')).rows.length,key=randomUUID(),orderVersion=Number((await db.query<{version:string}>('select version from customer_orders where id=$1',[deliveryOrder])).rows[0].version),args=[deliveryOrder,orderVersion,key];
+ const delivered=(await rpc('fulfill_order_delivery',args)).rows[0].result;
+ assert.equal(delivered.status,'fulfilled');
+ assert.deepEqual((await rpc('fulfill_order_delivery',args)).rows[0].result,delivered);
+ assert.equal((await db.query<{status:string}>('select status from customer_orders where id=$1',[deliveryOrder])).rows[0].status,'fulfilled');
+ assert.equal((await db.query('select * from deliveries where order_id=$1 and status=$2',[deliveryOrder,'posted'])).rows.length,1);
+ assert.equal((await db.query('select * from delivery_items where delivery_id=$1',[delivered.delivery_id])).rows.length,1);
+ assert.equal((await db.query('select * from inventory_movements')).rows.length,beforeMovements,'delivery does not issue raw ingredients a second time');
+ assert.equal(Number((await db.query<{balance:string}>('select private.finished_goods_balance($1,$2) balance',[ids.product,today])).rows[0].balance),available-100);
+ const detail=(await rpc('order_delivery_detail',[deliveryOrder])).rows[0].result as {delivery:{id:string};items:{delivery_item_id:string;returned_quantity:string}[]};
+ const lineId=detail.items[0].delivery_item_id,supportKey=randomUUID();
+ const support=(await rpc('record_order_return_support',[detail.delivery.id,today,[{delivery_item_id:lineId,quantity:15,support_unit_price_vnd:12345}],'Hỗ trợ hàng hoàn',supportKey])).rows[0].result;
+ assert.equal(support.total_support_vnd,'185175');assert.equal(support.inventory_returned,false);assert.equal(support.automatically_paid,false);
+ assert.equal(Number((await db.query<{balance:string}>('select private.finished_goods_balance($1,$2) balance',[ids.product,today])).rows[0].balance),available-100);
+ await assert.rejects(()=>rpc('record_order_return_support',[detail.delivery.id,today,[{delivery_item_id:lineId,quantity:86,support_unit_price_vnd:1}],'Excess return',randomUUID()]),/RETURN_QUANTITY_EXCEEDS_DELIVERY/);
+ const saved=(await db.query<{id:string;version:string}>('select id,version from order_return_supports where delivery_id=$1',[detail.delivery.id])).rows[0];
+ await rpc('reverse_order_return_support',[saved.id,Number(saved.version),today,'Điều chỉnh chứng từ hỗ trợ',randomUUID()]);
+ const afterReverse=(await rpc('order_delivery_detail',[deliveryOrder])).rows[0].result as {items:{returned_quantity:string}[]};
+ assert.equal(afterReverse.items[0].returned_quantity,'0');
+ assert.equal(Number((await db.query<{balance:string}>('select private.finished_goods_balance($1,$2) balance',[ids.product,today])).rows[0].balance),available-100);
+ assert.equal((await db.query('select * from sales_documents')).rows.length,0);
+ assert.equal((await db.query('select * from cash_ledger')).rows.length,0);
 });
 test('Portal capacity and unavailable-product validation roll back the entire order',async()=>{
  await db.exec("insert into app_settings(key,value) values('order_policy','{\"daily_capacity\":5}')");

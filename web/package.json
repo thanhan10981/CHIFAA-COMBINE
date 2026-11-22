@@ -21,6 +21,7 @@
     "test:commercial": "node scripts/design-check.mjs --commercial",
     "test:recipes": "node scripts/design-check.mjs --recipes",
     "test:production": "node scripts/design-check.mjs --production",
+    "test:orders": "node scripts/design-check.mjs --orders",
     "db:kiosk-update": "tsx scripts/package-kiosk-update.ts"
   },
   "engines": {

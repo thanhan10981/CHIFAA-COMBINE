@@ -1,3 +1,20 @@
+## 2026-11-22 — Tự động hoàn tất giao đơn và ghi nhận giá hỗ trợ hàng hoàn
+
+- Thêm xác nhận giao đủ dựa trên tồn thành phẩm từ lô sản xuất, chứng từ giao và bán; đơn chuyển hoàn tất cùng lúc với chứng từ giao, chống ghi trùng.
+- Giữ xuất nguyên liệu tại bước sản xuất. Giá hỗ trợ hàng hoàn được nhập riêng, có giới hạn số lượng và audit; hàng hoàn không nhập lại tồn, không tự thu/chi hoặc bù trừ công nợ.
+- Migration 056; xác minh local: typecheck, lint, 147 tests, build và fixture Playwright `test:orders` (giao, giá hỗ trợ, mobile). Chưa áp cloud/DEV hoặc deploy.
+## 2026-11-22 — Cho sửa đơn vị vật tư, bảo toàn chứng từ và quy đổi công thức (KH-01/09/10/11)
+
+- Cho đổi đơn vị mua, đơn vị kho và quy cách đã xác minh; chỉ số tồn vẫn do phiếu kho/kiểm kê quyết định. Đổi đơn vị kho cần có tỷ lệ xác minh, tồn được tính lại theo đơn vị mới mà không sửa các dòng kho đã chốt.
+- Migration `202611220055_material_units_editable.sql` lưu lịch sử tỷ lệ quy đổi theo ngày; công thức mới kiểm tra đơn vị có đường quy đổi hợp lệ. Màn công thức tự hiển thị 0,1 kg thành 100 g và 1 kg thành 1 kg.
+- Kiểm tra local: 146/146 PostgreSQL tests, db:types 95 bảng/76 RPC, typecheck, lint, production build; fixture vật tư 320–1920px và công thức 5 tuyến × 5 cỡ đạt. Chưa áp migration cloud/DEV, chưa deploy hoặc authenticated UAT.
+
+## 2026-11-22 — Nhập mã bộ phận tùy chỉnh (KH-02/KH-10)
+
+- Danh mục Bộ phận cho nhập mã tự do, viết hoa và hỗ trợ nhiều mã; nhân viên, cài lương, chấm công, lọc và bảng lương cùng tham chiếu danh mục này, hiển thị mã và tên.
+- Migration `202611220054_dynamic_department_codes.sql` mở rộng mã hợp lệ cho bộ phận và snapshot ca; giữ nguyên KPI sản xuất theo mã `SX` như hiện tại.
+- Xác minh local: db:types 95 bảng/76 RPC, typecheck, lint, 145/145 tests, build; entry fixture 50 bố cục/5 kích thước gửi mã `KHO`; commercial fixture 4 danh mục/5 kích thước xác nhận ô mã dạng text, chuẩn hóa chữ hoa và nối mã/tên tới hồ sơ, lương; `git diff --check` đạt. Fixture dùng dữ liệu giả. Chưa áp migration lên Supabase/DEV, deploy hoặc authenticated UAT.
+
 ## 2026-11-22 — Giữ đơn vị kho khi khai báo quy cách bằng gam (KH-01/KH-10)
 
 - Vật tư có lịch sử kho hoặc công thức giữ nguyên đơn vị chuẩn; biểu mẫu hiện lý do và vẫn cho khai báo quy cách như `1 túi = 100 g`.

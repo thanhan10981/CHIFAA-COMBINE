@@ -50,12 +50,12 @@ export async function checkMaterialTable(page,base,out,report){
  await page.getByRole('dialog').getByRole('combobox').selectOption('material-2');
  await page.getByRole('button',{name:'Xem giá, đơn vị & quy cách',exact:true}).click();
  await page.getByRole('button',{name:'Lưu xác minh',exact:true}).waitFor();
- const lockedUsage=page.getByLabel('Đơn vị dùng / kho',{exact:true});if(!await lockedUsage.isDisabled()||!(await page.getByRole('dialog').innerText()).includes('Giữ nguyên đơn vị chuẩn kg')||await page.getByLabel('Quy đổi ra đơn vị dùng/kho').count()!==1)throw new Error('Historical material must keep its stock unit while allowing a package ratio in grams');
+ const editableUsage=page.getByLabel('Đơn vị dùng / kho',{exact:true});if(await editableUsage.isDisabled()||!(await page.getByRole('dialog').innerText()).includes('Có thể đổi đơn vị chuẩn')||await page.getByLabel('Quy đổi ra đơn vị dùng/kho').count()!==1)throw new Error('Historical material should allow a stock unit change and package conversion in grams');await editableUsage.selectOption('g');
  await page.getByLabel('Quy đổi ra đơn vị dùng/kho').selectOption('g');await page.getByLabel('Số đơn vị dùng trong một đơn vị mua').fill('100');if(!(await page.locator('.material-conversion-preview').innerText()).includes('1 túi = 100 g'))throw new Error('Historical material should preview package size in grams');
  if(await page.locator('.material-review-history').count()||await page.getByRole('dialog').getByText(/Dữ liệu gốc.*lịch sử/).count())throw new Error('Material history still visible');
- await page.screenshot({path:path.join(out,'settings-locked-stock-unit.png')});
+ await page.screenshot({path:path.join(out,'settings-editable-stock-unit.png')});
  await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();
- report.checks.push('material settings preserve a historical stock unit and allow a verified package ratio in grams');
+ report.checks.push('material settings allow changing a historical stock unit and editing a package ratio in grams');
  const requests=[];
  await page.locator('.material-row-actions').nth(5).getByRole('button',{name:'Xác minh giá chuẩn',exact:true}).click();
  const reviewDialog=page.getByRole('dialog');await reviewDialog.waitFor();
