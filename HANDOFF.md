@@ -1,3 +1,10 @@
+## 2026-11-22 — Làm gọn số lượng thành phần trong trình sửa công thức (KH-01/KH-10/KH-11)
+
+- Trình sửa công thức hiển thị định lượng thành phần với tối đa 2 chữ số thập phân; làm tròn nửa lên khi mở giá trị cũ, rời ô hoặc lưu, ví dụ `1.125` thành `1.13`, `100.000000` thành `100`. Nếu cần độ chính xác nhỏ hơn, chọn đơn vị nhỏ hơn.
+- Giới hạn ở định lượng thành phần trên giao diện lưu phiên bản mới; sản lượng/mẻ vẫn giữ độ chính xác hiện tại. Phiên bản và snapshot công thức cũ không bị sửa; không đổi schema hay migration. Backend vẫn giữ numeric chính xác để hỗ trợ các luồng chưa qua trình sửa này.
+- Xác minh: `npm run typecheck`, `npm run lint` và production build đạt. Không chạy bộ test/fixture trong checkpoint này. Chưa có migration, deploy hoặc UAT cloud.
+- Còn lại: xác minh trên giao diện kết nối DEV, đặc biệt thành phần định lượng rất nhỏ trước khi áp dụng rộng.
+
 ## 2026-11-22 — Xóa và khôi phục vật tư trong danh mục (KH-01/KH-10/KH-11)
 
 - Thêm nút “Xóa” theo từng vật tư. Xóa là đưa khỏi danh mục đang dùng, không xóa vật lý: mã, giá, công thức, chứng từ kho và audit được giữ. Có mục “Vật tư đã xóa” để khôi phục lại mã đã ẩn. RPC `set_material_archived` kiểm tra quyền, version, idempotency và ghi audit.

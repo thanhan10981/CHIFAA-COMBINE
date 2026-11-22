@@ -1,3 +1,8 @@
+## 2026-11-22 — Làm tròn định lượng thành phần công thức (KH-01/KH-10/KH-11)
+
+- Trình sửa công thức chỉ hiển thị/lưu tối đa 2 chữ số thập phân ở số lượng thành phần; làm tròn nửa lên (ví dụ `1.125` → `1.13`). Sản lượng/mẻ và các phiên bản công thức cũ giữ nguyên.
+- Typecheck, lint và production build đạt. Không đổi schema, chưa chạy test/fixture, không deploy.
+
 ## 2026-11-22 — Xóa và khôi phục vật tư (KH-01/KH-10)
 
 Thêm thao tác đưa vật tư ra khỏi danh mục đang dùng và khôi phục từ danh sách đã xóa. Lưu trữ mềm giữ công thức/chứng từ/audit; máy chủ chặn khi tồn còn khác 0, lịch sử tồn chưa quy đổi được hoặc có chứng từ kho tương lai. Migration 058 chưa áp lên Supabase/DEV.

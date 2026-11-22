@@ -1,5 +1,11 @@
 # Theo dõi công việc
 
+## Định dạng số lượng thành phần công thức — 2026-11-22 (KH-01/10/11)
+
+- [x] Trong form thêm/sửa/sao chép, hiển thị số lượng thành phần tối đa 2 chữ số thập phân và làm tròn nửa lên khi mở, rời ô hoặc gửi; sản lượng/mẻ không đổi.
+- [x] `npm run typecheck`, `npm run lint`, `npm run build` đạt.
+- [ ] Chưa chạy test/fixture giao diện; cần UAT DEV với đơn vị/định lượng nhỏ. Không đổi DB/migration.
+
 ## Cổng đặt hàng công khai035 — KH-12/01/03/05/10
 
 - [x] Public portal không login, món đã công bố +giá chung/ngày giao, số lượng/tổng tiền/địa chỉ/liên hệ; giữ cổng điểm bán riêng.
