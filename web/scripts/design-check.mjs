@@ -135,7 +135,7 @@ try {
  await page.getByRole('button',{name:'Cài đặt quy đổi',exact:true}).click();
  await page.getByRole('dialog').getByRole('combobox').selectOption('material-1');
  await page.getByRole('button',{name:'Xem giá, đơn vị & quy cách',exact:true}).click();
- await page.getByRole('button',{name:'Lưu phiên bản xác minh',exact:true}).waitFor();
+ await page.getByRole('button',{name:'Lưu xác minh',exact:true}).waitFor();
  if(await page.getByLabel('Đơn vị tính giá',{exact:true}).inputValue()!=='kg'||await page.getByLabel('Đơn vị mua',{exact:true}).inputValue()!=='chai'||await page.getByLabel('Đơn vị tiêu hao / kho',{exact:true}).inputValue()!=='g')throw new Error('Price, purchase and usage units were conflated');
  if(await page.locator('.material-review-history').count())throw new Error('Material history must not be displayed');
  await page.screenshot({path:path.join(out,'material-verification-desktop.png'),animations:'disabled'});
@@ -147,7 +147,11 @@ try {
  report.checks.push('Admin verification separates price/purchase/usage/package units and preserves source/history');
  await page.goto(base+'/app/materials');
  const group=page.getByRole('button',{name:'DANH MỤC',exact:true});await group.click();if(await group.getAttribute('aria-expanded')!=='false')throw new Error('Sidebar collapse failed');await group.click();
- await page.getByRole('button',{name:'Thêm vật tư',exact:true}).click();await page.getByRole('dialog').waitFor();await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();report.checks.push('collapse/expand and real catalog dialog');
+ await page.getByRole('button',{name:'Thêm vật tư',exact:true}).click();const materialDialog=page.getByRole('dialog');await materialDialog.waitFor();
+ if(await materialDialog.getByLabel('Quy cách',{exact:true}).count())throw new Error('Material packaging must use structured units and quantity, not free text');
+ const packageQuantity=materialDialog.getByLabel('Số lượng trong một đơn vị mua',{exact:true});await packageQuantity.fill('100');await materialDialog.getByLabel('Đơn vị nhận quy cách',{exact:true}).selectOption('g');
+ if(await materialDialog.getByText('1 kg = 100 g',{exact:true}).count()!==1)throw new Error('Structured package preview missing');
+ await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();report.checks.push('collapse/expand, real catalog dialog and structured packaging fields');
  await page.goto(base+'/app/materials?role=staff');if(await page.locator('a[href="/app/admin"]').count())throw new Error('Unauthorized admin menu visible');if(await page.locator('.account-role').textContent()!=='Kế toán')throw new Error('Accountant role label missing');report.checks.push('permission-scoped sidebar and actual Admin/accountant labels with icon-only refresh/logout');
  await page.setViewportSize({width:390,height:844});
  for(const route of ['materials','recipes','strategy','entry-stock','sales','kiosk','opsdashboard']){

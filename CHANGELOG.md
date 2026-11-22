@@ -1,3 +1,9 @@
+## 2026-11-22 — Sửa popup vật tư và nhập quy cách bằng đơn vị/tỷ lệ (KH-01/KH-09/KH-10/KH-11)
+
+- Lỗi lưu bị từ chối như database chưa có RPC/bản vá không còn khóa form: người dùng có thể sửa và đóng popup. Lỗi chưa rõ kết quả vẫn giữ nguyên lần gửi để retry an toàn.
+- Form thêm/sửa dùng cấu hình quy cách có cấu trúc: đơn vị mua, số lượng, đơn vị nhận, trạng thái đối chiếu và preview; tỷ lệ đã xác minh nối vào quy đổi vật tư dùng trong công thức. Quy đổi cũ vẫn hiện và không bị mất khi chỉ sửa thông tin khác.
+- Thêm migration `202611220057_material_structured_packaging.sql`; chưa áp Supabase/DEV hoặc deploy. Xác minh local: 149/149 test, 7/7 test vật tư sau cập nhật cuối, typecheck, lint, build, fixture `--materials` và `git diff --check` đạt.
+
 ## 2026-11-22 — Tự động hoàn tất giao đơn và ghi nhận giá hỗ trợ hàng hoàn
 
 - Thêm xác nhận giao đủ dựa trên tồn thành phẩm từ lô sản xuất, chứng từ giao và bán; đơn chuyển hoàn tất cùng lúc với chứng từ giao, chống ghi trùng.

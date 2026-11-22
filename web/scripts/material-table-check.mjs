@@ -66,7 +66,7 @@ export async function checkMaterialTable(page,base,out,report){
  report.checks.push('pending price uses purchase unit as the price-basis default and saves a 1-to-100 conversion');
  await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/save_material_table',async route=>{
   requests.push(route.request().postDataJSON());
-  await route.fulfill({status:requests.length===1?503:200,contentType:'application/json',body:requests.length===1?'{}':'{"id":"material-1","version":"2"}'});
+  await route.fulfill({status:requests.length===1?503:requests.length===2?200:400,contentType:'application/json',body:requests.length===1?'{}':requests.length===2?'{"id":"material-1","version":"2"}':'{"code":"55000","message":"FUNCTION VERSION REQUIRED"}'});
  });
  await page.locator('.material-row-actions').nth(1).getByRole('button',{name:'Sửa',exact:true}).click();
  const editDialog=page.getByRole('dialog');if(!((await editDialog.innerText()).includes('Đơn vị mua/nhập *')&&(await editDialog.innerText()).includes('Giá này tính theo đơn vị')&&(await editDialog.innerText()).includes('12.000 đ/túi')))throw new Error('Material edit should distinguish purchase unit from price basis');
@@ -75,8 +75,24 @@ export async function checkMaterialTable(page,base,out,report){
  await page.getByRole('button',{name:'Kiểm tra lại lần gửi',exact:true}).click();
  await page.getByRole('dialog').waitFor({state:'hidden'});
  if(requests.length!==2||JSON.stringify(requests[0])!==JSON.stringify(requests[1]))throw new Error('Retry lost original idempotency request');
- if(requests[0].p_input.price_amount!=='180000'||Object.keys(requests[0].p_input).some(key=>/stock|reference|verified|evidence|date/.test(key)))throw new Error('Edit includes non-column mutation');
+ const inputKeys=Object.keys(requests[0].p_input);
+ if(requests[0].p_input.price_amount!=='180000'||inputKeys.some(key=>/^(?:stock|reference_quantity|effective_from|moved_on)/.test(key))||!['package_content_unit_id','package_quantity','package_verified','package_evidence'].every(key=>inputKeys.includes(key)))throw new Error('Edit should send catalog fields and structured packaging, without stock mutations');
  report.checks.push('offline mocked RPC: decimal money, atomic column payload, identical idempotency request after uncertain503; no cloud writes');
+
+ await page.getByRole('button',{name:'Thêm vật tư',exact:true}).click();
+ const failedDialog=page.getByRole('dialog');await failedDialog.waitFor();
+ await failedDialog.getByLabel('Mã sản phẩm *',{exact:true}).fill('REPAIR-AFTER-ERROR');
+ await failedDialog.getByLabel('Tên vật tư *',{exact:true}).fill('Repair fixture');
+ await failedDialog.getByLabel('Đơn vị mua/nhập *').selectOption('kg');
+ await failedDialog.getByLabel('Đơn vị dùng/kho *').selectOption('kg');
+ await failedDialog.getByRole('button',{name:'Lưu vật tư',exact:true}).click();
+ await failedDialog.getByRole('alert').waitFor();
+ if(await failedDialog.getByLabel('Mã sản phẩm *',{exact:true}).isDisabled()||await failedDialog.getByRole('button',{name:'Đóng hộp thoại',exact:true}).isDisabled())throw new Error('A rejected material save must leave the form editable and closable');
+ await failedDialog.getByLabel('Mã sản phẩm *',{exact:true}).fill('EDITABLE-AFTER-ERROR');
+ await failedDialog.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();
+ await failedDialog.waitFor({state:'hidden'});
+ if(requests.length!==3||requests[2].p_input.code!=='REPAIR-AFTER-ERROR')throw new Error('The rejected payload should be released so the form can be edited without retrying stale input');
+ report.checks.push('55000 rejected save leaves catalog form editable and close button available');
 
  const catalogBook=new ExcelJS.Workbook(),catalogSheet=catalogBook.addWorksheet('Danh mục vật tư');
  catalogSheet.addRow(['Mã nội bộ','Phiên bản','Mã SP','Tên vật tư','Nhóm vật tư','Đơn vị mua','Đơn vị tính giá','Đơn giá (đ)','Tồn tối thiểu','Quy cách']);

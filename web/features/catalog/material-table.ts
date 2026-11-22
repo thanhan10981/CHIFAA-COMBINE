@@ -7,6 +7,6 @@ export function materialMissingFields(row:MaterialRow){
   !row.purchase_unit_id&&'ĐVT',row.price_amount===null&&'Đơn giá',
   row.minimum_quantity===null&&'Tồn tối thiểu',
   row.stock_quantity===null&&'Tồn hiện tại',
-  !row.specification.trim()&&'Quy cách',
+  !row.package_quantity&&!row.specification.trim()&&'Quy cách',
  ].filter((field):field is string=>!!field);
 }

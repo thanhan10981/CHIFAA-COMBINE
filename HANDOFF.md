@@ -1,3 +1,10 @@
+## 2026-11-22 — Sửa lỗi lưu và quy cách có cấu trúc ở danh mục vật tư (KH-01/KH-09/KH-10/KH-11)
+
+- Sau phản hồi về popup bị khóa, lỗi lưu đã được phân loại: lỗi DB/PostgREST xác định như `55000`, `PGRST202`, quyền/validation sẽ xóa lần gửi bị từ chối và mở lại chỉnh sửa/đóng popup; lỗi mạng chưa rõ kết quả vẫn giữ cùng payload/idempotency để kiểm tra lại, nhưng popup vẫn đóng được sau khi request kết thúc.
+- Bỏ ô “Quy cách” nhập tự do khỏi form thêm/sửa. Dùng đơn vị mua, số lượng và đơn vị nhận; hiện preview tỷ lệ. Có thể đối chiếu và lưu tỷ lệ đã xác minh theo phiên bản để quy đổi tồn/công thức. Quy đổi cũ từ `unit_conversions` vẫn hiện và được giữ khi chỉ sửa thông tin khác. Tồn hiện tại vẫn chỉ đọc từ sổ kho/kiểm kê. Migration `202611220057_material_structured_packaging.sql` thêm RPC lưu và trả trường quy cách có cấu trúc; chưa áp lên Supabase/DEV.
+- Bằng chứng local: toàn bộ 149/149 test đạt; sau chỉnh sửa cuối, 7/7 test vật tư đạt; typecheck, lint, build, fixture `node scripts/design-check.mjs --materials` (320–1920px, preview g/100 và lỗi `55000` vẫn cho sửa/đóng) và `git diff --check` đạt. Fixture và PGlite chỉ dùng dữ liệu giả, chưa phải cloud/Auth UAT.
+- Còn lại: phát hành migration 057 theo release path và kiểm tra tài khoản đăng nhập sau khi được cập nhật database. Chưa commit, push hoặc deploy.
+
 ## 2026-11-22 — Giao đơn đặt hàng và hỗ trợ hàng hoàn (KH-01/KH-03/KH-04/KH-05/KH-10)
 
 - Đơn đã duyệt/lên kế hoạch có thể xác nhận giao đủ. RPC giao dịch tạo đúng một chứng từ deliveries, cập nhật đơn sang fulfilled, kiểm tra tồn thành phẩm và hỗ trợ gửi lại idempotent. Tồn khả dụng được tính từ thành phẩm tốt đã sản xuất trừ chứng từ giao và lượng bán chưa gắn giao. Nguyên liệu tiếp tục trừ tại sản xuất, không trừ lần hai khi giao.
