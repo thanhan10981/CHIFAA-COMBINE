@@ -7,8 +7,8 @@ export async function checkMaterialTable(page,base,out,report){
    await page.locator('.material-row-actions').first().waitFor();
    if(await page.getByLabel('Sắp xếp vật tư',{exact:true}).count()!==1)throw new Error('Catalog sort control missing at '+width+'px');
   for(const [index,actions] of (await page.locator('.material-row-actions').all()).entries()){
-   const expected=index===5?2:1;
-   if(await actions.getByRole('button').count()!==expected||!(await actions.innerText()).includes('Sửa')||(index===5&&!(await actions.innerText()).includes('Xác minh giá')))throw new Error('Pending-price row must expose direct verification action');
+   const expected=index===5?3:2;
+   if(await actions.getByRole('button').count()!==expected||!(await actions.innerText()).includes('Sửa')||!(await actions.innerText()).includes('Xóa')||(index===5&&!(await actions.innerText()).includes('Xác minh giá')))throw new Error('Material rows must expose delete while preserving direct verification action');
   }
   if(await page.locator('.material-table').getByText(/Cần xác minh|Cần đối chiếu/).count())throw new Error('Review warnings remain');
   const firstWarnings=await page.locator('.material-table tbody tr').first().locator('td').nth(9).innerText();
@@ -28,6 +28,24 @@ export async function checkMaterialTable(page,base,out,report){
   await dialog.getByRole('button',{name:'Lưu vật tư',exact:true}).scrollIntoViewIfNeeded();
   if([390,1440].includes(width))await page.screenshot({path:path.join(out,'edit-'+width+'.png')});
   await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();
+  await page.locator('.material-row-actions').first().getByRole('button',{name:'Xóa',exact:true}).click();
+  const archiveDialog=page.getByRole('dialog');await archiveDialog.waitFor();
+  if(!(await archiveDialog.innerText()).includes('Lịch sử công thức, giá và chứng từ kho vẫn được lưu'))throw new Error('Archive confirmation must explain that history is retained');
+  await archiveDialog.getByRole('button',{name:'Hủy',exact:true}).click();await archiveDialog.waitFor({state:'hidden'});
+  if(width===1920){
+   const archiveRequests=[];let restoreCompleted=false;
+   await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/set_material_archived',async route=>{const request=route.request().postDataJSON();archiveRequests.push(request);if(request.p_archived){await route.fulfill({status:400,contentType:'application/json',body:JSON.stringify({code:'P0001',message:'MATERIAL_HAS_STOCK',details:null,hint:null})});}else{restoreCompleted=true;await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({id:request.p_id,archived:false,version:3})});}});
+   await page.locator('.material-row-actions').first().getByRole('button',{name:'Xóa',exact:true}).click();
+   const archiveErrorDialog=page.getByRole('dialog');await archiveErrorDialog.getByRole('button',{name:'Xóa vật tư',exact:true}).click();await archiveErrorDialog.getByRole('alert').waitFor();
+   if(!((await archiveErrorDialog.getByRole('alert').innerText()).includes('Tồn vật tư chưa bằng 0'))||await archiveErrorDialog.getByRole('button',{name:'Hủy',exact:true}).isDisabled()||await archiveErrorDialog.getByRole('button',{name:'Đóng hộp thoại',exact:true}).isDisabled())throw new Error('Blocked archive must explain the stock reason while leaving the dialog closable');
+   await archiveErrorDialog.getByRole('button',{name:'Hủy',exact:true}).click();await archiveErrorDialog.waitFor({state:'hidden'});
+   if(archiveRequests.length!==1||archiveRequests[0].p_archived!==true||!archiveRequests[0].p_key)throw new Error('Archive must send an idempotent, versioned state change');
+   report.checks.push('material archive confirmation preserves history, can cancel, and remains closable after positive-stock rejection');
+   await page.route('https://visual-fixture.supabase.co/rest/v1/materials?*',async route=>{const url=route.request().url();if(url.includes('archived=eq.true'))await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(restoreCompleted?[]:[{id:'archived-fixture',code:'ARCHIVE-1',name:'Vật tư đã ẩn',version:2,updated_at:'2026-11-22T00:00:00Z'}])});else await route.continue();});
+   await page.getByRole('button',{name:'Vật tư đã xóa',exact:true}).click();const archivedDialog=page.getByRole('dialog');await archivedDialog.getByRole('button',{name:'Khôi phục',exact:true}).click();await archivedDialog.getByText('Chưa có vật tư đã xóa.',{exact:true}).waitFor();
+   if(archiveRequests.length!==2||archiveRequests[1].p_archived!==false||!archiveRequests[1].p_key)throw new Error('Restore must use a versioned idempotent state change and remove the row from the archive list');
+   await archivedDialog.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();report.checks.push('archived material can be restored and returns to the live catalog');
+  }
   if(width===1440)await page.screenshot({path:path.join(out,'table-1440.png')});
   report.checks.push('material table/editor '+width+': direct verification action on pending price, column fields, blank warnings, editable resolved price, stock read-only, no overflow');
  }

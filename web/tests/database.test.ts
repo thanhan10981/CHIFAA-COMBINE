@@ -83,3 +83,29 @@ test('KH-02 custom department codes link employees, role rates, attendance and p
  const customSnapshot=await db.query<{department_snapshot:string;home_department_snapshot:string}>("select department_snapshot,home_department_snapshot from attendance_shifts where id=$1",[customShift.shift_id]);
  assert.deepEqual(customSnapshot.rows[0],{department_snapshot:departmentCode,home_department_snapshot:departmentCode});
 });
+
+
+test('KH-01/KH-10 material archive keeps history, protects stock and replays safely',async()=>{
+ const unit=randomUUID(),materialId=randomUUID(),warehouse=randomUUID(),movement=randomUUID(),key=randomUUID();
+ const code='ARCH-'+materialId.slice(0,8);
+ await db.query("insert into material_units(id,code,name,dimension) values($1,$2,'Archive test unit','mass')",[unit,'U-'+unit.slice(0,8)]);
+ const created=(await asUser(db,identities.admin,()=>db.query<{r:{id:string;version:number}}>("select save_catalog('materials',null,null,$1::jsonb,$2) r",[JSON.stringify({code,name:'Synthetic archive test',category:'ingredient',purchase_unit_id:unit,usage_unit_id:unit}),randomUUID()]))).rows[0].r;
+ await assert.rejects(()=>asUser(db,identities.accountant,()=>db.query('select set_material_archived($1,1,true,$2)',[created.id,randomUUID()])),/FORBIDDEN/);
+ const archive=()=>asUser(db,identities.admin,()=>db.query<{r:{id:string;archived:boolean;version:number}}>('select set_material_archived($1,1,true,$2) r',[created.id,key]));
+ const first=(await archive()).rows[0].r,replayed=(await archive()).rows[0].r;
+ assert.deepEqual(replayed,first);assert.equal(first.id,created.id);assert.equal(first.archived,true);assert.equal(first.version,2);
+ assert.equal((await db.query<{n:number}>("select count(*)::int n from audit_logs where record_id=$1 and action='UPDATE'",[created.id])).rows[0].n,1);
+ await db.query("insert into warehouses(id,code,name,kind) values($1,$2,'Archive test warehouse','ingredient')",[warehouse,'W-'+warehouse.slice(0,8)]);
+ await db.query("insert into inventory_movements(id,warehouse_id,moved_on,kind) values($1,$2,current_date,'receipt')",[movement,warehouse]);
+ await assert.rejects(()=>db.query('insert into inventory_movement_lines(movement_id,material_id,unit_id,quantity) values($1,$2,$3,1)',[movement,created.id,unit]),/MATERIAL_ARCHIVED/);
+ const restored=(await asUser(db,identities.admin,()=>db.query<{r:{id:string;archived:boolean;version:number}}>('select set_material_archived($1,2,false,$2) r',[created.id,randomUUID()]))).rows[0].r;
+ assert.equal(restored.archived,false);assert.equal(restored.version,3);
+ assert.equal((await db.query<{n:number}>("select count(*)::int n from audit_logs where record_id=$1 and action='UPDATE'",[created.id])).rows[0].n,2);
+
+ const stockedId=randomUUID(),stockMovement=randomUUID(),stockKey=randomUUID(),stockCode='STOCK-'+stockedId.slice(0,8);
+ const stocked=(await asUser(db,identities.admin,()=>db.query<{r:{id:string}}>("select save_catalog('materials',null,null,$1::jsonb,$2) r",[JSON.stringify({code:stockCode,name:'Synthetic stocked material',category:'ingredient',purchase_unit_id:unit,usage_unit_id:unit}),randomUUID()]))).rows[0].r;
+ await db.query("insert into inventory_movements(id,warehouse_id,moved_on,kind) values($1,$2,current_date,'receipt')",[stockMovement,warehouse]);
+ await db.query("insert into inventory_movement_lines(movement_id,material_id,unit_id,quantity) values($1,$2,$3,2)",[stockMovement,stocked.id,unit]);
+ await assert.rejects(()=>asUser(db,identities.admin,()=>db.query('select set_material_archived($1,1,true,$2)',[stocked.id,stockKey])),/MATERIAL_HAS_STOCK/);
+ assert.equal((await db.query<{archived:boolean}>('select archived from materials where id=$1',[stocked.id])).rows[0].archived,false);
+});

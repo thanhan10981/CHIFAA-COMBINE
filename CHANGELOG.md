@@ -1,3 +1,7 @@
+## 2026-11-22 — Xóa và khôi phục vật tư (KH-01/KH-10)
+
+Thêm thao tác đưa vật tư ra khỏi danh mục đang dùng và khôi phục từ danh sách đã xóa. Lưu trữ mềm giữ công thức/chứng từ/audit; máy chủ chặn khi tồn còn khác 0, lịch sử tồn chưa quy đổi được hoặc có chứng từ kho tương lai. Migration 058 chưa áp lên Supabase/DEV.
+
 ## 2026-11-22 — Sửa popup vật tư và nhập quy cách bằng đơn vị/tỷ lệ (KH-01/KH-09/KH-10/KH-11)
 
 - Lỗi lưu bị từ chối như database chưa có RPC/bản vá không còn khóa form: người dùng có thể sửa và đóng popup. Lỗi chưa rõ kết quả vẫn giữ nguyên lần gửi để retry an toàn.

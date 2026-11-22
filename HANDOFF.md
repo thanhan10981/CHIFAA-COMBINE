@@ -1,3 +1,11 @@
+## 2026-11-22 — Xóa và khôi phục vật tư trong danh mục (KH-01/KH-10/KH-11)
+
+- Thêm nút “Xóa” theo từng vật tư. Xóa là đưa khỏi danh mục đang dùng, không xóa vật lý: mã, giá, công thức, chứng từ kho và audit được giữ. Có mục “Vật tư đã xóa” để khôi phục lại mã đã ẩn. RPC `set_material_archived` kiểm tra quyền, version, idempotency và ghi audit.
+- Chặn xóa khi số dư kho khác 0, có lịch sử kho chưa quy đổi được hoặc có chứng từ kho tương lai. Trigger khóa dòng vật tư khi ghi phiếu kho/kiểm kê để không phát sinh tồn mới sau khi đã ẩn. Không thay đổi tồn bằng thao tác xóa.
+- File: `web/features/catalog/material-workspace.tsx`, `web/features/catalog/materials.css`, `web/lib/database/generated.ts`, `web/tests/database.test.ts`, `web/scripts/material-table-check.mjs`, migration `supabase/migrations/202611220058_material_archive.sql`.
+- Bằng chứng: `npm run typecheck`, `npm run lint`, `npm run build`; bộ kiểm thử đầy đủ đạt 150/150 trước bổ sung kiểm thử khôi phục, sau đó `npm run test:db` đạt 11/11; `node scripts/design-check.mjs --materials` đạt xác nhận/hủy/xóa bị chặn/khôi phục ở fixture responsive; `git diff --check` đạt. Kiểm thử dùng PGlite và dữ liệu fixture, chưa phải cloud/Auth UAT.
+- Còn lại: chưa áp migration 058 lên Supabase/DEV, chưa deploy. Cần phát hành migration theo release path và kiểm tra quyền cùng tồn thật trên môi trường đăng nhập.
+
 ## 2026-11-22 — Sửa lỗi lưu và quy cách có cấu trúc ở danh mục vật tư (KH-01/KH-09/KH-10/KH-11)
 
 - Sau phản hồi về popup bị khóa, lỗi lưu đã được phân loại: lỗi DB/PostgREST xác định như `55000`, `PGRST202`, quyền/validation sẽ xóa lần gửi bị từ chối và mở lại chỉnh sửa/đóng popup; lỗi mạng chưa rõ kết quả vẫn giữ cùng payload/idempotency để kiểm tra lại, nhưng popup vẫn đóng được sau khi request kết thúc.
