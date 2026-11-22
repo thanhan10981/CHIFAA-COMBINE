@@ -40,6 +40,35 @@ test('date-aware BOM only costs verified bases, retains unknowns and rejects unc
   const incomplete=await asUser(db,identities.admin,()=>db.query<{cost:{complete:boolean;total_vnd:string|null}}>('select recipe_cost($1,1,$2) cost',[version,'2026-11-18']));assert.equal(incomplete.rows[0].cost.complete,false);assert.equal(incomplete.rows[0].cost.total_vnd,null);
  }finally{await db.close();}
 });
+test('historical materials keep their stock unit while package content can be verified in grams',async()=>{
+ const db=await database();try{
+  const original:MaterialImportRow={position:1,code:'TEST-BAG-MASS',name:'TEST-BAG-MASS',category:'ingredient',unit:'kg',amount:'260000',minimum:null,reference:null,specification:'Owner confirmed package size'};
+  await db.exec(buildMaterialImport([original],'b'.repeat(64),day));
+  const resolved:ReconciledMaterial={...original,purchase:'túi',usage:'kg',basis:'túi',verification:'verified',packageUnit:'túi',contentUnit:'g',packageQuantity:'100',packageVerified:true,minimumInUsage:null,issue:'',original:{unit:'kg',price:'260000'}};
+  await db.exec(buildMaterialReconciliation([resolved],'d'.repeat(64),'2026-11-18'));
+  const units=Object.fromEntries((await db.query<{id:string;code:string}>('select id,code from material_units')).rows.map(row=>[row.code,row.id]));
+  const material=(await db.query<{id:string;version:string;usage_unit_id:string}>("select id,version,usage_unit_id from materials where code='TEST-BAG-MASS'")).rows[0];
+  const before=await asUser(db,identities.admin,()=>db.query<{cost:{usage_unit_id:string;usage_unit_locked:boolean}}>('select material_cost_basis($1,$2) cost',[material.id,'2026-11-19']));
+  assert.equal(before.rows[0].cost.usage_unit_id,units.kg);assert.equal(before.rows[0].cost.usage_unit_locked,false);
+  const warehouse=(await db.query<{id:string}>("insert into warehouses(code,name,kind) values('TEST-BAG-W','Test warehouse','ingredient') returning id")).rows[0].id;
+  const movement=(await db.query<{id:string}>("insert into inventory_movements(warehouse_id,moved_on,kind) values($1,'2026-11-18','receipt') returning id",[warehouse])).rows[0].id;
+  await db.query('insert into inventory_movement_lines(movement_id,material_id,unit_id,quantity,unit_cost) values($1,$2,$3,1,260000)',[movement,material.id,units.kg]);
+  const recipe=(await db.query<{id:string}>("insert into recipes(code,name,kind) values('TEST-BAG-RECIPE','Test bag recipe','product') returning id")).rows[0].id;
+  const recipeVersion=(await db.query<{id:string}>('insert into recipe_versions(recipe_id,revision,effective_from,output_quantity,output_unit_id) values($1,1,$2,1,$3) returning id',[recipe,day,units.g])).rows[0].id;
+  await db.query('insert into recipe_items(recipe_version_id,material_id,quantity,unit_id) values($1,$2,1,$3)',[recipeVersion,material.id,units.kg]);
+  const locked=await asUser(db,identities.admin,()=>db.query<{cost:{usage_unit_id:string;usage_unit_locked:boolean}}>('select material_cost_basis($1,$2) cost',[material.id,'2026-11-19']));
+  assert.equal(locked.rows[0].cost.usage_unit_id,units.kg);assert.equal(locked.rows[0].cost.usage_unit_locked,true);
+  await assert.rejects(()=>asUser(db,identities.a,()=>db.query('select material_cost_basis($1,$2)',[material.id,'2026-11-19'])),/FORBIDDEN/);
+  const previous=(await db.query<Record<string,unknown>>('select purchase_unit_id,usage_unit_id,basis_unit_id,amount,verification,package_unit_id,package_content_unit_id,package_quantity,package_verified,issue,evidence from material_resolutions where material_id=$1 order by revision desc limit 1',[material.id])).rows[0];
+  const save=(input:Record<string,unknown>,key:string)=>asUser(db,identities.admin,()=>db.query('select resolve_material($1,$2,$3,$4,$5)',[material.id,material.version,'2026-11-19',input,key]));
+  await assert.rejects(()=>save({...previous,usage_unit_id:units.g},crypto.randomUUID()),/UNIT_MIGRATION_REQUIRED/);
+  await save({...previous,usage_unit_id:units.kg,package_unit_id:units['túi'],package_content_unit_id:units.g,package_quantity:'100',package_verified:true},crypto.randomUUID());
+  assert.equal((await db.query<{usage_unit_id:string}>('select usage_unit_id from materials where id=$1',[material.id])).rows[0].usage_unit_id,units.kg);
+  assert.equal(Number((await db.query<{q:string}>('select private.convert_quantity_at($1,$2,$3,1,$4)::text q',[material.id,units['túi'],units.kg,'2026-11-19'])).rows[0].q),0.1);
+  assert.equal((await db.query('select * from inventory_movement_lines where material_id=$1',[material.id])).rows.length,1);
+  assert.equal((await db.query('select * from recipe_items where material_id=$1',[material.id])).rows.length,1);
+ }finally{await db.close();}
+});
 test('Admin verification is versioned/idempotent, checks live authority and protects source/history and unit identities',async()=>{
  const db=await setup();try{
   const m=(await db.query<{id:string;version:string}>("select * from materials where code='TEST-EGG'")).rows[0];
