@@ -79,10 +79,10 @@ test('material API uses live permissions, hides ledger values without inventory 
  }finally{await db.close();}
 });
 
-test('Vietnamese money presentation remains exact for bigint/decimal amounts and preserves input values',()=>{
+test('Vietnamese money display rounds to two decimals and preserves bigint precision and input values',()=>{
  assert.equal(formatVnd('9007199254740993'),'9.007.199.254.740.993');
  assert.equal(formatVnd('16000.000000'),'16.000');assert.equal(formatVnd('0'),'0');assert.equal(formatVnd(null),'—');
- assert.equal(formatVnd('16000.125000'),'16.000,125');assert.equal(formatVnd('-0.5'),'-0,5');
+ assert.equal(formatVnd('16000.125000'),'16.000,13');assert.equal(formatVnd('-0.5'),'-0,5');
  assert.equal(formatVndCurrency('260000000.00000000006'),'260.000.000');
  assert.equal(formatVndCurrency('12.5'),'13');assert.equal(formatVndCurrency('-12.5'),'-13');
  assert.equal(moneyInputValue('260000.50'),'260.000,50');assert.equal(parseMoneyInput('260.000,50 đ'),'260000.50');

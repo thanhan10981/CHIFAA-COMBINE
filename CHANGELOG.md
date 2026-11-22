@@ -1,3 +1,8 @@
+## 2026-11-22 — Sửa kiểm tra định dạng tiền (KH-01/KH-10/KH-11)
+
+- Cập nhật kỳ vọng của test định dạng tiền theo quy tắc mới: `16.000,125` hiển thị thành `16.000,13`; độ chính xác bigint và giá trị nhập vẫn được kiểm tra riêng.
+- `npm run verify` đạt: sinh kiểu database không đổi, typecheck, lint, 150/150 test và production build.
+
 ## 2026-11-22 — Hoàn thiện tổng hợp giá vốn (KH-01/KH-10/KH-11)
 
 - Bảng tổng hợp tính và hiển thị giá vốn theo mẻ, theo đơn vị bán; giá bán lẻ theo định lượng được làm tròn đến đồng. Có phân trang và trạng thái kèm lý do thiếu dữ liệu.

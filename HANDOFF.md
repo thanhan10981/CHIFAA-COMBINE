@@ -921,3 +921,7 @@ Trang `/app/cost` hiển thị cột “Cost nguồn” (không kèm chữ “th
 Đã chuẩn hóa formatter hiển thị số trên web: giá trị làm tròn half-up tối đa 2 chữ số thập phân theo locale vi-VN, bỏ số 0 tận cùng. Bao gồm tồn kho/kiểm kê, nhu cầu và đối chiếu nguyên liệu, sản xuất, công thức và cost, danh mục, chấm công/payroll, ki-ốt và dashboard. Không sửa phiên bản công thức/chứng từ đã lưu; khi lưu phiên bản công thức mới, sản lượng/mẻ làm tròn tối đa 2 chữ số như thành phần. Các formatter khác chỉ tác động lúc hiển thị; độ chính xác đã lưu và lịch sử chứng từ vẫn nguyên. VND hiển thị nguyên đồng ở formatter tiền nguyên đồng; tiền đơn vị lẻ tối đa 2 số.
 
 Bằng chứng local: `npm run typecheck`, `npm run lint`, `npm run build`, `git diff --check` đạt. Không chạy test suite, không sửa schema hoặc dữ liệu; chưa làm UAT trình duyệt với tài khoản thật. Tiếp theo: commit/push checkpoint và UAT trên môi trường kết nối.
+
+## 22/11/2026 — Sửa GitHub verify cho định dạng số (KH-01/KH-10/KH-11)
+
+GitHub Actions run `45043505733` thất bại duy nhất ở `npm test`: test định dạng tiền vẫn mong đợi ba chữ số thập phân (`16.000,125`) sau khi giao diện được chuẩn hóa tối đa hai số. Cập nhật kỳ vọng thành `16.000,13`, đồng thời giữ kiểm tra độ chính xác bigint và parse/giá trị nhập. Bằng chứng local: `npm run verify` đạt — sinh kiểu DB không đổi (97 bảng/81 RPC), typecheck, lint, 150/150 test và production build. Không sửa schema/dữ liệu, không áp migration hoặc deploy. Đã push bản sửa; cần kiểm tra run Actions mới.
