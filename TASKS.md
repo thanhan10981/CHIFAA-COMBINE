@@ -330,8 +330,8 @@ Added authenticated owner-scoped requestStatus returning only journal state (no 
 ## MASTER M09 checkpoint - 2026-11-17
 
 273/273 local tests; syntax83/build pass. Financial completeness guards, request-local static configuration batching, visible-page sync60s/focus refresh and backup verification feedback. See docs/MASTER_M09_2026-11-17.md. Candidate built; verified DEV31 remains live until final source readback and rollout.
-## Bảng tổng hợp giá vốn — bỏ cột tham khảo và nhãn nháp (2026-11-22, KH-01/KH-10/KH-11)
+## Bảng tổng hợp giá vốn — giữ cột Cost nguồn, bỏ chữ tham khảo và nhãn nháp (2026-11-22, KH-01/KH-10/KH-11)
 
-- [x] Ẩn cost nguồn tham khảo và nhãn bản nháp trên `/app/cost`; còn giá vốn BOM và trạng thái đủ/thiếu cost.
+- [x] Hiển thị cột `Cost nguồn` với giá trị nguồn; bỏ chữ “tham khảo” khỏi tên cột và ẩn nhãn bản nháp; giữ giá vốn BOM và trạng thái đủ/thiếu cost.
 - [x] Không sửa status phiên bản hay dữ liệu database; `npm run check`, `npm run lint`, `npm run build` và `git diff --check` đạt.
 - [ ] Chưa chạy test/fixture theo phạm vi checkpoint UI này.

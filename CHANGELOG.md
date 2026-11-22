@@ -599,3 +599,7 @@ Bỏ phụ thuộc vào việc liệt kê Supabase Auth khi mở trang Tài kho�
 
 - Bỏ cột cost nguồn tham khảo và nhãn trạng thái bản nháp khỏi bảng `/app/cost`; giữ giá vốn tính từ BOM, trạng thái đủ/thiếu cost và lý do thiếu.
 - Chỉ đổi cách trình bày. Không đổi trạng thái phiên bản, dữ liệu nguồn, lịch sử hay database. `npm run check`, `npm run lint`, `npm run build` và `git diff --check` đạt; không chạy test/fixture.
+## 2026-11-22 — Điều chỉnh cột cost nguồn theo xác nhận (KH-01/KH-10/KH-11)
+
+- Giữ lại cột cost nguồn và giá trị tương ứng; tiêu đề chỉ là `Cost nguồn`, không còn chữ `tham khảo`. Nhãn `Bản nháp` vẫn được ẩn khỏi bảng.
+- Không đổi trạng thái phiên bản hay dữ liệu nguồn. `npm run check`, `npm run lint`, `npm run build` và `git diff --check` đạt; không chạy test/fixture.
