@@ -6,7 +6,7 @@ import {useState} from 'react';
 import Decimal from 'decimal.js';
 import {Icon} from '@/components/icons';
 import {browserSupabase} from '@/lib/supabase/browser';
-import {formatVndCurrency} from '@/lib/format';
+import {formatNumber,formatVndCurrency} from '@/lib/format';
 
 type Snapshot={
  date:string;net_revenue_vnd:string|null;revenue_yesterday_vnd:string|null;received_vnd:string|null;
@@ -21,7 +21,7 @@ const percent=(amount:string|null|undefined,base:string|null|undefined)=>{
  if(amount==null||base==null||Number(base)<=0)return null;
  return Number(amount)/Number(base)*100;
 };
-const showPercent=(value:number|null)=>value==null?'—':`${new Intl.NumberFormat('vi-VN',{maximumFractionDigits:1}).format(value)}%`;
+const showPercent=(value:number|null)=>value==null?'—':`${formatNumber(value,1)}%`;
 const targetPercent=(targets:Record<string,string>|undefined,key:string)=>targets?.[key]==null?null:Number(targets[key]);
 export function Dashboard({userId}:{userId:string}) {
  const [date,setDate]=useState(today);
@@ -80,8 +80,8 @@ export function Dashboard({userId}:{userId:string}) {
   <div className="v16-ratio-grid">{ratios.map(item=>{const exceeded=item.value!=null&&item.target!=null&&item.value>item.target;return <article className={'v16-ratio'+(item.value==null?' unknown':exceeded?' bad':' good')} key={item.label}><div className="v16-ratio-top"><h4>{item.label}</h4><span className={'v16-flag'+(item.value==null?' unknown':exceeded?' bad':' good')}>{item.value==null?'Thiếu dữ liệu':item.target==null?'Chưa đặt ngưỡng':exceeded?'Vượt ngưỡng':'Đang trong ngưỡng'}</span></div><div className="v16-ratio-value"><strong>{showPercent(item.value)}</strong><small>{item.target==null?'Chưa đặt trần':`Trần ${showPercent(item.target)}`}</small></div><div className="v16-progress"><span style={{width:`${item.value==null?'0':Math.min(item.value,100)}%`}}/></div><p>{item.note}</p></article>;})}</div>
   <div className="v16-section"><div><h3>Sản xuất &amp; dòng tiền trong ngày</h3><p>Thu nợ cũ không được cộng vào doanh thu bán hàng trong ngày xem.</p></div></div>
   <div className="stats">{[
-   ['Tiền thực nhận',money(data?.received_vnd)],['Sản lượng sản xuất',data?.produced==null?null:`${new Intl.NumberFormat('vi-VN',{maximumFractionDigits:2}).format(Number(data.produced))} phần`],
-   ['Giờ công sản xuất',data?.production_hours==null?null:`${new Intl.NumberFormat('vi-VN',{maximumFractionDigits:2}).format(Number(data.production_hours))} giờ`],
+   ['Tiền thực nhận',money(data?.received_vnd)],['Sản lượng sản xuất',data?.produced==null?null:`${formatNumber(data.produced)} phần`],
+   ['Giờ công sản xuất',data?.production_hours==null?null:`${formatNumber(data.production_hours)} giờ`],
    ['Chi phí nguyên liệu theo phiếu SX',money(data?.food_cost_vnd)],['Lương SX ước tính theo ca',money(data?.production_labor_estimate_vnd)],
   ].map(([label,value])=><article className="stat" key={label}><div><small>{label}</small><strong>{query.isPending?<span className="skeleton-value"/>:value??'—'}</strong><span>{value==null?'Chưa đủ dữ liệu':'Nguồn chứng từ đã ghi nhận'}</span></div></article>)}</div>
   <div className="v16-lower"><section className="v16-panel"><div className="v16-panel-title"><div><h3>Bảng theo dõi chỉ tiêu</h3><small>Theo dữ liệu đã lưu trong ngày xem</small></div></div><div className="v16-indicators">{indicators.map(item=><div className="v16-indicator" key={item.label}><div><b>{item.label}</b><small>Mục tiêu: {item.target??'—'}</small></div><div><b>{item.actual??'—'}</b><span className="v16-flag">{item.state}</span></div></div>)}</div></section>

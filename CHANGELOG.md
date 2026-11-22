@@ -603,3 +603,9 @@ Bỏ phụ thuộc vào việc liệt kê Supabase Auth khi mở trang Tài kho�
 
 - Giữ lại cột cost nguồn và giá trị tương ứng; tiêu đề chỉ là `Cost nguồn`, không còn chữ `tham khảo`. Nhãn `Bản nháp` vẫn được ẩn khỏi bảng.
 - Không đổi trạng thái phiên bản hay dữ liệu nguồn. `npm run check`, `npm run lint`, `npm run build` và `git diff --check` đạt; không chạy test/fixture.
+
+## 2026-11-22 — Hiển thị số tối đa hai chữ số thập phân (KH-01/KH-09/KH-10/KH-11)
+
+- Dùng một formatter dựa trên Decimal để làm tròn hiển thị theo quy tắc half-up, tối đa hai chữ số thập phân, bỏ số 0 cuối và dùng dấu phân cách tiếng Việt. Đã áp dụng cho tồn/kiểm kê, nhập xuất kho, sản xuất, quy đổi, công thức, cost, chấm công, payroll, ki-ốt, danh mục số thập phân và dashboard.
+- Không sửa phiên bản công thức hay chứng từ đã lưu. Khi lưu phiên bản công thức mới, sản lượng/mẻ được làm tròn tối đa 2 chữ số như định lượng thành phần. Các phép tính khác tiếp tục dùng dữ liệu chính xác đã lưu; formatter chỉ đổi cách hiển thị. Tiền VND dùng formatter nguyên đồng khi phù hợp; phần tiền đơn vị lẻ hiển thị tối đa hai chữ số.
+- Bằng chứng local: `npm run typecheck`, `npm run lint`, `npm run build` và `git diff --check` đạt. Không chạy test suite theo phạm vi checkpoint. Không sửa schema, áp SQL cloud, deploy hay UAT thật.

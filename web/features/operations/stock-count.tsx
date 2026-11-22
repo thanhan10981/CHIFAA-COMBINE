@@ -7,6 +7,7 @@ import {useSearchParams} from 'next/navigation';
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 
 import {browserSupabase} from '@/lib/supabase/browser';
+import {formatQuantity} from '@/lib/format';
 
 type CountRow = {id:string; code:string; name:string; unit_id:string; unit_code:string; quantity:string|null};
 type Snapshot = {inventory_version:string; rows:CountRow[]};
@@ -76,7 +77,7 @@ export function StockCount({userId, canPost,businessDate,onDirty}:{userId:string
    {(warehouses.isError||snapshot.isError)&&<ToastNotice message={warehouses.error?.message||snapshot.error?.message} tone="error"/>}
    {warehouse&&snapshot.data&&<>
     <div className="table-wrap"><table><thead><tr><th>Mã</th><th>Vật tư</th><th>Đơn vị chuẩn</th><th>Tồn theo sổ</th><th>Số đếm thực tế</th></tr></thead><tbody>
-     {snapshot.data.rows.slice(0,50).map(row=><tr key={row.id}><td>{row.code}</td><td>{row.name}</td><td>{row.unit_code}</td><td>{row.quantity??'Chưa có chuyển động'}</td><td><input aria-label={`Số đếm ${row.name}`} inputMode="decimal" disabled={!canPost||locked||snapshot.isFetching} value={counts[row.id]??''} placeholder="Bỏ qua" onChange={e=>setCounts({...counts,[row.id]:e.target.value})}/></td></tr>)}
+     {snapshot.data.rows.slice(0,50).map(row=><tr key={row.id}><td>{row.code}</td><td>{row.name}</td><td>{row.unit_code}</td><td>{row.quantity===null?'Chưa có chuyển động':formatQuantity(row.quantity)}</td><td><input aria-label={`Số đếm ${row.name}`} inputMode="decimal" disabled={!canPost||locked||snapshot.isFetching} value={counts[row.id]??''} placeholder="Bỏ qua" onChange={e=>setCounts({...counts,[row.id]:e.target.value})}/></td></tr>)}
     </tbody></table>{!snapshot.data.rows.length&&<p className="empty">Không có vật tư phù hợp đã thiết lập đơn vị chuẩn.</p>}</div>
     <div className="toolbar">
      <button className="button" disabled={locked||hasDraft||offset===0} onClick={()=>{setOffset(offset-50);reset();}}>Trước</button>

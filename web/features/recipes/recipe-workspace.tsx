@@ -6,12 +6,12 @@ import Decimal from 'decimal.js';
 import {browserSupabase} from '@/lib/supabase/browser';
 import {LoadingState,ToastNotice,useNotify} from '@/components/feedback';
 import {Icon} from '@/components/icons';
-import {formatVnd,formatVndCurrency} from '@/lib/format';
+import {formatQuantity,formatVnd,formatVndCurrency} from '@/lib/format';
 import {RecipeForm} from './recipe-form';
 import {today,recipeKinds,type Recipe,type Detail} from './recipe-types';
 import './recipes.css';
 const views:Record<string,{title:string;kind:string}>={recipes:{title:'Công thức món ăn',kind:'product'},batches:{title:'Công thức nhân & bán thành phẩm',kind:'sauce'},rice:{title:'Công thức cơm chín',kind:'rice'},packaging:{title:'Định mức bao bì từng đơn vị bán',kind:'packaging'},cost:{title:'Tổng hợp giá vốn',kind:'product'}};
-const quantity=(value:string|null|undefined)=>value==null?'—':new Decimal(value).toDecimalPlaces(6).toNumber().toLocaleString('vi-VN',{maximumFractionDigits:6});
+const quantity=formatQuantity;
 const massAmount=(value:string|null|undefined,unit:string|null|undefined)=>{
  if(value==null)return '—';
  const code=unit?.trim().toLocaleLowerCase('vi-VN');const amount=new Decimal(value);

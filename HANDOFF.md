@@ -915,3 +915,9 @@ Bằng chứng local: `npm run verify` đạt (95 bảng/76 RPC, typecheck, lint
 ## 22/11/2026 — Gọn bảng tổng hợp giá vốn (KH-01/KH-10/KH-11)
 
 Trang `/app/cost` hiển thị cột “Cost nguồn” (không kèm chữ “tham khảo”) và ẩn nhãn “Bản nháp”; phần mô tả cũng chỉ nói cost tính từ BOM, giá vật tư và ngày hiệu lực. Bảng vẫn hiển thị cost đầy đủ hoặc “Chưa đủ dữ liệu”, kèm lý do khi chưa đủ. Đây là thay đổi giao diện: trạng thái phiên bản trong database, cost nguồn và lịch sử vẫn được giữ, không sửa dữ liệu. `npm run check`, `npm run lint`, `npm run build` và `git diff --check` đạt; không chạy test/fixture. Còn lại: UAT trên môi trường kết nối thật.
+
+## 2026-11-22 — Quy tắc hiển thị số toàn web (KH-01/KH-09/KH-10/KH-11)
+
+Đã chuẩn hóa formatter hiển thị số trên web: giá trị làm tròn half-up tối đa 2 chữ số thập phân theo locale vi-VN, bỏ số 0 tận cùng. Bao gồm tồn kho/kiểm kê, nhu cầu và đối chiếu nguyên liệu, sản xuất, công thức và cost, danh mục, chấm công/payroll, ki-ốt và dashboard. Không sửa phiên bản công thức/chứng từ đã lưu; khi lưu phiên bản công thức mới, sản lượng/mẻ làm tròn tối đa 2 chữ số như thành phần. Các formatter khác chỉ tác động lúc hiển thị; độ chính xác đã lưu và lịch sử chứng từ vẫn nguyên. VND hiển thị nguyên đồng ở formatter tiền nguyên đồng; tiền đơn vị lẻ tối đa 2 số.
+
+Bằng chứng local: `npm run typecheck`, `npm run lint`, `npm run build`, `git diff --check` đạt. Không chạy test suite, không sửa schema hoặc dữ liệu; chưa làm UAT trình duyệt với tài khoản thật. Tiếp theo: commit/push checkpoint và UAT trên môi trường kết nối.

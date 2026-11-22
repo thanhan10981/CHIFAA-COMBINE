@@ -12,6 +12,7 @@ import {ActionDialog,LoadingState,ToastNotice} from '@/components/feedback';
 import {StockCount} from './stock-count';
 import {UsageDocuments,type UsageEvidence} from './usage-documents';
 import {periodRange} from '@/lib/production-period';
+import {formatQuantity} from '@/lib/format';
 export {periodRange} from '@/lib/production-period';
 import './production-materials.css';
 
@@ -24,7 +25,7 @@ type Report={id:string;starts_on:string;ends_on:string;created_at:string;created
 type Request={name:string;args:Record<string,unknown>};
 type Permissions={returns?:boolean;plan:boolean;produce:boolean;correct?:boolean;count:boolean;classify?:boolean;ledger?:boolean;freeze:boolean;history:boolean};
 const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh'}).format(new Date());
-const fmt=(value:string|null|undefined)=>value==null?'—':new Intl.NumberFormat('vi-VN',{maximumFractionDigits:6}).format(Number(value));
+const fmt=formatQuantity;
 const valid=(value:string)=>/^\d+(?:\.\d{1,6})?$/.test(value)&&new Decimal(value).lt('1e14');
 const normalize=(value:string)=>value.trim().replace(',','.');
 const add=(a:string|null,b:string|null)=>a===null&&b===null?null:new Decimal(a??0).plus(b??0).toFixed();
@@ -125,7 +126,7 @@ export function ProductionMaterials({slug,userId,permissions}:{slug:string;userI
   {data.sources.some(s=>s.issue)&&<div className="pm-note"><b>Chưa đủ dữ liệu — tổng nhu cầu còn thiếu các món sau:</b>{data.sources.filter(s=>s.issue).map((s,i)=><p key={i}>{s.product_name??data.products.find(p=>p.id===s.product_id)?.name??s.product_id}: {issues[s.issue!]??s.issue}</p>)}</div>}
   {material&&<div className="pm-detail"><h2>{material.name} ({material.code}) · {material.unit}</h2><details open><summary>Nguồn món, công thức và chứng từ</summary>{data.sources.filter(s=>s.material_id===material.material_id&&s.unit_id===material.unit_id).map((s,i)=><p key={i}>{data.products.find(p=>p.id===s.product_id)?.name??s.product_name??s.product_id} · {fmt(s.quantity)} {material.unit} · công thức {s.recipe_version_id} {s.batch_id&&<>· đợt {s.batch_id} · {s.date}</>}</p>)}</details>
   {counting&&<>{data.capabilities?.reconciliation?<UsageDocuments key={warehouse+date+material.material_id} warehouse={warehouse} date={date} material={material.material_id} previous={material.check?.id??null} userId={userId} locked={locked||ledgerDraft} canSave={permissions.count} canCertify={permissions.count} canClassify={permissions.classify??false} onDirty={setDocumentDraft} send={send} savedSource={data.usage_sources?.find(s=>s.id===material.check?.id)?.snapshot}/>:<p className="pm-note">Cần áp patch029 để tự ghép chứng từ và mở điều chỉnh sản lượng sau giao/bán.</p>}</>}
-  <details><summary>Lịch sử kiểm kê và chứng từ</summary>{material.check_history?.map(c=><p key={c.id}>{c.business_date} · {c.id} · {c.opening} + {c.incoming} − {c.closing} − {c.other_out} {material.unit} · {c.evidence} · {c.created_at} · {c.created_by}{c.replaces_id&&<> · thay {c.replaces_id}</>}</p>)}</details></div>}
+  <details><summary>Lịch sử kiểm kê và chứng từ</summary>{material.check_history?.map(c=><p key={c.id}>{c.business_date} · {c.id} · {fmt(c.opening)} + {fmt(c.incoming)} − {fmt(c.closing)} − {fmt(c.other_out)} {material.unit} · {c.evidence} · {c.created_at} · {c.created_by}{c.replaces_id&&<> · thay {c.replaces_id}</>}</p>)}</details></div>}
   {counting&&!selected&&<p className="pm-note">Chọn vật tư để lấy phiếu kiểm kê đã lưu và các luồng kho làm nguồn đối chiếu. Không nhập lại số đếm.</p>}
   {reporting&&<div className="pm-detail"><h2>Lưu và đọc báo cáo theo kỳ</h2><p>{frozen?'Đang xem snapshot '+frozen.id:'Kết quả hiện tại tính lúc '+data.calculated_at}. Báo cáo lưu giữ sản lượng nguồn, công thức, lượng và kiểm kê tại thời điểm chốt; số mới không sửa snapshot cũ.</p><button className="button primary" disabled={locked||!permissions.freeze||!!frozen||query.isFetching} onClick={()=>send('freeze_consumption_report',{p_warehouse:warehouse,p_from:range.from,p_to:range.to})}>Lưu snapshot kỳ</button><label>Snapshot đã lưu<select value={frozen?.id??''} disabled={locked||!permissions.history||readSnapshot.isPending} onChange={e=>e.target.value?readSnapshot.mutate(e.target.value):setFrozen(null)}><option value="">Xem số liệu hiện tại</option>{history.data?.map(h=><option key={h.id} value={h.id}>{h.starts_on} → {h.ends_on} · {h.created_at}</option>)}</select></label></div>}
   </>}
