@@ -11,6 +11,7 @@ import {materialCategories,localDate} from '@/features/catalog/material-types';
 import {formatQuantity,formatVnd} from '@/lib/format';
 import {Icon} from '@/components/icons';
 import {createInventoryWorkbook,parseInventoryWorkbook,type InventoryImportRow} from './inventory-excel';
+import {inventoryPostError} from './inventory-errors';
 import './inventory-workspace.css';
 type Row={id:string;code:string;name:string;category:string;unit_id:string|null;unit:string|null;quantity:string|null;minimum:string|null;needed:string|null;suggested:string|null;status:string;stock_average_unit_cost:string|null};
 type Result={rows:Row[];total:number;summary:{materials:number;known:number;unknown:number;low:number};needs_complete:boolean;planned:boolean;inventory_version:string};
@@ -40,7 +41,7 @@ export function InventoryWorkspace({slug,userId,canPost,canCount,canCorrect,canE
    setPending(request);
   }
   const {error}=await browserSupabase().rpc(request.action,request.args);
-  if(error){if(error.code==='P0001'||/^(22|23|42)/.test(error.code)){setPending(null);throw new Error(error.message.includes('INVENTORY_VERSION_CONFLICT')?'Tồn đã thay đổi. Đóng phiếu, tải lại tồn và đối chiếu số đếm trước khi lưu.':'Chưa lưu: kiểm tra kỳ khóa, quyền, đơn vị, tồn kho. '+error.message);}throw new Error('Chưa nhận được xác nhận. Bấm kiểm tra lại cùng lần gửi để tránh cộng trùng.');}
+  if(error){if(error.code==='P0001'||/^(22|23|42)/.test(error.code)){setPending(null);throw new Error(inventoryPostError(error,editor.kind==='issue'?{code:editor.row.code,name:editor.row.name,unit:editor.row.unit??'',date,requested:quantity,available:editor.row.quantity}:undefined));}throw new Error('Chưa nhận được xác nhận. Bấm kiểm tra lại cùng lần gửi để tránh cộng trùng.');}
  },onSuccess:()=>{setPending(null);setEditor(null);setMessage('Đã ghi phiếu. Tồn kho và lịch sử đã được cập nhật.');for(const key of ['inventory','counts','usage-evidence','production-materials','material-catalog','dashboard'])void cache.invalidateQueries({queryKey:[userId,key]});}});
  const correct=useMutation({retry:false,mutationFn:async()=>{
   if(!correction)throw new Error('Chọn phiếu nhập cần sửa.');

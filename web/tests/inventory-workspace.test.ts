@@ -34,6 +34,20 @@ test('KH-09 receipts add once under retry, issues reject negative closing, histo
  await assert.rejects(()=>rpc('post_inventory',[warehouse,'2026-11-18','issue',[{material_id:mat,unit_id:kg,quantity:'-12'}],'Synthetic overdraw',randomUUID()]),/INSUFFICIENT_STOCK/);
  const history=await rpc<{quantity:string;note:string;created_by:string}[]>('inventory_history',[warehouse,'2026-11-18',mat,0]);assert.equal(history.length,3);assert.ok(history.every(r=>r.created_by===identities.admin));assert.ok(history.some(r=>r.quantity==='-1.000000'));
 });
+test('stock issue checks balances from its date forward and returns exact shortage evidence',async()=>{
+ const legacy=randomUUID();await db.query("insert into materials(id,code,name,usage_unit_id) values($1,'INV-LEGACY-NEG','Synthetic stock with old negative day',$2)",[legacy,kg]);
+ const pastIssue=(await db.query<{id:string}>("insert into inventory_movements(warehouse_id,moved_on,kind,note) values($1,'2026-11-16','issue','Synthetic legacy negative day') returning id",[warehouse])).rows[0].id;
+ await db.query('insert into inventory_movement_lines(movement_id,material_id,unit_id,quantity) values($1,$2,$3,-3)',[pastIssue,legacy,kg]);
+ const recovery=(await db.query<{id:string}>("insert into inventory_movements(warehouse_id,moved_on,kind,note) values($1,'2026-11-17','receipt','Synthetic later recovery') returning id",[warehouse])).rows[0].id;
+ await db.query('insert into inventory_movement_lines(movement_id,material_id,unit_id,quantity) values($1,$2,$3,10)',[recovery,legacy,kg]);
+ assert.equal((await rpc<{rows:Row[]}>('inventory_workspace',[warehouse,'2026-11-18','2026-11-19','','','all',0])).rows.find(row=>row.id===legacy)?.quantity,'7.000000');
+ await rpc('post_inventory',[warehouse,'2026-11-18','issue',[{material_id:legacy,unit_id:kg,quantity:'-1'}],'Synthetic valid issue after recovered stock',randomUUID()]);
+ assert.equal((await rpc<{rows:Row[]}>('inventory_workspace',[warehouse,'2026-11-18','2026-11-19','','','all',0])).rows.find(row=>row.id===legacy)?.quantity,'6.000000');
+ await assert.rejects(()=>rpc('post_inventory',[warehouse,'2026-11-18','issue',[{material_id:legacy,unit_id:kg,quantity:'-10'}],'Synthetic overdraw with detail',randomUUID()]),error=>{
+  const detail=JSON.parse((error as {detail:string}).detail) as {material_code:string;transaction_date:string;requested_quantity:string;available_quantity:string;shortage_quantity:string;negative_balance_date:string};
+  assert.equal(detail.material_code,'INV-LEGACY-NEG');assert.equal(detail.transaction_date,'2026-11-18');assert.equal(Number(detail.requested_quantity),10);assert.equal(Number(detail.available_quantity),6);assert.equal(Number(detail.shortage_quantity),4);assert.equal(detail.negative_balance_date,'2026-11-18');return true;
+ });
+});
 test('receipt prices stay on each dated posting and the catalogue uses quantity-weighted receipt average',async()=>{
  await db.query("insert into materials(id,code,name,usage_unit_id) values($1,'INV-COST','Synthetic priced material',$2)",[priced,kg]);
  await db.query("insert into material_prices(material_id,basis_unit_id,amount,effective_from,verification) values($1,$2,12000,'2026-11-01','verified')",[priced,kg]);

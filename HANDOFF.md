@@ -1081,5 +1081,21 @@ Còn lại: chưa UAT dữ liệu thật hoặc triển khai frontend; không c�
 - Store-linked public orders load the effective discount for the link target and show the discounted total in the customer basket. The server recomputes the discount and stores it on order lines; clients cannot submit or override a rate. General anonymous orders without a store keep the public common-price/no-private-discount behavior.
 - When an unlinked guest order is assigned to a store during review, the selected store's discount for the delivery date is snapshotted before approval. Reassigning a linked guest order also updates the snapshot; keeping the same store preserves the submitted snapshot. The approval queue then calculates discount and due total from saved order lines.
 - Added customer payment preference (cash/bank) as a separate order snapshot. Review UI shows the customer's choice separately from posted receipt method and amounts; it does not record a receipt or mark the order paid. Idempotency fingerprints include the choice.
-- Evidence: `web/tests/public-portal.test.ts` 9/9; full web suite 169/169; typecheck and lint completed successfully; latest production build is running/verify result before close.
+- Evidence: `web/tests/public-portal.test.ts` 9/9; full web suite 169/169; typecheck, lint and production build completed successfully for that checkpoint.
 - Remaining: apply migration 070 to the intended Supabase database and deploy frontend through the normal process. No cloud SQL or deployment performed.
+
+
+## 2026-11-23 - Fix customer order summary print layout (KH-12/KH-01/KH-10)
+
+- Reworked print media layout for the approved order matrix and ingredient demand report. The modal and scroll container now print at natural height from the top of the page; the matrix can flow over pages and repeats its column headings. Removed the print-only blank space caused by the page behind the dialog remaining in document flow.
+- Evidence: `npm run test:orders` passed in Chromium with a print-media regression assertion for top-of-page placement, natural overflow, repeated table headings, and inclusion of the ingredient demand section; full web tests 169/169; `npm run typecheck`, `npm run lint`, `npm run build`, and `git diff --check` passed. Build and Chromium checks used the local visual fixture only, without cloud writes.
+- Remaining: visual check on the operator's actual browser/printer settings; no production deploy performed.
+
+
+## 2026-11-23 - Fix inventory issue validation and shortage message (KH-01/KH-10)
+
+- Root cause: the stock posting function rejected an issue if any daily balance anywhere in the material's history had ever gone negative. A later receipt could restore stock, but the historical negative day still blocked an issue even when the selected posting date showed enough stock.
+- Migration `202611230071_inventory_issue_balance_diagnostics.sql` checks the projected balance from the entered movement date forward. Negative movements are rejected if they make the balance negative; positive receipts are allowed to repair existing deficits. Rejection details identify material, transaction date, requested/available/shortage quantities and first affected negative date.
+- Inventory UI translates `INSUFFICIENT_STOCK` into a Vietnamese explanation with the material and exact quantities. Added SQL-history regression, error-message tests and a browser fixture for the insufficient-stock response.
+- Evidence: targeted inventory tests 11/11; full web tests 173/173; Chromium inventory UI check passed at 320/390/768/1024/1440px including shortage copy; typecheck, lint, production build and `git diff --check` passed. Tests use local PGlite/browser fixtures only.
+- Remaining: apply migration 071 to the intended Supabase database and deploy frontend through the normal process. No cloud SQL or deployment performed.

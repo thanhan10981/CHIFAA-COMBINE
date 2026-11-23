@@ -1,6 +1,7 @@
 import path from 'node:path';
 import ExcelJS from 'exceljs';
 export async function checkInventory(page,base,out,report){
+ const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh'}).format(new Date());
  for(const width of [320,390,768,1024,1440]){
   await page.setViewportSize({width,height:900});
   for(const slug of ['inventory','stockmovements','stockhistory','reorder','entry-stock']){
@@ -43,6 +44,10 @@ export async function checkInventory(page,base,out,report){
  if(!await page.getByLabel('Số lượng phiếu kho',{exact:true}).isDisabled())throw new Error('Uncertain receipt input unlocked');
  await page.getByRole('button',{name:'Kiểm tra lại lần lưu',exact:true}).click();await page.getByText('Đã ghi phiếu. Tồn kho và lịch sử đã được cập nhật.',{exact:true}).waitFor();
  if(sent.length!==2||JSON.stringify(sent[0])!==JSON.stringify(sent[1])||sent[0].p_lines[0].quantity!=='2.5'||sent[0].p_lines[0].unit_cost!=='3000')throw new Error('Receipt retry payload/quantity changed');
+ await page.goto(base+'/app/inventory');await page.getByRole('row').filter({hasText:'INV-Z'}).getByRole('button',{name:'Xuất',exact:true}).click();await page.getByLabel('Số lượng phiếu kho',{exact:true}).fill('1');
+ await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/post_inventory',route=>route.fulfill({status:400,contentType:'application/json',body:JSON.stringify({code:'P0001',message:'INSUFFICIENT_STOCK',details:JSON.stringify({material_code:'INV-Z',material_name:'Vật tư tồn không đã xác nhận',unit_code:'kg',transaction_date:today,requested_quantity:'1',available_quantity:'0',shortage_quantity:'1',negative_balance_date:today,projected_balance:'-1'})})}));
+ await page.getByRole('button',{name:'Lưu phiếu kho',exact:true}).click();await page.getByText(/Không thể xuất INV-Z · Vật tư tồn không đã xác nhận.*cần 1 kg, tồn trước phiếu 0 kg, thiếu 1 kg/).waitFor();
+ if(await page.getByText('INSUFFICIENT_STOCK',{exact:true}).count())throw new Error('Inventory shortage exposed the raw database code instead of quantities');await page.getByRole('button',{name:'Hủy',exact:true}).click();
  await page.goto(base+'/app/inventory');await page.getByRole('row').filter({hasText:'INV-M'}).getByRole('button',{name:'Kiểm kê',exact:true}).click();await page.getByLabel('Số lượng phiếu kho',{exact:true}).fill('0');let count;
  await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/post_stock_count',async route=>{count=route.request().postDataJSON();await route.fulfill({status:200,contentType:'application/json',body:'{"count_id":"synthetic-zero"}'});});
  await page.getByRole('button',{name:'Lưu phiếu kho',exact:true}).click();await page.getByText('Đã ghi phiếu. Tồn kho và lịch sử đã được cập nhật.',{exact:true}).waitFor();
@@ -72,7 +77,7 @@ export async function checkInventory(page,base,out,report){
  await page.getByText('Đã nhập Excel: 1 mã mới, 2 mã đã có, 2 vật tư được cộng tồn.',{exact:true}).waitFor();
  if(importSent.length!==1||importSent[0].p_lines.length!==3||importSent[0].p_lines[0].added_quantity!=='1.2'||importSent[0].p_lines[1].added_quantity!=='3.32'||importSent[0].p_lines[0].unit_cost!=='0'||importSent[0].p_lines[1].unit_cost!==null||importSent[0].p_lines[2].added_quantity!==null)throw new Error('Excel confirmation changed fractional additive quantities, explicit-zero/unknown price or catalog-only lines');
  report.checks.push('Excel import preview accepts and totals decimal additions 1.2 and 3.32; confirmation preserves both quantities, null/zero price distinction and catalog-only line; responsive modal fits at 320/1440 with no page overflow');
- report.checks.push('Inventory catalogue, movements, material-filtered receipt price history, reorder, entry at 5 widths; sole warehouse; empty warehouse guidance; decimal receipt plus per-entry price retry preserves payload/key; receipt price/quantity correction retains selected line and reason at 320/1440; confirmed zero count with captured inventory token; accessible icon actions stay in one row, desktop filters fit one row, no duplicate tabs, three compact dialogs at 320/1440');
+ report.checks.push('Inventory catalogue, movements, material-filtered receipt price history, reorder, entry at 5 widths; sole warehouse; empty warehouse guidance; decimal receipt retry preserves payload/key; insufficient stock error displays material, date, requested/available/shortage quantities without raw DB code; receipt correction retains selected line/reason; confirmed zero count with inventory token; no overflow or duplicate tabs');
  await page.goto(base+'/app/warehouses');await page.getByText('V\u1eadt t\u01b0 ki\u1ec3m th\u1eed nh\u1eadp kho',{exact:true}).waitFor();
  report.checks.push('Warehouse catalogue redirects to inventory; ingredient warehouse is resolved automatically without selector');
 }
