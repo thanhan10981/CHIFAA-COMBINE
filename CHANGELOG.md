@@ -1,3 +1,9 @@
+## 2026-11-23 — Sửa gói SQL đơn hàng phụ thuộc nền Ki-ốt (KH-04/KH-05)
+
+- Kiểm tra ảnh Supabase: đơn hàng đã có, còn thiếu bảng lô Ki-ốt và RPC bán/đối soát. Gói migration 061 riêng không thể chạy trước khi cài nền Ki-ốt.
+- Thêm `npm --prefix web run db:order-kiosk-update`, sinh một gói transaction gồm 021, 022 và 061 với preflight schema, phát hiện chạy lại/dở dang và rollback nguyên gói.
+- PGlite 11/11, typecheck và lint đạt. Chưa áp lên cloud. Project hiện chỉ có nhánh `main (PRODUCTION)`; chủ dự án cần tự quyết định chạy file trên database thật. Xem `docs/standalone/ONLINE_DEPLOY.md`.
+
 ## 2026-11-22 — Sửa kiểm tra định dạng tiền (KH-01/KH-10/KH-11)
 
 - Cập nhật kỳ vọng của test định dạng tiền theo quy tắc mới: `16.000,125` hiển thị thành `16.000,13`; độ chính xác bigint và giá trị nhập vẫn được kiểm tra riêng.
