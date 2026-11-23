@@ -1,3 +1,10 @@
+# 2026-11-23 — Đổi bảng ngoài trang đơn hàng theo mẫu tổng hợp (KH-04/KH-05/KH-12)
+
+- Trang Duyệt đơn hàng có các cột theo mẫu: mã/trạng thái, điểm bán/số điện thoại, ngày giao, tổng SL, mức chiết khấu, chi tiết món, cấn đơn trước, hủy/lỗ, tổng thanh toán, tiền mặt/chuyển khoản và ghi chú. Số liệu theo đơn lấy từ `order_customer_summary` hiện có, gom theo các ngày giao đang có trên trang.
+- Nút Chi tiết món mở hộp thoại đơn hàng để xem món và tiếp tục duyệt/từ chối/giao/hoàn. Không thay đổi nghiệp vụ hoặc snapshot của đơn.
+- Kiểm tra đạt: `npm run typecheck`, `npm run lint`, `npm test` (156/156), `npm run build`, `npm run test:orders`; fixture xác nhận các cột/giá trị đơn hàng, luồng xem món-giao-hoàn-bảng tổng hợp và không tràn màn hình 390px. Ảnh fixture ở `output/design-parity/order-list-desktop.png` và `output/design-parity/order-list-mobile.png`. Fixture không xác nhận đăng nhập/Supabase cloud.
+- Không cần SQL mới; chưa triển khai frontend và không áp SQL cloud. Sau khi frontend được phát hành, cần kiểm tra lại trên môi trường đã chạy gói 061.
+
 # 2026-11-23 — Gộp cài Ki-ốt còn thiếu với đối soát đơn (KH-04/KH-05)
 
 - Ảnh kiểm tra Supabase cho thấy các bảng/RPC đơn hàng đã có, nhưng `kiosk_return_lots`, `kiosk_action` và `kiosk_report` chưa có. Migration 061 cần nền Ki-ốt 021/022 nên chạy riêng sẽ lỗi.

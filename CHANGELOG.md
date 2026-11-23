@@ -1,3 +1,10 @@
+## 2026-11-23 — Đổi bảng ngoài trang đơn hàng theo mẫu tổng hợp (KH-04/KH-05/KH-12)
+
+- Bảng danh sách hiển thị mã/trạng thái, điểm bán và số điện thoại, ngày giao, tổng số lượng, chiết khấu, món, khoản cấn đơn trước, hủy/lỗ, tổng thanh toán, cách thu và ghi chú.
+- Lấy các số liệu theo đơn từ RPC tổng hợp hiện có theo ngày giao; nút chi tiết mở luồng đơn hiện có, còn duyệt/từ chối được giữ trong ô chi tiết. Không thêm migration hoặc thay đổi dữ liệu chứng từ.
+- Xác nhận: typecheck, lint, build, `npm test` (156/156) và `npm run test:orders` đạt; fixture xác nhận cột mới, giao/hoàn, Excel/in, không tràn trang điện thoại. Fixture không kiểm tra đăng nhập hay Supabase cloud.
+- Chưa triển khai frontend; không áp SQL cloud.
+
 ## 2026-11-23 — Sửa gói SQL đơn hàng phụ thuộc nền Ki-ốt (KH-04/KH-05)
 
 - Kiểm tra ảnh Supabase: đơn hàng đã có, còn thiếu bảng lô Ki-ốt và RPC bán/đối soát. Gói migration 061 riêng không thể chạy trước khi cài nền Ki-ốt.
