@@ -171,6 +171,24 @@ test('formula-only unit conversion lets recipes use pieces while inventory stays
   assert.equal((await db.query<{quantity:string}>('select private.inventory_quantity($1,$2,$3,$4)::text quantity',[warehouse,'2026-11-18',material.id,bag])).rows[0].quantity,'2.000000');
  }finally{await db.close();}
 });
+test('verification can migrate saved piece stock to bags while separately recording the formula ratio',async()=>{
+ const db=await setup();try{
+  const bag=(await db.query<{id:string}>("insert into material_units(code,name,dimension) values('TEST-MIGRATION-BAG','Bì','package') returning id")).rows[0].id;
+  const piece=(await db.query<{id:string}>("insert into material_units(code,name,dimension) values('TEST-MIGRATION-PIECE','Cái','count') returning id")).rows[0].id;
+  const material=(await db.query<{id:string;version:string}>("insert into materials(code,name,purchase_unit_id,usage_unit_id) values('TEST-PIECE-TO-BAG','Đũa đổi đơn vị', $1,$2) returning id,version",[bag,piece])).rows[0];
+  const warehouse=(await db.query<{id:string}>("insert into warehouses(code,name,kind) values('TEST-PIECE-BAG-W','Old piece stock','ingredient') returning id")).rows[0].id;
+  const movement=(await db.query<{id:string}>("insert into inventory_movements(warehouse_id,moved_on,kind) values($1,'2026-11-17','receipt') returning id",[warehouse])).rows[0].id;
+  await db.query('insert into inventory_movement_lines(movement_id,material_id,unit_id,quantity,unit_cost) values($1,$2,$3,100,120)',[movement,material.id,piece]);
+  await asUser(db,identities.admin,()=>db.query('select resolve_material($1,$2,$3,$4::jsonb,$5)',[
+   material.id,material.version,'2026-11-18',JSON.stringify({purchase_unit_id:bag,usage_unit_id:bag,basis_unit_id:bag,amount:'12000',verification:'verified',package_unit_id:bag,package_content_unit_id:piece,package_quantity:'100',package_verified:true,formula_unit_id:piece,formula_quantity:'100',evidence:'Đối chiếu bì 100 cái',issue:''}),crypto.randomUUID()
+  ]));
+  assert.equal((await db.query<{usage_unit_id:string}>('select usage_unit_id from materials where id=$1',[material.id])).rows[0].usage_unit_id,bag);
+  assert.equal(Number((await db.query<{quantity:string}>('select private.inventory_quantity($1,$2,$3,$4)::text quantity',[warehouse,'2026-11-19',material.id,bag])).rows[0].quantity),1);
+  assert.equal(Number((await db.query<{quantity:string}>('select private.recipe_convert_quantity_at($1,$2,$3,100,$4)::text quantity',[material.id,piece,bag,'2026-11-19'])).rows[0].quantity),1);
+  const saved=(await db.query<{package_verified:boolean;formula_verified:boolean}>('select package_verified,formula_verified from material_resolutions where material_id=$1 order by effective_from desc,revision desc limit 1',[material.id])).rows[0];
+  assert.equal(saved.package_verified,true);assert.equal(saved.formula_verified,true);
+ }finally{await db.close();}
+});
 test('reconciliation preserves posted ledger costs and receipts keep their entered price separate from catalog prices',async()=>{
  const db=await database();try{
   await db.exec(buildMaterialImport(originals,'a'.repeat(64),day));

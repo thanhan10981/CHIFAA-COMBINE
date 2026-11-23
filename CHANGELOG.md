@@ -701,3 +701,9 @@ Bỏ phụ thuộc vào việc liệt kê Supabase Auth khi mở trang Tài kho�
 - Migration `202611230065_material_formula_specific_unit_conversion.sql` stores the formula ratio as a dated immutable resolution and applies it only to recipe validation, BOM quantities, recipe detail, demand, and costing. Stock receipts, counts, and balances continue to use the stock unit. A catalog/price update preserves the formula ratio; changing the stock unit requires a new verification.
 - Verification: the local PGlite case `1 bì = 100 cái` passed, including 100 recipe pieces → 1 stock bag, 12,000 VND cost, and a balance of 2 bags remaining 2 bags. All 159 tests passed. The recipe UI fixture passed at 320–1440px; the material fixture passed at 320–1920px and captured a payload that keeps stock in bags while sending 100 pieces to formula conversion. Typecheck, lint, production build, and `git diff --check` passed.
 - Migration 065 has not been applied to Supabase; frontend has not been deployed. Apply 065 after 064 in the intended project, then UAT the chopsticks recipe. Historical documents and snapshots were not rewritten.
+
+## 2026-11-23 — Show stock migration ratio when existing and new stock units differ (KH-01/KH-10/KH-11)
+
+- The material review form now detects when the persisted stock unit differs from the selected one. It keeps the inventory conversion visible even when purchase and new stock units are both `bì`, defaults the other side to the old stock unit (`cái`), and requires the stock ratio before saving. Formula conversion remains separate.
+- Added regression coverage for 100 old pieces migrating to 1 bag while the recipe ratio is independently saved as 1 bag = 100 pieces. Verified old inventory balance and recipe quantity conversion.
+- Verification: 160/160 tests passed, material UI fixture passed at 320–1920px, typecheck/lint and `git diff --check` passed. Production SQL and frontend are not updated yet.

@@ -22,14 +22,14 @@ function ReviewForm({row,units,canVerify,onBusy,latest,onSuccess}:{userId:string
  const [amount,setAmount]=useState(clean(latest?.amount??row.price_amount));
  const [effective,setEffective]=useState(localDate);
  const [pack,setPack]=useState(latest?.package_unit_id??latest?.purchase_unit_id??row.purchase_unit_id);
- const [content,setContent]=useState(latest?.package_content_unit_id??latest?.usage_unit_id??row.usage_unit_id);
+ const [content,setContent]=useState(latest?.package_content_unit_id??row.usage_unit_id);
  const [quantity,setQuantity]=useState(clean(latest?.package_quantity));
  const [formulaUnit,setFormulaUnit]=useState(latest?.formula_unit_id??latest?.usage_unit_id??row.usage_unit_id);
  const [formulaQuantity,setFormulaQuantity]=useState(clean(latest?.formula_quantity));
  const [issue]=useState(latest?.issue??row.price_issue??'');
  const [pending,setPending]=useState<{input:Record<string,unknown>;key:string;date:string}|null>(null);
  const priceBasis=basis||purchase,selectedUsage=usage,verified=amount!==''&&!!priceBasis;
- const updateUsage=(value:string)=>{if(value!==usage){setUsage(value);setFormulaUnit(value);setFormulaQuantity('');}};
+ const updateUsage=(value:string)=>{if(value!==usage){setUsage(value);setFormulaUnit(value);setFormulaQuantity('');if(value!==row.usage_unit_id){setPack(purchase);setContent(row.usage_unit_id);setQuantity('');}}};
  const unit=(value:string,set:(v:string)=>void,optional=false,label?:string)=><select aria-label={label} required={!optional} value={value} onChange={e=>set(e.target.value)}><option value="">{optional?'Chưa xác định':'Chọn đơn vị'}</option>{units.map(u=><option key={u.id} value={u.id}>{u.code} · {u.name}</option>)}</select>;
  const unitCode=(id:string,fallback:string)=>units.find(u=>u.id===id)?.code||fallback;
  const save=useMutation({retry:false,mutationFn:async()=>{
@@ -39,8 +39,10 @@ function ReviewForm({row,units,canVerify,onBusy,latest,onSuccess}:{userId:string
    if(!purchase||!selectedUsage)throw new Error('Chọn đơn vị mua và đơn vị tiêu hao.');
    if(amount!==''&&!/^\d+(?:\.\d{1,6})?$/.test(amount))throw new Error('Đơn giá phải là số không âm, tối đa 6 chữ số thập phân.');
    if(quantity!==''&&!/^\d+(?:\.\d{1,9})?$/.test(quantity))throw new Error('Nhập số lượng quy đổi bằng số, ví dụ 30.');
+   const stockUnitChanged=row.usage_unit_id!==selectedUsage;
    const identityPackage=purchase===selectedUsage&&pack===purchase&&content===selectedUsage;
    const hasPackageRatio=quantity!==''&&!identityPackage;
+   if(stockUnitChanged&&!hasPackageRatio)throw new Error(`Đơn vị kho đang lưu là ${unitCode(row.usage_unit_id,'đơn vị cũ')} nhưng bạn chọn ${unitCode(selectedUsage,'đơn vị mới')}. Nhập và xác minh tỷ lệ chuyển đổi giữa hai đơn vị ở mục quy đổi nhập/kho.`);
    if(hasPackageRatio&&(!pack||!content||pack===content||Number(quantity)<=0))throw new Error('Quy đổi nhập/kho cần hai đơn vị khác nhau và số lượng dương.');
    if(formulaQuantity!==''&&(!/^\d+(?:\.\d{1,9})?$/.test(formulaQuantity)||!formulaUnit||formulaUnit===selectedUsage||Number(formulaQuantity)<=0))throw new Error('Chọn đơn vị công thức khác đơn vị kho và nhập số lượng dương.');
    request={date:effective,key:crypto.randomUUID(),input:{purchase_unit_id:purchase,usage_unit_id:selectedUsage,basis_unit_id:priceBasis||null,amount:amount||null,verification:verified?'verified':'needs_verification',package_unit_id:hasPackageRatio?pack:null,package_content_unit_id:hasPackageRatio?content:null,package_quantity:hasPackageRatio?quantity:null,package_verified:hasPackageRatio,issue:verified?'':issue}};
@@ -65,10 +67,11 @@ function ReviewForm({row,units,canVerify,onBusy,latest,onSuccess}:{userId:string
      <label>Đơn vị dùng/kho (ví dụ: cái, lá){unit(selectedUsage,updateUsage,false,'Đơn vị dùng / kho')}<small>Tồn kho, phiếu nhập và kiểm kê tiếp tục dùng đơn vị này.</small></label>
      <label>Đơn giá (đ)<div className="material-price-entry"><CurrencyInput value={amount} onValueChange={setAmount} placeholder="Chưa có giá"/><span>/</span>{unit(priceBasis,setBasis,true,'Đơn vị áp dụng giá')}</div><small>Giá đang áp dụng cho 1 đơn vị ở bên phải; nếu chưa chọn, mặc định theo đơn vị mua.</small></label>
      <div className="material-conversion-field">
-      <strong>Quy đổi nhập/kho <small>(chỉ khi đơn vị mua và kho khác nhau)</small></strong>
-      {purchase===selectedUsage&&quantity===''?<small>Đơn vị mua và đơn vị kho hiện giống nhau; không cần quy đổi tồn kho.</small>:<>
+      <strong>Quy đổi nhập/kho <small>(khi đơn vị mua/kho khác nhau hoặc đổi đơn vị kho đang lưu)</small></strong>
+      {purchase===selectedUsage&&row.usage_unit_id===selectedUsage&&quantity===''?<small>Đơn vị mua và kho hiện giống nhau; đơn vị kho đang lưu cũng không đổi nên không cần tỷ lệ ở mục này.</small>:<>
        <div className="material-conversion-row"><span>1</span>{unit(pack,setPack,true,'Quy đổi từ đơn vị mua')}<span>=</span><input aria-label="Số đơn vị kho trong một đơn vị mua" inputMode="decimal" value={quantity} placeholder="Số lượng" onChange={e=>setQuantity(e.target.value.replace(',','.'))}/>{unit(content,setContent,true,'Đơn vị kho nhận')}</div>
-       <small>Quy đổi này dùng để chuẩn hóa nhập và tồn kho.</small>
+       {row.usage_unit_id!==selectedUsage&&<small>Đơn vị kho đang lưu: {unitCode(row.usage_unit_id,'đơn vị cũ')} → đơn vị mới: {unitCode(selectedUsage,'đơn vị mới')}. Hãy nhập tỷ lệ giữa hai đơn vị; bản ghi kho cũ không bị sửa.</small>}
+       <small>Quy đổi này dùng để chuẩn hóa nhập và tồn kho. Quy đổi công thức được khai báo riêng bên dưới.</small>
        <small className="material-conversion-preview">1 {unitCode(pack,'đơn vị mua')} = {quantity||'…'} {unitCode(content,'đơn vị kho')}</small>
       </>}
      </div>
