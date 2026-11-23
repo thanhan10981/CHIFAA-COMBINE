@@ -60,7 +60,7 @@ begin
    'output_quantity',tv.output_quantity::text,'output_unit',(select code from public.material_units where id=tv.output_unit_id),
    'cost',case when private.can('materials','view') then public.recipe_cost(tv.id,tv.output_quantity,p_date) end)
    order by o.sort_order,tr.name),'[]'::jsonb) from public.recipe_topping_options o join public.recipes tr on tr.id=o.topping_recipe_id
-   join lateral(select v.* from public.recipe_versions v where v.recipe_id=tr.id and v.status='published' and v.effective_from<=p_date order by v.effective_from desc,v.revision desc limit 1) tv on true where o.parent_version_id=p_version)
+   join lateral(select topping_version.* from public.recipe_versions topping_version where topping_version.recipe_id=tr.id and topping_version.status='published' and topping_version.effective_from<=p_date order by topping_version.effective_from desc,topping_version.revision desc limit 1) tv on true where o.parent_version_id=p_version)
   else '[]'::jsonb end,true);
  return result;$new$;
  if strpos(d,old_fragment)=0 then raise exception 'RECIPE_TOPPING_DETAIL_PATCH_MISMATCH';end if;

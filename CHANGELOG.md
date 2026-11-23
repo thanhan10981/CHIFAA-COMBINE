@@ -748,3 +748,7 @@ Bỏ phụ thuộc vào việc liệt kê Supabase Auth khi mở trang Tài kho�
 - Added an independently costed Topping recipe category and per-dish topping options. Base recipe cost remains the dish-only cost; topping costs are visible by output unit and batch.
 - Public ordering now offers configured, published toppings and snapshots selected topping identity/version, quantity and internal cost on each order. Order review displays selected toppings separately. No topping surcharge is applied to customer payment because no sale-price rule was specified.
 - Migration and frontend are not applied/deployed. Checks have not been run yet.
+
+## 2026-11-24 — Khắc phục lỗi chi tiết công thức topping
+
+Sửa lỗi SQLSTATE 42702 do bí danh truy vấn topping trùng biến trong `recipe_detail`; bổ sung migration sửa cho môi trường đã chạy 073, thông báo lỗi cụ thể trên màn công thức và sửa các nhãn tiếng Việt của topping. Cần áp migration 074 và cập nhật frontend để mục Topping xuất hiện trên ứng dụng đang dùng.
