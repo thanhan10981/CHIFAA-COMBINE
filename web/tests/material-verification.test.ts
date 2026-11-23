@@ -189,6 +189,43 @@ test('verification can migrate saved piece stock to bags while separately record
   assert.equal(saved.package_verified,true);assert.equal(saved.formula_verified,true);
  }finally{await db.close();}
 });
+test('material editor accepts its verified bag-to-piece ratio when changing the stock unit',async()=>{
+ const db=await setup();try{
+  const bag=(await db.query<{id:string}>("insert into material_units(code,name,dimension) values('TEST-EDIT-BAG','Bì','package') returning id")).rows[0].id;
+  const piece=(await db.query<{id:string}>("insert into material_units(code,name,dimension) values('TEST-EDIT-PIECE','Cái','count') returning id")).rows[0].id;
+  const material=(await db.query<{id:string;version:string}>("insert into materials(code,name,purchase_unit_id,usage_unit_id,minimum_quantity) values('TEST-EDIT-BAG-PIECE','Đũa sửa qua danh mục',$1,$2,200) returning id,version",[bag,piece])).rows[0];
+  const warehouse=(await db.query<{id:string}>("insert into warehouses(code,name,kind) values('TEST-EDIT-BAG-PIECE-W','Material editor stock','ingredient') returning id")).rows[0].id;
+  const movement=(await db.query<{id:string}>("insert into inventory_movements(warehouse_id,moved_on,kind) values($1,'2026-11-17','receipt') returning id",[warehouse])).rows[0].id;
+  await db.query('insert into inventory_movement_lines(movement_id,material_id,unit_id,quantity,unit_cost) values($1,$2,$3,500,120)',[movement,material.id,piece]);
+  const saved=await asUser(db,identities.admin,()=>db.query('select save_material_table($1,$2,$3,$4)',[material.id,material.version,{code:'TEST-EDIT-BAG-PIECE',name:'Đũa sửa qua danh mục',category:'ingredient',purchase_unit_id:bag,usage_unit_id:bag,basis_unit_id:bag,price_amount:null,minimum_quantity:'2',package_content_unit_id:piece,package_quantity:'100',package_verified:true,package_evidence:'Đối chiếu nhãn bì 100 cái'},crypto.randomUUID()]));
+  assert.ok(saved.rows.length);
+  const today=(await db.query<{d:string}>("select (now() at time zone 'Asia/Ho_Chi_Minh')::date::text d")).rows[0].d;
+  assert.equal((await db.query<{usage_unit_id:string;minimum_quantity:string}>('select usage_unit_id,minimum_quantity::text from materials where id=$1',[material.id])).rows[0].usage_unit_id,bag);
+  assert.equal((await db.query<{minimum_quantity:string}>('select minimum_quantity::text from materials where id=$1',[material.id])).rows[0].minimum_quantity,'2.000000');
+  assert.equal(Number((await db.query<{quantity:string}>('select private.inventory_quantity($1,$2,$3,$4)::text quantity',[warehouse,today,material.id,bag])).rows[0].quantity),5);
+  const ratio=(await db.query<{package_verified:boolean;package_quantity:string}>('select package_verified,package_quantity::text from material_resolutions where material_id=$1 order by effective_from desc,revision desc limit 1',[material.id])).rows[0];
+  assert.equal(ratio.package_verified,true);assert.equal(ratio.package_quantity,'100.000000000');
+ }finally{await db.close();}
+});
+test('material editor bridges verified packages through compatible SI units and rejects cross-dimension guesses',async()=>{
+ const db=await setup();try{
+  const bag=(await db.query<{id:string}>("insert into material_units(code,name,dimension) values('TEST-BRIDGE-BAG','Bì','package') returning id")).rows[0].id;
+  const standardUnits=Object.fromEntries((await db.query<{id:string;code:string}>("select id,code from material_units where code in ('g','kg','l')")).rows.map(unit=>[unit.code,unit.id]));
+  const gram=standardUnits.g,kg=standardUnits.kg,litre=standardUnits.l;
+  assert.ok(gram&&kg&&litre);
+  const material=(await db.query<{id:string;version:string}>("insert into materials(code,name,purchase_unit_id,usage_unit_id,minimum_quantity) values('TEST-BRIDGE-BAG-KG','Bì quy cách 1000 g',$1,$2,2) returning id,version",[bag,kg])).rows[0];
+  const warehouse=(await db.query<{id:string}>("insert into warehouses(code,name,kind) values('TEST-BRIDGE-W','Compatible bridge stock','ingredient') returning id")).rows[0].id;
+  const movement=(await db.query<{id:string}>("insert into inventory_movements(warehouse_id,moved_on,kind) values($1,'2026-11-17','receipt') returning id",[warehouse])).rows[0].id;
+  await db.query('insert into inventory_movement_lines(movement_id,material_id,unit_id,quantity,unit_cost) values($1,$2,$3,3,1000)',[movement,material.id,kg]);
+  await asUser(db,identities.admin,()=>db.query('select save_material_table($1,$2,$3,$4)',[material.id,material.version,{code:'TEST-BRIDGE-BAG-KG',name:'Bì quy cách 1000 g',category:'ingredient',purchase_unit_id:bag,usage_unit_id:bag,basis_unit_id:bag,price_amount:null,minimum_quantity:'2',package_content_unit_id:gram,package_quantity:'1000',package_verified:true,package_evidence:'Đối chiếu nhãn bì 1000 g'},crypto.randomUUID()]));
+  const today=(await db.query<{d:string}>("select (now() at time zone 'Asia/Ho_Chi_Minh')::date::text d")).rows[0].d;
+  assert.equal(Number((await db.query<{quantity:string}>('select private.inventory_quantity($1,$2,$3,$4)::text quantity',[warehouse,today,material.id,bag])).rows[0].quantity),3);
+
+  const incompatible=(await db.query<{id:string;version:string}>("insert into materials(code,name,purchase_unit_id,usage_unit_id) values('TEST-BRIDGE-INVALID','Không đổi kg sang bì theo lít',$1,$2) returning id,version",[bag,kg])).rows[0];
+  await assert.rejects(()=>asUser(db,identities.admin,()=>db.query('select save_material_table($1,$2,$3,$4)',[incompatible.id,incompatible.version,{code:'TEST-BRIDGE-INVALID',name:'Không đổi kg sang bì theo lít',category:'ingredient',purchase_unit_id:bag,usage_unit_id:bag,basis_unit_id:bag,price_amount:null,minimum_quantity:null,package_content_unit_id:litre,package_quantity:'1',package_verified:true,package_evidence:'Synthetic incompatible dimensions'},crypto.randomUUID()])),/UNIT_CONVERSION_REQUIRED/);
+  assert.equal((await db.query<{usage_unit_id:string}>('select usage_unit_id from materials where id=$1',[incompatible.id])).rows[0].usage_unit_id,kg);
+ }finally{await db.close();}
+});
 test('reconciliation preserves posted ledger costs and receipts keep their entered price separate from catalog prices',async()=>{
  const db=await database();try{
   await db.exec(buildMaterialImport(originals,'a'.repeat(64),day));

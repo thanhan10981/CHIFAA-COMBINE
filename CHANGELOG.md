@@ -1,3 +1,10 @@
+## 2026-11-23 — Cho đổi đơn vị kho qua quy cách đã xác minh (KH-01/KH-09/KH-10/KH-11)
+
+- Sửa migration kiểm tra đổi đơn vị để quy cách bao bì mới có thể nối đơn vị kho cũ/mới qua cùng đại lượng vật lý (ví dụ 1 bì = 1.000 g để đổi kg → bì). Không nhận lít làm cầu nối sang kg khi thiếu quy tắc vật lý; không tự sửa lịch sử phiếu kho.
+- Khi lỗi thiếu quy đổi, biểu mẫu chỉ rõ hai đơn vị đang chuyển và vị trí nhập tỷ lệ: “Quy cách đóng gói” hoặc “Quy đổi nhập/kho”.
+- Xác minh: typecheck, lint, diff check và PGlite trực tiếp cho ba luồng lưu/chuyển/chặn đạt. `npm test` có 150 test đạt, một file test không khởi tạo do `spawn EPERM` của esbuild; production build bị cùng lỗi worker `spawn EPERM`.
+- Chưa áp migration `202611230066_material_unit_package_bridge.sql` lên Supabase/DEV hoặc deploy; cần đối chiếu và phát hành sau 055/057/064/065, rồi UAT bằng tài khoản thật.
+
 ## 2026-11-23 — Đưa ma trận khách đặt hàng lên đầu popup, Excel và bản in (KH-12/KH-01/KH-10)
 
 - Popup tổng hợp, sheet Excel đầu tiên và bản in dùng chung ma trận món theo điểm bán, hàng tổng số lượng và phần nhu cầu nguyên liệu phía dưới. Ngày hiển thị theo định dạng ngày/tháng/năm.

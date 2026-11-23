@@ -1,3 +1,10 @@
+# 2026-11-23 — Sửa đổi đơn vị kho vật tư theo tỷ lệ bao bì đã xác minh (KH-01/KH-09/KH-10/KH-11)
+
+- Sửa lỗi validation chỉ nhận tỷ lệ nối đúng trực tiếp hai đơn vị. Migration `202611230066_material_unit_package_bridge.sql` cho phép nối đơn vị kho cũ/mới qua quy cách vật lý tương thích, ví dụ kg → bì qua 1 bì = 1.000 g; tỷ lệ không có đường nối cùng đại lượng như kg → bì qua lít vẫn bị từ chối. Không đổi các dòng phiếu kho lịch sử; tồn được tính theo đơn vị hiện tại sau khi đã xác minh.
+- Biểu mẫu sửa vật tư và xác minh đơn vị nay nêu rõ tỷ lệ cần khai báo ở “Quy cách đóng gói” hoặc “Quy đổi nhập/kho”, kèm đơn vị cũ → mới và ví dụ bì/cái.
+- Kiểm tra: `npm run typecheck`, `npm run lint` và `git diff --check` đạt. Chạy PGlite qua Node trực tiếp với đầy đủ migrations đạt ba trường hợp: bì/cái lưu qua `save_material_table`, kg→bì qua gram và từ chối lít→kg; đồng thời xác nhận tồn cũ quy đổi đúng và mức tối thiểu lưu theo đơn vị mới. Bộ `npm test` chạy được 150 test nhưng file `material-verification.test.ts` không khởi tạo do `spawn EPERM` từ esbuild; `npm run build` cũng dừng vì worker `spawn EPERM`. Kiểm thử mới đã thêm vào file nhưng cần chạy lại khi môi trường cho phép tạo worker.
+- Chưa áp migration lên Supabase/DEV hoặc deploy. Migration 066 cần theo sau 055/057/064/065; cần đối chiếu trạng thái thật trước khi phát hành và chạy UAT đăng nhập. Các mã KH-01/KH-09/KH-10/KH-11 được xử lý trong luồng này; kiểm kê, phiếu kho đã chốt và snapshot công thức/giá không bị sửa.
+
 # 2026-11-23 — Đổi bảng ngoài trang đơn hàng theo mẫu tổng hợp (KH-04/KH-05/KH-12)
 
 - Trang Duyệt đơn hàng có các cột theo mẫu: mã/trạng thái, điểm bán/số điện thoại, ngày giao, tổng SL, mức chiết khấu, chi tiết món, cấn đơn trước, hủy/lỗ, tổng thanh toán, tiền mặt/chuyển khoản và ghi chú. Số liệu theo đơn lấy từ `order_customer_summary` hiện có, gom theo các ngày giao đang có trên trang.
