@@ -42,12 +42,12 @@ function ReviewForm({row,units,canVerify,onBusy,latest,onSuccess}:{userId:string
    if(amount!==''&&!/^\d+(?:\.\d{1,6})?$/.test(amount))throw new Error('Đơn giá phải là số không âm, tối đa 6 chữ số thập phân.');
    if(quantity!==''&&!/^\d+(?:\.\d{1,9})?$/.test(quantity))throw new Error('Nhập số lượng quy đổi bằng số, ví dụ 30.');
    const stockUnitChanged=row.usage_unit_id!==selectedUsage;
-   if(stockUnitChanged&&(!/^\d+(?:\.\d{1,9})?$/.test(stockConversion)||Number(stockConversion)<=0))throw new Error(`Nhập tỷ lệ dương cho “Đổi đơn vị chuẩn tồn kho”: 1 ${unitCode(row.usage_unit_id,'đơn vị cũ')} = ? ${unitCode(selectedUsage,'đơn vị mới')}.`);
+   if(stockUnitChanged&&stockConversion!==''&&(!/^\d+(?:\.\d{1,9})?$/.test(stockConversion)||Number(stockConversion)<=0))throw new Error(`Nhập tỷ lệ dương cho “Đổi đơn vị chuẩn tồn kho”: 1 ${unitCode(row.usage_unit_id,'đơn vị cũ')} = ? ${unitCode(selectedUsage,'đơn vị mới')}.`);
    const identityPackage=purchase===selectedUsage&&pack===purchase&&content===selectedUsage;
    const hasPackageRatio=quantity!==''&&!identityPackage;
    if(hasPackageRatio&&(!pack||!content||pack===content||Number(quantity)<=0))throw new Error('Quy đổi nhập/kho cần hai đơn vị khác nhau và số lượng dương.');
    if(formulaQuantity!==''&&(!/^\d+(?:\.\d{1,9})?$/.test(formulaQuantity)||!formulaUnit||formulaUnit===selectedUsage||Number(formulaQuantity)<=0))throw new Error('Chọn đơn vị công thức khác đơn vị kho và nhập số lượng dương.');
-   request={date:effective,key:crypto.randomUUID(),input:{purchase_unit_id:purchase,usage_unit_id:selectedUsage,basis_unit_id:priceBasis||null,amount:amount||null,verification:verified?'verified':'needs_verification',package_unit_id:hasPackageRatio?pack:null,package_content_unit_id:hasPackageRatio?content:null,package_quantity:hasPackageRatio?quantity:null,package_verified:hasPackageRatio,stock_conversion_factor:stockUnitChanged?stockConversion:null,issue:verified?'':issue}};
+   request={date:effective,key:crypto.randomUUID(),input:{purchase_unit_id:purchase,usage_unit_id:selectedUsage,basis_unit_id:priceBasis||null,amount:amount||null,verification:verified?'verified':'needs_verification',package_unit_id:hasPackageRatio?pack:null,package_content_unit_id:hasPackageRatio?content:null,package_quantity:hasPackageRatio?quantity:null,package_verified:hasPackageRatio,stock_conversion_factor:stockUnitChanged&&stockConversion?stockConversion:null,issue:verified?'':issue}};
    setPending(request);onBusy(true);
   }
   const input={...request.input,formula_unit_id:formulaQuantity?formulaUnit:null,formula_quantity:formulaQuantity||null};
@@ -71,7 +71,7 @@ function ReviewForm({row,units,canVerify,onBusy,latest,onSuccess}:{userId:string
      <label>Đơn giá (đ)<div className="material-price-entry"><CurrencyInput value={amount} onValueChange={setAmount} placeholder="Chưa có giá"/><span>/</span>{unit(priceBasis,setBasis,true,'Đơn vị áp dụng giá')}</div><small>Giá đang áp dụng cho 1 đơn vị ở bên phải; nếu chưa chọn, mặc định theo đơn vị mua.</small></label>
      {row.usage_unit_id!==selectedUsage&&<div className="material-conversion-field material-stock-transition-field">
       <strong>Đổi đơn vị chuẩn tồn kho</strong>
-      <div className="material-conversion-row material-stock-transition-row"><span>1 {unitCode(row.usage_unit_id,'đơn vị cũ')}</span><span>=</span><input aria-label="Số đơn vị kho mới trong một đơn vị kho cũ" inputMode="decimal" required value={stockConversion} placeholder="Tỷ lệ" onChange={e=>setStockConversion(e.target.value.replace(',','.'))}/><span>{unitCode(selectedUsage,'đơn vị mới')}</span></div>
+      <div className="material-conversion-row material-stock-transition-row"><span>1 {unitCode(row.usage_unit_id,'đơn vị cũ')}</span><span>=</span><input aria-label="Số đơn vị kho mới trong một đơn vị kho cũ" inputMode="decimal" value={stockConversion} placeholder="Tự tính từ quy cách nếu đủ dữ liệu" onChange={e=>setStockConversion(e.target.value.replace(',','.'))}/><span>{unitCode(selectedUsage,'đơn vị mới')}</span></div>
       <small>Tỷ lệ này đổi số tồn hiện tại ở tất cả kho và mức tồn tối thiểu sang đơn vị mới. Phiếu kho đã chốt giữ đơn vị ban đầu; số tồn được tính lại theo tỷ lệ đã xác minh.</small>
       <small className="material-conversion-preview">1 {unitCode(row.usage_unit_id,'đơn vị cũ')} = {stockConversion||'…'} {unitCode(selectedUsage,'đơn vị mới')}</small>
      </div>}

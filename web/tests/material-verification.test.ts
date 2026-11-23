@@ -270,6 +270,19 @@ test('material editor bridges verified packages through compatible SI units and 
   assert.equal((await db.query<{usage_unit_id:string}>('select usage_unit_id from materials where id=$1',[incompatible.id])).rows[0].usage_unit_id,kg);
  }finally{await db.close();}
 });
+test('material editor derives a package-unit transition from existing and new verified package ratios',async()=>{
+ const db=await setup();try{
+  const oldBag=(await db.query<{id:string}>("insert into material_units(code,name,dimension) values('TEST-OLD-BAG','Old bag','package') returning id")).rows[0].id;
+  const newBag=(await db.query<{id:string}>("insert into material_units(code,name,dimension) values('TEST-NEW-BAG','New bag','package') returning id")).rows[0].id;
+  const piece=(await db.query<{id:string}>("insert into material_units(code,name,dimension) values('TEST-PACKAGE-PIECE','Piece','count') returning id")).rows[0].id;
+  const material=(await db.query<{id:string;version:string}>("insert into materials(code,name,purchase_unit_id,usage_unit_id) values('TEST-PACKAGE-TRANSITION','Package transition',$1,$1) returning id,version",[oldBag])).rows[0];
+  await asUser(db,identities.admin,()=>db.query('select resolve_material($1,$2,$3,$4::jsonb,$5)',[material.id,material.version,'2026-11-18',JSON.stringify({purchase_unit_id:oldBag,usage_unit_id:oldBag,basis_unit_id:oldBag,verification:'needs_verification',package_unit_id:oldBag,package_content_unit_id:piece,package_quantity:'200',package_verified:true,evidence:'Previously checked old package ratio',issue:''}),crypto.randomUUID()]));
+  const current=(await db.query<{version:string}>('select version from materials where id=$1',[material.id])).rows[0];
+  await asUser(db,identities.admin,()=>db.query('select save_material_table($1,$2,$3,$4)',[material.id,current.version,{code:'TEST-PACKAGE-TRANSITION',name:'Package transition',category:'ingredient',purchase_unit_id:newBag,usage_unit_id:newBag,basis_unit_id:newBag,price_amount:null,minimum_quantity:null,package_content_unit_id:piece,package_quantity:'200',package_verified:true,package_evidence:'Checked new package ratio'},crypto.randomUUID()]));
+  const transition=(await db.query<{stock_conversion_factor:string;stock_conversion_from_unit_id:string}>('select stock_conversion_factor::text,stock_conversion_from_unit_id from material_resolutions where material_id=$1 order by effective_from desc,revision desc limit 1',[material.id])).rows[0];
+  assert.equal(transition.stock_conversion_from_unit_id,oldBag);assert.equal(Number(transition.stock_conversion_factor),1);
+ }finally{await db.close();}
+});
 test('reconciliation preserves posted ledger costs and receipts keep their entered price separate from catalog prices',async()=>{
  const db=await database();try{
   await db.exec(buildMaterialImport(originals,'a'.repeat(64),day));
