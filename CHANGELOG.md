@@ -2,7 +2,7 @@
 
 - Kiểm tra ảnh Supabase: đơn hàng đã có, còn thiếu bảng lô Ki-ốt và RPC bán/đối soát. Gói migration 061 riêng không thể chạy trước khi cài nền Ki-ốt.
 - Thêm `npm --prefix web run db:order-kiosk-update`, sinh một gói transaction gồm 021, 022 và 061 với preflight schema, phát hiện chạy lại/dở dang và rollback nguyên gói.
-- PGlite 11/11, typecheck và lint đạt. Chưa áp lên cloud. Project hiện chỉ có nhánh `main (PRODUCTION)`; chủ dự án cần tự quyết định chạy file trên database thật. Xem `docs/standalone/ONLINE_DEPLOY.md`.
+- PGlite 11/11, typecheck và lint đạt. Chủ dự án xác nhận đã chạy gói; ảnh SQL Editor cho thấy bảng `kiosk_return_lots` và hai RPC Ki-ốt đã có. Nếu chạy trọn file, 061 đã commit trong cùng transaction. Còn xác minh RPC settlement và UAT giao/hoàn trên ứng dụng; không chạy lại gói. Xem `docs/standalone/ONLINE_DEPLOY.md`.
 
 ## 2026-11-22 — Sửa kiểm tra định dạng tiền (KH-01/KH-10/KH-11)
 

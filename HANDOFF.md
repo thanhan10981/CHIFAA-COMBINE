@@ -3,7 +3,7 @@
 - Ảnh kiểm tra Supabase cho thấy các bảng/RPC đơn hàng đã có, nhưng `kiosk_return_lots`, `kiosk_action` và `kiosk_report` chưa có. Migration 061 cần nền Ki-ốt 021/022 nên chạy riêng sẽ lỗi.
 - Thêm lệnh `npm --prefix web run db:order-kiosk-update` để sinh một SQL transaction gồm 021, 022, 061 tại `output/CHIFAA_PATCH_ORDER_KIOSK.sql`. Preflight yêu cầu schema đơn hàng 056–060 hiện diện, chặn chạy lại/schema dở dang, và không ghi nhận dữ liệu nghiệp vụ mới. SQL Editor không cập nhật lịch sử migration CLI.
 - Kiểm chứng PGlite: 11/11 kiểm thử liên quan đạt, gồm cài gói trên DB giả có migrations 056–060 nhưng thiếu Ki-ốt, giữ dữ liệu sẵn có, chặn thiếu nền/chạy lại và rollback toàn bộ khi lỗi. `npm run typecheck` và `npm run lint` đạt.
-- Chưa chạy SQL cloud hoặc deploy. Người dùng chỉ có `main (PRODUCTION)`, do đó chạy file sẽ sửa schema thật. Cần chủ dự án tự xem đúng project/backup và quyết định chạy; sau khi chạy, đối chiếu lịch sử Supabase CLI trước mọi `db push`. Chưa UAT với tài khoản đăng nhập thật.
+- Chủ dự án xác nhận đã chạy gói trên Supabase. Ảnh SQL Editor trả về `kiosk_return_lots`, `kiosk_action(text,uuid,bigint,date,jsonb,uuid)` và `kiosk_report(date,date,integer,integer)`, không còn NULL. Vì file là một transaction, nếu chạy trọn gói thì migration 061 cũng đã commit. Chưa có ảnh xác nhận riêng các RPC settlement/bảng credit, chưa UAT giao/hoàn trên ứng dụng. Không chạy lại gói; reconcile migration history trước mọi `db push`.
 
 ## 2026-11-22 — Hoàn thiện tổng hợp giá vốn (KH-01/KH-10/KH-11)
 

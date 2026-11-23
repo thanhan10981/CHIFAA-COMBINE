@@ -14,6 +14,8 @@ Mở `output/CHIFAA_PATCH_ORDER_KIOSK.sql`. Trong Dashboard, xác nhận tên pr
 
 **Lưu ý môi trường hiện tại:** project người dùng đang mở chỉ có `main (PRODUCTION)`. Chạy file này tại đó sẽ thay đổi database thật. Xác nhận đang ở đúng project và có backup trước khi bấm Run. Không chạy lại các migration 021, 022 hoặc 061 riêng lẻ sau khi gói thành công. SQL Editor không cập nhật lịch sử migration CLI; phải đối chiếu/repair lịch sử trước lần `supabase db push` tiếp theo. Việc tạo file và kiểm thử local không có nghĩa là SQL cloud đã chạy.
 
+**Cập nhật 23/11:** chủ dự án xác nhận đã chạy gói. Ảnh SQL Editor xác nhận `kiosk_return_lots`, `kiosk_action` và `kiosk_report` đã tồn tại. Không chạy lại gói. Chưa xác nhận riêng các RPC settlement hoặc thao tác giao/hoàn trên giao diện.
+
 ## Cơ sở giá sau giải thích của chủ sở hữu (migration024)
 
 Sau patch023, chạy `output/CHIFAA_PATCH_XAC_MINH_VAT_TU_DEV.sql`, rồi `output/CHIFAA_63_VAT_TU_DIEU_CHINH_DEV.sql`. Hai file dùng DO atomic; không xóa/tạo lại database. Nếu patch024 báo VERIFICATION_PATCH_ALREADY_APPLIED thì bỏ qua patch và chạy file điều chỉnh. File nhập chạy lại không trùng; không ghi đè lần xác minh Admin đã có, không sửa giá/phiếu kho cũ. Danh mục đã có lịch sử được giữ đơn vị kho và đánh dấu cần chuyển đổi thay vì relabel. Tải bản DEV mới để có nút Xác minh và xem giá theo cơ sở riêng. SQL Editor không đăng ký CLI history; reconcile024 trước db push sau này. Công cụ chưa thực thi SQL cloud.
