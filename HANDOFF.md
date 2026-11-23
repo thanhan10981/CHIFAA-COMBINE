@@ -1099,3 +1099,34 @@ Còn lại: chưa UAT dữ liệu thật hoặc triển khai frontend; không c�
 - Inventory UI translates `INSUFFICIENT_STOCK` into a Vietnamese explanation with the material and exact quantities. Added SQL-history regression, error-message tests and a browser fixture for the insufficient-stock response.
 - Evidence: targeted inventory tests 11/11; full web tests 173/173; Chromium inventory UI check passed at 320/390/768/1024/1440px including shortage copy; typecheck, lint, production build and `git diff --check` passed. Tests use local PGlite/browser fixtures only.
 - Remaining: apply migration 071 to the intended Supabase database and deploy frontend through the normal process. No cloud SQL or deployment performed.
+
+
+## 2026-11-23 - Align public menu quantity controls (KH-12)
+
+- Root cause: product cards in the responsive grid have different content heights (name wrapping and optional store discount text). Their quantity controls followed the content instead of sharing a consistent bottom edge.
+- Quantity controls now use the remaining vertical space in each stretched card, aligning across each menu row at desktop and mobile grid widths.
+- Added a browser fixture assertion for quantity-control alignment across product rows.
+- Evidence: `node scripts/design-check.mjs --public-portal --catalog-only` passed with the row-alignment assertion at 390/768/1024/1440/1920px and the one-column 320px layout; fixture-only, no cloud writes.
+- Remaining: no production deployment performed.
+
+
+## 2026-11-23 - Audit dashboard data sources and calculations (KH-06/KH-07/KH-08/KH-10)
+
+- Audited `Tổng quan điều hành` (`dashboard_summary`), `Dashboard vận hành` (`dashboard_period_summary`), and `Chiến lược kinh doanh` (`dashboard_period_summary` plus `strategy_sales_breakdown`). All three implemented routes use authenticated Supabase RPCs; their SQL reads posted/source business tables and checks module permissions. Local fixture pages and test data are not the runtime data source for these routes.
+- Confirmed local PGlite tests for posted sales, target, null-on-missing behavior and bounded period summaries: `web/tests/executive-dashboard.test.ts` 2/2 passed. No live Supabase/production connection or remote migration state was queried.
+- Gaps found: strategy break-even, average portions/day, cancellation rate and profit are deliberately displayed as unavailable; the scenario calculator is local user-entered what-if math and is not saved. Strategy cost composition and 12-month cost history omit `recovery_expense_vnd` although the RPC returns it and the executive dashboard includes it in its conditional profit estimate. The Operations tab for store sales is explanatory text rather than a computed per-store breakdown; the strategy page has a separate per-store breakdown.
+- The targeted order-return workflow test did not reach its strategy breakdown assertions because its local fixture inserts a production line with missing `recipe_version_id` (`23502`).
+- Remaining: apply/confirm migrations on the intended Supabase environment and perform authenticated live-data UAT; clarify/fix the listed calculation gaps before treating these dashboards as complete. No cloud SQL or deployment performed.
+
+## 2026-11-23 — Show revenue after recorded costs across dashboards (KH-05/06/07/08/09/10)
+
+- Added migration `202611230072_dashboard_revenue_after_costs.sql`. The daily and period RPCs now compute sales revenue after discounts/valid revenue adjustments less recorded production material issues, estimated wages from posted SX/VP/BH shifts, posted office/fixed/marketing/recovery/other expenses, loan interest actually paid, and recorded depreciation. Principal repayments and cash receipts are excluded. Unknown or inaccessible cost sources keep the after-cost result unavailable; absent production-period costs count as zero only when the source is readable and there is no production activity needing that cost.
+- Executive, operations, and strategy dashboards now label sales after reductions separately from revenue after all recorded costs. Period totals use the database aggregate, the strategy history uses complete period totals, and its cost composition includes recovery support, all-department wage estimates, and paid interest.
+- Regression evidence: PGlite dashboard tests 2/2; full web suite 173/173; `npm run typecheck`, `npm run lint`, `npm run build`, and `git diff --check` passed.
+- Limits/remaining: wages are estimated from posted shifts and saved pay snapshots; interest is included on payment date, not accrued date. Costs absent from the system or outside these tracked sources cannot be represented. Apply migration 072 to the intended DEV database and perform authenticated live-data UAT before relying on the updated KPI. No cloud SQL, production deploy, or live data access was performed.
+
+## 2026-11-24 ? Optional topping recipes and order snapshots (KH-01/KH-10/KH-12)
+
+- Added a separate `Topping` recipe kind using the same dated BOM and material cost calculation as other recipes. A dish recipe can configure which topping recipes are offered. The dish's displayed base cost stays separate; its detail shows each topping cost per output unit and per batch.
+- The public order menu exposes only the published topping options for the effective dish recipe. Customer selections do not change the dish sale price. The order stores the chosen topping version, name/code, quantity and dated cost snapshot; the review view displays those lines separately.
+- Added migration `202611230073_recipe_toppings.sql`; it has not been applied to Supabase. Frontend changes have not been deployed. No cloud SQL was run. No tests/typecheck/build were run for this checkpoint. Remaining: run project checks, inspect migration application in local DB, then apply to intended DEV and perform public-order UAT before deployment. Selected topping BOMs are not yet added to production plan material demand or stock issuance; that needs order allocation in production so multiple batches cannot consume the same topping demand twice.

@@ -13,6 +13,7 @@ type Snapshot={
  produced:string|null;production_hours:string|null;cash_balance_vnd:string|null;food_cost_vnd:string|null;
  production_labor_estimate_vnd:string|null;office_expense_vnd:string|null;fixed_expense_vnd:string|null;
  marketing_expense_vnd:string|null;recovery_expense_vnd:string|null;other_expense_vnd:string|null;depreciation_vnd:string|null;revenue_target_daily_vnd:string|null;
+ cost_total_vnd:string|null;revenue_after_costs_vnd:string|null;costs_complete:boolean;
  targets:Record<string,string>;inventory_low_count:number|null;inventory_unknown_count:number|null;updated_at:string;completeness:string;
 };
 const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh'}).format(new Date());
@@ -37,16 +38,14 @@ export function Dashboard({userId}:{userId:string}) {
  const revenueTarget=data?.revenue_target_daily_vnd;
  const revenueDelta=data?.net_revenue_vnd!=null&&data.revenue_yesterday_vnd!=null?new Decimal(data.net_revenue_vnd).minus(data.revenue_yesterday_vnd).toString():null;
  const revenueProgress=percent(data?.net_revenue_vnd,revenueTarget);
- const profitParts=[data?.food_cost_vnd,data?.production_labor_estimate_vnd,data?.office_expense_vnd,data?.fixed_expense_vnd,data?.marketing_expense_vnd,data?.recovery_expense_vnd,data?.other_expense_vnd,data?.depreciation_vnd];
- const estimateProfit=data?.net_revenue_vnd!=null&&profitParts.every(value=>value!=null)
-  ?profitParts.reduce((total,value)=>total.minus(value!),new Decimal(data.net_revenue_vnd)).toString():null;
+ const afterCostRevenue=data?.revenue_after_costs_vnd??null;
  const metrics=[
-  {label:'Doanh thu thuần ngày xem',value:money(data?.net_revenue_vnd),note:`Mục tiêu ngày: ${money(revenueTarget)??'Chưa cài'} · Hôm trước: ${money(data?.revenue_yesterday_vnd)??'chưa có dữ liệu'}${revenueDelta==null?'':` · ${new Decimal(revenueDelta).gte(0)?'+':''}${formatVndCurrency(revenueDelta)} đ`}`,href:'/app/sales'},
+  {label:'Doanh thu sau tất cả chi phí',value:money(afterCostRevenue),note:`Doanh thu bán hàng sau giảm trừ ${money(data?.net_revenue_vnd)??'chưa đủ dữ liệu'} trừ chi phí đã ghi nhận ${money(data?.cost_total_vnd)??'chưa đủ dữ liệu'}.`,href:'/app/reports'},
   {label:'Số dư tiền mặt + ngân hàng',value:money(data?.cash_balance_vnd),note:'Sổ quỹ đến hết ngày xem; cần số dư đầu kỳ đã xác nhận',href:'/app/cash'},
   {label:'Food cost / doanh thu',value:showPercent(foodRatio),note:`Mục tiêu tối đa: ${targetPercent(data?.targets,'foodCost')==null?'Chưa cài':showPercent(targetPercent(data?.targets,'foodCost'))}`,href:'/app/recipes'},
   {label:'Nhân sự SX / doanh thu',value:showPercent(laborRatio),note:`Ước tính từ ca SX và mức lương đã lưu · trần ${targetPercent(data?.targets,'productionLabor')==null?'chưa cài':showPercent(targetPercent(data?.targets,'productionLabor'))}`,href:'/app/attendance'},
   {label:'Dư địa thưởng nhân sự SX',value:null,note:'Chưa đủ kế hoạch sản lượng và phê duyệt để tính; không tự tạo khoản thưởng.',href:'/app/production'},
-  {label:'Lợi nhuận tạm tính',value:money(estimateProfit),note:'Chỉ hiện khi doanh thu và toàn bộ nhóm chi phí đều có dữ liệu',href:'/app/reports'},
+  {label:'Doanh thu bán hàng sau giảm trừ',value:money(data?.net_revenue_vnd),note:`Mục tiêu doanh thu bán hàng: ${money(revenueTarget)??'Chưa cài'} · Hôm trước: ${money(data?.revenue_yesterday_vnd)??'chưa có dữ liệu'}${revenueDelta==null?'':` · ${new Decimal(revenueDelta).gte(0)?'+':''}${formatVndCurrency(revenueDelta)} đ`}`,href:'/app/sales'},
  ];
  const ratios=[
   {label:'Food cost',value:foodRatio,target:targetPercent(data?.targets,'foodCost'),note:'Chi phí nguyên liệu theo phiếu xuất sản xuất đã ghi nhận.'},
@@ -57,7 +56,7 @@ export function Dashboard({userId}:{userId:string}) {
   {label:'Marketing',value:percent(data?.marketing_expense_vnd,data?.net_revenue_vnd),target:targetPercent(data?.targets,'marketingRate'),note:'Chi phí Marketing đã ghi nhận trong ngày.'},
  ];
  const indicators=[
-  {label:'Doanh thu thuần ngày xem',actual:money(data?.net_revenue_vnd),target:money(revenueTarget),state:data?.net_revenue_vnd==null?'Chưa đủ dữ liệu':revenueProgress==null?'Chưa có mục tiêu':revenueProgress>=100?'Đạt kế hoạch':'Đang theo dõi'},
+  {label:'Doanh thu bán hàng sau giảm trừ',actual:money(data?.net_revenue_vnd),target:money(revenueTarget),state:data?.net_revenue_vnd==null?'Chưa đủ dữ liệu':revenueProgress==null?'Chưa có mục tiêu':revenueProgress>=100?'Đạt kế hoạch':'Đang theo dõi'},
   {label:'Food cost / doanh thu',actual:showPercent(foodRatio),target:targetPercent(data?.targets,'foodCost')==null?'Chưa đặt':`≤ ${showPercent(targetPercent(data?.targets,'foodCost'))}`,state:foodRatio==null?'Chưa đủ dữ liệu':targetPercent(data?.targets,'foodCost')==null?'Chưa đặt ngưỡng':foodRatio<=Number(data?.targets?.foodCost)?'Trong ngưỡng':'Vượt ngưỡng'},
   {label:'Nhân sự SX / doanh thu',actual:showPercent(laborRatio),target:targetPercent(data?.targets,'productionLabor')==null?'Chưa đặt':`≤ ${showPercent(targetPercent(data?.targets,'productionLabor'))}`,state:laborRatio==null?'Chưa đủ dữ liệu':targetPercent(data?.targets,'productionLabor')==null?'Chưa đặt ngưỡng':laborRatio<=Number(data?.targets?.productionLabor)?'Trong ngưỡng':'Vượt ngưỡng'},
   {label:'Số dư tiền mặt + ngân hàng',actual:money(data?.cash_balance_vnd),target:money(data?.targets?.minCash),state:data?.cash_balance_vnd==null?'Chưa đủ dữ liệu':data.targets?.minCash==null?'Chưa đặt ngưỡng':Number(data.cash_balance_vnd)>=Number(data.targets.minCash)?'Đạt ngưỡng':'Dưới ngưỡng'},

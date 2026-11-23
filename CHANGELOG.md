@@ -734,3 +734,17 @@ Bỏ phụ thuộc vào việc liệt kê Supabase Auth khi mở trang Tài kho�
 
 - Fixed the formula conversion input: its four controls were using the five-column package grid, placing the quantity input in the 20px separator column. The formula row now has a dedicated responsive grid.
 - Added a browser-fixture regression check for a usable input width. `npm run typecheck`, `npm run lint`, `npm run build`, all 162 tests, the material UI fixture at 320–1920px, and `git diff --check` passed. No cloud writes or deployment.
+
+
+## 2026-11-23 - Calculate revenue after all recorded costs (KH-05/KH-06/KH-07/KH-08/KH-09/KH-10)
+
+- Added `202611230072_dashboard_revenue_after_costs.sql`: net sales less production material issues, estimated wages for posted SX/VP/BH shifts, posted expense categories including recovery support, loan interest actually paid, and recorded depreciation. Loan principal and cash receipts are excluded. Missing or unauthorized source coverage keeps the after-cost amount unavailable.
+- Updated the executive, operations, and strategy dashboards to show sales after reductions separately from revenue after all recorded costs. Period and history totals use server-side SQL results.
+- Verification: dashboard PGlite tests 2/2; full web suite 173/173; typecheck, lint, build, and `git diff --check` passed.
+- Migration is not applied to Supabase and the frontend is not deployed. Wages are estimated from posted shifts; interest uses payment date. Live DEV UAT remains.
+
+## 2026-11-24 ? Optional topping recipes and order snapshots (KH-01/KH-10/KH-12)
+
+- Added an independently costed Topping recipe category and per-dish topping options. Base recipe cost remains the dish-only cost; topping costs are visible by output unit and batch.
+- Public ordering now offers configured, published toppings and snapshots selected topping identity/version, quantity and internal cost on each order. Order review displays selected toppings separately. No topping surcharge is applied to customer payment because no sale-price rule was specified.
+- Migration and frontend are not applied/deployed. Checks have not been run yet.
