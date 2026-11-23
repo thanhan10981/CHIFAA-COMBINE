@@ -1,3 +1,10 @@
+## 2026-11-23 — Đồng bộ chuẩn vật tư với tồn kho bằng tỷ lệ chuyển đổi riêng (KH-01/KH-09/KH-10/KH-11)
+
+- Tách tỷ lệ đổi chuẩn tồn kho khỏi quy cách đóng gói/công thức. Khi chọn đơn vị chuẩn mới, xác minh và sửa danh mục đều cho nhập rõ `1 đơn vị cũ = N đơn vị mới`; lưu một resolution có hiệu lực để danh mục, tồn tất cả kho, mức tối thiểu và kiểm kê dùng chung chuẩn mới.
+- Tồn lịch sử chuyển qua chuỗi tỷ lệ đã xác minh; phiếu kho đã ghi và snapshot công thức/giá không bị ghi lại. Khối lượng ↔ thể tích bị từ chối; bao bì ↔ lít cần quy cách đóng gói đã đối chiếu.
+- Xác minh local: `npm run db:types` (99 bảng/88 RPC), typecheck, lint, `npm test` (163/163), production build và `node scripts/design-check.mjs --materials` đạt. Browser fixture không dùng Supabase thật.
+- Không áp migration cloud hoặc deploy frontend. Cần xác nhận trạng thái migration trên Supabase rồi phát hành migration 067 sau 066 cùng frontend tương thích và UAT.
+
 ## 2026-11-23 — Cho đổi đơn vị kho qua quy cách đã xác minh (KH-01/KH-09/KH-10/KH-11)
 
 - Sửa migration kiểm tra đổi đơn vị để quy cách bao bì mới có thể nối đơn vị kho cũ/mới qua cùng đại lượng vật lý (ví dụ 1 bì = 1.000 g để đổi kg → bì). Không nhận lít làm cầu nối sang kg khi thiếu quy tắc vật lý; không tự sửa lịch sử phiếu kho.

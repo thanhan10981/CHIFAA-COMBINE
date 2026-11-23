@@ -189,6 +189,50 @@ test('verification can migrate saved piece stock to bags while separately record
   assert.equal(saved.package_verified,true);assert.equal(saved.formula_verified,true);
  }finally{await db.close();}
 });
+test('stock-unit changes update every warehouse and count snapshot through a verified multi-step conversion while preserving posted lines',async()=>{
+ const db=await database();try{
+  const old=(await db.query<{id:string}>("insert into material_units(code,name,dimension) values('TEST-STOCK-OLD','Synthetic old bag','package') returning id")).rows[0].id;
+  const middle=(await db.query<{id:string}>("insert into material_units(code,name,dimension) values('TEST-STOCK-MIDDLE','Synthetic new bag','package') returning id")).rows[0].id;
+  const current=(await db.query<{id:string}>("insert into material_units(code,name,dimension) values('TEST-STOCK-CURRENT','Synthetic crate','package') returning id")).rows[0].id;
+  const material=(await db.query<{id:string;version:string}>("insert into materials(code,name,purchase_unit_id,usage_unit_id,minimum_quantity) values('TEST-STOCK-CHAIN','Synthetic shared stock',$1,$1,3) returning id,version",[old])).rows[0];
+  const warehouses=(await db.query<{id:string}>("insert into warehouses(code,name,kind) values('TEST-STOCK-W1','Synthetic warehouse one','ingredient'),('TEST-STOCK-W2','Synthetic warehouse two','ingredient') returning id")).rows.map(row=>row.id);
+  const movement1=(await db.query<{id:string}>("insert into inventory_movements(warehouse_id,moved_on,kind) values($1,'2026-11-17','receipt') returning id",[warehouses[0]])).rows[0].id;
+  const movement2=(await db.query<{id:string}>("insert into inventory_movements(warehouse_id,moved_on,kind) values($1,'2026-11-17','receipt') returning id",[warehouses[1]])).rows[0].id;
+  await db.query('insert into inventory_movement_lines(movement_id,material_id,unit_id,quantity) values($1,$2,$3,4),($4,$2,$3,2)',[movement1,material.id,old,movement2]);
+  const resolve=(version:string,date:string,target:string,factor:string)=>asUser(db,identities.admin,()=>db.query('select resolve_material($1,$2,$3,$4::jsonb,$5)',[material.id,version,date,JSON.stringify({purchase_unit_id:target,usage_unit_id:target,basis_unit_id:null,amount:null,verification:'needs_verification',stock_conversion_factor:factor,evidence:'Owner checked stock-unit ratio',issue:''}),crypto.randomUUID()]));
+  await resolve(material.version,'2026-11-18',middle,'2');
+  let master=(await db.query<{version:string;usage_unit_id:string;minimum_quantity:string}>('select version,usage_unit_id,minimum_quantity::text from materials where id=$1',[material.id])).rows[0];
+  assert.equal(master.usage_unit_id,middle);assert.equal(master.minimum_quantity,'6.000000');
+  for(const [warehouse,expected] of [[warehouses[0],8],[warehouses[1],4]] as const){
+   const balance=await asUser(db,identities.admin,()=>db.query<{unit_id:string;unit_code:string;quantity:string;minimum_quantity:string}>('select unit_id,unit_code,quantity,minimum_quantity from public.inventory_balance($1,$2) where material_id=$3',[warehouse,'2026-11-19',material.id]));
+   assert.equal(balance.rows[0].unit_id,middle);assert.equal(Number(balance.rows[0].quantity),expected);assert.equal(balance.rows[0].minimum_quantity,'6.000000');
+   const snapshot=await asUser(db,identities.admin,()=>db.query<{snapshot:{rows:{unit_id:string;unit_code:string;quantity:string}[]}}>('select public.stock_count_snapshot($1,$2,\'\',0) snapshot',[warehouse,'2026-11-19']));
+   const countRow=snapshot.rows[0].snapshot.rows.find(row=>row.unit_id===middle);assert.equal(countRow?.unit_code,'TEST-STOCK-MIDDLE');assert.equal(Number(countRow?.quantity),expected);
+  }
+  const receipt=(await db.query<{id:string}>("insert into inventory_movements(warehouse_id,moved_on,kind) values($1,'2026-11-19','receipt') returning id",[warehouses[0]])).rows[0].id;
+  await db.query('insert into inventory_movement_lines(movement_id,material_id,unit_id,quantity) values($1,$2,$3,5)',[receipt,material.id,middle]);
+  await resolve(master.version,'2026-11-20',current,'0.5');
+  master=(await db.query<{version:string;usage_unit_id:string;minimum_quantity:string}>('select version,usage_unit_id,minimum_quantity::text from materials where id=$1',[material.id])).rows[0];
+  assert.equal(master.usage_unit_id,current);assert.equal(master.minimum_quantity,'3.000000');
+  for(const [warehouse,expected] of [[warehouses[0],6.5],[warehouses[1],2]] as const){
+   const balance=await asUser(db,identities.admin,()=>db.query<{unit_id:string;quantity:string}>('select unit_id,quantity from public.inventory_balance($1,$2) where material_id=$3',[warehouse,'2026-11-23',material.id]));
+   assert.equal(balance.rows[0].unit_id,current);assert.equal(Number(balance.rows[0].quantity),expected);
+   const snapshot=await asUser(db,identities.admin,()=>db.query<{snapshot:{rows:{unit_id:string;quantity:string}[]}}>('select public.stock_count_snapshot($1,$2,\'\',0) snapshot',[warehouse,'2026-11-23']));
+   const countRow=snapshot.rows[0].snapshot.rows.find(row=>row.unit_id===current);assert.equal(Number(countRow?.quantity),expected);
+  }
+  const history=(await db.query<{unit_id:string;quantity:string}>("select l.unit_id,l.quantity::text from inventory_movement_lines l where l.material_id=$1 order by l.created_at,l.id",[material.id])).rows;
+  assert.deepEqual(history.map(line=>[line.unit_id,line.quantity]).sort((a,b)=>Number(a[1])-Number(b[1])),[[old,'2.000000'],[old,'4.000000'],[middle,'5.000000']]);
+  const kg=(await db.query<{id:string}>("insert into material_units(code,name,dimension) values('TEST-STOCK-KG','Synthetic kilogram','mass') returning id")).rows[0].id;
+  const litre=(await db.query<{id:string}>("insert into material_units(code,name,dimension) values('TEST-STOCK-LITRE','Synthetic litre','volume') returning id")).rows[0].id;
+  const incompatible=(await db.query<{id:string;version:string}>("insert into materials(code,name,purchase_unit_id,usage_unit_id) values('TEST-STOCK-KG-L','Synthetic incompatible dimensions',$1,$1) returning id,version",[kg])).rows[0];
+  await assert.rejects(()=>asUser(db,identities.admin,()=>db.query('select resolve_material($1,$2,$3,$4::jsonb,$5)',[incompatible.id,incompatible.version,'2026-11-21',JSON.stringify({purchase_unit_id:litre,usage_unit_id:litre,verification:'needs_verification',stock_conversion_factor:'1',evidence:'Invalid mass to volume ratio'}),crypto.randomUUID()])),/UNIT_DIMENSION_INCOMPATIBLE/);
+  assert.equal((await db.query<{usage_unit_id:string}>('select usage_unit_id from materials where id=$1',[incompatible.id])).rows[0].usage_unit_id,kg);
+  const packageMaterial=(await db.query<{id:string;version:string}>("insert into materials(code,name,purchase_unit_id,usage_unit_id) values('TEST-STOCK-PACKAGE-L','Synthetic invalid package volume',$1,$1) returning id,version",[old])).rows[0];
+  await assert.rejects(()=>asUser(db,identities.admin,()=>db.query('select resolve_material($1,$2,$3,$4::jsonb,$5)',[packageMaterial.id,packageMaterial.version,'2026-11-21',JSON.stringify({purchase_unit_id:litre,usage_unit_id:litre,verification:'needs_verification',stock_conversion_factor:'1',evidence:'Package to volume without packaging proof'}),crypto.randomUUID()])),/UNIT_DIMENSION_INCOMPATIBLE/);
+  assert.equal((await db.query<{usage_unit_id:string}>('select usage_unit_id from materials where id=$1',[packageMaterial.id])).rows[0].usage_unit_id,old);
+ }finally{await db.close();}
+});
+
 test('material editor accepts its verified bag-to-piece ratio when changing the stock unit',async()=>{
  const db=await setup();try{
   const bag=(await db.query<{id:string}>("insert into material_units(code,name,dimension) values('TEST-EDIT-BAG','Bì','package') returning id")).rows[0].id;
@@ -197,7 +241,7 @@ test('material editor accepts its verified bag-to-piece ratio when changing the 
   const warehouse=(await db.query<{id:string}>("insert into warehouses(code,name,kind) values('TEST-EDIT-BAG-PIECE-W','Material editor stock','ingredient') returning id")).rows[0].id;
   const movement=(await db.query<{id:string}>("insert into inventory_movements(warehouse_id,moved_on,kind) values($1,'2026-11-17','receipt') returning id",[warehouse])).rows[0].id;
   await db.query('insert into inventory_movement_lines(movement_id,material_id,unit_id,quantity,unit_cost) values($1,$2,$3,500,120)',[movement,material.id,piece]);
-  const saved=await asUser(db,identities.admin,()=>db.query('select save_material_table($1,$2,$3,$4)',[material.id,material.version,{code:'TEST-EDIT-BAG-PIECE',name:'Đũa sửa qua danh mục',category:'ingredient',purchase_unit_id:bag,usage_unit_id:bag,basis_unit_id:bag,price_amount:null,minimum_quantity:'2',package_content_unit_id:piece,package_quantity:'100',package_verified:true,package_evidence:'Đối chiếu nhãn bì 100 cái'},crypto.randomUUID()]));
+  const saved=await asUser(db,identities.admin,()=>db.query('select save_material_table($1,$2,$3,$4)',[material.id,material.version,{code:'TEST-EDIT-BAG-PIECE',name:'Đũa sửa qua danh mục',category:'ingredient',purchase_unit_id:bag,usage_unit_id:bag,basis_unit_id:bag,price_amount:null,minimum_quantity:'2',package_content_unit_id:piece,package_quantity:'100',package_verified:true,package_evidence:'Đối chiếu nhãn bì 100 cái',stock_conversion_factor:'0.01'},crypto.randomUUID()]));
   assert.ok(saved.rows.length);
   const today=(await db.query<{d:string}>("select (now() at time zone 'Asia/Ho_Chi_Minh')::date::text d")).rows[0].d;
   assert.equal((await db.query<{usage_unit_id:string;minimum_quantity:string}>('select usage_unit_id,minimum_quantity::text from materials where id=$1',[material.id])).rows[0].usage_unit_id,bag);
@@ -217,7 +261,7 @@ test('material editor bridges verified packages through compatible SI units and 
   const warehouse=(await db.query<{id:string}>("insert into warehouses(code,name,kind) values('TEST-BRIDGE-W','Compatible bridge stock','ingredient') returning id")).rows[0].id;
   const movement=(await db.query<{id:string}>("insert into inventory_movements(warehouse_id,moved_on,kind) values($1,'2026-11-17','receipt') returning id",[warehouse])).rows[0].id;
   await db.query('insert into inventory_movement_lines(movement_id,material_id,unit_id,quantity,unit_cost) values($1,$2,$3,3,1000)',[movement,material.id,kg]);
-  await asUser(db,identities.admin,()=>db.query('select save_material_table($1,$2,$3,$4)',[material.id,material.version,{code:'TEST-BRIDGE-BAG-KG',name:'Bì quy cách 1000 g',category:'ingredient',purchase_unit_id:bag,usage_unit_id:bag,basis_unit_id:bag,price_amount:null,minimum_quantity:'2',package_content_unit_id:gram,package_quantity:'1000',package_verified:true,package_evidence:'Đối chiếu nhãn bì 1000 g'},crypto.randomUUID()]));
+  await asUser(db,identities.admin,()=>db.query('select save_material_table($1,$2,$3,$4)',[material.id,material.version,{code:'TEST-BRIDGE-BAG-KG',name:'Bì quy cách 1000 g',category:'ingredient',purchase_unit_id:bag,usage_unit_id:bag,basis_unit_id:bag,price_amount:null,minimum_quantity:'2',package_content_unit_id:gram,package_quantity:'1000',package_verified:true,package_evidence:'Đối chiếu nhãn bì 1000 g',stock_conversion_factor:'1'},crypto.randomUUID()]));
   const today=(await db.query<{d:string}>("select (now() at time zone 'Asia/Ho_Chi_Minh')::date::text d")).rows[0].d;
   assert.equal(Number((await db.query<{quantity:string}>('select private.inventory_quantity($1,$2,$3,$4)::text quantity',[warehouse,today,material.id,bag])).rows[0].quantity),3);
 

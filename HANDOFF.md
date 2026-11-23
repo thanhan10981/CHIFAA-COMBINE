@@ -1,3 +1,10 @@
+# 2026-11-23 — Đổi chuẩn tồn kho đồng bộ danh mục và các kho (KH-01/KH-09/KH-10/KH-11)
+
+- Tách rõ tỷ lệ “1 đơn vị chuẩn cũ = N đơn vị chuẩn mới” khỏi quy cách đóng gói và quy đổi công thức. Cả xác minh vật tư lẫn sửa danh mục gửi cùng tỷ lệ vào workflow Admin, có phiên bản/ngày hiệu lực/audit. `materials.usage_unit_id` tiếp tục là chuẩn dùng chung cho danh mục, tồn, phiếu mới và kiểm kê.
+- Migration `202611230067_material_stock_unit_transition.sql` lưu cạnh quy đổi đã xác minh vào `material_resolutions`; tồn lịch sử và mức tối thiểu được quy đổi theo các lần đổi liên tiếp. Hỗ trợ quy cách cũ đã xác minh tương thích; chặn khối lượng ↔ thể tích và bao bì ↔ lít nếu không có quy cách đã đối chiếu. Không sửa phiếu kho hoặc snapshot đã chốt.
+- Kiểm tra đạt: `npm run db:types` (99 bảng/88 RPC), `npm run typecheck`, `npm run lint`, `npm test` (163/163), `npm run build`, `node scripts/design-check.mjs --materials` (browser fixture, gồm hai form và responsive 320–1920px), `git diff --check`. Fixture không kiểm tra Supabase thật.
+- Chưa áp SQL lên Supabase/DEV, chưa deploy frontend hoặc UAT cloud. Cần đối chiếu trạng thái migrations đang chạy trước; cài 067 sau 066 và phát hành frontend tương thích trong một lượt có kiểm soát.
+
 # 2026-11-23 — Sửa đổi đơn vị kho vật tư theo tỷ lệ bao bì đã xác minh (KH-01/KH-09/KH-10/KH-11)
 
 - Sửa lỗi validation chỉ nhận tỷ lệ nối đúng trực tiếp hai đơn vị. Migration `202611230066_material_unit_package_bridge.sql` cho phép nối đơn vị kho cũ/mới qua quy cách vật lý tương thích, ví dụ kg → bì qua 1 bì = 1.000 g; tỷ lệ không có đường nối cùng đại lượng như kg → bì qua lít vẫn bị từ chối. Không đổi các dòng phiếu kho lịch sử; tồn được tính theo đơn vị hiện tại sau khi đã xác minh.

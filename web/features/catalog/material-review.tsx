@@ -16,20 +16,22 @@ export function MaterialReview({userId,row,units,canVerify,onDone,onBusy}:{userI
 }
 
 function ReviewForm({row,units,canVerify,onBusy,latest,onSuccess}:{userId:string;row:MaterialRow;units:Unit[];canVerify:boolean;onBusy:(busy:boolean)=>void;latest?:Resolution;onSuccess:()=>void}){
- const [purchase,setPurchase]=useState(latest?.purchase_unit_id??row.purchase_unit_id);
- const [usage,setUsage]=useState(latest?.usage_unit_id??row.usage_unit_id);
- const [basis,setBasis]=useState(latest?.basis_unit_id??row.basis_unit_id??latest?.purchase_unit_id??row.purchase_unit_id);
- const [amount,setAmount]=useState(clean(latest?.amount??row.price_amount));
+ const latestMatchesCurrentUnit=latest?.usage_unit_id===row.usage_unit_id;
+ const [purchase,setPurchase]=useState(latestMatchesCurrentUnit?latest?.purchase_unit_id??row.purchase_unit_id:row.purchase_unit_id);
+ const [usage,setUsage]=useState(row.usage_unit_id);
+ const [basis,setBasis]=useState(latestMatchesCurrentUnit?latest?.basis_unit_id??row.basis_unit_id??latest?.purchase_unit_id??row.purchase_unit_id:row.basis_unit_id??row.purchase_unit_id);
+ const [amount,setAmount]=useState(clean(latestMatchesCurrentUnit?latest?.amount??row.price_amount:row.price_amount));
  const [effective,setEffective]=useState(localDate);
- const [pack,setPack]=useState(latest?.package_unit_id??latest?.purchase_unit_id??row.purchase_unit_id);
- const [content,setContent]=useState(latest?.package_content_unit_id??row.usage_unit_id);
- const [quantity,setQuantity]=useState(clean(latest?.package_quantity));
- const [formulaUnit,setFormulaUnit]=useState(latest?.formula_unit_id??latest?.usage_unit_id??row.usage_unit_id);
- const [formulaQuantity,setFormulaQuantity]=useState(clean(latest?.formula_quantity));
+ const [pack,setPack]=useState(latestMatchesCurrentUnit?latest?.package_unit_id??latest?.purchase_unit_id??row.purchase_unit_id:row.purchase_unit_id);
+ const [content,setContent]=useState(latestMatchesCurrentUnit?latest?.package_content_unit_id??row.usage_unit_id:row.usage_unit_id);
+ const [quantity,setQuantity]=useState(clean(latestMatchesCurrentUnit?latest?.package_quantity:null));
+ const [stockConversion,setStockConversion]=useState('');
+ const [formulaUnit,setFormulaUnit]=useState(latestMatchesCurrentUnit?latest?.formula_unit_id??row.usage_unit_id:row.usage_unit_id);
+ const [formulaQuantity,setFormulaQuantity]=useState(clean(latestMatchesCurrentUnit?latest?.formula_quantity:null));
  const [issue]=useState(latest?.issue??row.price_issue??'');
  const [pending,setPending]=useState<{input:Record<string,unknown>;key:string;date:string}|null>(null);
  const priceBasis=basis||purchase,selectedUsage=usage,verified=amount!==''&&!!priceBasis;
- const updateUsage=(value:string)=>{if(value!==usage){setUsage(value);setFormulaUnit(value);setFormulaQuantity('');if(value!==row.usage_unit_id){setPack(purchase);setContent(row.usage_unit_id);setQuantity('');}}};
+ const updateUsage=(value:string)=>{if(value!==usage){setUsage(value);setStockConversion('');setFormulaUnit(value);setFormulaQuantity('');}};
  const unit=(value:string,set:(v:string)=>void,optional=false,label?:string)=><select aria-label={label} required={!optional} value={value} onChange={e=>set(e.target.value)}><option value="">{optional?'Chưa xác định':'Chọn đơn vị'}</option>{units.map(u=><option key={u.id} value={u.id}>{u.code} · {u.name}</option>)}</select>;
  const unitCode=(id:string,fallback:string)=>units.find(u=>u.id===id)?.code||fallback;
  const save=useMutation({retry:false,mutationFn:async()=>{
@@ -40,12 +42,12 @@ function ReviewForm({row,units,canVerify,onBusy,latest,onSuccess}:{userId:string
    if(amount!==''&&!/^\d+(?:\.\d{1,6})?$/.test(amount))throw new Error('Đơn giá phải là số không âm, tối đa 6 chữ số thập phân.');
    if(quantity!==''&&!/^\d+(?:\.\d{1,9})?$/.test(quantity))throw new Error('Nhập số lượng quy đổi bằng số, ví dụ 30.');
    const stockUnitChanged=row.usage_unit_id!==selectedUsage;
+   if(stockUnitChanged&&(!/^\d+(?:\.\d{1,9})?$/.test(stockConversion)||Number(stockConversion)<=0))throw new Error(`Nhập tỷ lệ dương cho “Đổi đơn vị chuẩn tồn kho”: 1 ${unitCode(row.usage_unit_id,'đơn vị cũ')} = ? ${unitCode(selectedUsage,'đơn vị mới')}.`);
    const identityPackage=purchase===selectedUsage&&pack===purchase&&content===selectedUsage;
    const hasPackageRatio=quantity!==''&&!identityPackage;
-   if(stockUnitChanged&&!hasPackageRatio)throw new Error(`Đơn vị kho đang lưu là ${unitCode(row.usage_unit_id,'đơn vị cũ')} nhưng bạn chọn ${unitCode(selectedUsage,'đơn vị mới')}. Nhập và xác minh tỷ lệ chuyển đổi giữa hai đơn vị ở mục quy đổi nhập/kho.`);
    if(hasPackageRatio&&(!pack||!content||pack===content||Number(quantity)<=0))throw new Error('Quy đổi nhập/kho cần hai đơn vị khác nhau và số lượng dương.');
    if(formulaQuantity!==''&&(!/^\d+(?:\.\d{1,9})?$/.test(formulaQuantity)||!formulaUnit||formulaUnit===selectedUsage||Number(formulaQuantity)<=0))throw new Error('Chọn đơn vị công thức khác đơn vị kho và nhập số lượng dương.');
-   request={date:effective,key:crypto.randomUUID(),input:{purchase_unit_id:purchase,usage_unit_id:selectedUsage,basis_unit_id:priceBasis||null,amount:amount||null,verification:verified?'verified':'needs_verification',package_unit_id:hasPackageRatio?pack:null,package_content_unit_id:hasPackageRatio?content:null,package_quantity:hasPackageRatio?quantity:null,package_verified:hasPackageRatio,issue:verified?'':issue}};
+   request={date:effective,key:crypto.randomUUID(),input:{purchase_unit_id:purchase,usage_unit_id:selectedUsage,basis_unit_id:priceBasis||null,amount:amount||null,verification:verified?'verified':'needs_verification',package_unit_id:hasPackageRatio?pack:null,package_content_unit_id:hasPackageRatio?content:null,package_quantity:hasPackageRatio?quantity:null,package_verified:hasPackageRatio,stock_conversion_factor:stockUnitChanged?stockConversion:null,issue:verified?'':issue}};
    setPending(request);onBusy(true);
   }
   const input={...request.input,formula_unit_id:formulaQuantity?formulaUnit:null,formula_quantity:formulaQuantity||null};
@@ -54,7 +56,7 @@ function ReviewForm({row,units,canVerify,onBusy,latest,onSuccess}:{userId:string
   if(error){
    if(materialWriteWasRejected(error.code)){setPending(null);onBusy(false);}
    const oldUnit=unitCode(row.usage_unit_id,'đơn vị đang lưu'),newUnit=unitCode(selectedUsage,'đơn vị mới');
-   throw new Error(error.message.includes('UNIT_CONVERSION_REQUIRED')?`Chưa đổi được tồn kho từ ${oldUnit} sang ${newUnit}. Trong “Quy đổi nhập/kho”, nhập tỷ lệ đã đối chiếu nối hai đơn vị (ví dụ 1 bì = 100 cái) rồi lưu. Không tự suy đoán quy đổi như lít ↔ kg.`:error.message.includes('VERSION_CONFLICT')?'Dữ liệu vừa thay đổi. Đóng và tải lại trước khi xác minh.':error.message.includes('INVALID_FORMULA_CONVERSION')?'Kiểm tra đơn vị công thức và nhập số lượng dương trong một đơn vị kho.':error.message.includes('INVALID_PACKAGE')||error.message.includes('UNIT_RATIO_MISMATCH')?'Quy đổi không hợp lệ. Kiểm tra lại tỷ lệ và hai đơn vị.':error.message.includes('PRICE_BASIS_REQUIRED')?'Máy chủ chưa nhận được đơn vị tính giá. Đóng hộp thoại, mở lại vật tư rồi lưu lại.':error.code==='55000'?'Database chưa cập nhật phiên bản xác minh vật tư; lần lưu bị từ chối và bạn có thể đóng cửa sổ.':error.code==='PGRST202'?'Database chưa cài chức năng xác minh vật tư; lần lưu chưa chạy và bạn có thể đóng cửa sổ.':error.message.includes('FORBIDDEN')?'Tài khoản cần quyền Admin và quyền duyệt giá vật tư.':'Chưa xác nhận lưu. Kiểm tra ngày hiệu lực hoặc kết nối; nếu mất mạng, hãy kiểm tra lại cùng lần gửi.');
+   throw new Error(error.message.includes('UNIT_CONVERSION_REQUIRED')?`Chưa có tỷ lệ chuyển đổi tồn kho ${oldUnit} → ${newUnit}. Nhập số ở mục “Đổi đơn vị chuẩn tồn kho” (1 ${oldUnit} = ? ${newUnit}) rồi lưu.`:error.message.includes('UNIT_DIMENSION_INCOMPATIBLE')?`Không thể đổi ${oldUnit} sang ${newUnit}: hai đơn vị không cùng đại lượng. Không quy đổi khối lượng ↔ thể tích; đơn vị bao bì đổi sang lít cần quy cách đã đối chiếu.`:error.message.includes('UNIT_RATIO_MISMATCH')?'Tỷ lệ vừa nhập khác với quy đổi đã xác minh hoặc quy cách bao bì. Kiểm tra lại số lượng và căn cứ đối chiếu.':error.message.includes('INVALID_STOCK_CONVERSION')?'Tỷ lệ đổi đơn vị chuẩn phải là số dương.':error.message.includes('VERSION_CONFLICT')?'Dữ liệu vừa thay đổi. Đóng và tải lại trước khi xác minh.':error.message.includes('INVALID_FORMULA_CONVERSION')?'Kiểm tra đơn vị công thức và nhập số lượng dương trong một đơn vị kho.':error.message.includes('INVALID_PACKAGE')?'Quy cách đóng gói không hợp lệ. Kiểm tra lại tỷ lệ và hai đơn vị.':error.message.includes('PRICE_BASIS_REQUIRED')?'Máy chủ chưa nhận được đơn vị tính giá. Đóng hộp thoại, mở lại vật tư rồi lưu lại.':error.code==='55000'?'Database chưa cập nhật phiên bản xác minh vật tư; lần lưu bị từ chối và bạn có thể đóng cửa sổ.':error.code==='PGRST202'?'Database chưa cài chức năng xác minh vật tư; lần lưu chưa chạy và bạn có thể đóng cửa sổ.':error.message.includes('FORBIDDEN')?'Tài khoản cần quyền Admin và quyền duyệt giá vật tư.':'Chưa xác nhận lưu. Kiểm tra ngày hiệu lực hoặc kết nối; nếu mất mạng, hãy kiểm tra lại cùng lần gửi.');
   }
   return;
  },onSuccess:()=>{setPending(null);onBusy(false);onSuccess();}});
@@ -67,6 +69,12 @@ function ReviewForm({row,units,canVerify,onBusy,latest,onSuccess}:{userId:string
      <label>Đơn vị mua (ví dụ: túi, bì){unit(purchase,setPurchase,false,'Đơn vị mua')}</label>
      <label>Đơn vị dùng/kho (ví dụ: cái, lá){unit(selectedUsage,updateUsage,false,'Đơn vị dùng / kho')}<small>Tồn kho, phiếu nhập và kiểm kê tiếp tục dùng đơn vị này.</small></label>
      <label>Đơn giá (đ)<div className="material-price-entry"><CurrencyInput value={amount} onValueChange={setAmount} placeholder="Chưa có giá"/><span>/</span>{unit(priceBasis,setBasis,true,'Đơn vị áp dụng giá')}</div><small>Giá đang áp dụng cho 1 đơn vị ở bên phải; nếu chưa chọn, mặc định theo đơn vị mua.</small></label>
+     {row.usage_unit_id!==selectedUsage&&<div className="material-conversion-field material-stock-transition-field">
+      <strong>Đổi đơn vị chuẩn tồn kho</strong>
+      <div className="material-conversion-row material-stock-transition-row"><span>1 {unitCode(row.usage_unit_id,'đơn vị cũ')}</span><span>=</span><input aria-label="Số đơn vị kho mới trong một đơn vị kho cũ" inputMode="decimal" required value={stockConversion} placeholder="Tỷ lệ" onChange={e=>setStockConversion(e.target.value.replace(',','.'))}/><span>{unitCode(selectedUsage,'đơn vị mới')}</span></div>
+      <small>Tỷ lệ này đổi số tồn hiện tại ở tất cả kho và mức tồn tối thiểu sang đơn vị mới. Phiếu kho đã chốt giữ đơn vị ban đầu; số tồn được tính lại theo tỷ lệ đã xác minh.</small>
+      <small className="material-conversion-preview">1 {unitCode(row.usage_unit_id,'đơn vị cũ')} = {stockConversion||'…'} {unitCode(selectedUsage,'đơn vị mới')}</small>
+     </div>}
      <div className="material-conversion-field">
       <strong>Quy đổi nhập/kho <small>(khi đơn vị mua/kho khác nhau hoặc đổi đơn vị kho đang lưu)</small></strong>
       {purchase===selectedUsage&&row.usage_unit_id===selectedUsage&&quantity===''?<small>Đơn vị mua và kho hiện giống nhau; đơn vị kho đang lưu cũng không đổi nên không cần tỷ lệ ở mục này.</small>:<>
