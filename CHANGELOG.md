@@ -1,3 +1,9 @@
+## 2026-11-23 — Hiển thị rõ nguyên nhân lỗi tải ảnh món (KH-12/KH-10)
+
+- Thay thông báo chung khi tải/lưu ảnh bằng hướng dẫn theo lỗi Supabase Storage: thiếu bucket `product-images`, bị policy/RLS hoặc thiếu quyền `products.edit`, lỗi mạng, giới hạn kích thước/định dạng, thiếu RPC `save_product_image`; lỗi khác hiển thị mã HTTP và thông điệp đã rút gọn.
+- Xác minh local: `npm run verify` đạt (99 bảng/87 RPC, typecheck, lint, 158/158 tests, production build).
+- Chưa kiểm tra được bucket/quyền trên Supabase đang chạy và chưa deploy frontend; không áp migration hay SQL cloud.
+
 ## 2026-11-23 — Đổi bảng ngoài trang đơn hàng theo mẫu tổng hợp (KH-04/KH-05/KH-12)
 
 - Bảng danh sách hiển thị mã/trạng thái, điểm bán và số điện thoại, ngày giao, tổng số lượng, chiết khấu, món, khoản cấn đơn trước, hủy/lỗ, tổng thanh toán, cách thu và ghi chú.

@@ -970,3 +970,10 @@ GitHub Actions run `45043505733` thất bại duy nhất ở `npm test`: test đ
 
 - Reworked the public ordering menu into compact product tiles: four columns on wide screens, three on medium layouts, two on phones, and one at very narrow widths. Each tile keeps the published image, name, price, and quantity controls; cart totals and order submission logic are unchanged.
 - Verification: production build and `npm run test:orders` passed. Isolated public catalog fixture (`node scripts/design-check.mjs --public-portal --catalog-only`) passed grid-column assertions, quantity/cart totals, and no overflow at 320, 390, 768, 1024, 1440, and 1920px. The unisolated public portal fixture still times out later in an unrelated admin order-review step (`Xem đơn`). `git diff --check` passed. No database or live data changes.
+
+## 2026-11-23 — Chẩn đoán lỗi tải ảnh món (KH-12/KH-10)
+
+- Giao diện trước đây gộp mọi lỗi upload Storage thành một câu nên không phân biệt được bucket `product-images` chưa có, Storage RLS từ chối, lỗi mạng hay giới hạn tệp. Bổ sung ánh xạ thông báo cho upload và RPC lưu `image_path`; các thông báo khác giữ mã HTTP và phần lỗi ngắn để chẩn đoán. Giữ nguyên giới hạn JPG/PNG/WebP 5 MB, luồng RPC và kiểm tra quyền.
+- Bằng chứng local: `npm run verify` đạt (DB types 99 bảng/87 RPC, TypeScript, lint, 158/158 tests, production build). Không chạy UAT Supabase Storage.
+- Blocker: không có phiên Supabase trong môi trường hiện tại để đọc trạng thái project; chưa thể kết luận lỗi thật là thiếu migration 059 hay quyền Storage. Không áp SQL hoặc deploy.
+- Bước tiếp theo: chạy truy vấn chỉ đọc kiểm tra `products.image_path`, RPC `save_product_image`, bucket và các policy `product_images_*` trong SQL Editor của đúng project; nếu cấu trúc đã có thì thử lại trên frontend đã nhận bản sửa để xem thông báo cụ thể và kiểm tra `products.edit`.
