@@ -23,7 +23,8 @@
     "test:production": "node scripts/design-check.mjs --production",
     "test:orders": "node scripts/design-check.mjs --orders",
     "db:kiosk-update": "tsx scripts/package-kiosk-update.ts",
-    "db:order-kiosk-update": "tsx scripts/package-order-kiosk-update.ts"
+    "db:order-kiosk-update": "tsx scripts/package-order-kiosk-update.ts",
+    "db:material-stock-update": "tsx scripts/package-material-stock-unit-update.ts"
   },
   "engines": {
     "node": ">=22"
