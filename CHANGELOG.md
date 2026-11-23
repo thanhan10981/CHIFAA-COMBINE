@@ -714,3 +714,8 @@ Bỏ phụ thuộc vào việc liệt kê Supabase Auth khi mở trang Tài kho�
 - The material review form now detects when the persisted stock unit differs from the selected one. It keeps the inventory conversion visible even when purchase and new stock units are both `bì`, defaults the other side to the old stock unit (`cái`), and requires the stock ratio before saving. Formula conversion remains separate.
 - Added regression coverage for 100 old pieces migrating to 1 bag while the recipe ratio is independently saved as 1 bag = 100 pieces. Verified old inventory balance and recipe quantity conversion.
 - Verification: 160/160 tests passed, material UI fixture passed at 320–1920px, typecheck/lint and `git diff --check` passed. Production SQL and frontend are not updated yet.
+
+## 2026-11-23 — Fix formula conversion quantity input width (KH-01/KH-10/KH-11)
+
+- Fixed the formula conversion input: its four controls were using the five-column package grid, placing the quantity input in the 20px separator column. The formula row now has a dedicated responsive grid.
+- Added a browser-fixture regression check for a usable input width. `npm run typecheck`, `npm run lint`, `npm run build`, all 162 tests, the material UI fixture at 320–1920px, and `git diff --check` passed. No cloud writes or deployment.

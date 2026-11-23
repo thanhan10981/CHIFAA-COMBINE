@@ -1038,3 +1038,10 @@ Còn lại: chưa UAT dữ liệu thật hoặc triển khai frontend; không c�
 - Hộp xác minh nay so sánh đơn vị kho đang lưu với đơn vị mới. Khi khác nhau, luôn hiện tỷ lệ nhập/kho, mặc định hướng từ đơn vị mua `bì` sang đơn vị kho cũ `cái`, và chặn lưu nếu chưa xác minh tỷ lệ. Tỷ lệ công thức vẫn là ô riêng.
 - Bằng chứng local: test PGlite lưu 100 `cái` cũ, đổi chuẩn kho sang `bì` với `1 bì = 100 cái`, đồng thời lưu tỷ lệ công thức riêng; tồn cũ quy đổi thành 1 `bì`, định lượng công thức 100 `cái` quy đổi thành 1 `bì`. UI fixture xác nhận payload gửi cả hai tỷ lệ độc lập. `160/160` test, fixture vật tư ở 320–1920px, typecheck, lint và `git diff --check` đạt.
 - Còn lại: chưa áp migration 064/065 lên Supabase hoặc deploy frontend; lỗi trên môi trường đang dùng sẽ còn đến khi cập nhật. Chưa ghi dữ liệu production.
+
+## 2026-11-23 — Sửa độ rộng ô nhập quy đổi công thức (KH-01/KH-10/KH-11)
+
+- Nguyên nhân: dòng quy đổi công thức có bốn phần tử nhưng dùng chung lưới năm cột của quy đổi bao bì; ô số lượng rơi vào cột dấu phân cách 20px và gần như không thấy.
+- Tách lưới bốn cột cho dòng công thức và bố cục riêng ở màn hình hẹp; thêm kiểm tra hồi quy trên fixture trình duyệt để ô nhập rộng ít nhất 100px ở màn xác minh desktop.
+- Bằng chứng: `npm run typecheck`, `npm run lint`, `npm run build`, `npm test` (162/162), `node scripts/design-check.mjs --materials` (320/390/768/1024/1440/1920px) và `git diff --check` đạt. Fixture chỉ dùng dữ liệu tổng hợp, không ghi cloud.
+- Còn lại: chưa áp SQL hoặc deploy frontend; giao diện đang dùng cần nhận frontend deployment theo quy trình bình thường.

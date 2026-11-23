@@ -78,7 +78,7 @@ function ReviewForm({row,units,canVerify,onBusy,latest,onSuccess}:{userId:string
      </div>
      <div className="material-conversion-field">
       <strong>Quy đổi riêng dành cho công thức</strong>
-      <div className="material-conversion-row"><span>1 {unitCode(selectedUsage,'đơn vị kho')}</span><span>=</span><input aria-label="Số đơn vị công thức trong một đơn vị kho" inputMode="decimal" value={formulaQuantity} placeholder="Số lượng" onChange={e=>setFormulaQuantity(e.target.value.replace(',','.'))}/>{unit(formulaUnit,setFormulaUnit,true,'Đơn vị dùng trong công thức')}</div>
+      <div className="material-conversion-row material-formula-conversion-row"><span>1 {unitCode(selectedUsage,'đơn vị kho')}</span><span>=</span><input aria-label="Số đơn vị công thức trong một đơn vị kho" inputMode="decimal" value={formulaQuantity} placeholder="Số lượng" onChange={e=>setFormulaQuantity(e.target.value.replace(',','.'))}/>{unit(formulaUnit,setFormulaUnit,true,'Đơn vị dùng trong công thức')}</div>
       <small>Ví dụ: kho vẫn kiểm theo bì, khai báo 1 bì = 100 cái. Công thức chọn cái; quy đổi này không đổi đơn vị nhập/kho.</small>
       <small className="material-conversion-preview">{formulaRatioEntered?`1 ${unitCode(selectedUsage,'đơn vị kho')} = ${formulaQuantity} ${unitCode(formulaUnit,'đơn vị công thức')} · sẽ được xác minh khi lưu`:'Chưa khai báo quy đổi riêng; công thức dùng đơn vị kho hiện tại.'}</small>
      </div>
