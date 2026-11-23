@@ -4,11 +4,12 @@ export async function checkPublicPortal(page,base,out,report){
  const products=[{product_id:'public-rice',code:'CN',name:'Cơm nắm kiểm thử với tên dài trên màn hình điện thoại',sale_unit:'Phần',price_vnd:'15000'},{product_id:'public-roll',code:'CC',name:'Cơm cuộn kiểm thử',sale_unit:'Hộp',price_vnd:'25000'},{product_id:'public-missing',code:'CG',name:'Món công bố chưa có giá',sale_unit:'Phần',price_vnd:null}];
  let empty=false,priceChanged=false;const requests=[];
  await page.route('**/rest/v1/rpc/public_order_catalog',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({rows:empty?[]:products,total:empty?'0':'3'})}));
- await page.route('**/rest/v1/rpc/submit_public_order',async route=>{
+ await page.route('**/rest/v1/rpc/public_order_catalog_linked',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({rows:products.map(product=>({...product,discount_rate:'0.1'})),total:'3'})}));
+ await page.route('**/rest/v1/rpc/submit_public_order_v2',async route=>{
   requests.push(route.request().postDataJSON());
   await route.fulfill({status:priceChanged?400:requests.length===1?503:200,contentType:'application/json',body:priceChanged?'{"code":"P0001","message":"PRICE_CHANGED"}':requests.length===1?'{}':'{"order_id":"public-synthetic-order","status":"submitted"}'});
  });
- await page.route('**/rest/v1/rpc/submit_store_link_order',async route=>{requests.push(route.request().postDataJSON());await route.fulfill({status:200,contentType:'application/json',body:'{"order_id":"public-synthetic-order","status":"submitted"}'});});
+ await page.route('**/rest/v1/rpc/submit_store_link_order_v2',async route=>{requests.push(route.request().postDataJSON());await route.fulfill({status:200,contentType:'application/json',body:'{"order_id":"public-synthetic-order","status":"submitted"}'});});
  await page.route('**/rest/v1/stores*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([{id:'store-fixture',code:'GUEST-S',name:'Điểm nhận đơn kiểm thử'}])}));
  await page.route('**/rest/v1/rpc/public_order_links',route=>route.fulfill({status:200,contentType:'application/json',body:'[]'}));
  let createdLink;
@@ -16,7 +17,7 @@ export async function checkPublicPortal(page,base,out,report){
  await page.route('**/rest/v1/rpc/create_public_order_link',async route=>{createdLink=route.request().postDataJSON();await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({link_id:'link-fixture',token:'a'.repeat(64),store_id:'store-fixture',store_code:'GUEST-S',store_name:'Điểm nhận đơn kiểm thử'})});});
  await page.route('**/rest/v1/rpc/review_public_order',async route=>{reviewed=route.request().postDataJSON();await route.fulfill({status:200,contentType:'application/json',body:'{"status":"approved"}'});});
  for(const width of [320,390,768,1024,1440,1920]){
-  await page.setViewportSize({width,height:1000});await page.goto(base+'/portal');
+  await page.setViewportSize({width,height:1000});await page.goto(base+'/portal');if(await page.locator('input[type=radio][name=payment_method]').count()!==2)throw new Error('Cash and bank transfer radio choices missing');
   if(await page.getByRole('link',{name:'Đơn điểm bán',exact:true}).count())throw new Error('Legacy store-order button is still shown on the public portal');
   await page.getByRole('heading',{name:products[0].name,exact:true}).waitFor();
   const columns=await page.locator('.public-products').evaluate(element=>getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length);
@@ -51,11 +52,11 @@ export async function checkPublicPortal(page,base,out,report){
  if(await page.locator('.public-cart li').count())throw new Error('Changed quote was silently retained');
  empty=true;await page.reload();await page.getByText('Chưa có món được công bố. Vui lòng quay lại sau.',{exact:true}).waitFor();
  report.checks.push('price change requires a fresh choice; empty published menu has an explicit empty state');
- empty=false;priceChanged=false;await page.goto(base+'/portal#'+'a'.repeat(64));await page.reload();await page.getByRole('heading',{name:products[0].name,exact:true}).waitFor();
+ empty=false;priceChanged=false;await page.goto(base+'/portal#'+'a'.repeat(64));await page.reload();await page.getByRole('heading',{name:products[0].name,exact:true}).waitFor();await page.locator('input[type=radio][name=payment_method][value=bank]').check();
  await page.getByRole('button',{name:'Tăng '+products[0].name,exact:true}).click();
  await page.getByLabel('Tên người nhận *',{exact:true}).fill('Điểm bán kiểm thử');await page.getByLabel('Số điện thoại *',{exact:true}).fill('0900000038');await page.getByLabel('Địa chỉ / điểm giao *',{exact:true}).fill('Địa chỉ kiểm thử điểm bán');
  await page.getByRole('button',{name:'Gửi đơn đặt hàng',exact:true}).click();await page.getByText('Đã nhận đơn #public-s',{exact:true}).waitFor();
- if(requests.at(-1)?.p_link_token!=='a'.repeat(64))throw new Error('Store link token was not passed to the order RPC');
+ if(requests.at(-1)?.p_link_token!=='a'.repeat(64)||requests.at(-1)?.p_payment_method!=='bank')throw new Error('Store link token or selected payment method was not passed to the order RPC');
  if(!['AM','PM'].includes(requests.at(-1)?.p_shift))throw new Error('Hidden Vietnam shift was not passed with the store order');
  if(!page.url().endsWith('#'+'a'.repeat(64)))throw new Error('Reusable store link was removed after its first order');
  report.checks.push('store-link portal retains the capability token until submit and includes it in the idempotent order request');

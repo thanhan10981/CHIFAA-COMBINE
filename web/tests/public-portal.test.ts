@@ -51,13 +51,37 @@ test('DEV036 store links are private, idempotent, revocable and route orders to 
  }finally{await db.close();}
 });
 
+test('store-linked and review-assigned orders snapshot discounts and payment choice',async()=>{
+ const db=await database();try{
+  const store=(await db.query<{id:string}>("insert into stores(code,name,active) values('PAY-STORE','Payment store',true) returning id")).rows[0].id;
+  const product=(await db.query<{id:string}>("insert into products(code,name,sale_unit,published) values('PAY-PRODUCT','Payment dish','Phần',true) returning id")).rows[0].id;
+  await db.query("insert into product_prices(product_id,price_vnd,effective_from,evidence) values($1,10000,current_date-1,'Synthetic public price')",[product]);
+  const policy=(await db.query<{id:string}>("insert into store_discount_policies(store_id,effective_from,common_rate,note,evidence) values($1,current_date-1,0.15,'Synthetic rate','Synthetic policy evidence') returning id",[store])).rows[0].id;
+  await db.query('insert into store_discount_policy_items(policy_id,product_id,eligible) values($1,$2,true)',[policy,product]);
+  const token='a'.repeat(64);await db.query('insert into private.public_order_links(token_hash,store_id,created_by) values($1,$2,$3)',[createHash('sha256').update(token).digest('hex'),store,identities.admin]);
+  const date=(await db.query<{delivery_day:string}>("select to_char((now() at time zone 'Asia/Ho_Chi_Minh')::date+1,'YYYY-MM-DD') delivery_day")).rows[0].delivery_day;
+  const linked=await anonymous(db,()=>db.query<{result:{rows:Record<string,unknown>[]}}>('select public_order_catalog_linked($1,0,100,$2) result',[date,token]));
+  assert.equal(linked.rows[0].result.rows[0].price_vnd,'10000');assert.equal(linked.rows[0].result.rows[0].discount_rate,'0.150000');
+  const payload=[{product_id:product,quantity:'2',price_vnd:'10000'}],key=randomUUID(),submit=()=>anonymous(db,()=>db.query<{result:{order_id:string}}>('select submit_store_link_order_v2($1,$2,$3,$4,$5,$6,$7,$8) result',[date,'AM',{name:'Discount visitor',phone:'0900000055',address:'Discount delivery address'},payload,'Rate snapshot',token,'bank',key]));
+  const first=(await submit()).rows[0].result;assert.deepEqual((await submit()).rows[0].result,first);
+  const snapshot=(await db.query<{discount_rate:string;customer_payment_method:string}>('select i.discount_rate::text,o.customer_payment_method from customer_order_items i join customer_orders o on o.id=i.order_id where o.id=$1',[first.order_id])).rows[0];
+  assert.equal(snapshot.discount_rate,'0.150000');assert.equal(snapshot.customer_payment_method,'bank');
+  await assert.rejects(()=>anonymous(db,()=>db.query('select submit_store_link_order_v2($1,$2,$3,$4,$5,$6,$7,$8)',[date,'AM',{name:'Discount visitor',phone:'0900000055',address:'Discount delivery address'},payload,'Rate snapshot',token,'cash',key])),/IDEMPOTENCY_CONFLICT/);
+  const guestKey=randomUUID(),guest=(await anonymous(db,()=>db.query<{result:{order_id:string}}>('select submit_public_order_v2($1,$2,$3,$4,$5,$6,$7) result',[date,'AM',{name:'Unlinked visitor',phone:'0900000056',address:'Unlinked delivery address'},payload,'Assign store on review','cash',guestKey]))).rows[0].result;
+  const guestVersion=(await db.query<{version:string}>('select version::text from customer_orders where id=$1',[guest.order_id])).rows[0].version;
+  await asUser(db,identities.admin,()=>db.query('select review_public_order($1,$2,$3,true,\'\',$4)',[guest.order_id,guestVersion,store,randomUUID()]));
+  const summary=(await asUser(db,identities.admin,()=>db.query<{result:{orders:{id:string;discount_vnd:string;order_total_vnd:string}[]}}>('select order_customer_summary($1) result',[date]))).rows[0].result;
+  const reviewed=summary.orders.find(order=>order.id===guest.order_id)!;assert.equal(reviewed.discount_vnd,'3000');assert.equal(reviewed.order_total_vnd,'17000');
+ }finally{await db.close();}
+});
+
 test('order review queue shows the assigned store with orders:view and does not require stores:view',async()=>{
  const db=await database();try{
   const store=(await db.query<{id:string}>("insert into stores(code,name) values('QUEUE-STORE','Review queue store') returning id")).rows[0].id;
-  const order=(await db.query<{id:string}> ("insert into customer_orders(store_id,delivery_date,shift,guest_name,guest_phone,guest_address) values($1,current_date,'PM','Synthetic guest','0900000048','Queue test address') returning id",[store])).rows[0].id;
+  const order=(await db.query<{id:string}> ("insert into customer_orders(store_id,delivery_date,shift,guest_name,guest_phone,guest_address,customer_payment_method) values($1,current_date,'PM','Synthetic guest','0900000048','Queue test address','bank') returning id",[store])).rows[0].id;
   await db.query("insert into public.user_permissions(user_id,module,action,allowed) values($1,'orders','view',true),($1,'stores','view',false)",[identities.a]);
-  const rows=await asUser(db,identities.a,()=>db.query<{id:string;store_code:string;store_name:string;guest_name:string}>('select * from public.order_review_queue(0,25)'));
-  assert.equal(rows.rows.length,1);assert.equal(rows.rows[0].id,order);assert.equal(rows.rows[0].guest_name,'Synthetic guest');assert.equal(rows.rows[0].store_code,'QUEUE-STORE');assert.equal(rows.rows[0].store_name,'Review queue store');
+  const rows=await asUser(db,identities.a,()=>db.query<{id:string;store_code:string;store_name:string;guest_name:string;customer_payment_method:string}>('select * from public.order_review_queue(0,25)'));
+  assert.equal(rows.rows.length,1);assert.equal(rows.rows[0].id,order);assert.equal(rows.rows[0].guest_name,'Synthetic guest');assert.equal(rows.rows[0].store_code,'QUEUE-STORE');assert.equal(rows.rows[0].store_name,'Review queue store');assert.equal(rows.rows[0].customer_payment_method,'bank');
   await assert.rejects(()=>anonymous(db,()=>db.query('select * from public.order_review_queue(0,25)')),/permission denied/);
   await assert.rejects(()=>asUser(db,identities.b,()=>db.query('select * from public.order_review_queue(0,25)')),/FORBIDDEN/);
   await assert.rejects(()=>asUser(db,identities.a,()=>db.query('select * from public.order_review_queue(-1,25)')),/INVALID_FILTER/);

@@ -1074,3 +1074,12 @@ Còn lại: chưa UAT dữ liệu thật hoặc triển khai frontend; không c�
 - Added migration 202611230069 and a regression case covering automatic same-code matching with no link row, dated material cost, and existing unlinked behavior.
 - Evidence: commercial-catalogs tests pass 7/7; full web suite had 161 passing tests and commercial test process failed to start due sandbox EPERM, then targeted commercial suite passed after approved child-process execution; diff check clean.
 - Remaining: apply migration 069 to the intended Supabase database and deploy frontend through the normal deployment process. No cloud SQL or deployment was performed.
+
+
+## 2026-11-23 - Store discounts and customer payment choice on orders (KH-05/KH-12/KH-10)
+
+- Store-linked public orders load the effective discount for the link target and show the discounted total in the customer basket. The server recomputes the discount and stores it on order lines; clients cannot submit or override a rate. General anonymous orders without a store keep the public common-price/no-private-discount behavior.
+- When an unlinked guest order is assigned to a store during review, the selected store's discount for the delivery date is snapshotted before approval. Reassigning a linked guest order also updates the snapshot; keeping the same store preserves the submitted snapshot. The approval queue then calculates discount and due total from saved order lines.
+- Added customer payment preference (cash/bank) as a separate order snapshot. Review UI shows the customer's choice separately from posted receipt method and amounts; it does not record a receipt or mark the order paid. Idempotency fingerprints include the choice.
+- Evidence: `web/tests/public-portal.test.ts` 9/9; full web suite 169/169; typecheck and lint completed successfully; latest production build is running/verify result before close.
+- Remaining: apply migration 070 to the intended Supabase database and deploy frontend through the normal process. No cloud SQL or deployment performed.
