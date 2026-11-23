@@ -15,7 +15,7 @@ export function productImageFailure(value:unknown,phase:'upload'|'save'){
   if(/bucket.{0,30}(not found|does not exist)|bucket_not_found/i.test(normalized))
    return 'Chưa tìm thấy bucket product-images trên Supabase đang kết nối. Kiểm tra migration 059 đã được cài trên đúng project chưa.';
   if(['401','403'].includes(status)||/row.level security|permission denied|unauthorized|not authorized|forbidden/i.test(normalized))
-   return 'Supabase Storage từ chối quyền tải ảnh. Kiểm tra tài khoản có quyền Sửa danh mục món (products.edit) và policy product_images_edit trên project này.';
+   return 'Supabase Storage từ chối upload. Kiểm tra products.edit và chạy migration 202611230063_product_image_storage_rls_fix.sql để cập nhật policy product_images_edit trên đúng project.';
   if(status==='413'||/payload too large|file size limit|maximum.*size/i.test(normalized))
    return 'Ảnh vượt giới hạn tải lên 5 MB. Hãy chọn ảnh nhỏ hơn.';
   if(/mime|content.type|media type|file type/i.test(normalized))

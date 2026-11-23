@@ -676,3 +676,21 @@ Bỏ phụ thuộc vào việc liệt kê Supabase Auth khi mở trang Tài kho�
 
 - Changed the public order menu from full-width product rows to compact product tiles with four columns on wide screens and responsive three/two/one-column layouts. Quantity controls, published prices/images, cart totals, and submit behavior remain connected to the existing order flow.
 - Production build and `npm run test:orders` passed. Isolated public catalog fixture passed grid-column assertions, quantity/cart behavior, and no horizontal overflow from 320px to 1920px. No schema or live data was changed.
+
+## 2026-11-23 - Fix public guest order rejection (KH-12/KH-10)
+
+- Added migration 062 to restore the customer_id guard around notification creation after the order-kiosk repair bundle reapplies legacy migration 022. Public orders can now be reviewed without violating notifications.user_id NOT NULL.
+- Added migration 062 to the generated order-kiosk update package. Current Supabase still needs the standalone migration 062 run in SQL Editor; no cloud SQL or deployment performed here.
+
+## 2026-11-23 — Fix product image Storage RLS (KH-12/KH-10)
+
+- Added migration `202611230063_product_image_storage_rls_fix.sql`. It moves product-ID existence validation into a narrowly scoped `SECURITY DEFINER` helper, avoiding the nested `public.products` RLS check from the Storage insert policy while retaining `products.edit`, path validation, and product existence checks.
+- Updated the upload error message to identify the exact migration needed when the Storage policy rejects the insert.
+- No production SQL or frontend deployment performed. Apply migration 063 to the connected Supabase project and deploy the frontend before retrying upload.
+
+## 2026-11-23 — Material package conversions for recipes (KH-01/KH-11/KH-10)
+
+- The material verification form now always exposes package contents, including when the purchase and stock units are the same. It explains that inventory may stay in bags while recipes use pieces.
+- Migration `202611230064_material_formula_unit_conversion.sql` lets a newly verified package ratio validate a same-transaction stock-unit change. Recipe quantities continue to convert to the material stock unit using the effective verified ratio.
+- Updated recipe and material error guidance. Existing posted stock and saved recipe revisions remain intact.
+- `npm run typecheck`, `npm run lint`, and `git diff --check` passed. The `npm run test:recipes` fixture could not start because the environment blocked the esbuild child process (`spawn EPERM`). Migration 064 has not been applied to Supabase and the frontend has not been deployed. UAT is still needed for `1 bì = 100 cái` with stock kept in bì and a recipe using cái.

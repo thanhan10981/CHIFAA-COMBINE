@@ -995,3 +995,25 @@ Giữ bộ lọc hiện hành của nguồn: ma trận lấy đơn `approved/sch
 Bằng chứng: `npm run verify` đạt (DB types 99 bảng/87 RPC, typecheck, lint, 158/158 tests, production build); test Excel kiểm tra tab/ma trận/tổng/nguyên liệu; `npm run test:orders` đạt với fixture và xác nhận nội dung in/popup, cột tổng hiện trên desktop, bảng cuộn ngang trên mobile, không tràn ở 320px/390px/1280px; `git diff --check` đạt. Fixture không đăng nhập hay kết nối Supabase cloud.
 
 Còn lại: chưa UAT dữ liệu thật hoặc triển khai frontend; không cần SQL migration cho thay đổi giao diện này.
+
+## 2026-11-23 - Fix rejection of public guest orders (KH-12/KH-10)
+
+- Root cause: the order-kiosk SQL bundle reapplied legacy migration 022 after the public portal migration 035. The old `review_order` always inserted a notification, but public guest orders have a NULL `customer_id`; `notifications.user_id` is NOT NULL, so review rolled back.
+- Added migration `202611230062_public_order_review_guard.sql` to restore the public-order guards and avoid notifying a non-existent customer. The order-kiosk bundle now includes migration 062 after 061.
+- The user's diagnostic query confirmed both test orders are public guest orders; `d4797aed` remains submitted and both review RPCs exist. The database hotfix has not been run from this environment; run migration 062 in Supabase SQL Editor, then refresh and retry.
+- No SQL cloud execution or frontend deployment performed.
+
+## 2026-11-23 — Sửa policy upload ảnh món (KH-12/KH-10)
+
+- Ảnh chụp xác nhận tài khoản có `products.edit` và `products.view`; Storage có policy INSERT `product_images_edit`, cùng một policy INSERT chỉ dành cho bucket documents. Policy ảnh cũ truy vấn `public.products` trực tiếp trong điều kiện RLS của `storage.objects`, nên phép EXISTS còn bị RLS của bảng món áp thêm.
+- Thêm migration `202611230063_product_image_storage_rls_fix.sql`: kiểm tra quyền, định dạng đường dẫn và ID món tồn tại bên trong hàm `SECURITY DEFINER` riêng; thay policy upload gọi hàm đó, vẫn chỉ cho `authenticated` có `products.edit` tải ảnh lên bucket `product-images`.
+- Thông báo lỗi giao diện nêu đúng migration cần áp dụng thay vì chỉ yêu cầu kiểm tra lại quyền đã xác nhận.
+- Bằng chứng hiện có: ảnh SQL Editor xác nhận quyền bật và policy tồn tại; ảnh Network ghi nhận lỗi Storage `new row violates row-level security policy`. Chưa chạy kiểm thử tự động hoặc áp SQL lên Supabase.
+- Việc còn lại: chạy migration 063 trên đúng project `bpwqdwymqozgwfjyhseg` (nhánh `main`/PRODUCTION), deploy frontend, rồi thử tải ảnh lại. Chưa có quyền/phiên để tự áp thay đổi vào production.
+
+## 2026-11-23 — Sửa quy cách bao bì dùng trong công thức (KH-01/KH-11/KH-10)
+
+- Hộp xác minh vật tư luôn cho khai báo quy cách gói, kể cả khi đơn vị mua trùng đơn vị kho. Ví dụ giữ tồn theo `bì` và khai báo `1 bì = 100 cái`; công thức có thể chọn `cái`.
+- Migration 064 sửa kiểm tra đổi đơn vị kho để tỷ lệ bao bì vừa nhập có thể xác minh lần đổi đó. Nếu chưa có tỷ lệ áp dụng được từ đơn vị cũ sang mới, thao tác vẫn bị từ chối; dữ liệu kho và công thức đã chốt không bị viết lại.
+- Công thức tiếp tục dùng quy đổi theo ngày hiệu lực để tính nhu cầu/giá vốn; cập nhật thông báo lỗi và hướng dẫn trong biểu mẫu.
+- Kiểm tra: `npm run typecheck`, `npm run lint` và `git diff --check` đạt. Fixture `npm run test:recipes` không khởi chạy được vì môi trường chặn tạo tiến trình con (`esbuild spawn EPERM`). Chưa áp migration lên Supabase hoặc triển khai frontend; cần UAT trường hợp kho dùng bì/công thức dùng cái.

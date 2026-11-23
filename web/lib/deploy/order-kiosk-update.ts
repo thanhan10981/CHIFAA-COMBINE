@@ -2,14 +2,15 @@ export const orderKioskMigrations = [
  '202611170021_kiosk_workflow.sql',
  '202611170022_workflow_guards.sql',
  '202611230061_order_settlement_returns.sql',
+ '202611230062_public_order_review_guard.sql',
 ] as const;
 
 type Migration = { name: string; sql: string };
 
-/** Bundle the missing kiosk foundation with the order settlement update for the existing schema. */
+/** Bundle the missing kiosk foundation and order updates for the existing schema. */
 export function buildOrderKioskUpdate(migrations: Migration[]) {
  if (migrations.length !== orderKioskMigrations.length || migrations.some((item, index) => item.name !== orderKioskMigrations[index])) {
-  throw new Error('Order kiosk update requires migrations 021, 022 and 061 in order');
+  throw new Error('Order kiosk update requires migrations 021, 022, 061 and 062 in order');
  }
 
  const sections = migrations.map(({ name, sql }) => {
