@@ -19,6 +19,9 @@ export async function checkPublicPortal(page,base,out,report){
   await page.setViewportSize({width,height:1000});await page.goto(base+'/portal');
   if(await page.getByRole('link',{name:'Đơn điểm bán',exact:true}).count())throw new Error('Legacy store-order button is still shown on the public portal');
   await page.getByRole('heading',{name:products[0].name,exact:true}).waitFor();
+  const columns=await page.locator('.public-products').evaluate(element=>getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length);
+  const expectedColumns=width>1150?4:width>620?3:width>340?2:1;
+  if(columns!==expectedColumns)throw new Error('Public product grid expected '+expectedColumns+' columns at '+width+'px, got '+columns);
   if(width===320){await page.waitForFunction(()=>{const input=document.querySelector('input[type=hidden][name=shift]');const hour=Number(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',hourCycle:'h23'}).format(new Date()));return input?.value===(hour<12?'AM':'PM');});if(await page.getByLabel('Ca giao',{exact:true}).count()||await page.locator('input[type=hidden][name=shift]').count()!==1)throw new Error('Delivery shift must be hidden and derived from Vietnam time');report.checks.push('delivery shift is hidden and derived as AM/PM from Vietnam local time');}
   if(await page.getByRole('button',{name:'Đăng nhập',exact:true}).count()||await page.getByLabel('Điểm bán',{exact:true}).count())throw new Error('Public portal requires linked account');
   await page.getByRole('button',{name:'Tăng '+products[0].name,exact:true}).click();
@@ -29,6 +32,7 @@ export async function checkPublicPortal(page,base,out,report){
   if([390,1440].includes(width))await page.screenshot({path:path.join(out,'public-portal-'+width+'.png'),fullPage:true});
   report.checks.push('public portal '+width+': immediate menu, quantities, exact total, no login/store dependency, unpriced disabled, no overflow');
  }
+ if(process.argv.includes('--catalog-only')){report.checks.push('catalog-only fixture exit before unrelated order review flows');return;}
  await page.getByLabel('Tên người nhận *',{exact:true}).fill('Khách kiểm thử');
  await page.getByLabel('Số điện thoại *',{exact:true}).fill('0900000035');
  await page.getByLabel('Địa chỉ / điểm giao *',{exact:true}).fill('Địa chỉ kiểm thử không phải dữ liệu thật');

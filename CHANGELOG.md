@@ -649,3 +649,8 @@ Bỏ phụ thuộc vào việc liệt kê Supabase Auth khi mở trang Tài kho�
 - Làm popup rộng và gọn hơn trên desktop, sắp xếp lại bộ lọc ngày/Excel/in, thêm số đếm và chia nội dung thành các khối dễ đọc.
 - Rút ngắn trạng thái rỗng, báo cuộn ngang cho bảng nhiều cột, giữ popup gọn ở màn 320px/390px. Logo được giữ cho bản in và ẩn khỏi nội dung trên màn hình.
 - Chỉ đổi giao diện; dữ liệu và phép tính đơn hàng không đổi. `npm run verify` đạt (156/156 tests, typecheck, lint, build); `npm run test:orders` đạt tại 320px/390px/1280px và kiểm tra phần đầu trang khi in. Không áp SQL cloud hoặc deploy.
+
+## 2026-11-23 — POS-style ordering catalog (KH-12/KH-10)
+
+- Changed the public order menu from full-width product rows to compact product tiles with four columns on wide screens and responsive three/two/one-column layouts. Quantity controls, published prices/images, cart totals, and submit behavior remain connected to the existing order flow.
+- Production build and `npm run test:orders` passed. Isolated public catalog fixture passed grid-column assertions, quantity/cart behavior, and no horizontal overflow from 320px to 1920px. No schema or live data was changed.

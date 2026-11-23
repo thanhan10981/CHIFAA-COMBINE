@@ -965,3 +965,8 @@ GitHub Actions run `45043505733` thất bại duy nhất ở `npm test`: test đ
 - Chỉ thay cách trình bày. Nguồn đơn, trạng thái, số tiền, khoản thu, cấn trừ, hàng hủy/trả và nhu cầu nguyên liệu không đổi; không sửa database.
 - Bằng chứng local: `npm run verify` đạt (99 bảng/87 RPC, TypeScript, lint, 156/156 tests, production build); `npm run test:orders` đạt với fixture tại 320px, 390px và 1280px, kiểm tra cuộn bảng và logo in; `git diff --check` đạt. Ảnh fixture nằm trong `output/design-parity/` (ignored).
 - Còn lại: chưa UAT bằng tài khoản/dữ liệu thật, chưa áp SQL cloud hoặc deploy. Các migration giao hàng/trả hàng ghi ở checkpoint trước vẫn chưa được áp vào Supabase.
+
+## 2026-11-23 — POS-style ordering catalog (KH-12/KH-10)
+
+- Reworked the public ordering menu into compact product tiles: four columns on wide screens, three on medium layouts, two on phones, and one at very narrow widths. Each tile keeps the published image, name, price, and quantity controls; cart totals and order submission logic are unchanged.
+- Verification: production build and `npm run test:orders` passed. Isolated public catalog fixture (`node scripts/design-check.mjs --public-portal --catalog-only`) passed grid-column assertions, quantity/cart totals, and no overflow at 320, 390, 768, 1024, 1440, and 1920px. The unisolated public portal fixture still times out later in an unrelated admin order-review step (`Xem đơn`). `git diff --check` passed. No database or live data changes.
