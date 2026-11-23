@@ -1137,3 +1137,9 @@ Còn lại: chưa UAT dữ liệu thật hoặc triển khai frontend; không c�
 - Sửa bí danh ở migration 073 và thêm migration 074 để sửa database đã chạy migration 073. Giao diện hiện giải thích cụ thể mã lỗi 42702 và migration cần áp dụng.
 - Route/mục Topping đã có trong mã nguồn local tại `/app/toppings` và thanh điều hướng workspace. Bản trong ảnh chưa có frontend chứa thay đổi topping; cần cập nhật frontend để thấy mục này.
 - Evidence: đối chiếu SQL của `recipe_detail`, migration 073, route map và `workspace-nav.json`; `npm run typecheck`, `npm run lint` và `git diff --check` đều đạt. Chưa chạy test, áp migration lên Supabase hoặc triển khai frontend. Áp 074 trên đúng DB và cập nhật frontend là bước cần thiết để khôi phục ứng dụng đang xem.
+
+## 2026-11-24 — Khôi phục tải dữ liệu form sửa công thức (KH-01/KH-10/KH-11)
+
+- Form sửa công thức tải recipe_versions cùng quan hệ nhúng recipes. Tách thành hai truy vấn bảng và ghép theo recipe_id để loại phụ thuộc schema cache/embedding ở PostgREST; giữ bộ lọc các phiên bản topping đã công bố.
+- Lỗi truy vấn danh mục hiện kèm mã và message từ Supabase, giúp phân biệt lỗi truy cập/schema thay vì chỉ báo tên bảng.
+- Kiểm chứng: `npm --prefix web run typecheck`, `npm --prefix web run lint` và `git diff --check` đạt. Chưa kết nối Supabase thật để xác nhận UI trên cloud; nếu query recipe_versions vẫn lỗi, thông báo mới sẽ cung cấp mã/message để xác định bước DB còn thiếu. Không áp SQL cloud hoặc deploy.
