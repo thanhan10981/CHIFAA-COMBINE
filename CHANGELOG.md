@@ -1,9 +1,10 @@
-## 2026-11-23 ? T? t?nh ??i ??n v? kho t? hai quy c?ch ?? ??i chi?u (KH-01/KH-09/KH-10/KH-11)
+## 2026-11-23 - Derive stock transitions from verified package ratios (KH-01/KH-09/KH-10/KH-11)
+- Fixed SQL Editor compatibility: migration 068 now locates the resolver insertion point with a whitespace/case-tolerant pattern and reports a clear missing-067 prerequisite instead of a false patch mismatch. Full migration chain passed again on PGlite.
 
-- Khi ??n v? kho c? v? m?i l? c?c bao b? kh?c m?, h? th?ng d?ng quy c?ch c? ?? x?c minh v? quy c?ch m?i v?a ??i chi?u ?? t?nh t? l? qua ??n v? b?n trong chung (v? d? 1 t?i = 200 c?i, 1 b? = 200 c?i ? 1:1). Kh?ng b?t nh?p l?i quy c?ch c?; n?u n?i dung quy c?ch kh?c nhau th? t? t?nh ??ng h? s?.
-- ? nh?p t? l? ??i chu?n tr? th?nh t?y ch?n khi m?y ch? c? ?? hai quy c?ch ?? x?c minh; ng??i d?ng v?n c? th? nh?p tr?c ti?p n?u l?ch s? thi?u c?n c?. Ch?n quy ??i kh?c ??i l??ng v? kh?ng s?a d?ng phi?u kho ?? ch?t.
-- X?c minh: migration ??y ?? ch?y tr?n PGlite; lu?ng `save_material_table` l?u h? s? 1:1 kh?ng c?n g?i t? l? ri?ng; typecheck v? lint ??t. `npm test`: 150 pass, file `material-verification.test.ts` kh?ng kh?i ch?y do esbuild `spawn EPERM`; ch?y ri?ng PGlite tr?c ti?p x?c nh?n migration v? t? l? 200?200 ??t.
-- Ch?a ?p migration l?n Supabase/DEV ho?c deploy frontend.
+- The system now derives a stock-unit transition from the old verified package ratio and the new verified package ratio when their inner units are physically compatible. For example, 200 pieces in each package gives a 1:1 transition without asking the operator to re-enter the old ratio. Different counts yield the corresponding factor.
+- The separate stock-factor input is optional when the server has enough verified package history; incompatible dimensions and missing proof remain rejected. Posted stock documents keep their original units and quantities.
+- Validation: migration chain and 200-to-200 transition passed on PGlite; typecheck and lint passed. 150 tests passed; the material-verification test file could not start because esbuild worker creation was denied (`spawn EPERM`).
+- No cloud migration or frontend deployment performed.
 
 ## 2026-11-23 — Đồng bộ chuẩn vật tư với tồn kho bằng tỷ lệ chuyển đổi riêng (KH-01/KH-09/KH-10/KH-11)
 

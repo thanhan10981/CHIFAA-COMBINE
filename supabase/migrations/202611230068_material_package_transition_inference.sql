@@ -34,19 +34,19 @@ do $patch$
 declare definition text; old_fragment text; new_fragment text;
 begin
  select pg_get_functiondef('public.resolve_material(uuid,bigint,date,jsonb,uuid)'::regprocedure) into definition;
- old_fragment=$old$package_factor=private.material_package_conversion_factor(
-  m.usage_unit_id,usage,(p_input->>'package_unit_id')::uuid,
-  (p_input->>'package_content_unit_id')::uuid,(p_input->>'package_quantity')::numeric,
-  coalesce((p_input->>'package_verified')::boolean,false));$old$;
+ old_fragment='if[[:space:]]+stock_factor[[:space:]]+is[[:space:]]+null[[:space:]]+then';
  new_fragment=$new$package_factor=coalesce(
   private.material_package_transition_factor(p_material,m.usage_unit_id,usage,p_effective,
    (p_input->>'package_unit_id')::uuid,(p_input->>'package_content_unit_id')::uuid,
-   (p_input->>'package_quantity')::numeric,coalesce((p_input->>'package_verified')::boolean,false)),
-  private.material_package_conversion_factor(m.usage_unit_id,usage,(p_input->>'package_unit_id')::uuid,
-   (p_input->>'package_content_unit_id')::uuid,(p_input->>'package_quantity')::numeric,
-   coalesce((p_input->>'package_verified')::boolean,false)));$new$;
- if strpos(definition,old_fragment)=0 then raise exception 'MATERIAL_PACKAGE_TRANSITION_RESOLVE_PATCH_MISMATCH';end if;
- definition=replace(definition,old_fragment,new_fragment);
+   (p_input->>'package_quantity')::numeric,coalesce((p_input->>'package_verified')::boolean,false)),package_factor);
+ if stock_factor is null then$new$;
+ if definition!~*old_fragment then
+  if position('stock_conversion_from_unit_id' in definition)=0 then
+   raise exception 'MATERIAL_STOCK_UNIT_TRANSITION_MIGRATION_REQUIRED';
+  end if;
+  raise exception 'MATERIAL_PACKAGE_TRANSITION_RESOLVE_PATCH_MISMATCH';
+ end if;
+ definition=regexp_replace(definition,old_fragment,new_fragment,'i');
  execute definition;
 end
 $patch$;

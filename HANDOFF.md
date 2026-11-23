@@ -1,9 +1,10 @@
-# 2026-11-23 ? T? n?i quy c?ch bao b? c?/m?i khi ??i ??n v? kho (KH-01/KH-09/KH-10/KH-11)
+# 2026-11-23 - Verified package ratios derive stock-unit transitions (KH-01/KH-09/KH-10/KH-11)
+- Follow-up for SQL Editor run failure: replaced the brittle exact resolver-fragment match with a whitespace/case-tolerant marker; if migration 067 is missing, migration 068 now reports `MATERIAL_STOCK_UNIT_TRANSITION_MIGRATION_REQUIRED`. Full migrations through 068 re-applied successfully on PGlite after this change.
 
-- Migration `202611230068_material_package_transition_inference.sql` b? sung ph?p t?nh t? quy c?ch c? ?? x?c minh sang quy c?ch m?i v?a x?c minh, n?u ??n v? b?n trong t??ng th?ch v?t l?. V? d? 1 t?i = 200 c?i v? 1 b? = 200 c?i ???c t?nh th?nh 1 t?i = 1 b?; kh?ng y?u c?u x?c nh?n/nh?p l?i quy c?ch c?. Kh?c s? l??ng th? t? l? ???c t?nh theo hai quy c?ch. Kh?ng suy ?o?n n?u thi?u x?c minh c?/m?i, kh?ng ??i kh?i l??ng ? th? t?ch.
-- Hai form danh m?c v? x?c minh cho ph?p b? tr?ng t? l? chuy?n ri?ng n?u quy c?ch ?? ?? m?y ch? t?nh; n?i dung h??ng d?n gi?i th?ch r? c?ch t?nh v? gi? l?a ch?n nh?p tay khi thi?u d? li?u.
-- B?ng ch?ng: migration to?n b? ?p d?ng tr?n PGlite; k?ch b?n l?u danh m?c 200 c?i c? ? 200 c?i m?i kh?ng g?i `stock_conversion_factor`, l?u c?nh 1:1 ??ng. `npm run typecheck`, `npm run lint`, `git diff --check` ??t. `npm test`: 150/150 test ch?y th?nh c?ng ngo?i file `material-verification.test.ts`, file ?? b? `spawn EPERM` b?i esbuild worker; c?ng lu?ng ???c x?c minh b?ng PGlite ch?y tr?c ti?p.
-- Ch?a ?p SQL cloud ho?c deploy. Ph?t h?nh migration 068 sau 067 v? frontend t??ng th?ch c?ng l??t; sau ?? UAT b?ng t?i kho?n th?t.
+- Migration `202611230068_material_package_transition_inference.sql` derives the old-to-new stock factor from the old verified package ratio and the newly verified package ratio when their inner units are physically compatible. Example: old package = 200 pieces and new package = 200 pieces gives a 1:1 transition. The old ratio is reused; the UI does not ask to re-enter it. Different counts produce the calculated factor. Missing verification and incompatible dimensions are rejected.
+- Catalog and verification forms allow the separate stock factor to be omitted when the database can derive it, while retaining manual entry if the historical package proof is unavailable.
+- Validation: full migration chain applied in PGlite; the `save_material_table` 200-to-200 package transition saved a 1:1 edge without an explicit stock factor. Typecheck and lint passed. The full test command reported 150 passing tests; `material-verification.test.ts` could not start because the environment denied the esbuild worker (`spawn EPERM`).
+- Supabase SQL and frontend have not been applied/deployed.
 
 # 2026-11-23 — Đổi chuẩn tồn kho đồng bộ danh mục và các kho (KH-01/KH-09/KH-10/KH-11)
 
