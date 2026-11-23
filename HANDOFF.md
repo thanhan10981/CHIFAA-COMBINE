@@ -934,3 +934,13 @@ GitHub Actions run `45043505733` thất bại duy nhất ở `npm test`: test đ
 - Giao ho?n t?t t?o ch?ng t? b?n h?ng li?n k?t v?i delivery v? kho?n ph?i thu t? snapshot gi?/chi?t kh?u, kh?a giao h?ng ch?ng tr?ng; th?c thu v?n b?ng ch?ng t? thu ri?ng. C?c quy?n sales/receivables c?n c? m?i b?t thao t?c giao.
 - `npm run verify` ??t: sinh ki?u t? 97 b?ng/84 RPC, typecheck, lint, 152/152 test v? production build. `npm --prefix web run test:orders` ??t fixture responsive viewport 390px, kh?ng tr?n; ch? d?ng ph?n h?i fixture. CSDL d?ng c?c b? t? migrations; kh?ng ?p SQL Supabase/cloud, kh?ng deploy.
 - C?n l?i: lu?ng h?ng h?y/h? tr? v? nh?n h?ng v?t l? v?o kiosk, gi? nh?n l?i v? c?n tr? n? ??n c? ch?a ???c n?i v? D04/D16 c?n ch?t. Hi?n summary hi?n th? ch?a ghi nh?n khi thi?u ch?ng t?, return support hi?n h?u kh?ng nh?p kho/kh?ng ghi thu chi/b? tr?.
+
+
+## 23/11/2026 — Chốt giao đơn, trả/hủy và giá vốn kiosk (KH-12/01/03/04/05/10)
+
+- Giao hoàn tất tạo chứng từ bán gắn với đơn/delivery, kiểm tra đủ thành phẩm và ghi giảm tồn một lần. Nguyên liệu tiếp tục bị trừ tại bước sản xuất; giao hàng không xuất nguyên liệu lần hai. Khi chốt giao chọn tiền mặt, chuyển khoản theo khoản thu thật hoặc để công nợ; khoản hàng trả trước đó tự cấn vào lần giao kế tiếp cùng điểm bán.
+- Trả hàng có nhập số lượng, giá mua lại hoặc chiết khấu, ngày và kho kiosk đã nhận thực tế. Giá mua lại được lưu làm giá vốn của lô để kiosk hiển thị doanh thu, giá vốn, lãi gộp và giá trị tồn đã định giá. Lô lịch sử thiếu giá vốn vẫn để chưa xác định. Hủy tại điểm bán không nhập kho, giảm công nợ/doanh thu ngày ghi nhận và hiện riêng là hủy/lỗ; không cấn đơn sau. Các chỉnh sửa giữ chứng từ gốc và thêm dòng điều chỉnh/audit.
+- Bảng tổng hợp đơn có mã/điểm bán và điện thoại/ngày giao/tổng số lượng/chiết khấu/chi tiết/trừ tiền đơn cũ/hủy-lỗ/thanh toán/hình thức thu/ghi chú; có ma trận số lượng theo điểm bán, tải Excel hai sheet có logo, in ngang. Có cảnh báo nhu cầu nguyên liệu dự kiến từ BOM và tồn; không tự ghi phiếu xuất hay thay thế bước sản xuất.
+- Chỉnh kiểm tra giao diện đơn để kiểm tra luồng chốt công nợ, nhận hàng trả với giá nhập, popup tổng hợp/Excel/in và responsive 390px.
+- Bằng chứng local: `npm run verify` đạt (DB types 99 bảng/87 RPC, TypeScript, lint, 153/153 test, production build); `npm run test:orders` đạt trên fixture (`cloudAuthTested=false`); `git diff --check` đạt.
+- Còn lại: migration `202611230061_order_settlement_returns.sql` chưa áp lên Supabase DEV/production và chưa UAT với quyền/tài khoản/chứng từ thật. Kiosk gross profit hiện tính theo giá mua lại nhập cho từng lô; đây không phải lợi nhuận ròng toàn phần vì chi phí sản xuất/vận hành vẫn ở báo cáo riêng. Không áp SQL cloud, deploy hay sửa workbook/dữ liệu gốc.

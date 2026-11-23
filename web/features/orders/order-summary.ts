@@ -1,5 +1,5 @@
 export type SummaryItem={product_id:string;code:string;name:string;quantity:string;unit:string;price_vnd:string;discount_rate:string;line_total_vnd:string};
-export type SummaryOrder={id:string;code:string;store_id:string|null;store_code:string|null;store_name:string|null;store_phone:string|null;customer_name:string|null;customer_phone:string|null;delivery_date:string;shift:string;status:string;note:string|null;total_quantity:string;discount_rate:string;discount_vnd:string;order_total_vnd:string;old_deduction_vnd:string|null;cash_received_vnd:string|null;bank_received_vnd:string|null;payment_method:string|null;outstanding_vnd:string|null;items:SummaryItem[]};
+export type SummaryOrder={id:string;code:string;store_id:string|null;store_code:string|null;store_name:string|null;store_phone:string|null;customer_name:string|null;customer_phone:string|null;delivery_date:string;shift:string;status:string;note:string|null;total_quantity:string;discount_rate:string;discount_vnd:string;order_total_vnd:string;old_deduction_vnd:string|null;cancelled_loss_vnd:string;cash_received_vnd:string|null;bank_received_vnd:string|null;payment_method:string|null;outstanding_vnd:string|null;items:SummaryItem[]};
 export type SummaryStore={id:string;code:string;name:string;phone:string|null};
 export type SummaryProduct={product_id:string;code:string;name:string;unit:string;total_quantity:string;by_store:Record<string,string>};
 export type OrderSummaryData={date:string;orders:SummaryOrder[];stores:SummaryStore[];products:SummaryProduct[];planned_quantity_total:string};
@@ -20,19 +20,19 @@ export async function createOrderSummaryWorkbook(data:OrderSummaryData){
  const ExcelJS=(await import('exceljs')).default;
  const workbook=new ExcelJS.Workbook();workbook.creator='CHIFAA COMBINE';workbook.subject='Bảng tổng hợp khách đặt hàng';workbook.created=new Date();
  const sheet=workbook.addWorksheet('Tổng hợp đơn',{views:[{state:'frozen',ySplit:3,showGridLines:false}]});
- sheet.columns=[{width:14},{width:28},{width:14},{width:15},{width:14},{width:52},{width:19},{width:22},{width:24},{width:36}];
- sheet.mergeCells('B1:J1');sheet.getCell('B1').value=`BẢNG TỔNG HỢP KHÁCH ĐẶT HÀNG · ${data.date}`;sheet.getCell('B1').font={bold:true,size:16,color:{argb:'FF173349'}};sheet.getCell('B1').alignment={vertical:'middle',horizontal:'center'};sheet.getRow(1).height=48;
- sheet.mergeCells('A2:J2');sheet.getCell('A2').value='Nguồn: đơn đã ghi trong CHIFAA · Số tiền chỉ phản ánh chứng từ/đối soát đã có';sheet.getCell('A2').font={italic:true,color:{argb:'FF66798A'}};sheet.getCell('A2').alignment={vertical:'middle'};
+ sheet.columns=[{width:14},{width:28},{width:14},{width:15},{width:14},{width:52},{width:19},{width:16},{width:22},{width:24},{width:36}];
+ sheet.mergeCells('B1:K1');sheet.getCell('B1').value=`BẢNG TỔNG HỢP KHÁCH ĐẶT HÀNG · ${data.date}`;sheet.getCell('B1').font={bold:true,size:16,color:{argb:'FF173349'}};sheet.getCell('B1').alignment={vertical:'middle',horizontal:'center'};sheet.getRow(1).height=48;
+ sheet.mergeCells('A2:K2');sheet.getCell('A2').value='Nguồn: đơn đã ghi trong CHIFAA · Số tiền chỉ phản ánh chứng từ/đối soát đã có';sheet.getCell('A2').font={italic:true,color:{argb:'FF66798A'}};sheet.getCell('A2').alignment={vertical:'middle'};
  await addLogo(workbook,sheet);
- sheet.addRow(['Mã','Điểm bán · điện thoại','Ngày giao','Tổng số lượng','Mức chiết khấu','Chi tiết món','Trừ tiền đơn cũ','Tổng thanh toán','CK hoặc tiền mặt','Ghi chú']);styleHeader(sheet.getRow(3));
+ sheet.addRow(['Mã','Điểm bán · điện thoại','Ngày giao','Tổng số lượng','Mức chiết khấu','Chi tiết món','Trừ tiền đơn cũ','Hủy / lỗ','Tổng thanh toán','CK hoặc tiền mặt','Ghi chú']);styleHeader(sheet.getRow(3));
  for(const order of data.orders){
   const detail=order.items.map(item=>`${item.name} (${item.code}) · ${item.quantity} ${item.unit}`).join('\n');
   const payment=order.payment_method?`${order.payment_method}\nTM: ${order.cash_received_vnd?Number(order.cash_received_vnd).toLocaleString('vi-VN'):'0'} đ · CK: ${order.bank_received_vnd?Number(order.bank_received_vnd).toLocaleString('vi-VN'):'0'} đ`:'Chưa ghi nhận';
-  const row=sheet.addRow([order.code,`${order.store_name??order.customer_name??'Chưa gán điểm bán'}${order.store_code?` (${order.store_code})`:''}\n${order.store_phone??order.customer_phone??''}`,order.delivery_date,excelNumber(order.total_quantity),Number(order.discount_rate),detail,order.old_deduction_vnd===null?'Chưa ghi nhận':Number(order.old_deduction_vnd),Number(order.order_total_vnd),payment,order.note??'']);
+  const row=sheet.addRow([order.code,`${order.store_name??order.customer_name??'Chưa gán điểm bán'}${order.store_code?` (${order.store_code})`:''}\n${order.store_phone??order.customer_phone??''}`,order.delivery_date,excelNumber(order.total_quantity),Number(order.discount_rate),detail,order.old_deduction_vnd===null?'Chưa ghi nhận':Number(order.old_deduction_vnd),Number(order.cancelled_loss_vnd??'0'),Number(order.order_total_vnd),payment,order.note??'']);
   row.height=Math.max(34,Math.min(72,20+order.items.length*14));row.eachCell(cell=>cell.alignment={vertical:'middle',wrapText:true});
-  row.getCell(4).numFmt='#,##0.##';row.getCell(5).numFmt='0.00%';for(const column of [7,8])row.getCell(column).numFmt='#,##0 "đ"';
+  row.getCell(4).numFmt='#,##0.##';row.getCell(5).numFmt='0.00%';for(const column of [7,8,9])row.getCell(column).numFmt='#,##0 "đ"';
  }
- sheet.autoFilter={from:'A3',to:`J${Math.max(3,data.orders.length+3)}`};sheet.pageSetup={orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0,paperSize:9};sheet.pageSetup.printTitlesRow='1:3';
+ sheet.autoFilter={from:'A3',to:`K${Math.max(3,data.orders.length+3)}`};sheet.pageSetup={orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0,paperSize:9};sheet.pageSetup.printTitlesRow='1:3';
  const matrix=workbook.addWorksheet('Sản lượng theo điểm',{views:[{state:'frozen',ySplit:1,showGridLines:false}]});
  matrix.columns=[{width:20},{width:38},...data.stores.map(()=>({width:18})),{width:18}];
  matrix.addRow(['Mã món','Tên món',...data.stores.map(store=>`${store.name} (${store.code})`),'Tổng SL']);styleHeader(matrix.getRow(1));

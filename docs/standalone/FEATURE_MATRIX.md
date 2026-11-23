@@ -10,7 +10,7 @@ Cơ sở giá migration024: tách price/purchase/usage/package, Admin xác minh 
 
 Cập nhật danh mục vật tư: migration023, 51 tests, 78 bảng/28 RPC. Bảng và hộp thoại vật tư, chỉ số, giá theo ngày, quy đổi theo vật tư và kiểm kê thật đã nối RPC. Đã chuẩn bị SQL 63 mã theo nguồn người dùng, kiểm thử nâng cấp từ020 và nhập/replay bằng PostgreSQL cục bộ; **chưa chạy patch023 hoặc nhập63 trên cloud**. Các hạn chế nghiệp vụ còn lại trong bảng vẫn áp dụng.
 
-Cập nhật chuyển dự án cũ: [LEGACY_PARITY.md](LEGACY_PARITY.md). Menu runtime 7 nhóm/37 mục; Ki-ốt có UI/RPC thật, thêm nhật ký và cấu hình quỹ. Migrations 021/022 gồm Ki-ốt và sửa các lỗi audit, **chưa được công cụ áp lên cloud**. Bộ kiểm tra hiện có 47 tests; kiểm tra layout 41 route và 6 màn mobile trên fixture.
+Cập nhật chuyển dự án cũ: [LEGACY_PARITY.md](LEGACY_PARITY.md). Menu runtime 7 nhóm/37 mục. Tình trạng hiện tại gồm 99 bảng/87 RPC; kiểm thử dự án local có 153 test. Các mục dưới đây được cập nhật theo checkpoint 23/11/2026; migration nghiệp vụ vẫn **chưa được áp lên Supabase cloud**.
 
 Kiểm tra mới: [Báo cáo 17/11/2026](SYSTEM_AUDIT_2026-11-17.md). 37 tests hiện có đạt, nhưng kiểm tra bổ sung xác nhận lỗi null/version và gắn đơn vượt kế hoạch; chưa đủ điều kiện nghiệm thu.
 
@@ -26,10 +26,10 @@ Chưa có nhóm nghiệp vụ nào được nghiệm thu đầy đủ trên Supa
 | Sản xuất | RPC chính + thêm, ràng buộc lỗi, snapshot/xuất kho atomic; UI ghi một món | Plan editor, nhiều dòng, bổ sung/điều chỉnh/đảo và kho thành phẩm |
 | Kho | Sổ chuyển động, tồn, nhập/xuất UI; kiểm kê UI 50 dòng/trang + snapshot/version, adjustment atomic, khóa kỳ | Browser/cloud UAT, chuyển/đảo phiếu, phân trang màn hình tồn chung và định giá |
 | Portal | Giá riêng, submit/idempotency/capacity/cutoff/rate, 50 đơn gần nhất, trạng thái/realtime source | Hosted test, lịch sử đầy đủ, cancel/OTP và quản trị giá |
-| Duyệt đơn | UI/RPC/version/audit, link kế hoạch có sẵn không cộng trùng | Scheduling UI, tạo/merge kế hoạch |
-| Giao/thu hồi nguồn | Schema chuẩn hóa | Posting/UI đầy đủ cho giao hàng và doanh thu có thu hồi; chính sách chưa chốt |
-| Ki-ốt | 021: duyệt/thực nhận/từ chối/bán/hoàn tác, giới hạn tồn, tiền/quỹ/công nợ atomic, nguồn/version/period guards và UI; giá vốn chưa xác định giữ null | Cài 021/022 và UAT cloud; UI nguồn doanh thu; định giá theo lô/hạn dùng |
-| Doanh thu | Schema, truy vấn chứng từ posted, dữ liệu thiếu trả null | Sales posting, adjustments/reversals/UI; chưa ghi sổ theo giả định |
+| Duyệt đơn | UI/RPC/version/audit; bảng tổng hợp theo điểm bán; xem chi tiết; Excel/in có logo; đơn portal có ảnh/giỏ; dự báo nguyên liệu từ BOM và tồn | UAT cloud cho quyền, link portal, ảnh storage và đơn thật |
+| Giao/thu hồi nguồn | Migration 061: giao tạo chứng từ bán và giảm thành phẩm đúng một lần; ghi tiền thu hoặc công nợ; trả thực nhận vào kiosk và tự cấn đơn kế tiếp; hủy giảm doanh thu/phải thu, ghi lỗ riêng; nguyên liệu không trừ lần hai | Áp migration lên DEV theo quy trình và đối soát dữ liệu mẫu được phép; UAT quyền/chứng từ trên Supabase thật |
+| Ki-ốt | Duyệt/thực nhận/từ chối/bán/hoàn tác, giới hạn tồn, tiền/quỹ/công nợ atomic; hàng trả từ đơn vào lô kiosk; giá mua lại làm giá vốn và báo cáo lãi gộp; giá lô cũ thiếu chứng từ vẫn null | UAT cloud; đối soát giá mua lại và từng lô thực nhận |
+| Doanh thu | Sales posting theo giao/kiosk; trả và hủy có bút toán giảm doanh thu có ngày, điểm bán, món; summary/dashboard cập nhật theo điều chỉnh; lãi gộp kiosk tách chi phí khác | Không gộp chi phí sản xuất/nhân sự thành lợi nhuận ròng khi chưa có quy tắc phân bổ; UAT cloud |
 | Thu nợ/quỹ | Receipt → allocation + cash atomic, chặn trả dư, không tăng doanh thu; SQL tests | UI, số đầu kỳ và hoàn tác |
 | Vay/chi phí | Lãi nhập tay, chặn trả gốc dư, expense + cash RPC; SQL tests | UI, giải ngân và kiểm soát số dư |
 | Nhân sự | Ca đêm 8/9/10 giờ, overlap guard, snapshot; lương tách RLS riêng | UI, chế độ nhập liệu, allowance policy và payroll posting/cash |

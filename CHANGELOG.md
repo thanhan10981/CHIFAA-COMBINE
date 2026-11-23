@@ -622,3 +622,11 @@ Bỏ phụ thuộc vào việc liệt kê Supabase Auth khi mở trang Tài kho�
 - Th?m ?nh m?n v?o danh m?c v? c?ng ??t h?ng; th?m d? b?o nhu c?u nguy?n li?u t? ??n ?? duy?t/?ang giao c?ng c?nh b?o t?n.
 - Giao th?nh c?ng ghi m?t ch?ng t? b?n h?ng v? kho?n ph?i thu; kh?ng t? ??nh d?u ti?n ?? thu. Nguy?n li?u kh?ng b? tr? l?n hai khi giao.
 - H?ng h?y, h? tr?, h?ng nh?n l?i v?o kiosk v? b? tr? kho?n n? c? v?n ch? ch?t D04/D16; ch?a t? s?a t?n/ti?n cho c?c t?nh hu?ng ??. Migrations ch?a ?p cloud/deploy.
+
+
+## 2026-11-23 — Chốt giao, cấn trả hàng và ghi nhận hủy/lỗ (KH-12/01/03/04/05/10)
+
+- Giao đơn kiểm tra đủ thành phẩm, ghi chứng từ bán + công nợ; chọn thu tiền mặt/chuyển khoản theo khoản thực nhận hoặc để công nợ. Nguyên liệu chỉ trừ ở sản xuất.
+- Hàng trả đã nhận được vào kho kiosk, lưu giá mua lại/chiết khấu làm giá vốn và tự cấn đơn kế tiếp cùng điểm bán. Hàng hủy giảm doanh thu/công nợ, được thể hiện thành khoản lỗ riêng và không nhập tồn/cấn đơn sau.
+- Bảng tổng hợp đơn có chi tiết món, ma trận theo điểm bán, Excel hai sheet có logo và bản in ngang; kèm dự báo nhu cầu nguyên liệu từ đơn đã duyệt, BOM và tồn. Báo cáo kiosk có doanh thu, giá vốn và lãi gộp; thiếu giá vốn cũ tiếp tục để trống.
+- Local verification: `npm run verify` (153/153 tests, DB types 99 tables/87 RPCs, TypeScript, lint, production build), `npm run test:orders` (fixture responsive UI), `git diff --check` passed. Supabase migration and live UAT are not run.
