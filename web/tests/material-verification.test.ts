@@ -132,6 +132,45 @@ test('Admin verification defaults a missing price basis to the selected purchase
   assert.equal(saved.basis_unit_id,purchase);assert.equal(saved.amount,'12000.000000');
  }finally{await db.close();}
 });
+test('formula-only unit conversion lets recipes use pieces while inventory stays in bags',async()=>{
+ const db=await setup();try{
+  const bag=(await db.query<{id:string}>("insert into material_units(code,name,dimension) values('TEST-BAG','Bì','package') returning id")).rows[0].id;
+  const piece=(await db.query<{id:string}>("insert into material_units(code,name,dimension) values('TEST-PIECE','Cái','count') returning id")).rows[0].id;
+  const material=(await db.query<{id:string;version:string}>("insert into materials(code,name,purchase_unit_id,usage_unit_id) values('TEST-FORMULA-BAG','Đũa kiểm thử', $1,$1) returning id,version",[bag])).rows[0];
+
+  await asUser(db,identities.admin,()=>db.query('select resolve_material($1,$2,$3,$4::jsonb,$5)',[
+   material.id,material.version,'2026-11-18',JSON.stringify({purchase_unit_id:bag,usage_unit_id:bag,basis_unit_id:bag,amount:'12000',verification:'verified',package_unit_id:null,package_content_unit_id:null,package_quantity:null,package_verified:false,formula_unit_id:piece,formula_quantity:'100',issue:''}),crypto.randomUUID()
+  ]));
+
+  const materialUnits=await asUser(db,identities.admin,()=>db.query<{rows:{id:string;usage_unit_id:string;formula_unit_id:string;formula_quantity:string;formula_verified:boolean}[]}>('select recipe_material_units($1) rows',['2026-11-18']));
+  const available=materialUnits.rows[0].rows.find(row=>row.id===material.id);
+  assert.equal(available?.usage_unit_id,bag);assert.equal(available?.formula_unit_id,piece);assert.equal(available?.formula_quantity,'100.000000000');assert.equal(available?.formula_verified,true);
+  const current=(await db.query<{version:string}>('select version from materials where id=$1',[material.id])).rows[0];
+  await asUser(db,identities.admin,()=>db.query('select save_material_table($1,$2,$3,$4)',[material.id,current.version,{code:'TEST-FORMULA-BAG',name:'Đũa kiểm thử đã cập nhật',category:'ingredient',purchase_unit_id:bag,basis_unit_id:bag,price_amount:'12000',minimum_quantity:null,specification:'1 bì = 100 cái'},crypto.randomUUID()]));
+  const retained=(await db.query<{formula_unit_id:string;formula_quantity:string;formula_verified:boolean}>('select formula_unit_id,formula_quantity::text,formula_verified from material_resolutions where material_id=$1 order by effective_from desc,revision desc limit 1',[material.id])).rows[0];
+  assert.equal(retained.formula_unit_id,piece);assert.equal(retained.formula_quantity,'100.000000000');assert.equal(retained.formula_verified,true);
+  assert.equal(Number((await db.query<{quantity:string}>('select private.recipe_convert_quantity_at($1,$2,$3,100,$4)::text quantity',[material.id,piece,bag,'2026-11-18'])).rows[0].quantity),1);
+  assert.equal(Number((await db.query<{quantity:string}>('select private.recipe_convert_quantity_at($1,$2,$3,1,$4)::text quantity',[material.id,bag,piece,'2026-11-18'])).rows[0].quantity),100);
+  await assert.rejects(()=>db.query('select private.convert_quantity_at($1,$2,$3,1,$4)',[material.id,bag,piece,'2026-11-18']),/UNIT_NEEDS_VERIFICATION/);
+
+  const recipe=await asUser(db,identities.admin,()=>db.query<{result:{recipe_id:string;version_id:string}}>("select save_recipe_revision(null,null,$1::jsonb,$2::jsonb,'',$3) result",[
+   JSON.stringify({code:'TEST-BAG-FORMULA',name:'Công thức dùng đũa',kind:'product',effective_from:'2026-11-18',output_quantity:'100',output_unit_id:piece}),
+   JSON.stringify([{material_id:material.id,child_version_id:null,quantity:'100',unit_id:piece,cost_exempt:false}]),crypto.randomUUID()
+  ]));
+  const version=recipe.rows[0].result.version_id;
+  const cost=await asUser(db,identities.admin,()=>db.query<{cost:{complete:boolean;total_vnd:string;lines:{quantity:string;unit:string;unit_cost_vnd:string;line_cost_vnd:string}[]}}>('select recipe_cost($1,100,$2) cost',[version,'2026-11-18']));
+  assert.equal(cost.rows[0].cost.complete,true);assert.equal(cost.rows[0].cost.total_vnd,'12000');
+  assert.equal(Number(cost.rows[0].cost.lines[0].quantity),1);assert.equal(cost.rows[0].cost.lines[0].unit,'TEST-BAG');
+  const detail=await asUser(db,identities.admin,()=>db.query<{value:{lines:{quantity:string;unit:string;converted:string;stock_unit:string;unit_cost_vnd:string;line_cost_vnd:string}[]}}>('select recipe_detail($1,$2) value',[version,'2026-11-18']));
+  assert.equal(detail.rows[0].value.lines[0].quantity,'100.000000');assert.equal(detail.rows[0].value.lines[0].unit,'TEST-PIECE');
+  assert.equal(Number(detail.rows[0].value.lines[0].converted),1);assert.equal(detail.rows[0].value.lines[0].stock_unit,'TEST-BAG');
+  assert.equal(Number(detail.rows[0].value.lines[0].unit_cost_vnd),120);assert.equal(detail.rows[0].value.lines[0].line_cost_vnd,'12000');
+
+  const warehouse=(await db.query<{id:string}>("insert into warehouses(code,name,kind) values('TEST-FORMULA-W','Formula stock test','ingredient') returning id")).rows[0].id;
+  await asUser(db,identities.admin,()=>db.query('select post_inventory($1,$2,$3,$4::jsonb,$5,$6)',[warehouse,'2026-11-18','receipt',JSON.stringify([{material_id:material.id,unit_id:bag,quantity:'2',unit_cost:'12000'}]),'Bag-only stock test',crypto.randomUUID()]));
+  assert.equal((await db.query<{quantity:string}>('select private.inventory_quantity($1,$2,$3,$4)::text quantity',[warehouse,'2026-11-18',material.id,bag])).rows[0].quantity,'2.000000');
+ }finally{await db.close();}
+});
 test('reconciliation preserves posted ledger costs and receipts keep their entered price separate from catalog prices',async()=>{
  const db=await database();try{
   await db.exec(buildMaterialImport(originals,'a'.repeat(64),day));
