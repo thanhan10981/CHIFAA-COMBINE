@@ -27,13 +27,21 @@ export async function checkCommercial(page,base,out,report){
     await close();
    }
    const captions=kind==='stores'?['Giá riêng','Chiết khấu']:kind==='products'?['Giá bán']:kind==='employees'?['Lương giờ']:['Chi tiết / lịch sử'];
-   if(kind==='products'&&await page.getByRole('button',{name:'Công thức',exact:true}).count())throw new Error('Redundant product recipe action is still rendered');
+   if(kind==='products'){
+    await page.getByRole('button',{name:'Liên kết công thức',exact:true}).first().click();await page.getByRole('dialog').locator('select').first().waitFor();await dialog('product recipe link '+width);await close();
+   }
    for(const caption of captions){
-    await page.getByRole('button',{name:caption,exact:true}).first().click();await page.getByText('Nguồn kiểm thử tổng hợp',{exact:true}).waitFor();await dialog(kind+' history');
+    await page.getByRole('button',{name:caption,exact:true}).first().click();
+    if(caption==='Giá bán'){
+     await page.getByRole('button',{name:'Lưu phiên bản mới',exact:true}).waitFor();await dialog(kind+' '+caption);
+     if(await page.getByLabel('Nguồn / lý do *',{exact:true}).count())throw new Error('Price form still asks for a source/reason');
+     if(await page.getByLabel('Giá bán (đ) *',{exact:true}).inputValue()!=='15.000')throw new Error('VND input not formatted');
+     await close();continue;
+    }
+    await page.getByText('Nguồn kiểm thử tổng hợp',{exact:true}).waitFor();await dialog(kind+' history');
     if(kind==='employees'&&!await page.getByText('KHO-01 · Kho nguyên liệu · 25.000 đ/giờ',{exact:true}).count())throw new Error('Pay history does not show the linked department code and name');
     await page.getByRole('button',{name:'Thêm phiên bản',exact:true}).click();await page.getByRole('button',{name:'Lưu phiên bản mới',exact:true}).waitFor();await dialog(kind+' '+caption);
     if(kind==='employees'){const payDepartments=await page.locator('select[aria-label="Bộ phận áp dụng mức lương"] option').allTextContents();if(!payDepartments.some(label=>label.includes('KHO-01 · Kho nguyên liệu')))throw new Error('Custom department option is missing from pay form: '+JSON.stringify(payDepartments));}
-    if(caption==='Giá bán'&&await page.getByLabel('Giá bán (đ) *',{exact:true}).inputValue()!=='15.000')throw new Error('VND input not formatted');
     if(caption==='Chiết khấu'||kind==='discounts'){
      const excluded=page.getByRole('checkbox',{name:'SYN-W · Món nguyên cây kiểm thử',exact:true});if(await excluded.isChecked())throw new Error('Excluded product was ticked');
      await page.getByRole('button',{name:'Chọn tất cả',exact:true}).click();if(!await excluded.isChecked())throw new Error('Select all failed');
@@ -48,8 +56,8 @@ export async function checkCommercial(page,base,out,report){
  if(await page.getByRole('button',{name:'Lương giờ',exact:true}).count()||await page.getByRole('button',{name:'Sửa',exact:true}).count()||await page.getByText('25.000 đ',{exact:true}).count())throw new Error('Unauthorized payroll/action rendered');
  const requests=[];
  await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/save_commercial_terms',async route=>{requests.push(route.request().postDataJSON());await route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({code:'NETWORK',message:'Synthetic uncertain response'})});});
- await page.goto(base+'/app/products');await page.getByRole('button',{name:'Giá bán',exact:true}).click();await page.getByRole('button',{name:'Thêm phiên bản',exact:true}).click();await page.getByLabel('Nguồn / lý do *',{exact:true}).fill('Synthetic new quote');await page.getByRole('button',{name:'Lưu phiên bản mới',exact:true}).click();await page.getByRole('button',{name:'Kiểm tra lại lần lưu',exact:true}).waitFor();await page.getByRole('button',{name:'Kiểm tra lại lần lưu',exact:true}).click();await page.waitForFunction(()=>document.querySelectorAll('.chifaa-toast').length>0);
- if(requests.length!==2||requests[0].p_key!==requests[1].p_key||requests[0].p_input.amount!=='15000')throw new Error('Uncertain retry lost key or exact VND amount');
+ await page.goto(base+'/app/products');await page.getByRole('button',{name:'Giá bán',exact:true}).click();await page.getByLabel('Giá bán (đ) *',{exact:true}).fill('15.000');if(await page.getByLabel('Nguồn / lý do *',{exact:true}).count())throw new Error('Price form still asks for a source/reason');await page.getByRole('button',{name:'Lưu phiên bản mới',exact:true}).click();await page.getByRole('button',{name:'Kiểm tra lại lần lưu',exact:true}).waitFor();await page.getByRole('button',{name:'Kiểm tra lại lần lưu',exact:true}).click();await page.waitForFunction(()=>document.querySelectorAll('.chifaa-toast').length>0);
+ if(requests.length!==2||requests[0].p_key!==requests[1].p_key||requests[0].p_input.amount!=='15000'||requests[0].p_input.evidence!=='Cập nhật trong danh mục món bán')throw new Error('Price retry lost its idempotency key, audit context, or exact VND amount');
  await page.goto(base+'/app/departments');await page.getByRole('button',{name:'Thêm mới',exact:true}).click();const departmentDialog=page.getByRole('dialog'),departmentCode=departmentDialog.getByLabel('Mã bộ phận',{exact:true});await departmentDialog.waitFor();if(await departmentCode.evaluate(element=>element.tagName!=='INPUT'||element.type!=='text'))throw new Error('Department code is still a fixed-choice control');await departmentCode.fill('kho-02');if(await departmentCode.inputValue()!=='KHO-02')throw new Error('Department code is not normalized for the shared catalog');await departmentDialog.getByRole('button',{name:'Đóng',exact:true}).click();
- report.checks.push('4 commercial catalogues ×5 widths, typed department-code entry and uppercase normalization, dynamic department code/name in employee rows, employee and salary selectors and pay history, metadata/price/pay/store-price/discount dialogs, Vietnamese money, unknown department retained, discount checkboxes, removed redundant recipe action, hidden salary/actions and same-key uncertain retry; synthetic offline fixture');
+ report.checks.push('4 commercial catalogues ×5 widths, typed department-code entry and uppercase normalization, dynamic department code/name in employee rows, employee and salary selectors and pay history, direct price editor without history/reason, product recipe-link shortcut, metadata/pay/store-price/discount dialogs, Vietnamese money, unknown department retained, discount checkboxes, hidden salary/actions and same-key uncertain retry; synthetic offline fixture');
 }

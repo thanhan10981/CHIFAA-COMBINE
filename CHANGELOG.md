@@ -1,3 +1,19 @@
+## 2026-11-23 — Đưa ma trận khách đặt hàng lên đầu popup, Excel và bản in (KH-12/KH-01/KH-10)
+
+- Popup tổng hợp, sheet Excel đầu tiên và bản in dùng chung ma trận món theo điểm bán, hàng tổng số lượng và phần nhu cầu nguyên liệu phía dưới. Ngày hiển thị theo định dạng ngày/tháng/năm.
+- File Excel giữ tab phụ “Chi tiết đơn” để tra lại số liệu từng đơn. Danh sách duyệt đơn bên ngoài không đổi.
+- Giữ nguyên phạm vi nghiệp vụ từ RPC: ma trận tính đơn đã duyệt/lên kế hoạch/giao xong; nhu cầu nguyên liệu theo đơn đã duyệt/lên kế hoạch chưa gắn kế hoạch sản xuất. Đơn chờ duyệt không bị tính thành nhu cầu chuẩn bị.
+- Kiểm tra đạt: `npm run verify` (99 bảng/87 RPC, typecheck, lint, 158/158 tests, production build); `npm run test:orders` (fixture xác nhận popup/Excel/in, nguyên liệu, cột tổng trên desktop, cuộn ngang trên mobile và không tràn ở 320/390/1280px); `git diff --check`.
+- Không sửa schema, dữ liệu cloud hay triển khai frontend. Chưa UAT bằng tài khoản Supabase thật.
+
+## 2026-11-23 — Giá vốn danh mục món và hộp nhập giá bán (KH-01/KH-11/KH-10)
+
+- Thêm nút mở liên kết công thức ngay tại từng món; hộp chọn chỉ đưa ra công thức đã công bố có hiệu lực vào ngày xem, và giữ số lượng đầu ra đang liên kết khi mở lại.
+- Phân biệt món chưa liên kết công thức; với giá vốn chưa đầy đủ, gợi ý kiểm tra định mức, giá vật tư đã xác minh và quy đổi. Vẫn để trống giá vốn thiếu dữ liệu, không thay bằng 0.
+- Nút “Giá bán” mở thẳng hộp thêm phiên bản, bỏ lịch sử giá khỏi giao diện và bỏ ô nguồn/lý do. Backend vẫn lưu lịch sử bất biến và dấu ghi nhận trung tính “Cập nhật trong danh mục món bán”.
+- Xác minh local: `npm run verify` đạt (99 bảng/87 RPC, TypeScript, lint, 158/158 tests, build); `npm run test:commercial` đạt 20 màn hình ở 5 kích thước, gồm mở giá trực tiếp không lý do/lịch sử, mở liên kết công thức, gửi lại idempotent; `git diff --check` đạt.
+- Giới hạn: chưa truy cập dữ liệu Supabase đang chạy để tự liên kết công thức hoặc kiểm tra giá vốn thật của từng món; không áp SQL, sửa dữ liệu cloud hay deploy.
+
 ## 2026-11-23 — Hiển thị rõ nguyên nhân lỗi tải ảnh món (KH-12/KH-10)
 
 - Thay thông báo chung khi tải/lưu ảnh bằng hướng dẫn theo lỗi Supabase Storage: thiếu bucket `product-images`, bị policy/RLS hoặc thiếu quyền `products.edit`, lỗi mạng, giới hạn kích thước/định dạng, thiếu RPC `save_product_image`; lỗi khác hiển thị mã HTTP và thông điệp đã rút gọn.

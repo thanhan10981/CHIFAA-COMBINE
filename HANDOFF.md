@@ -977,3 +977,21 @@ GitHub Actions run `45043505733` thất bại duy nhất ở `npm test`: test đ
 - Bằng chứng local: `npm run verify` đạt (DB types 99 bảng/87 RPC, TypeScript, lint, 158/158 tests, production build). Không chạy UAT Supabase Storage.
 - Blocker: không có phiên Supabase trong môi trường hiện tại để đọc trạng thái project; chưa thể kết luận lỗi thật là thiếu migration 059 hay quyền Storage. Không áp SQL hoặc deploy.
 - Bước tiếp theo: chạy truy vấn chỉ đọc kiểm tra `products.image_path`, RPC `save_product_image`, bucket và các policy `product_images_*` trong SQL Editor của đúng project; nếu cấu trúc đã có thì thử lại trên frontend đã nhận bản sửa để xem thông báo cụ thể và kiểm tra `products.edit`.
+
+## 23/11/2026 — Giá vốn danh mục món và hộp nhập giá bán (KH-01/KH-11/KH-10)
+
+- Đã đối chiếu luồng tính giá vốn: RPC `commercial_catalog` tính từ công thức đang liên kết/có hiệu lực và BOM; chỉ trả số khi đủ giá nguyên liệu, đơn vị và quy đổi hợp lệ. Không sửa công thức tính tiền, không biến thiếu dữ liệu thành 0.
+- Bổ sung nút `Liên kết công thức`/`Công thức` ngay trong danh mục món, chọn công thức đã công bố và có hiệu lực đến ngày xem; tự điền lượng đầu ra hiện liên kết. Nhãn giá vốn thiếu dữ liệu giải thích các mục cần rà soát.
+- Nút `Giá bán` mở trực tiếp form thêm giá; bỏ lịch sử giá và ô `Nguồn / lý do` khỏi luồng giao diện này. RPC vẫn nhận dấu nội bộ trung tính `Cập nhật trong danh mục món bán`; không xóa lịch sử giá đã lưu/audit vì giá là phiên bản bất biến theo ngày hiệu lực.
+- Bằng chứng local: `npm run verify` đạt (99 bảng/87 RPC, TypeScript, lint, 158/158 tests, production build); `npm run test:commercial` đạt với fixture ở 320/390/768/1024/1440px cho bốn danh mục, gồm form giá không có history/reason và shortcut liên kết công thức; `git diff --check` đạt.
+- Còn lại: không có phiên Supabase để xác định món nào thiếu liên kết công thức hay dòng vật tư nào chưa xác minh. Người quản lý cần dùng nút `Liên kết công thức` và bổ sung/xác minh công thức, giá vật tư hoặc quy đổi còn thiếu; chưa sửa dữ liệu cloud, chạy SQL hay deploy frontend.
+
+## 23/11/2026 — Ma trận tổng hợp khách đặt hàng trong popup, Excel và bản in (KH-12/KH-01/KH-10)
+
+Popup tổng hợp đã đổi để ma trận theo món và điểm bán là nội dung chính, kèm hàng tổng số lượng. Phần nhu cầu nguyên liệu từ BOM và đối chiếu tồn nằm ngay dưới, hiện trong popup, Excel và bản in. Ngày báo cáo định dạng ngày/tháng/năm. Excel mở ở tab “Bảng tổng hợp”; tab “Chi tiết đơn” giữ các trường số tiền, cách thu và ghi chú. Bảng duyệt đơn ngoài popup giữ nguyên theo yêu cầu.
+
+Giữ bộ lọc hiện hành của nguồn: ma trận lấy đơn `approved/scheduled/fulfilled`; nhu cầu nguyên liệu lấy đơn `approved/scheduled` chưa gắn kế hoạch sản xuất. Đơn chờ duyệt vẫn hiện trong bảng duyệt nhưng không đi vào số lượng chuẩn bị hoặc nhu cầu vật tư, theo KH-01/KH-12. Không hardcode số trong workbook mẫu, không sửa nguồn workbook, schema hay dữ liệu cloud.
+
+Bằng chứng: `npm run verify` đạt (DB types 99 bảng/87 RPC, typecheck, lint, 158/158 tests, production build); test Excel kiểm tra tab/ma trận/tổng/nguyên liệu; `npm run test:orders` đạt với fixture và xác nhận nội dung in/popup, cột tổng hiện trên desktop, bảng cuộn ngang trên mobile, không tràn ở 320px/390px/1280px; `git diff --check` đạt. Fixture không đăng nhập hay kết nối Supabase cloud.
+
+Còn lại: chưa UAT dữ liệu thật hoặc triển khai frontend; không cần SQL migration cho thay đổi giao diện này.
