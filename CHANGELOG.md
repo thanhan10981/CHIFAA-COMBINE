@@ -643,3 +643,9 @@ Bỏ phụ thuộc vào việc liệt kê Supabase Auth khi mở trang Tài kho�
 - Hàng trả đã nhận được vào kho kiosk, lưu giá mua lại/chiết khấu làm giá vốn và tự cấn đơn kế tiếp cùng điểm bán. Hàng hủy giảm doanh thu/công nợ, được thể hiện thành khoản lỗ riêng và không nhập tồn/cấn đơn sau.
 - Bảng tổng hợp đơn có chi tiết món, ma trận theo điểm bán, Excel hai sheet có logo và bản in ngang; kèm dự báo nhu cầu nguyên liệu từ đơn đã duyệt, BOM và tồn. Báo cáo kiosk có doanh thu, giá vốn và lãi gộp; thiếu giá vốn cũ tiếp tục để trống.
 - Local verification: `npm run verify` (153/153 tests, DB types 99 tables/87 RPCs, TypeScript, lint, production build), `npm run test:orders` (fixture responsive UI), `git diff --check` passed. Supabase migration and live UAT are not run.
+
+## 2026-11-23 — Chỉnh giao diện popup bảng tổng hợp khách đặt hàng (KH-12/KH-10)
+
+- Làm popup rộng và gọn hơn trên desktop, sắp xếp lại bộ lọc ngày/Excel/in, thêm số đếm và chia nội dung thành các khối dễ đọc.
+- Rút ngắn trạng thái rỗng, báo cuộn ngang cho bảng nhiều cột, giữ popup gọn ở màn 320px/390px. Logo được giữ cho bản in và ẩn khỏi nội dung trên màn hình.
+- Chỉ đổi giao diện; dữ liệu và phép tính đơn hàng không đổi. `npm run verify` đạt (156/156 tests, typecheck, lint, build); `npm run test:orders` đạt tại 320px/390px/1280px và kiểm tra phần đầu trang khi in. Không áp SQL cloud hoặc deploy.

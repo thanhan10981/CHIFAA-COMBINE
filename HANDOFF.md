@@ -958,3 +958,10 @@ GitHub Actions run `45043505733` thất bại duy nhất ở `npm test`: test đ
 - Chỉnh kiểm tra giao diện đơn để kiểm tra luồng chốt công nợ, nhận hàng trả với giá nhập, popup tổng hợp/Excel/in và responsive 390px.
 - Bằng chứng local: `npm run verify` đạt (DB types 99 bảng/87 RPC, TypeScript, lint, 153/153 test, production build); `npm run test:orders` đạt trên fixture (`cloudAuthTested=false`); `git diff --check` đạt.
 - Còn lại: migration `202611230061_order_settlement_returns.sql` chưa áp lên Supabase DEV/production và chưa UAT với quyền/tài khoản/chứng từ thật. Kiosk gross profit hiện tính theo giá mua lại nhập cho từng lô; đây không phải lợi nhuận ròng toàn phần vì chi phí sản xuất/vận hành vẫn ở báo cáo riêng. Không áp SQL cloud, deploy hay sửa workbook/dữ liệu gốc.
+
+## 23/11/2026 — Chỉnh giao diện popup tổng hợp đơn đặt hàng (KH-12/KH-10; hiển thị KH-04/KH-05)
+
+- Thu gọn popup và tăng bề rộng desktop; gom ngày giao, Excel và in vào thanh công cụ; thêm số lượng đơn/món/điểm bán; chia bảng thành các khối rõ ràng, hướng dẫn cuộn ngang; ngày trống dùng trạng thái rỗng gọn. Logo chỉ hiện trên bản in. Bản mobile 320px/390px giữ trong màn hình.
+- Chỉ thay cách trình bày. Nguồn đơn, trạng thái, số tiền, khoản thu, cấn trừ, hàng hủy/trả và nhu cầu nguyên liệu không đổi; không sửa database.
+- Bằng chứng local: `npm run verify` đạt (99 bảng/87 RPC, TypeScript, lint, 156/156 tests, production build); `npm run test:orders` đạt với fixture tại 320px, 390px và 1280px, kiểm tra cuộn bảng và logo in; `git diff --check` đạt. Ảnh fixture nằm trong `output/design-parity/` (ignored).
+- Còn lại: chưa UAT bằng tài khoản/dữ liệu thật, chưa áp SQL cloud hoặc deploy. Các migration giao hàng/trả hàng ghi ở checkpoint trước vẫn chưa được áp vào Supabase.

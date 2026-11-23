@@ -49,7 +49,21 @@ export async function checkOrders(page,base,out,report){
  await page.getByRole('button',{name:'Xem bảng tổng hợp khách đặt hàng',exact:true}).click();
  await page.getByRole('heading',{name:'Bảng tổng hợp khách đặt hàng',exact:true}).waitFor();
  await page.getByRole('button',{name:'Xuất Excel',exact:true}).waitFor();await page.getByRole('button',{name:'In bảng',exact:true}).waitFor();
+ await page.locator('.order-summary-stats').waitFor();
+ const summaryCounts=await page.locator('.order-summary-stats').innerText();if(!summaryCounts.includes('2')||!summaryCounts.includes('1'))throw new Error('Order summary overview counts are missing: '+JSON.stringify(summaryCounts));
+ if(!(await page.getByText('Chưa có số lượng cần chuẩn bị',{exact:true}).isVisible()))throw new Error('Order summary empty state is not compactly displayed');
+ const summaryDesktop=await page.locator('.order-summary-dialog').evaluate(dialog=>{const r=dialog.getBoundingClientRect(),wrap=dialog.querySelector('.order-summary-orders-table')?.parentElement,logo=dialog.querySelector('.order-summary-print-header');return {left:r.left,right:r.right,width:r.width,viewport:innerWidth,tableScrolls:!!wrap&&wrap.scrollWidth>wrap.clientWidth,logoDisplay:logo?getComputedStyle(logo).display:'missing'};});
+ if(summaryDesktop.left<0||summaryDesktop.right>summaryDesktop.viewport||summaryDesktop.width<summaryDesktop.viewport*.85||!summaryDesktop.tableScrolls||summaryDesktop.logoDisplay!=='none')throw new Error('Order summary desktop width, bounds, table scrolling, or print-only logo is incorrect: '+JSON.stringify(summaryDesktop));
+ await page.screenshot({path:out+'/order-summary-desktop.png',animations:'disabled'});
+ await page.setViewportSize({width:390,height:844});
+ const summaryMobile=await page.locator('.order-summary-dialog').evaluate(dialog=>{const r=dialog.getBoundingClientRect(),wrap=dialog.querySelector('.order-summary-orders-table')?.parentElement;return {left:r.left,right:r.right,width:r.width,viewport:innerWidth,bodyWidth:document.documentElement.scrollWidth,tableScrolls:!!wrap&&wrap.scrollWidth>wrap.clientWidth};});
+ if(summaryMobile.left<0||summaryMobile.right>summaryMobile.viewport||summaryMobile.bodyWidth>summaryMobile.viewport+1||!summaryMobile.tableScrolls)throw new Error('Order summary mobile dialog or table overflows the viewport: '+JSON.stringify(summaryMobile));
+ await page.screenshot({path:out+'/order-summary-mobile.png',animations:'disabled'});
+ await page.setViewportSize({width:320,height:768});
+ const summaryNarrow=await page.locator('.order-summary-dialog').evaluate(dialog=>{const r=dialog.getBoundingClientRect(),actions=dialog.querySelector('.order-summary-actions');return {left:r.left,right:r.right,width:r.width,viewport:innerWidth,bodyWidth:document.documentElement.scrollWidth,actionsOverflow:!!actions&&actions.scrollWidth>actions.clientWidth+1};});
+ if(summaryNarrow.left<0||summaryNarrow.right>summaryNarrow.viewport||summaryNarrow.bodyWidth>summaryNarrow.viewport+1||summaryNarrow.actionsOverflow)throw new Error('Order summary narrow-mobile controls overflow the viewport: '+JSON.stringify(summaryNarrow));
+ await page.emulateMedia({media:'print'});const printLogo=await page.locator('.order-summary-print-header').evaluate(el=>getComputedStyle(el).display);if(printLogo==='none')throw new Error('Order summary print header is hidden in print media');await page.emulateMedia({media:'screen'});
  if(!summaryOpened)throw new Error('Order summary did not load the server-side aggregate');
- report.pages.push({route:'orders',width:390,orderId,deliverySettled:delivered,returnSubmitted:true,summaryOpened,overflow:false});
- report.checks.push('order details show finished stock, settlement records a receivable, return receipt captures kiosk, quantity and exact fractional discount, and aggregate exposes Excel/print controls; fixture-only network responses');
+ report.pages.push({route:'orders',width:390,orderId,deliverySettled:delivered,returnSubmitted:true,summaryOpened,summaryDesktop:summaryDesktop.width,desktopViewport:summaryDesktop.viewport,summaryMobile:summaryMobile.width,summaryNarrow:summaryNarrow.width,overflow:false});
+ report.checks.push('order details show finished stock, settlement records a receivable, return receipt captures kiosk, quantity and exact fractional discount, and aggregate has compact counts/empty state, bounded 320px/mobile/desktop layouts, scrollable wide table, print-only logo, Excel and print controls; fixture-only network responses');
 }
