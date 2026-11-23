@@ -28,7 +28,6 @@ export async function checkCommercial(page,base,out,report){
    }
    const captions=kind==='stores'?['Giá riêng','Chiết khấu']:kind==='products'?['Giá bán']:kind==='employees'?['Lương giờ']:['Chi tiết / lịch sử'];
    if(kind==='products'){
-    await page.getByRole('button',{name:'Liên kết công thức',exact:true}).first().click();await page.getByRole('dialog').locator('select').first().waitFor();await dialog('product recipe link '+width);await close();
    }
    for(const caption of captions){
     await page.getByRole('button',{name:caption,exact:true}).first().click();

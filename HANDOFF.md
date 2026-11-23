@@ -1065,3 +1065,12 @@ Còn lại: chưa UAT dữ liệu thật hoặc triển khai frontend; không c�
 - Tách lưới bốn cột cho dòng công thức và bố cục riêng ở màn hình hẹp; thêm kiểm tra hồi quy trên fixture trình duyệt để ô nhập rộng ít nhất 100px ở màn xác minh desktop.
 - Bằng chứng: `npm run typecheck`, `npm run lint`, `npm run build`, `npm test` (162/162), `node scripts/design-check.mjs --materials` (320/390/768/1024/1440/1920px) và `git diff --check` đạt. Fixture chỉ dùng dữ liệu tổng hợp, không ghi cloud.
 - Còn lại: chưa áp SQL hoặc deploy frontend; giao diện đang dùng cần nhận frontend deployment theo quy trình bình thường.
+
+
+## 2026-11-23 - Product catalog recipe cost auto-resolution (KH-01/KH-11/KH-10)
+
+- Product catalog cost now prefers an existing effective product-recipe link; if absent, it resolves the latest published/effective product recipe with an exact matching product code. The exact-code fallback is read-only and does not create links or rewrite production/history.
+- Removed the manual recipe-link action from the product catalog. Missing exact-code recipe remains "unlinked"; incomplete verified recipe/material pricing remains "incomplete".
+- Added migration 202611230069 and a regression case covering automatic same-code matching with no link row, dated material cost, and existing unlinked behavior.
+- Evidence: commercial-catalogs tests pass 7/7; full web suite had 161 passing tests and commercial test process failed to start due sandbox EPERM, then targeted commercial suite passed after approved child-process execution; diff check clean.
+- Remaining: apply migration 069 to the intended Supabase database and deploy frontend through the normal deployment process. No cloud SQL or deployment was performed.
