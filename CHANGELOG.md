@@ -1,3 +1,7 @@
+## 2026-11-24 — Xác nhận kết nối topping trên Supabase thật (KH-01/KH-10/KH-11/KH-12)
+- Owner đã áp gói SQL 081–083. Kiểm tra RPC công khai xác nhận API v2 sẵn sàng và ba món CC/CCC/CCC-NC có STO/STC, bắt buộc chọn và không có lựa chọn chưa sẵn sàng.
+- Kiểm tra live `check-public-toppings.mjs --expect=CCC-NC` đạt; cho phép tiếp tục đẩy frontend đã kiểm thử sau khi database sẵn sàng. Không tạo đơn hoặc thay đổi dữ liệu thật trong bước xác minh.
+
 ## 2026-11-24 — Lấy topping từ cấu hình món đã lưu và bắt buộc chọn khi đặt (KH-01/KH-10/KH-11/KH-12)
 - Xác nhận qua RPC Supabase thật: 10 món công khai nhưng catalog topping rỗng; số lượng món không phải nguyên nhân. Catalog mới đọc cấu hình đã lưu có hiệu lực mới nhất, không bị bản công thức liên kết cũ che lựa chọn mới.
 - Lưu món bằng tài khoản có quyền duyệt tự công bố riêng các topping đã tích. Giữ đúng phiên bản topping bất biến cho đơn; không buộc công bố toàn bộ BOM món để hiện lựa chọn, không tự suy quy đổi hoặc phụ thu.

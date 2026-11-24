@@ -1,3 +1,8 @@
+# 2026-11-24 — Xác nhận API topping cloud sẵn sàng phát hành frontend (KH-01/KH-10/KH-11/KH-12)
+- Owner đã chạy gói SQL 081–083 qua Supabase SQL Editor và gửi kết quả `topping_catalog`. Đối chiếu lại bằng public key và các RPC chỉ đọc: API v2 trả `schema_version=1`, thực đơn 10 món, có 3 món cấu hình topping là CC, CCC và CCC-NC; mỗi món có STO/Sốt Tương ớt và STC/Sốt Tương Cà, `required=true`, `unavailable_count=0`.
+- `node scripts/check-public-toppings.mjs --expect=CCC-NC` đạt trên Supabase đang dùng. Không gửi đơn thử, sửa dữ liệu kinh doanh hoặc dùng quyền quản trị từ agent. Bản code `084135f` đã có 184/184 tests, typecheck/lint/build và fixture trình duyệt đạt ở checkpoint trước; lượt này chỉ cập nhật bằng chứng phát hành.
+- Điều kiện chờ database trước khi push đã được đáp ứng; tiếp tục push `chifaa-next-dev` theo chỉ dẫn đã có và kiểm tra giao diện công khai sau khi Vercel triển khai. SQL Editor không tự đăng ký lịch sử Supabase CLI migrations; chưa kiểm thử ghi đơn thật trên cloud.
+
 # 2026-11-24 — Kết nối topping đã lưu với món đặt, bắt buộc chọn topping (KH-01/KH-10/KH-11/KH-12)
 - Đối chiếu Supabase thật bằng public key và RPC chỉ đọc: thực đơn có 10 món nhưng `public_order_topping_catalog('2026-11-24')` trả `[]`; API phiên bản mới chưa có (HTTP 404). Trạng thái Vercel Ready không xác nhận migration database đã chạy. Chưa có phiên/quyền quản trị database trong môi trường này để đọc bảng nội bộ hoặc áp SQL cloud.
 - Nguyên nhân trong code: màn công thức hiển thị lựa chọn ở bản lưu mới nhất, còn catalog cũ chỉ đọc bản đã công bố/liên kết; một liên kết cũ cũng che cấu hình mới. Ngoài ra, RPC gửi đơn cũ không bung mảng JSON ngoài khi kiểm tra topping và tính cost topping theo cả số món thay vì số phần được phân bổ.
