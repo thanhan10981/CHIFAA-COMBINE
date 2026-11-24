@@ -10,11 +10,13 @@ alter table public.recipes add constraint recipes_kind_check
 insert into private.table_modules(table_name,module) values('recipe_topping_options','recipes')
  on conflict do nothing;
 create table public.recipe_topping_options(
+ id uuid not null default gen_random_uuid() unique,
  parent_version_id uuid not null references public.recipe_versions(id),
  topping_recipe_id uuid not null references public.recipes(id),
  sort_order integer not null default 0 check(sort_order>=0),
  version bigint not null default 1 check(version>0),
  created_at timestamptz not null default now(),created_by uuid references auth.users(id),
+ updated_at timestamptz not null default now(),updated_by uuid references auth.users(id),
  primary key(parent_version_id,topping_recipe_id)
 );
 alter table public.recipe_topping_options enable row level security;
@@ -106,7 +108,9 @@ create table public.customer_order_item_toppings(
  topping_version_id uuid references public.recipe_versions(id),topping_code text not null,topping_name text not null,
  topping_output_unit text not null,quantity numeric(12,3) not null default 1 check(quantity>0),
  cost_vnd numeric(20,2),cost_complete boolean not null default false,
- created_at timestamptz not null default now(),created_by uuid references auth.users(id)
+ version bigint not null default 1 check(version>0),
+ created_at timestamptz not null default now(),created_by uuid references auth.users(id),
+ updated_at timestamptz not null default now(),updated_by uuid references auth.users(id)
 );
 insert into private.table_modules values('customer_order_item_toppings','orders') on conflict do nothing;
 alter table public.customer_order_item_toppings enable row level security;

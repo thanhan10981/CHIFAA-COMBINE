@@ -1143,3 +1143,17 @@ Còn lại: chưa UAT dữ liệu thật hoặc triển khai frontend; không c�
 - Form sửa công thức tải recipe_versions cùng quan hệ nhúng recipes. Tách thành hai truy vấn bảng và ghép theo recipe_id để loại phụ thuộc schema cache/embedding ở PostgREST; giữ bộ lọc các phiên bản topping đã công bố.
 - Lỗi truy vấn danh mục hiện kèm mã và message từ Supabase, giúp phân biệt lỗi truy cập/schema thay vì chỉ báo tên bảng.
 - Kiểm chứng: `npm --prefix web run typecheck`, `npm --prefix web run lint` và `git diff --check` đạt. Chưa kết nối Supabase thật để xác nhận UI trên cloud; nếu query recipe_versions vẫn lỗi, thông báo mới sẽ cung cấp mã/message để xác định bước DB còn thiếu. Không áp SQL cloud hoặc deploy.
+
+## 2026-11-24 — Sửa lưu lựa chọn topping trong công thức (KH-01/KH-10/KH-11)
+
+- Xác định lỗi ở trigger audit dùng chung: private.record_change() cần cột id, version, updated_at, updated_by; bảng recipe_topping_options thiếu id và thông tin cập nhật nên INSERT lựa chọn topping bị lỗi. Bảng topping trong đơn hàng cũng thiếu version và thông tin cập nhật theo cùng hợp đồng trigger.
+- Bổ sung đầy đủ cột ở migration 073 cho cài mới và migration 075 cho database đã cài 073; giữ nguyên audit, version và lịch sử các dòng topping. Khi RPC trả lỗi SQL có mã, form mở khóa dữ liệu và hiển thị message/mã lỗi để có thể sửa rồi gửi lại.
+- Kiểm tra: typecheck và lint đạt; chưa áp migration lên Supabase hoặc deploy trong checkpoint này.
+
+
+## 2026-11-24 - Order review revisions and print slip (KH-04/KH-05/KH-10/KH-12)
+
+- Order review action buttons are compact SVG controls with accessible labels. Item counts display without trailing decimal zeroes.
+- Added an audited RPC for add/edit/soft-remove of lines on submitted orders only. Removed lines remain in audit history; review, summaries, demand, delivery, and topping snapshots exclude cancelled lines. Existing approved/fulfilled orders stay locked.
+- Added a printable order slip with seller branding, order code, delivery details, item quantities/prices and total. Per user choice it is explicitly an internal order slip, not a tax e-invoice.
+- Verification: web typecheck and lint passed; git diff --check passed at initial checkpoint. Migration is not applied to Supabase and production was not deployed. Remaining: apply migration through the authorized release process and verify with live order data; legal e-invoice issuance needs company tax profile and provider integration.
