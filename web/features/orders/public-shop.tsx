@@ -1,5 +1,5 @@
 'use client';
-import {useState,useSyncExternalStore} from 'react';
+import {useEffect,useRef,useState,useSyncExternalStore} from 'react';
 import Image from 'next/image';
 import {useMutation,useQuery} from '@tanstack/react-query';
 import Decimal from 'decimal.js';
@@ -13,6 +13,7 @@ import {publicOrderShift} from './public-order-shift';
 type Product={product_id:string;code:string;name:string;sale_unit:string;price_vnd:string|null;image_path:string|null;discount_rate?:string|null};
 type Topping={version_id:string;code:string;name:string;unit:string};
 type ToppingCatalogRow={product_id:string;options:Topping[];required?:boolean;unavailable?:boolean;unavailable_count?:number};
+type StoreContact={name:string;phone:string;address:string};
 type ToppingSelection=Topping&{quantity:string};
 type Line={product:Product;quantity:string;toppings?:ToppingSelection[]};
 type Submission={p_date:string;p_shift:string;p_contact:{name:string;phone:string;address:string};p_items:{product_id:string;quantity:string;price_vnd:string;toppings:{version_id:string;quantity:string}[]}[];p_note:string;p_link_token:string|null;p_payment_method:'cash'|'bank';p_key:string};
@@ -34,7 +35,14 @@ function toppingIssue(line:Line,configured:ToppingCatalogRow|undefined){
 }
 export function PublicShop(){
  const [date,setDate]=useState(localDate),[offset,setOffset]=useState(0),[basket,setBasket]=useState<Record<string,Line>>({}),[name,setName]=useState(''),[phone,setPhone]=useState(''),[address,setAddress]=useState(''),[note,setNote]=useState(''),[paymentMethod,setPaymentMethod]=useState<'cash'|'bank'>('cash'),[pending,setPending]=useState<Submission|null>(null),[confirmation,setConfirmation]=useState(''),linkToken=useSyncExternalStore(subscribeLinkToken,getLinkToken,getServerLinkToken),shift=useSyncExternalStore(subscribeOrderShift,getOrderShift,getServerOrderShift);
- const catalog=useQuery({queryKey:['public-portal','catalog',date,offset,linkToken],staleTime:0,refetchInterval:30_000,queryFn:async({signal})=>{const {data,error}=linkToken?await browserSupabase().rpc('public_order_catalog_linked',{p_date:date,p_offset:offset,p_limit:100,p_link_token:linkToken}).abortSignal(signal):await browserSupabase().rpc('public_order_catalog',{p_date:date,p_offset:offset,p_limit:100}).abortSignal(signal);if(error)throw new Error(error.code==='PGRST202'?'Cổng đặt hàng đang được cập nhật. Vui lòng thử lại sau.':'Chưa tải được thực đơn. Vui lòng thử lại.');return data as {rows:Product[];total:string};}});
+ const prefilledLink=useRef<string|null>(null);
+ const catalog=useQuery({queryKey:['public-portal','catalog',date,offset,linkToken],staleTime:0,refetchInterval:30_000,queryFn:async({signal})=>{const {data,error}=linkToken?await browserSupabase().rpc('public_order_catalog_linked',{p_date:date,p_offset:offset,p_limit:100,p_link_token:linkToken}).abortSignal(signal):await browserSupabase().rpc('public_order_catalog',{p_date:date,p_offset:offset,p_limit:100}).abortSignal(signal);if(error)throw new Error(error.code==='PGRST202'?'Cổng đặt hàng đang được cập nhật. Vui lòng thử lại sau.':'Chưa tải được thực đơn. Vui lòng thử lại.');return data as {rows:Product[];total:string;store_contact?:StoreContact};}});
+ useEffect(()=>{
+  if(!linkToken){prefilledLink.current=null;return;}
+  const contact=catalog.data?.store_contact;
+  if(!contact||prefilledLink.current===linkToken)return;
+  setName(contact.name??'');setPhone(contact.phone??'');setAddress(contact.address??'');prefilledLink.current=linkToken;
+ },[catalog.data?.store_contact,linkToken]);
  const toppingCatalog=useQuery({queryKey:['public-portal','toppings',date],staleTime:0,refetchInterval:30_000,retry:false,queryFn:async({signal})=>{const {data,error}=await browserSupabase().rpc('public_order_topping_catalog_v2',{p_date:date}).abortSignal(signal);if(error)throw new Error(error.code==='PGRST202'?'Cổng đặt hàng đang được cập nhật lựa chọn topping. Vui lòng thử lại sau.':'Chưa tải được lựa chọn topping. Vui lòng thử lại trước khi gửi đơn.');const result=data as {schema_version?:number;rows?:ToppingCatalogRow[]}|null;if(result?.schema_version!==1||!Array.isArray(result.rows))throw new Error('Cổng đặt hàng đang được cập nhật lựa chọn topping. Vui lòng thử lại sau.');return result.rows;}});
  const toppingsByProduct=new Map((toppingCatalog.data??[]).map(row=>[row.product_id,row]));
  const lines=Object.values(basket).filter(line=>Number(line.quantity)>0);

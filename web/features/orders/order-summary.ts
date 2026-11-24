@@ -3,8 +3,15 @@ export type SummaryOrder={id:string;code:string;store_id:string|null;store_code:
 export type SummaryStore={id:string;code:string;name:string;phone:string|null};
 export type SummaryProduct={product_id:string;code:string;name:string;unit:string;total_quantity:string;by_store:Record<string,string>};
 export type SummaryMaterial={code:string;name:string;unit_code:string;quantity:string;stock_quantity:string|null;minimum_quantity:string|null;shortage_quantity:string|null;status:'unknown'|'insufficient'|'low'|'ok'};
-export type OrderMaterialDemandData={issues:{issue:string;product_name?:string}[];materials:SummaryMaterial[]};
+export type OrderMaterialDemandData={issues:{issue:string;product_id?:string;product_code?:string;product_name?:string}[];materials:SummaryMaterial[]};
 export type OrderSummaryData={date:string;orders:SummaryOrder[];stores:SummaryStore[];products:SummaryProduct[];planned_quantity_total:string};
+
+export function orderDemandIssueText(issue:OrderMaterialDemandData['issues'][number],products:OrderSummaryData['products']){
+ const product=issue.product_name?null:products.find(item=>item.product_id===issue.product_id),name=issue.product_name??product?.name,code=issue.product_code??product?.code;
+ const item=name?` món ${name}${code?` (${code})`:''}`:'';
+ if(issue.issue==='PUBLISHED_PRODUCT_RECIPE_REQUIRED')return `Chưa tính được nhu cầu nguyên liệu của${item}: cần liên kết công thức đã công bố và tỷ lệ quy đổi món bán có hiệu lực trong ngày giao. Thiết lập tại Danh mục món bán rồi tải lại bảng tổng hợp.`;
+ return `Chưa tính được một phần nhu cầu${item}: ${issue.issue}`;
+}
 
 const excelNumber=(value:string|null|undefined)=>value===null||value===undefined?'':Number(value);
 const displayDate=(value:string)=>{const [year,month,day]=value.split('-');return year&&month&&day?`${day}/${month}/${year}`:value;};

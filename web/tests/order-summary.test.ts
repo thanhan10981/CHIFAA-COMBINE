@@ -3,7 +3,12 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import ExcelJS from 'exceljs';
-import {createOrderSummaryWorkbook,type OrderMaterialDemandData,type OrderSummaryData} from '../features/orders/order-summary';
+import {createOrderSummaryWorkbook,orderDemandIssueText,type OrderMaterialDemandData,type OrderSummaryData} from '../features/orders/order-summary';
+
+test('order demand warnings identify a missing effective recipe and product conversion without guessing requirements',()=>{
+ const message=orderDemandIssueText({product_id:'product-1',issue:'PUBLISHED_PRODUCT_RECIPE_REQUIRED'},[{product_id:'product-1',code:'MON-1',name:'Món kiểm thử',unit:'phần',total_quantity:'10',by_store:{}}]);
+ assert.match(message,/Món kiểm thử \(MON-1\)/);assert.match(message,/công thức đã công bố và tỷ lệ quy đổi món bán có hiệu lực trong ngày giao/);assert.match(message,/Danh mục món bán/);assert.doesNotMatch(message,/PUBLISHED_PRODUCT_RECIPE_REQUIRED/);
+});
 
 test('daily order workbook puts the store matrix and ingredient demand first, then keeps order details',async()=>{
  const originalFetch=globalThis.fetch;

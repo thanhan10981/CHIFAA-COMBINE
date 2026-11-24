@@ -53,7 +53,7 @@ test('DEV036 store links are private, idempotent, revocable and route orders to 
 
 test('store-linked and review-assigned orders snapshot discounts and payment choice',async()=>{
  const db=await database();try{
-  const store=(await db.query<{id:string}>("insert into stores(code,name,active) values('PAY-STORE','Payment store',true) returning id")).rows[0].id;
+  const store=(await db.query<{id:string}>("insert into stores(code,name,address,contact,active) values('PAY-STORE','Payment store','Synthetic store delivery address','0900000055',true) returning id")).rows[0].id;
   const product=(await db.query<{id:string}>("insert into products(code,name,sale_unit,published) values('PAY-PRODUCT','Payment dish','Phần',true) returning id")).rows[0].id;
   await db.query("insert into product_prices(product_id,price_vnd,effective_from,evidence) values($1,10000,current_date-1,'Synthetic public price')",[product]);
   await db.query("insert into warehouses(code,name,kind) values('PAY-ING','Payment ingredient warehouse','ingredient')");
@@ -67,8 +67,10 @@ test('store-linked and review-assigned orders snapshot discounts and payment cho
   await db.query('insert into store_discount_policy_items(policy_id,product_id,eligible) values($1,$2,true)',[policy,product]);
   const token='a'.repeat(64);await db.query('insert into private.public_order_links(token_hash,store_id,created_by) values($1,$2,$3)',[createHash('sha256').update(token).digest('hex'),store,identities.admin]);
   const date=(await db.query<{delivery_day:string}>("select to_char((now() at time zone 'Asia/Ho_Chi_Minh')::date+1,'YYYY-MM-DD') delivery_day")).rows[0].delivery_day;
-  const linked=await anonymous(db,()=>db.query<{result:{rows:Record<string,unknown>[]}}>('select public_order_catalog_linked($1,0,100,$2) result',[date,token]));
+  const linked=await anonymous(db,()=>db.query<{result:{rows:Record<string,unknown>[];store_contact:{name:string;phone:string;address:string}}}>('select public_order_catalog_linked($1,0,100,$2) result',[date,token]));
   assert.equal(linked.rows[0].result.rows[0].price_vnd,'10000');assert.equal(linked.rows[0].result.rows[0].discount_rate,'0.150000');
+  assert.deepEqual(linked.rows[0].result.store_contact,{name:'Payment store',phone:'0900000055',address:'Synthetic store delivery address'});
+  await assert.rejects(()=>anonymous(db,()=>db.query('select public_order_catalog_linked($1,0,100,$2)',[date,'b'.repeat(64)])),/INVALID_LINK/);
   const payload=[{product_id:product,quantity:'2',price_vnd:'10000'}],key=randomUUID(),submit=()=>anonymous(db,()=>db.query<{result:{order_id:string}}>('select submit_store_link_order_v2($1,$2,$3,$4,$5,$6,$7,$8) result',[date,'AM',{name:'Discount visitor',phone:'0900000055',address:'Discount delivery address'},payload,'Rate snapshot',token,'bank',key]));
   const first=(await submit()).rows[0].result;assert.deepEqual((await submit()).rows[0].result,first);
   const snapshot=(await db.query<{discount_rate:string;customer_payment_method:string}>('select i.discount_rate::text,o.customer_payment_method from customer_order_items i join customer_orders o on o.id=i.order_id where o.id=$1',[first.order_id])).rows[0];

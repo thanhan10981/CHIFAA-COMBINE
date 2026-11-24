@@ -1,3 +1,15 @@
+## 2026-11-24 — Cảnh báo nhu cầu nguyên liệu nêu rõ món thiếu cấu hình (KH-01/KH-10/KH-12)
+- Đơn đã duyệt có thể còn ở trạng thái chưa lập kế hoạch theo migration 084. Nhu cầu vẫn chỉ tính cho món có liên kết công thức đã công bố và tỷ lệ quy đổi hiệu lực trong ngày giao.
+- Thay mã `PUBLISHED_PRODUCT_RECIPE_REQUIRED` lặp lại bằng hướng dẫn tiếng Việt, nêu tên/mã món từ ma trận và chỉ nơi cần thiết lập. Không suy đoán tỷ lệ hoặc bung BOM mới hơn vào nhu cầu chứng từ cũ.
+- Xác minh: test helper cảnh báo đạt; `npm test` 187/187, typecheck, lint và build đạt. `npm run test:orders` vẫn lỗi fixture cũ tại nút “Chi tiết món đơn …”, trước phần tổng hợp.
+- Còn lại: cần liên kết công thức và tỷ lệ có hiệu lực cho món báo lỗi để tính được vật tư thực tế. Chưa truy cập/đổi dữ liệu Supabase; không áp SQL hoặc deploy.
+
+## 2026-11-24 — Điền sẵn thông tin điểm bán cho link order (KH-10/KH-12)
+- RPC catalog qua link hợp lệ trả tên, địa chỉ và liên hệ của đúng điểm bán liên kết; link thường vẫn chỉ nhận catalog chung. Không mở quyền đọc danh sách/bảng điểm bán.
+- Form tên người nhận, số điện thoại và địa chỉ tự điền từ danh mục, vẫn cho khách sửa. Chỉ điền một lần theo link, không ghi đè khi catalog tự tải lại. Trường `Liên hệ` của danh mục được map vào số điện thoại vì schema chưa có điện thoại riêng.
+- Kiểm tra: 186/186 tests, typecheck, lint và fixture trình duyệt 6 kích thước đạt; migration có test link hợp lệ và từ chối token không hợp lệ.
+- Cần áp migration `202611240085_prefill_public_order_contact_from_store.sql` lên Supabase trước khi phát hành frontend. Chưa chạy SQL cloud hoặc deploy.
+
 ## 2026-11-24 — Cho duyệt đơn dù chưa đủ dữ liệu lập kế hoạch; sửa số lượng nguyên (KH-01/KH-10/KH-12)
 - Migration 084 tách quyết định duyệt đơn khỏi điều kiện tự lập kế hoạch: thiếu công thức/quy đổi hoặc công thức topping thì đơn vẫn được duyệt, còn ở trạng thái `approved` và không có kế hoạch cho đến khi thiết lập đủ. Khi dữ liệu đủ, tự lập kế hoạch vẫn chạy nguyên luồng.
 - Form sửa/thêm món dùng bước 1, làm gọn `10.000000` thành `10` và kiểm tra số nguyên dương; RPC từ chối số lượng lẻ trước khi thay đổi đơn/lịch sử.

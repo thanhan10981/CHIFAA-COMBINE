@@ -1,3 +1,15 @@
+# 2026-11-24 — Chỉ rõ món thiếu công thức/quy đổi trong nhu cầu đơn hàng (KH-01/KH-10/KH-12)
+- Điều tra cảnh báo `PUBLISHED_PRODUCT_RECIPE_REQUIRED`: `order_material_demand` đưa các đơn `approved` chưa có kế hoạch vào `planning_needs`; nhu cầu chỉ tính được khi có liên kết công thức đã công bố và tỷ lệ món bán hiệu lực đúng ngày giao. Migration 084 cho phép duyệt khi thiếu dữ liệu nhưng không tạo công thức/quy đổi.
+- Cảnh báo ở bảng tổng hợp nay đổi sang hướng dẫn tiếng Việt và tìm tên/mã món từ dữ liệu ma trận; yêu cầu liên kết công thức và tỷ lệ ở Danh mục món bán rồi tải lại. Không dùng BOM mới hơn hoặc giả định hệ số để viết ngược nhu cầu cho chứng từ cũ.
+- Bằng chứng: test nội dung cảnh báo theo `product_id` đạt; `npm test` 187/187, typecheck, lint và production build đạt. `npm run test:orders` còn dừng ở fixture cũ không hiện nút “Chi tiết món đơn …”, trước khi mở bảng tổng hợp; chưa kiểm thử luồng giao diện đó.
+- Còn lại: phải gắn công thức và tỷ lệ đã xác minh cho các món bị báo lỗi thì hệ thống mới bung được nhu cầu vật tư. Chưa có dữ liệu/quyền Supabase để xác định các món và tỷ lệ thực tế; không tự tạo liên kết hoặc áp SQL cloud.
+
+# 2026-11-24 — Điền sẵn liên hệ điểm bán trên link đặt hàng (KH-10/KH-12)
+- Link đặt hàng hợp lệ nay trả thêm đúng ba trường từ điểm bán được liên kết: tên điểm bán, `contact` ánh xạ vào số điện thoại, và địa chỉ. RPC không công bố danh sách điểm bán hoặc mở quyền đọc bảng `stores`; link thường không nhận dữ liệu điểm bán. Form chỉ điền một lần mỗi link để không ghi đè chỉnh sửa của khách; nội dung đã điền vẫn sửa được và đơn gửi giá trị khách xác nhận.
+- Danh mục hiện chỉ có trường `Liên hệ`, chưa có trường điện thoại riêng; do đó nội dung này được đặt sẵn vào ô điện thoại nhưng vẫn để người đặt tự chỉnh nếu dữ liệu danh mục không đúng định dạng/số liên hệ.
+- Bằng chứng: `npm test` 186/186 (PGlite kiểm tra response của link có đủ ba trường và link sai không đọc được); typecheck, lint, production build; fixture portal 6 kích thước xác nhận link thường để trống, link điểm bán tự điền, khách sửa tên và payload giữ thay đổi.
+- Còn lại: migration `202611240085_prefill_public_order_contact_from_store.sql` chưa áp lên Supabase; cần áp migration trước khi frontend mới được phát hành. Không đọc/ghi dữ liệu cloud hoặc deploy production.
+
 # 2026-11-24 — Duyệt đơn khi thiếu thiết lập sản xuất và chỉ nhận số lượng nguyên (KH-01/KH-10/KH-12)
 - Ảnh lỗi cho thấy `review_order` gọi tự lập kế hoạch sản xuất đồng bộ; thiếu công thức/quy đổi của một món làm rollback cả thao tác duyệt. Migration `202611240084_allow_order_review_without_production_setup.sql` cho phép giao dịch duyệt thành công và giữ trạng thái `approved` khi không thể lập kế hoạch do thiếu công thức/quy đổi hoặc BOM topping. Khi thiết lập đầy đủ, luồng tự lập kế hoạch và trạng thái `scheduled` tiếp tục như cũ. Không tạo kế hoạch một phần, tồn kho hay chứng từ tài chính.
 - Form thêm/sửa món chỉ nhận số nguyên dương, làm gọn số `10.000000` từ numeric thành `10`; RPC `revise_submitted_order_item` kiểm tra lại bằng `p_quantity = trunc(p_quantity)`. Lý do, version check, idempotency, audit và các dòng đơn đã chốt vẫn giữ nguyên.
