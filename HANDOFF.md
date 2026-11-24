@@ -1,3 +1,8 @@
+# 2026-11-24 — Công bố phiên bản công thức có topping cho cổng đặt hàng (KH-10/KH-12)
+- Sửa nguyên nhân cấu hình topping đã lưu nhưng không hiện trên `/portal`: trang công thức mặc định chọn phiên bản mới nhất (có thể là bản nháp), còn catalog công khai chỉ đọc phiên bản đã công bố và đã liên kết với món bán. Thêm thao tác công bố/liên kết ngay trên chi tiết công thức món ăn khi bản nháp có topping; chỉ tự tìm món bán trùng mã công thức, yêu cầu người dùng nhập tỷ lệ đầu ra/đơn vị bán đã xác minh, và gọi RPC `publish_recipe` có kiểm tra quyền hiện có. Không tự sửa snapshot đã chốt.
+- Số lượng đầu ra topping trên chi tiết giá vốn dùng formatter chung, bỏ phần thập phân dư như `1.000000` → `1`, giữ phần lẻ có ý nghĩa.
+- Bằng chứng cục bộ: `npm run typecheck` và `npm run lint` đạt. Chưa kiểm tra dữ liệu RPC trên Supabase, chưa chạy UAT portal, chưa áp SQL cloud hoặc deploy. Sau khi công bố phiên bản và cập nhật món bán, tải lại `/portal` để kiểm tra topping trên đúng món/ngày giao; tỷ lệ đầu ra phải được xác nhận bởi người dùng.
+
 # 2026-11-23 - Verified package ratios derive stock-unit transitions (KH-01/KH-09/KH-10/KH-11)
 - Follow-up for the Production `INVALID_RESOLUTION` response: added `npm --prefix web run db:material-stock-update`, which packages migrations 067 and 068 together in one transaction, preflights the required 064-066 foundation, and refuses partial/replayed schemas. This addresses the observed 068-alone failure where 067 was absent; the generated SQL is an operator-run artifact and has not been applied to cloud.
 - Material review/catalog forms now explain that `INVALID_RESOLUTION`/`INVALID_FIELDS` means the database schema is behind the deployed form, instead of showing the generic connection/date warning.
@@ -1157,3 +1162,9 @@ Còn lại: chưa UAT dữ liệu thật hoặc triển khai frontend; không c�
 - Added an audited RPC for add/edit/soft-remove of lines on submitted orders only. Removed lines remain in audit history; review, summaries, demand, delivery, and topping snapshots exclude cancelled lines. Existing approved/fulfilled orders stay locked.
 - Added a printable order slip with seller branding, order code, delivery details, item quantities/prices and total. Per user choice it is explicitly an internal order slip, not a tax e-invoice.
 - Verification: web typecheck and lint passed; git diff --check passed at initial checkpoint. Migration is not applied to Supabase and production was not deployed. Remaining: apply migration through the authorized release process and verify with live order data; legal e-invoice issuance needs company tax profile and provider integration.
+
+## 2026-11-24 - Audit activity list cleanup control (KH-10)
+
+- Added a “Dọn danh sách” control to clear the current activity-log view and reset its search/pagination. The UI explicitly states this does not delete durable audit records; existing audit history remains available for compliance and reconciliation.
+- Replaced raw operation/table headings with Vietnamese labels for common actions and business tables; unknown values remain visible as supplied by the database.
+- Verification: `npm run typecheck`, `npm run lint`, and `git diff --check` passed. No database changes, cloud SQL, or deployment performed. The button is a view cleanup, not persistent storage reclamation.
