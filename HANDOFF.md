@@ -1,3 +1,9 @@
+# 2026-11-24 — Hiện topping trên món trước khi nhập số lượng (KH-10/KH-12)
+- Sửa nguyên nhân thấy món đã cấu hình topping nhưng trang order không hiện lựa chọn: giao diện trước đó chỉ dựng nhóm topping sau khi số lượng món lớn hơn 0.
+- Topping nay hiện ngay trên thẻ món tương ứng. Khi số lượng bằng 0, checkbox bị khóa và hướng dẫn tăng số lượng; sau khi thêm món, checkbox hoạt động và topping được ghi vào đúng dòng món trong giỏ. Giữ nguyên kiểm tra tổng phân bổ không vượt số món và không cộng topping vào giá bán.
+- Kiểm tra: `npm run typecheck`, `npm run lint`, `npm run build` và `node scripts/design-check.mjs --public-portal --catalog-only` đạt; fixture kiểm tra ở 320, 390, 768, 1024, 1440 và 1920 px, bao gồm hiển thị ở số lượng 0, mở chọn sau khi tăng số lượng, chọn topping vào giỏ và không tràn ngang. `git diff --check` đạt.
+- Giới hạn: fixture dùng dữ liệu và RPC giả lập; chưa phải UAT Supabase. Migration `202611240082_publish_recipe_dependencies_and_toppings.sql` chưa được áp lên Supabase và frontend chưa deploy. Cần phát hành migration 082 cùng frontend trước khi xác nhận topping hiển thị trên trang live.
+
 # 2026-11-24 — Tự công bố công thức món khi lưu, sửa lỗi topping (KH-01/KH-10/KH-11/KH-12)
 - Bỏ nút “Công bố phiên bản” khỏi chi tiết công thức món và bỏ cảnh báo buộc phải thiết lập quy đổi trước khi hiển thị topping. Khi tài khoản có quyền `recipes/approve` lưu công thức món, giao diện tự gọi RPC công bố; tài khoản không có quyền vẫn lưu nháp và được báo rằng topping chưa hiện trên cổng.
 - Migration `202611240082_publish_recipe_dependencies_and_toppings.sql` duyệt topping đã tích và công thức con theo thứ tự lá lên gốc trong cùng giao dịch công bố. RPC vẫn kiểm tra quyền, định lượng/BOM, chu kỳ và ngày hiệu lực; lỗi giữ toàn bộ các phiên bản ở nháp. Khi có liên kết quy đổi hiệu lực cũ đúng mã món, RPC giữ lại tỷ lệ đó; nếu chưa có thì không tạo quy đổi hoặc nhu cầu vật tư giả.

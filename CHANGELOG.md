@@ -1,3 +1,9 @@
+# 2026-11-24 - Show configured toppings before entering dish quantity (KH-10/KH-12)
+- Fixed the public ordering card hiding configured topping options until the dish had a nonzero quantity.
+- Topping choices now appear on their configured dish card immediately. Checkboxes remain disabled at zero quantity with a short instruction, become selectable after adding the dish, and selections stay on that dish's basket line without changing its sale price.
+- Verified typecheck, lint, production build, and the public portal browser fixture at six viewport widths. The fixture confirms toppings show at zero, unlock after increasing quantity, and can be selected into the basket.
+- The browser fixture uses mocked API data. Migration 082 and the frontend have not been applied/deployed to Supabase/live portal.
+
 ## 2026-11-24 - Tự công bố công thức món và hiển thị topping theo mã món (KH-01/KH-10/KH-11/KH-12)
 - Gỡ nút công bố phiên bản riêng. Lưu công thức món bằng tài khoản có quyền duyệt sẽ tự công bố; phiên bản vẫn ở nháp nếu thiếu quyền hoặc lỗi kiểm tra.
 - Công bố topping đã tích và các công thức con từ dưới lên trong một giao dịch; kiểm tra chu kỳ, ngày hiệu lực và BOM. Nếu món đã có quy đổi hiệu lực theo đúng mã thì giữ tỷ lệ; không tự tạo quy đổi khi chưa có.

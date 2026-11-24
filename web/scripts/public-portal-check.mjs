@@ -26,7 +26,12 @@ export async function checkPublicPortal(page,base,out,report){
   if(columns>1){const quantityRow=await page.locator('.public-product').evaluateAll(cards=>{const rows=cards.map(card=>({top:Math.round(card.getBoundingClientRect().top),bottom:card.querySelector('.public-quantity').getBoundingClientRect().bottom}));const firstTop=rows[0].top;const firstRow=rows.filter(row=>row.top===firstTop);return {count:firstRow.length,spread:Math.max(...firstRow.map(row=>row.bottom))-Math.min(...firstRow.map(row=>row.bottom))};});if(quantityRow.count<2||quantityRow.spread>1)throw new Error('Quantity controls must align at the bottom across each product row at '+width+'px: '+JSON.stringify(quantityRow));}
   if(width===320){await page.waitForFunction(()=>{const input=document.querySelector('input[type=hidden][name=shift]');const hour=Number(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',hourCycle:'h23'}).format(new Date()));return input?.value===(hour<12?'AM':'PM');});if(await page.getByLabel('Ca giao',{exact:true}).count()||await page.locator('input[type=hidden][name=shift]').count()!==1)throw new Error('Delivery shift must be hidden and derived from Vietnam time');report.checks.push('delivery shift is hidden and derived as AM/PM from Vietnam local time');}
   if(await page.getByRole('button',{name:'Đăng nhập',exact:true}).count()||await page.getByLabel('Điểm bán',{exact:true}).count())throw new Error('Public portal requires linked account');
+  const toppingChoices=page.locator('.public-product').first().locator('.public-topping-options');
+  await toppingChoices.waitFor();
+  if(await toppingChoices.locator('input[type=checkbox]').count()!==2||!await toppingChoices.locator('input[type=checkbox]').first().isDisabled())throw new Error('Configured topping choices must be visible and disabled before selecting a product quantity');
+
   await page.getByRole('button',{name:'Tăng '+products[0].name,exact:true}).click();
+  if(await toppingChoices.locator('input[type=checkbox]').first().isDisabled())throw new Error('Topping choice did not become selectable after increasing product quantity');
   await page.getByLabel('Số lượng '+products[1].name,{exact:true}).fill('2');
   if(!await page.getByLabel('Số lượng '+products[2].name,{exact:true}).isDisabled())throw new Error('Unpriced dish can be ordered');
   if(!await page.locator('.public-total').innerText().then(value=>value.includes('65.000')))throw new Error('Basket total incorrect');
@@ -34,7 +39,7 @@ export async function checkPublicPortal(page,base,out,report){
   if([390,1440].includes(width))await page.screenshot({path:path.join(out,'public-portal-'+width+'.png'),fullPage:true});
   report.checks.push('public portal '+width+': immediate menu, quantities, exact total, no login/store dependency, unpriced disabled, no overflow');
  }
- if(process.argv.includes('--catalog-only')){report.checks.push('catalog-only fixture exit before unrelated order review flows');return;}
+ if(process.argv.includes('--catalog-only')){await page.getByRole('checkbox',{name:'Sốt cà'}).check();if(!await page.locator('.public-cart-toppings').innerText().then(value=>value.includes('1 Sốt cà')))throw new Error('Selecting a visible topping did not add it to the product basket');report.checks.push('configured topping choices are visible at zero quantity, unlock after adding the dish, and can be selected into its basket line');report.checks.push('catalog-only fixture exit before unrelated order review flows');return;}
  await page.getByLabel('Số lượng '+products[0].name,{exact:true}).fill('10');
  if(await page.locator('.public-product').nth(1).locator('.public-topping-options').count())throw new Error('A dish without configured toppings showed topping choices');
  for(const toppingName of ['Sốt cà','Sốt tương ớt']){await page.getByRole('checkbox',{name:toppingName}).check();if(!await page.locator('.public-cart-toppings').innerText().then(value=>value.includes('1 '+toppingName)))throw new Error('Checking a topping did not show it in the cart');for(let count=1;count<5;count++)await page.getByRole('button',{name:'Tăng '+toppingName+' cho '+products[0].name,exact:true}).click();}
