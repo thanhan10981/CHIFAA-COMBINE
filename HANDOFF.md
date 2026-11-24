@@ -1,3 +1,9 @@
+# 2026-11-24 — Thu gọn thẻ món và bộ chọn topping trên cổng đặt hàng (KH-10/KH-12)
+- Theo ảnh owner gửi, thu gọn UI thẻ món: bộ số lượng đặt ngay dưới giá, món không có topping không kéo dài theo thẻ bên cạnh. Lưới dựa trên chiều rộng thực của khung thực đơn, từ 1–4 cột, để tên món và topping đủ chỗ đọc khi có cột giỏ hàng.
+- Topping dùng tiêu đề ngắn và nhãn `1 phần/món`, bỏ đơn vị lặp khỏi phần nhìn thấy nhưng giữ đầy đủ tên/đơn vị trong nhãn truy cập của checkbox. Số lượng từng topping nằm dưới nhãn khi được chọn; trạng thái phân bổ gọn, không lặp cảnh báo dài trong thẻ. Ảnh món dùng contain để tránh cắt logo/ảnh.
+- `npm test` đạt 184/184; typecheck, lint và production build đạt; fixture `node scripts/design-check.mjs --public-portal --public-shop-only` đạt 6 chiều rộng 320/390/768/1024/1440/1920, bao gồm trạng thái chọn topping, phân bổ đủ/thiếu, giỏ hàng, payload và retry. Đã xem ảnh 390/1440 ở `output/public-portal-design/public-portal-selected-*.png`.
+- Giữ yêu cầu topping bắt buộc theo từng món và kiểm tra máy chủ đã có. Cập nhật chỉ thuộc frontend/fixture; đã đủ kiểm tra để commit/push theo chỉ dẫn đã có, kiểm tra giao diện live sau khi Vercel phục vụ bản mới.
+
 # 2026-11-24 — Xác nhận API topping cloud sẵn sàng phát hành frontend (KH-01/KH-10/KH-11/KH-12)
 - Owner đã chạy gói SQL 081–083 qua Supabase SQL Editor và gửi kết quả `topping_catalog`. Đối chiếu lại bằng public key và các RPC chỉ đọc: API v2 trả `schema_version=1`, thực đơn 10 món, có 3 món cấu hình topping là CC, CCC và CCC-NC; mỗi món có STO/Sốt Tương ớt và STC/Sốt Tương Cà, `required=true`, `unavailable_count=0`.
 - `node scripts/check-public-toppings.mjs --expect=CCC-NC` đạt trên Supabase đang dùng. Không gửi đơn thử, sửa dữ liệu kinh doanh hoặc dùng quyền quản trị từ agent. Bản code `084135f` đã có 184/184 tests, typecheck/lint/build và fixture trình duyệt đạt ở checkpoint trước; lượt này chỉ cập nhật bằng chứng phát hành.

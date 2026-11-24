@@ -24,7 +24,8 @@ export async function checkPublicPortal(page,base,out,report){
   if(await page.getByRole('link',{name:'Đơn điểm bán',exact:true}).count())throw new Error('Legacy store-order button is still shown on the public portal');
   await page.getByRole('heading',{name:products[0].name,exact:true}).waitFor();
   const columns=await page.locator('.public-products').evaluate(element=>getComputedStyle(element).gridTemplateColumns.trim().split(/\s+/).length);
-  const expectedColumns=width>1150?4:width>620?3:width>340?2:1;
+  const menuWidth=await page.locator('.public-menu').evaluate(element=>{const style=getComputedStyle(element);return element.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight);});
+  const expectedColumns=menuWidth>=760?4:menuWidth>=480?3:menuWidth>=260?2:1;
   if(columns!==expectedColumns)throw new Error('Public product grid expected '+expectedColumns+' columns at '+width+'px, got '+columns);
   if(columns>1){const quantityRow=await page.locator('.public-product').evaluateAll(cards=>{const rows=cards.map(card=>({top:Math.round(card.getBoundingClientRect().top),bottom:card.querySelector('.public-quantity').getBoundingClientRect().bottom}));const firstTop=rows[0].top;const firstRow=rows.filter(row=>row.top===firstTop);return {count:firstRow.length,spread:Math.max(...firstRow.map(row=>row.bottom))-Math.min(...firstRow.map(row=>row.bottom))};});if(quantityRow.count<2||quantityRow.spread>1)throw new Error('Quantity controls must align at the bottom across each product row at '+width+'px: '+JSON.stringify(quantityRow));}
   if(width===320){await page.waitForFunction(()=>{const input=document.querySelector('input[type=hidden][name=shift]');const hour=Number(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',hourCycle:'h23'}).format(new Date()));return input?.value===(hour<12?'AM':'PM');});if(await page.getByLabel('Ca giao',{exact:true}).count()||await page.locator('input[type=hidden][name=shift]').count()!==1)throw new Error('Delivery shift must be hidden and derived from Vietnam time');report.checks.push('delivery shift is hidden and derived as AM/PM from Vietnam local time');}
@@ -39,7 +40,12 @@ export async function checkPublicPortal(page,base,out,report){
   if(!await page.getByLabel('Số lượng '+products[2].name,{exact:true}).isDisabled())throw new Error('Unpriced dish can be ordered');
   if(!await page.locator('.public-total').innerText().then(value=>value.includes('65.000')))throw new Error('Basket total incorrect');
   if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))throw new Error('Public portal overflows '+width);
-  if([390,1440].includes(width))await page.screenshot({path:path.join(out,'public-portal-'+width+'.png'),fullPage:true});
+  if([390,1440].includes(width)){
+   await page.screenshot({path:path.join(out,'public-portal-'+width+'.png'),fullPage:true});
+   await page.getByRole('checkbox',{name:'Sốt cà'}).check();
+   await page.screenshot({path:path.join(out,'public-portal-selected-'+width+'.png'),fullPage:true});
+   await page.getByRole('checkbox',{name:'Sốt cà'}).uncheck();
+  }
   report.checks.push('public portal '+width+': immediate menu, quantities, exact total, no login/store dependency, unpriced disabled, no overflow');
  }
  const send=page.getByRole('button',{name:'Gửi đơn đặt hàng',exact:true});

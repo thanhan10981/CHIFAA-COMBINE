@@ -1,3 +1,8 @@
+## 2026-11-24 — Gọn thẻ món và topping trên cổng đặt hàng (KH-10/KH-12)
+- Đưa số lượng món ngay dưới giá, bỏ kéo giãn thẻ không có topping và cho số cột thích ứng theo chiều rộng thực đơn.
+- Rút ngắn tiêu đề, bỏ đơn vị lặp trên nhãn hiển thị, làm gọn trạng thái phân bổ và tách bộ chỉnh số phần topping khỏi dòng tên. Checkbox vẫn có nhãn truy cập đầy đủ.
+- 184/184 tests, typecheck, lint, build và fixture trình duyệt ở 6 chiều rộng đạt; đã xem ảnh mobile/desktop có topping được chọn. Tiêu chí chọn đủ topping, giỏ hàng, payload và retry tiếp tục đạt.
+
 ## 2026-11-24 — Xác nhận kết nối topping trên Supabase thật (KH-01/KH-10/KH-11/KH-12)
 - Owner đã áp gói SQL 081–083. Kiểm tra RPC công khai xác nhận API v2 sẵn sàng và ba món CC/CCC/CCC-NC có STO/STC, bắt buộc chọn và không có lựa chọn chưa sẵn sàng.
 - Kiểm tra live `check-public-toppings.mjs --expect=CCC-NC` đạt; đã push frontend và kiểm tra sau khi Vercel triển khai. Trên trang thật, CCC-NC hiện hai topping; số lượng 2 phải phân bổ đủ (có thể chia 1+1), còn thiếu thì khóa gửi; CC-NC chưa cấu hình không hiện topping. Màn 390 px không tràn ngang. Không tạo đơn hoặc thay đổi dữ liệu thật trong bước xác minh.
