@@ -73,12 +73,20 @@ test('generated source import replays stable drafts and preserves unresolved row
 });
 test('publishing a product recipe also publishes its selected draft toppings and exposes them in the public order catalog',async()=>{
  const topping=await call('save_recipe_revision',[null,null,{...metadata('R-CAT-TOPPING'),kind:'topping'},[item],'Synthetic topping source',randomUUID()]);
+ const child=await call('save_recipe_revision',[null,null,{...metadata('R-CAT-ORDER-CHILD'),kind:'sauce'},[item],'Synthetic child source',randomUUID()]);
  const productId=randomUUID();await db.query("insert into products(id,code,name,sale_unit,published) values($1,'R-CAT-ORDER','Synthetic order product','phần',true)",[productId]);
- const product=await call('save_recipe_revision',[null,null,{...metadata('R-CAT-ORDER'),topping_version_ids:[topping.version_id]},[item],'Synthetic product source',randomUUID()]);
+ const product=await call('save_recipe_revision',[null,null,{...metadata('R-CAT-ORDER'),topping_version_ids:[topping.version_id]},[{material_id:null,child_version_id:child.version_id,quantity:'1',unit_id:portion},item],'Synthetic product source',randomUUID()]);
  const option=(await db.query<{topping_version_id:string}>('select topping_version_id from recipe_topping_options where parent_version_id=$1',[product.version_id])).rows[0];assert.equal(option.topping_version_id,topping.version_id);
- await call('publish_recipe',[product.version_id,'1',productId,'2',randomUUID()]);
- const statuses=await db.query<{parent:string;topping:string}>("select p.status parent,t.status topping from recipe_versions p join recipe_topping_options o on o.parent_version_id=p.id join recipe_versions t on t.id=o.topping_version_id where p.id=$1",[product.version_id]);assert.deepEqual(statuses.rows,[{parent:'published',topping:'published'}]);
+ await call('publish_recipe',[product.version_id,'1',null,null,randomUUID()]);
+ const statuses=await db.query<{parent:string;topping:string;child:string}>("select p.status parent,t.status topping,c.status child from recipe_versions p join recipe_topping_options o on o.parent_version_id=p.id join recipe_versions t on t.id=o.topping_version_id join recipe_items i on i.recipe_version_id=p.id join recipe_versions c on c.id=i.child_version_id where p.id=$1",[product.version_id]);assert.deepEqual(statuses.rows,[{parent:'published',topping:'published',child:'published'}]);
+ assert.equal((await db.query('select * from product_recipe_links where product_id=$1',[productId])).rows.length,0,'publication must not invent a product output conversion');
  const catalog=await call('public_order_topping_catalog',['2026-11-17']);const row=(catalog as unknown as {product_id:string;options:{version_id:string}[]}[]).find(x=>x.product_id===productId);assert.equal(row?.options[0]?.version_id,topping.version_id);
+});
+test('automatic product publication carries forward an existing effective conversion without changing its ratio',async()=>{
+ const productId=randomUUID();await db.query("insert into products(id,code,name,sale_unit,published) values($1,'R-CAT-AUTO-LINK','Synthetic linked product','phần',true)",[productId]);
+ const first=await call('save_recipe_revision',[null,null,metadata('R-CAT-AUTO-LINK'),[item],'Synthetic product source',randomUUID()]);await call('publish_recipe',[first.version_id,'1',productId,'2',randomUUID()]);
+ const next=await call('save_recipe_revision',[first.recipe_id,'1',metadata('R-CAT-AUTO-LINK','2026-11-18'),[item],'Synthetic product revision',randomUUID()]);await call('publish_recipe',[next.version_id,'1',null,null,randomUUID()]);
+ const links=await db.query<{effective_from:string;quantity:string}>('select effective_from::text,output_quantity_per_product::text quantity from product_recipe_links where product_id=$1 order by effective_from',[productId]);assert.deepEqual(links.rows,[{effective_from:'2026-11-17',quantity:'2.000000'},{effective_from:'2026-11-18',quantity:'2.000000'}]);
 });
 test('failed topping validation rolls back publication of both topping and product recipe',async()=>{
  const topping=await call('save_recipe_revision',[null,null,{...metadata('R-CAT-BAD-TOPPING'),kind:'topping'},[item],'Synthetic topping source',randomUUID()]);

@@ -1,3 +1,10 @@
+## 2026-11-24 - Tự công bố công thức món và hiển thị topping theo mã món (KH-01/KH-10/KH-11/KH-12)
+- Gỡ nút công bố phiên bản riêng. Lưu công thức món bằng tài khoản có quyền duyệt sẽ tự công bố; phiên bản vẫn ở nháp nếu thiếu quyền hoặc lỗi kiểm tra.
+- Công bố topping đã tích và các công thức con từ dưới lên trong một giao dịch; kiểm tra chu kỳ, ngày hiệu lực và BOM. Nếu món đã có quy đổi hiệu lực theo đúng mã thì giữ tỷ lệ; không tự tạo quy đổi khi chưa có.
+- Cổng trả topping theo công thức liên kết hiệu lực, hoặc theo mã công thức khớp chính xác với món đã công bố khi chưa có liên kết. Đơn hàng tiếp tục hiển thị checkbox chọn topping theo từng món và giữ phân bổ tách khỏi giá bán.
+- Xác minh local: 176/176 tests, typecheck, lint, production build, fixture công thức (25 route/kích thước) và PGlite migration/rollback đạt. Fixture portal qua các ca topping nhưng dừng ở bước admin chờ “Xem đơn”; fixture order review dừng trước chi tiết đơn. Chưa có UAT Supabase.
+- Chưa áp migration cloud hoặc deploy frontend.
+
 ## 2026-11-23 - Derive stock transitions from verified package ratios (KH-01/KH-09/KH-10/KH-11)
 - Fixed SQL Editor compatibility: migration 068 now locates the resolver insertion point with a whitespace/case-tolerant pattern and reports a clear missing-067 prerequisite instead of a false patch mismatch. Full migration chain passed again on PGlite.
 
