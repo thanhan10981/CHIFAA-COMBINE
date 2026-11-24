@@ -9,6 +9,7 @@ export type OrderSummaryData={date:string;orders:SummaryOrder[];stores:SummarySt
 export function orderDemandIssueText(issue:OrderMaterialDemandData['issues'][number],products:OrderSummaryData['products']){
  const product=issue.product_name?null:products.find(item=>item.product_id===issue.product_id),name=issue.product_name??product?.name,code=issue.product_code??product?.code;
  const item=name?` món ${name}${code?` (${code})`:''}`:'';
+ if(issue.issue==='PRODUCT_RECIPE_RATIO_REQUIRED')return `Đã tìm thấy công thức đã công bố${item}, nhưng đơn vị đầu ra khác đơn vị bán và chưa có tỷ lệ quy đổi hiệu lực ngày giao. Cần xác minh tỷ lệ trong Danh mục món bán rồi tải lại bảng tổng hợp.`;
  if(issue.issue==='PUBLISHED_PRODUCT_RECIPE_REQUIRED')return `Chưa tính được nhu cầu nguyên liệu của${item}: cần liên kết công thức đã công bố và tỷ lệ quy đổi món bán có hiệu lực trong ngày giao. Thiết lập tại Danh mục món bán rồi tải lại bảng tổng hợp.`;
  return `Chưa tính được một phần nhu cầu${item}: ${issue.issue}`;
 }
@@ -56,7 +57,7 @@ export async function createOrderSummaryWorkbook(data:OrderSummaryData,demand:Or
  const materialHeader=matrix.getRow(materialStart+3);materialHeader.values=['Mã vật tư','Vật tư','ĐVT','Cần','Tồn sổ','Thiếu','Cảnh báo'];styleHeader(materialHeader);
  if(demand.materials.length){for(const material of demand.materials){const row=matrix.addRow([material.code,material.name,material.unit_code,excelNumber(material.quantity),material.stock_quantity===null?'Chưa có tồn':excelNumber(material.stock_quantity),material.shortage_quantity===null?'—':excelNumber(material.shortage_quantity),materialStatus(material.status)]);row.eachCell((cell,column)=>{cell.alignment={vertical:'middle',wrapText:true};if(column>=4&&column<=6&&typeof cell.value==='number')cell.numFmt='#,##0.###';});}}
  else {const row=matrix.addRow(['Chưa có nhu cầu nguyên liệu đủ dữ liệu công thức cho đơn đã duyệt.']);matrix.mergeCells(row.number,1,row.number,7);row.getCell(1).alignment={horizontal:'center',vertical:'middle',wrapText:true};}
- for(const issue of demand.issues){const row=matrix.addRow([`Chưa tính được một phần nhu cầu${issue.product_name?` của ${issue.product_name}`:''}: ${issue.issue}`]);matrix.mergeCells(row.number,1,row.number,Math.max(7,totalColumn));row.getCell(1).font={color:{argb:'FF9C4B28'}};row.getCell(1).alignment={wrapText:true,vertical:'middle'};}
+ for(const issue of demand.issues){const row=matrix.addRow([orderDemandIssueText(issue,data.products)]);matrix.mergeCells(row.number,1,row.number,Math.max(7,totalColumn));row.getCell(1).font={color:{argb:'FF9C4B28'}};row.getCell(1).alignment={wrapText:true,vertical:'middle'};}
  for(let col=1;col<=7;col++)if(matrix.getColumn(col).width===undefined)matrix.getColumn(col).width=18;
  const finalRow=matrix.rowCount;matrix.pageSetup={orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0,paperSize:9};matrix.pageSetup.printTitlesRow='1:3';matrix.pageSetup.printArea=`A1:${excelColumn(Math.max(totalColumn,7))}${finalRow}`;
 

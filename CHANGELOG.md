@@ -1,3 +1,8 @@
+# 2026-11-24 — Đồng bộ công thức cùng mã với nhu cầu đơn đã duyệt (KH-01/KH-10/KH-12)
+- `planning_needs` nay dùng công thức sản phẩm cùng mã đã công bố khi chưa có liên kết tường minh; chỉ dùng hệ số 1 nếu đơn vị đầu ra trùng đơn vị bán, còn quy đổi khác đơn vị phải có tỷ lệ nguồn/lưu đã xác minh.
+- Cảnh báo nhu cầu phân biệt thiếu công thức với thiếu tỷ lệ và được dùng chung trong Excel.
+- Migration `202611240086_use_same_code_recipe_for_order_demand.sql`; cần áp dụng theo quy trình phát hành trước khi backend cloud sử dụng thay đổi.
+
 ## 2026-11-24 — Cảnh báo nhu cầu nguyên liệu nêu rõ món thiếu cấu hình (KH-01/KH-10/KH-12)
 - Đơn đã duyệt có thể còn ở trạng thái chưa lập kế hoạch theo migration 084. Nhu cầu vẫn chỉ tính cho món có liên kết công thức đã công bố và tỷ lệ quy đổi hiệu lực trong ngày giao.
 - Thay mã `PUBLISHED_PRODUCT_RECIPE_REQUIRED` lặp lại bằng hướng dẫn tiếng Việt, nêu tên/mã món từ ma trận và chỉ nơi cần thiết lập. Không suy đoán tỷ lệ hoặc bung BOM mới hơn vào nhu cầu chứng từ cũ.

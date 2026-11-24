@@ -1,3 +1,10 @@
+# 2026-11-24 — Dùng công thức cùng mã khi tính nhu cầu đơn hàng (KH-01/KH-10/KH-12)
+- Điều tra tiếp cảnh báo ở bảng tổng hợp: `commercial_catalog` (migration 069) có thể hiển thị và tính giá vốn bằng công thức sản phẩm đã công bố cùng mã, trong khi `planning_needs` chỉ đọc `product_recipe_links`; hai màn vì vậy đưa ra kết quả không nhất quán dù công thức nhìn thấy trong danh mục/công thức.
+- Migration 086 làm nhu cầu đơn dùng liên kết đã lưu nếu có; nếu không, dùng phiên bản công thức sản phẩm đã công bố, hiệu lực đúng ngày và trùng mã. Chỉ mặc định hệ số 1 khi mã đơn vị đầu ra công thức trùng đơn vị bán; khác đơn vị phải có `productQuantity` nguồn hợp lệ hoặc tỷ lệ đã lưu. Công thức chỉ đọc, không ghi liên kết mới hay thay đổi snapshot.
+- Cảnh báo phân biệt “không tìm thấy công thức đã công bố” với “đã tìm thấy công thức nhưng thiếu tỷ lệ”; bảng Excel dùng cùng nội dung dễ hiểu.
+- Bằng chứng: kiểm thử tích hợp công thức cùng mã/cùng đơn vị, trường hợp khác đơn vị thiếu tỷ lệ và trường hợp có tỷ lệ nguồn đạt; toàn bộ tests 189/189, typecheck, lint và production build đạt. PGlite đã nạp migration 086 từ thư mục migrations.
+- Còn lại: cần phát hành migration 086 lên môi trường ứng dụng trước khi nhu cầu cloud cập nhật; chưa xác minh được bản ghi thật cho các mã trong ảnh. Nếu công thức đầu ra khác đơn vị bán, cần tỷ lệ thực đã xác minh.
+
 # 2026-11-24 — Chỉ rõ món thiếu công thức/quy đổi trong nhu cầu đơn hàng (KH-01/KH-10/KH-12)
 - Điều tra cảnh báo `PUBLISHED_PRODUCT_RECIPE_REQUIRED`: `order_material_demand` đưa các đơn `approved` chưa có kế hoạch vào `planning_needs`; nhu cầu chỉ tính được khi có liên kết công thức đã công bố và tỷ lệ món bán hiệu lực đúng ngày giao. Migration 084 cho phép duyệt khi thiếu dữ liệu nhưng không tạo công thức/quy đổi.
 - Cảnh báo ở bảng tổng hợp nay đổi sang hướng dẫn tiếng Việt và tìm tên/mã món từ dữ liệu ma trận; yêu cầu liên kết công thức và tỷ lệ ở Danh mục món bán rồi tải lại. Không dùng BOM mới hơn hoặc giả định hệ số để viết ngược nhu cầu cho chứng từ cũ.

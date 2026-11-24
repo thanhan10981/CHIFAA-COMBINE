@@ -5,14 +5,14 @@ import fs from 'node:fs/promises';
 import type {PGlite} from '@electric-sql/pglite';
 import {database,asUser,identities} from './database-fixture';
 import {buildPlanningFlowUpdate} from '../lib/deploy/planning-flow-update';
-let db:PGlite,recipe:string;const warehouse=randomUUID(),rice=randomUUID(),sausage=randomUUID(),wrapper=randomUUID(),product=randomUUID(),missing=randomUUID(),kg=randomUUID(),each=randomUUID();
+let db:PGlite,recipe:string;const warehouse=randomUUID(),rice=randomUUID(),sausage=randomUUID(),wrapper=randomUUID(),product=randomUUID(),missing=randomUUID(),kg=randomUUID(),each=randomUUID(),portion=randomUUID();
 type R=Record<string,unknown>;type Preview={plan_id:string|null;complete:boolean;products:{quantity:string}[];materials:{material_id:string;quantity:string;shortage:string|null}[];sources:R[]};
 const rpc=async<T=R>(name:string,args:unknown[],user=identities.admin)=>(await asUser(db,user,()=>db.query<{r:T}>(`select public.${name}(${args.map((_,i)=>'$'+(i+1)).join(',')}) r`,args))).rows[0].r;
 const lines=(quantity:string)=>[{product_id:product,quantity}];
 const preview=(date:string,quantity:string,previous:string|null=null,mode='replace')=>rpc<Preview>('production_plan_requirements',[warehouse,date,previous,mode,lines(quantity)]);
 const version=async()=>(await db.query<{v:string}>("select coalesce((select version::text from data_versions where module='inventory'),'0') v")).rows[0].v;
 before(async()=>{
- db=await database();await db.query("insert into material_units(id,code,name,dimension) values($1,'kg','kg','mass'),($2,'each','each','count')",[kg,each]);await db.query("insert into warehouses(id,code,name,kind) values($1,'FLOW-W','Synthetic shared warehouse','ingredient')",[warehouse]);
+ db=await database();await db.query("insert into material_units(id,code,name,dimension) values($1,'kg','kg','mass'),($2,'each','each','count'),($3,'portion','portion','count')",[kg,each,portion]);await db.query("insert into warehouses(id,code,name,kind) values($1,'FLOW-W','Synthetic shared warehouse','ingredient')",[warehouse]);
  await db.query("insert into materials(id,code,name,usage_unit_id,purchase_unit_id) values($1,'FLOW-R','Synthetic rice',$4,$4),($2,'FLOW-S','Synthetic sausage',$4,$4),($3,'FLOW-B','Synthetic wrapper',$5,$5)",[rice,sausage,wrapper,kg,each]);await db.query("insert into products(id,code,name,sale_unit) values($1,'FLOW-P','Synthetic planned meal','portion'),($2,'FLOW-M','Synthetic missing recipe','portion')",[product,missing]);
  const child=await rpc('save_recipe',[{code:'FLOW-CH',name:'Synthetic cooked rice',kind:'rice',effective_from:'2020-01-01',output_quantity:'1',output_unit_id:kg},[{material_id:rice,quantity:'0.5',unit_id:kg}],randomUUID()]);await rpc('publish_recipe',[child.version_id,'1',null,'1',randomUUID()]);
  const meal=await rpc('save_recipe',[{code:'FLOW-MEAL',name:'Synthetic meal recipe',kind:'product',effective_from:'2020-01-01',output_quantity:'1',output_unit_id:each},[{child_version_id:child.version_id,quantity:'0.1',unit_id:kg},{material_id:sausage,quantity:'0.01',unit_id:kg},{material_id:wrapper,quantity:'1',unit_id:each}],randomUUID()]);recipe=meal.version_id as string;await rpc('publish_recipe',[recipe,'1',product,'1',randomUUID()]);
@@ -30,6 +30,22 @@ test('KH-01 plan100 expands nested recipe and packaging without stock write; app
 test('KH-01 missing recipe stays incomplete and missing stock stays null, preview respects live permissions',async()=>{
  const p=await rpc<Preview>('production_plan_requirements',[warehouse,'2026-11-20',null,'replace',[{product_id:missing,quantity:'100'}]]);assert.equal(p.complete,false);assert.equal(p.materials.length,0);assert.ok(p.sources.some(s=>s.issue==='PUBLISHED_PRODUCT_RECIPE_REQUIRED'));
  await assert.rejects(()=>rpc('production_plan_requirements',[warehouse,'2026-11-20',null,'replace',lines('100')],identities.a),/FORBIDDEN/);
+});
+test('KH-01 order demand resolves same-code published recipes only with a safe or sourced conversion',async()=>{
+ const sameUnitProduct=randomUUID();await db.query("insert into products(id,code,name,sale_unit) values($1,'FLOW-SAME','Synthetic same-unit product','portion')",[sameUnitProduct]);
+ const sameUnitRecipe=await rpc('save_recipe',[{code:'FLOW-SAME',name:'Synthetic same-unit recipe',kind:'product',effective_from:'2020-01-01',output_quantity:'2',output_unit_id:portion},[{material_id:rice,quantity:'1',unit_id:kg}],randomUUID()]);
+ await rpc('publish_recipe',[sameUnitRecipe.version_id,'1',null,null,randomUUID()]);
+ const sameUnit=await rpc<Preview>('production_plan_requirements',[warehouse,'2026-11-20',null,'replace',[{product_id:sameUnitProduct,quantity:'10'}]]);
+ assert.equal(sameUnit.complete,true);assert.equal(Number(sameUnit.materials.find(m=>m.material_id===rice)?.quantity),5);
+
+ const convertedProduct=randomUUID();await db.query("insert into products(id,code,name,sale_unit) values($1,'FLOW-CONVERTED','Synthetic converted product','box')",[convertedProduct]);
+ const convertedRecipe=await rpc('save_recipe',[{code:'FLOW-CONVERTED',name:'Synthetic converted recipe',kind:'product',effective_from:'2020-01-01',output_quantity:'2',output_unit_id:portion},[{material_id:rice,quantity:'1',unit_id:kg}],randomUUID()]);
+ await rpc('publish_recipe',[convertedRecipe.version_id,'1',null,null,randomUUID()]);
+ const missingRatio=await rpc<Preview>('production_plan_requirements',[warehouse,'2026-11-20',null,'replace',[{product_id:convertedProduct,quantity:'1'}]]);
+ assert.equal(missingRatio.complete,false);assert.ok(missingRatio.sources.some(source=>source.issue==='PRODUCT_RECIPE_RATIO_REQUIRED'));
+ await db.query("insert into private.catalog_sources(entity,entity_id,source_hash,source_data) values('recipe:source',$1,$2,$3)",[convertedRecipe.version_id,randomUUID(),{productQuantity:'3'}]);
+ const sourcedRatio=await rpc<Preview>('production_plan_requirements',[warehouse,'2026-11-20',null,'replace',[{product_id:convertedProduct,quantity:'1'}]]);
+ assert.equal(sourcedRatio.complete,true);assert.equal(Number(sourcedRatio.materials.find(m=>m.material_id===rice)?.quantity),1.5);
 });
 test('KH-01/03 one shared stock count feeds reconciliation; planning does not issue, actual production does once',async()=>{
  const opening=await rpc('post_stock_count',[warehouse,'2026-11-20',[{material_id:rice,counted_quantity:'10'}],await version(),randomUUID()]);await rpc('certify_stock_count',[opening.count_id,'2',null,'2026-11-20T23:00:00+07:00','Synthetic end of day',randomUUID()]);

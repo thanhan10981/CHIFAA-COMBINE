@@ -10,6 +10,11 @@ test('order demand warnings identify a missing effective recipe and product conv
  assert.match(message,/Món kiểm thử \(MON-1\)/);assert.match(message,/công thức đã công bố và tỷ lệ quy đổi món bán có hiệu lực trong ngày giao/);assert.match(message,/Danh mục món bán/);assert.doesNotMatch(message,/PUBLISHED_PRODUCT_RECIPE_REQUIRED/);
 });
 
+test('same-code published recipe with unlike output unit identifies missing conversion',()=>{
+ const message=orderDemandIssueText({product_id:'product-1',product_code:'MON-1',product_name:'Món kiểm thử',issue:'PRODUCT_RECIPE_RATIO_REQUIRED'},[]);
+ assert.match(message,/Đã tìm thấy công thức đã công bố món Món kiểm thử \(MON-1\)/);assert.match(message,/đơn vị đầu ra khác đơn vị bán/);assert.match(message,/xác minh tỷ lệ/);assert.doesNotMatch(message,/PRODUCT_RECIPE_RATIO_REQUIRED/);
+});
+
 test('daily order workbook puts the store matrix and ingredient demand first, then keeps order details',async()=>{
  const originalFetch=globalThis.fetch;
  const logo=await fs.readFile(path.resolve('public/logo-chifaa.png'));
