@@ -88,6 +88,14 @@ test('automatic product publication carries forward an existing effective conver
  const next=await call('save_recipe_revision',[first.recipe_id,'1',metadata('R-CAT-AUTO-LINK','2026-11-18'),[item],'Synthetic product revision',randomUUID()]);await call('publish_recipe',[next.version_id,'1',null,null,randomUUID()]);
  const links=await db.query<{effective_from:string;quantity:string}>('select effective_from::text,output_quantity_per_product::text quantity from product_recipe_links where product_id=$1 order by effective_from',[productId]);assert.deepEqual(links.rows,[{effective_from:'2026-11-17',quantity:'2.000000'},{effective_from:'2026-11-18',quantity:'2.000000'}]);
 });
+test('recipe publication reports the exact material and units when its formula conversion is missing',async()=>{
+ const piece=randomUUID(),unmappedMaterial=randomUUID();
+ await db.query("insert into material_units(id,code,name,dimension) values($1,'piece','Synthetic piece','count')",[piece]);
+ await db.query("insert into materials(id,code,name,purchase_unit_id,usage_unit_id) values($1,'R-CAT-UNIT-BLOCK','Synthetic unmapped material',$2,$2)",[unmappedMaterial,kg]);
+ const row=await save('R-CAT-UNIT-BLOCK-RECIPE',[{material_id:unmappedMaterial,child_version_id:null,quantity:'1',unit_id:piece}]);
+ await assert.rejects(()=>call('publish_recipe',[row.version_id,'1',null,null,randomUUID()]),/UNIT_NEEDS_VERIFICATION\|material=R-CAT-UNIT-BLOCK\|from=piece\|to=kg/);
+ assert.equal((await db.query<{status:string}>('select status from recipe_versions where id=$1',[row.version_id])).rows[0].status,'draft');
+});
 test('failed topping validation rolls back the product configuration save and leaves topping unpublished',async()=>{
  const topping=await call('save_recipe_revision',[null,null,{...metadata('R-CAT-BAD-TOPPING'),kind:'topping'},[item],'Synthetic topping source',randomUUID()]);
  await db.query("insert into recipe_unresolved_items(recipe_version_id,label,quantity,unit_label,issue,sort_order) values($1,'Unresolved topping source',1,'g','Missing material mapping',2)",[topping.version_id]);

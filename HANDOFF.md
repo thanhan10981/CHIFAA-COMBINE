@@ -1265,3 +1265,8 @@ Còn lại: chưa UAT dữ liệu thật hoặc triển khai frontend; không c�
 - Chạy `npm run db:types`, cập nhật generated output. Cập nhật test fixtures: selected product recipes publish before adding immutable lines; customer order approval now expects an auto-created plan and no revenue/stock posting; stable date assertions use SQL formatting.
 - Evidence: 175/175 full web tests, `npm run db:types`, typecheck, lint, production build, and `git diff --check` passed. GitHub Actions has not yet rerun against the fix.
 - No Supabase cloud migration or Vercel deployment was performed.
+
+## 2026-11-25 - Recipe publication unit diagnostics (KH-01/KH-10/KH-11)
+- Migration `202611250087_explain_recipe_publication_unit_blocker.sql` preserves the publication guard and reports the exact material code plus formula-unit conversion direction when BOM publication fails with `UNIT_NEEDS_VERIFICATION`. The recipe editor now translates this into Vietnamese instructions to verify the formula conversion in the material catalog. No ratio is inferred and no cloud SQL was applied.
+- Evidence: added a PGlite regression asserting the missing material conversion is identified and the recipe remains draft. `npm test` ran 176 passing tests; the recipe-catalog test module could not start because Windows returned `spawn EPERM` (isolated retry failed before test execution). Typecheck and lint pass. Production build is blocked by the same `spawn EPERM`; rerun the recipe-catalog test and build when process spawning is available.
+- Remaining: apply migration 087 to the target database before the editor can display the exact material and units. The reported conversion must be entered with verified evidence; this change does not invent it.

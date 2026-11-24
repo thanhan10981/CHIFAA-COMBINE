@@ -823,3 +823,6 @@ Sửa lỗi SQLSTATE 42702 do bí danh truy vấn topping trùng biến trong `r
 - Cập nhật `web/lib/database/generated.ts` từ migrations sau khi migration 081 thêm `recipe_topping_options.topping_version_id`; CI trước đó thất bại ở bước kiểm tra diff của file types được sinh tự động.
 - Cập nhật fixture/test duyệt đơn để kiểm tra việc tự tạo kế hoạch sản xuất, không ghi doanh thu/kho; chuẩn hóa ngày đọc từ PGlite.
 - Kiểm tra: full suite 175/175, `db:types`, typecheck, lint, production build và `git diff --check` đạt. Chưa xác minh GitHub Actions sau khi push.
+
+## 2026-11-25
+- Added exact material/unit details to recipe publication conversion errors and a Vietnamese editor message to guide the verified fix.
