@@ -1,3 +1,11 @@
+## 2026-11-24 — Lấy topping từ cấu hình món đã lưu và bắt buộc chọn khi đặt (KH-01/KH-10/KH-11/KH-12)
+- Xác nhận qua RPC Supabase thật: 10 món công khai nhưng catalog topping rỗng; số lượng món không phải nguyên nhân. Catalog mới đọc cấu hình đã lưu có hiệu lực mới nhất, không bị bản công thức liên kết cũ che lựa chọn mới.
+- Lưu món bằng tài khoản có quyền duyệt tự công bố riêng các topping đã tích. Giữ đúng phiên bản topping bất biến cho đơn; không buộc công bố toàn bộ BOM món để hiện lựa chọn, không tự suy quy đổi hoặc phụ thu.
+- Khách phải chọn đủ một phần topping cho mỗi món có cấu hình; có thể chia nhiều loại. Kiểm tra ở cả UI/PostgreSQL, chặn đường RPC cũ bỏ qua và giữ nguyên snapshot/retry lịch sử. Sửa kiểm tra JSON và tính cost theo số phần topping thực sự phân bổ.
+- API topping có phiên bản để nhận biết database chưa cập nhật; lỗi tải, cấu hình chưa sẵn sàng hoặc lựa chọn đã thay đổi đều báo rõ và khóa gửi đơn.
+- 184/184 tests, db types, typecheck, lint, build, 21 ca PostgreSQL tập trung và browser fixture phần khách đặt hàng đạt. Gói SQL một giao dịch 081–083 được thử từ các trạng thái 080/081/082 và chạy lại an toàn; có script kiểm tra API live chỉ đọc.
+- Chưa áp SQL cloud; cần người quản trị chạy `output/CHIFAA_TOPPINGS_081_083.sql` trước khi phát hành frontend mới và UAT dữ liệu thật. Các topping nháp được chọn từ trước cần lưu lại món bằng tài khoản có quyền duyệt.
+
 # 2026-11-24 - Show configured toppings before entering dish quantity (KH-10/KH-12)
 - Fixed the public ordering card hiding configured topping options until the dish had a nonzero quantity.
 - Topping choices now appear on their configured dish card immediately. Checkboxes remain disabled at zero quantity with a short instruction, become selectable after adding the dish, and selections stay on that dish's basket line without changing its sale price.

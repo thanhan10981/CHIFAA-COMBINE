@@ -88,12 +88,12 @@ test('automatic product publication carries forward an existing effective conver
  const next=await call('save_recipe_revision',[first.recipe_id,'1',metadata('R-CAT-AUTO-LINK','2026-11-18'),[item],'Synthetic product revision',randomUUID()]);await call('publish_recipe',[next.version_id,'1',null,null,randomUUID()]);
  const links=await db.query<{effective_from:string;quantity:string}>('select effective_from::text,output_quantity_per_product::text quantity from product_recipe_links where product_id=$1 order by effective_from',[productId]);assert.deepEqual(links.rows,[{effective_from:'2026-11-17',quantity:'2.000000'},{effective_from:'2026-11-18',quantity:'2.000000'}]);
 });
-test('failed topping validation rolls back publication of both topping and product recipe',async()=>{
+test('failed topping validation rolls back the product configuration save and leaves topping unpublished',async()=>{
  const topping=await call('save_recipe_revision',[null,null,{...metadata('R-CAT-BAD-TOPPING'),kind:'topping'},[item],'Synthetic topping source',randomUUID()]);
  await db.query("insert into recipe_unresolved_items(recipe_version_id,label,quantity,unit_label,issue,sort_order) values($1,'Unresolved topping source',1,'g','Missing material mapping',2)",[topping.version_id]);
- const product=await call('save_recipe_revision',[null,null,{...metadata('R-CAT-BAD-PRODUCT'),topping_version_ids:[topping.version_id]},[item],'Synthetic product source',randomUUID()]);
- await assert.rejects(()=>call('publish_recipe',[product.version_id,'1',null,null,randomUUID()]),/RECIPE_NEEDS_REVIEW/);
- const statuses=await db.query<{parent:string;topping:string}>("select p.status parent,t.status topping from recipe_versions p join recipe_topping_options o on o.parent_version_id=p.id join recipe_versions t on t.id=o.topping_version_id where p.id=$1",[product.version_id]);assert.deepEqual(statuses.rows,[{parent:'draft',topping:'draft'}]);
+ await assert.rejects(()=>call('save_recipe_revision',[null,null,{...metadata('R-CAT-BAD-PRODUCT'),topping_version_ids:[topping.version_id]},[item],'Synthetic product source',randomUUID()]),/RECIPE_NEEDS_REVIEW/);
+ assert.equal((await db.query("select * from recipes where code='R-CAT-BAD-PRODUCT'")).rows.length,0);
+ assert.equal((await db.query<{status:string}>('select status from recipe_versions where id=$1',[topping.version_id])).rows[0].status,'draft');
 });
 test('sheet parser preserves blank source quantities instead of silently dropping ingredients',()=>{
  const row=(...cells:string[])=>cells.join('\t');

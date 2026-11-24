@@ -1,11 +1,14 @@
 import path from 'node:path';
 export async function checkPublicPortal(page,base,out,report){
+ page.setDefaultTimeout(15000);
  await page.routeWebSocket('**',socket=>socket.close());
+ await page.clock.install();
  const products=[{product_id:'public-rice',code:'CN',name:'Cơm nắm kiểm thử với tên dài trên màn hình điện thoại',sale_unit:'Phần',price_vnd:'15000'},{product_id:'public-roll',code:'CC',name:'Cơm cuộn kiểm thử',sale_unit:'Hộp',price_vnd:'25000'},{product_id:'public-missing',code:'CG',name:'Món công bố chưa có giá',sale_unit:'Phần',price_vnd:null}];
- let empty=false,priceChanged=false;const requests=[];
+ let empty=false,priceChanged=false,toppingState='ready',toppingCalls=0;const requests=[];
+ const configuredToppings=[{version_id:'topping-tomato',code:'STC',name:'Sốt cà',unit:'phần'},{version_id:'topping-chili',code:'STO',name:'Sốt tương ớt',unit:'phần'}];
  await page.route('**/rest/v1/rpc/public_order_catalog',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({rows:empty?[]:products,total:empty?'0':'3'})}));
  await page.route('**/rest/v1/rpc/public_order_catalog_linked',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({rows:products.map(product=>({...product,discount_rate:'0.1'})),total:'3'})}));
- await page.route('**/rest/v1/rpc/public_order_topping_catalog',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([{product_id:products[0].product_id,options:[{version_id:'topping-tomato',code:'STC',name:'Sốt cà',unit:'phần'},{version_id:'topping-chili',code:'STO',name:'Sốt tương ớt',unit:'phần'}]}])}));
+ await page.route('**/rest/v1/rpc/public_order_topping_catalog_v2',route=>{toppingCalls++;return route.fulfill({status:toppingState==='error'?503:200,contentType:'application/json',body:toppingState==='error'?'{}':toppingState==='unsupported'?'[]':JSON.stringify({schema_version:1,rows:[{product_id:products[0].product_id,required:true,unavailable_count:toppingState==='unavailable'?1:0,options:toppingState==='unavailable'?[]:toppingState==='stale'?[configuredToppings[1]]:configuredToppings}]})});});
  await page.route('**/rest/v1/rpc/submit_public_order_with_toppings',async route=>{
   requests.push(route.request().postDataJSON());
   await route.fulfill({status:priceChanged?400:requests.length===1?503:200,contentType:'application/json',body:priceChanged?'{"code":"P0001","message":"PRICE_CHANGED"}':requests.length===1?'{}':'{"order_id":"public-synthetic-order","status":"submitted"}'});
@@ -39,10 +42,27 @@ export async function checkPublicPortal(page,base,out,report){
   if([390,1440].includes(width))await page.screenshot({path:path.join(out,'public-portal-'+width+'.png'),fullPage:true});
   report.checks.push('public portal '+width+': immediate menu, quantities, exact total, no login/store dependency, unpriced disabled, no overflow');
  }
- if(process.argv.includes('--catalog-only')){await page.getByRole('checkbox',{name:'Sốt cà'}).check();if(!await page.locator('.public-cart-toppings').innerText().then(value=>value.includes('1 Sốt cà')))throw new Error('Selecting a visible topping did not add it to the product basket');report.checks.push('configured topping choices are visible at zero quantity, unlock after adding the dish, and can be selected into its basket line');report.checks.push('catalog-only fixture exit before unrelated order review flows');return;}
+ const send=page.getByRole('button',{name:'Gửi đơn đặt hàng',exact:true});
+ if(!await send.isDisabled())throw new Error('Configured dish can be submitted without choosing toppings');
+ await page.getByLabel('Số lượng '+products[0].name,{exact:true}).fill('0');
+ if(await send.isDisabled())throw new Error('An unconfigured dish incorrectly requires a topping');
+ await page.getByLabel('Số lượng '+products[0].name,{exact:true}).fill('2');
+ if(!await send.isDisabled())throw new Error('Adding a configured dish did not require its topping');
+ await page.getByRole('checkbox',{name:'Sốt cà'}).check();
+ if(await send.isDisabled()||!await page.locator('.public-cart-toppings').innerText().then(value=>value.includes('2 Sốt cà')))throw new Error('Choosing a topping must allocate the full remaining dish quantity');
+ await page.getByRole('button',{name:'Giảm Sốt cà cho '+products[0].name,exact:true}).click();
+ if(!await send.isDisabled())throw new Error('Partial topping allocation can be submitted');
+ await page.getByRole('checkbox',{name:'Sốt tương ớt'}).check();
+ if(await send.isDisabled()||!await page.locator('.public-cart-toppings').innerText().then(value=>value.includes('1 Sốt cà')&&value.includes('1 Sốt tương ớt')))throw new Error('Completing a split topping allocation did not enable submission');
+ await page.getByLabel('Số lượng '+products[0].name,{exact:true}).fill('1');
+ if(await send.isDisabled()||!await page.locator('.public-cart-toppings').innerText().then(value=>value.includes('1 Sốt cà')&&!value.includes('Sốt tương ớt')))throw new Error('Decreasing dish quantity did not preserve a valid bounded topping allocation');
+ await page.getByRole('checkbox',{name:'Sốt cà'}).uncheck();
+ report.checks.push('configured dishes require full allocation, a checkbox assigns remaining portions, split allocations enable submit, reducing quantity keeps counts bounded; dishes without configured toppings remain orderable');
  await page.getByLabel('Số lượng '+products[0].name,{exact:true}).fill('10');
  if(await page.locator('.public-product').nth(1).locator('.public-topping-options').count())throw new Error('A dish without configured toppings showed topping choices');
- for(const toppingName of ['Sốt cà','Sốt tương ớt']){await page.getByRole('checkbox',{name:toppingName}).check();if(!await page.locator('.public-cart-toppings').innerText().then(value=>value.includes('1 '+toppingName)))throw new Error('Checking a topping did not show it in the cart');for(let count=1;count<5;count++)await page.getByRole('button',{name:'Tăng '+toppingName+' cho '+products[0].name,exact:true}).click();}
+ await page.getByRole('checkbox',{name:'Sốt cà'}).check();
+ for(let count=10;count>5;count--)await page.getByRole('button',{name:'Giảm Sốt cà cho '+products[0].name,exact:true}).click();
+ await page.getByRole('checkbox',{name:'Sốt tương ớt'}).check();
  if(!await page.locator('.public-cart-toppings').innerText().then(value=>value.includes('5 Sốt cà')&&value.includes('5 Sốt tương ớt')))throw new Error('Topping portions were not split across 10 ordered portions');
  await page.getByLabel('Tên người nhận *',{exact:true}).fill('Khách kiểm thử');
  await page.getByLabel('Số điện thoại *',{exact:true}).fill('0900000035');
@@ -58,6 +78,7 @@ export async function checkPublicPortal(page,base,out,report){
  report.checks.push('guest503/retry keeps identical request and idempotency key; 10 items split into 5 portions per topping; confirmation only after server success');
  priceChanged=true;
  await page.getByRole('button',{name:'Tăng '+products[0].name,exact:true}).click();
+ await page.getByRole('checkbox',{name:'Sốt cà'}).check();
  await page.getByRole('button',{name:'Gửi đơn đặt hàng',exact:true}).click();
  await page.getByRole('alert').filter({hasText:'Giá món vừa thay đổi'}).first().waitFor();
  if(await page.locator('.public-cart li').count())throw new Error('Changed quote was silently retained');
@@ -65,12 +86,37 @@ export async function checkPublicPortal(page,base,out,report){
  report.checks.push('price change requires a fresh choice; empty published menu has an explicit empty state');
  empty=false;priceChanged=false;await page.goto(base+'/portal#'+'a'.repeat(64));await page.reload();await page.getByRole('heading',{name:products[0].name,exact:true}).waitFor();await page.locator('input[type=radio][name=payment_method][value=bank]').check();
  await page.getByRole('button',{name:'Tăng '+products[0].name,exact:true}).click();
+ await page.getByRole('checkbox',{name:'Sốt cà'}).check();
  await page.getByLabel('Tên người nhận *',{exact:true}).fill('Điểm bán kiểm thử');await page.getByLabel('Số điện thoại *',{exact:true}).fill('0900000038');await page.getByLabel('Địa chỉ / điểm giao *',{exact:true}).fill('Địa chỉ kiểm thử điểm bán');
  await page.getByRole('button',{name:'Gửi đơn đặt hàng',exact:true}).click();await page.getByText('Đã nhận đơn #public-s',{exact:true}).waitFor();
  if(requests.at(-1)?.p_link_token!=='a'.repeat(64)||requests.at(-1)?.p_payment_method!=='bank')throw new Error('Store link token or selected payment method was not passed to the order RPC');
  if(!['AM','PM'].includes(requests.at(-1)?.p_shift))throw new Error('Hidden Vietnam shift was not passed with the store order');
  if(!page.url().endsWith('#'+'a'.repeat(64)))throw new Error('Reusable store link was removed after its first order');
  report.checks.push('store-link portal retains the capability token until submit and includes it in the idempotent order request');
+ await page.getByRole('button',{name:'Tăng '+products[0].name,exact:true}).click();
+ await page.getByRole('checkbox',{name:'Sốt cà'}).check();
+ async function refreshToppings(state){toppingState=state;const before=toppingCalls;await Promise.all([page.waitForResponse(response=>response.url().includes('/rpc/public_order_topping_catalog_v2')),page.clock.runFor(30_050)]);if(toppingCalls<=before)throw new Error('Topping catalog did not refetch');}
+ await refreshToppings('stale');
+ await page.getByRole('button',{name:'Chọn lại topping',exact:true}).waitFor();
+ if(!await send.isDisabled()||!await page.locator('.public-cart-toppings').innerText().then(value=>value.includes('Sốt cà')))throw new Error('A stale topping selection was silently removed or remained submittable');
+ await page.getByRole('button',{name:'Chọn lại topping',exact:true}).click();
+ if(!await send.isDisabled())throw new Error('Resetting stale toppings silently bypassed the required selection');
+ await page.getByRole('checkbox',{name:'Sốt tương ớt'}).check();
+ if(await send.isDisabled())throw new Error('Choosing an available replacement did not restore valid allocation');
+ await refreshToppings('unavailable');
+ await page.locator('.public-topping-options').getByText('Topping của món đang được cập nhật. Vui lòng chọn món khác hoặc thử tải lại.',{exact:true}).waitFor();
+ if(!await send.isDisabled())throw new Error('A saved but unavailable topping configuration can be submitted');
+ await refreshToppings('error');
+ const retryToppings=page.getByRole('button',{name:'Tải lại topping',exact:true});await retryToppings.waitFor();
+ if(!await send.isDisabled())throw new Error('A failed topping catalog was treated as no configured toppings');
+ toppingState='ready';await retryToppings.click();await retryToppings.waitFor({state:'hidden'});
+ if(await send.isDisabled())throw new Error('Successful topping retry did not restore the valid basket');
+ await refreshToppings('unsupported');await retryToppings.waitFor();
+ if(!await send.isDisabled()||!await page.getByRole('alert').filter({hasText:'Cổng đặt hàng đang được cập nhật lựa chọn topping.'}).count())throw new Error('An unsupported topping contract silently bypassed topping requirements');
+ toppingState='ready';await retryToppings.click();await retryToppings.waitFor({state:'hidden'});
+ report.checks.push('catalog refetch blocks stale topping selections until explicitly replaced; unavailable saved configuration blocks submission; visible catalog error can retry without losing the basket');
+ report.checks.push('versioned topping contract rejects an old/unsupported response visibly and blocks checkout until a compatible catalog is loaded');
+ if(process.argv.includes('--catalog-only')||process.argv.includes('--public-shop-only')){report.checks.push('public-shop fixture exit before unrelated admin review flows');return;}
  await page.goto(base+'/app/materials');await page.getByRole('button',{name:'Cổng đặt hàng',exact:true}).click();const linkDialog=page.getByRole('dialog',{name:'Tạo link cho điểm bán'});await linkDialog.waitFor();
  if(!await linkDialog.getByLabel('Điểm bán',{exact:true}).count())throw new Error('Store picker missing: '+(await linkDialog.innerText()).slice(0,500));
  await linkDialog.getByLabel('Điểm bán',{exact:true}).selectOption('store-fixture');await page.getByRole('button',{name:'Tạo link',exact:true}).click();
