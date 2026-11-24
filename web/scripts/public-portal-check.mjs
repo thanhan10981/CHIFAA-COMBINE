@@ -5,11 +5,11 @@ export async function checkPublicPortal(page,base,out,report){
  let empty=false,priceChanged=false;const requests=[];
  await page.route('**/rest/v1/rpc/public_order_catalog',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({rows:empty?[]:products,total:empty?'0':'3'})}));
  await page.route('**/rest/v1/rpc/public_order_catalog_linked',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({rows:products.map(product=>({...product,discount_rate:'0.1'})),total:'3'})}));
- await page.route('**/rest/v1/rpc/submit_public_order_v2',async route=>{
+ await page.route('**/rest/v1/rpc/public_order_topping_catalog',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([{product_id:products[0].product_id,options:[{version_id:'topping-tomato',code:'STC',name:'Sốt cà',unit:'phần'},{version_id:'topping-chili',code:'STO',name:'Sốt tương ớt',unit:'phần'}]}])}));
+ await page.route('**/rest/v1/rpc/submit_public_order_with_toppings',async route=>{
   requests.push(route.request().postDataJSON());
   await route.fulfill({status:priceChanged?400:requests.length===1?503:200,contentType:'application/json',body:priceChanged?'{"code":"P0001","message":"PRICE_CHANGED"}':requests.length===1?'{}':'{"order_id":"public-synthetic-order","status":"submitted"}'});
  });
- await page.route('**/rest/v1/rpc/submit_store_link_order_v2',async route=>{requests.push(route.request().postDataJSON());await route.fulfill({status:200,contentType:'application/json',body:'{"order_id":"public-synthetic-order","status":"submitted"}'});});
  await page.route('**/rest/v1/stores*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([{id:'store-fixture',code:'GUEST-S',name:'Điểm nhận đơn kiểm thử'}])}));
  await page.route('**/rest/v1/rpc/public_order_links',route=>route.fulfill({status:200,contentType:'application/json',body:'[]'}));
  let createdLink;
@@ -35,6 +35,9 @@ export async function checkPublicPortal(page,base,out,report){
   report.checks.push('public portal '+width+': immediate menu, quantities, exact total, no login/store dependency, unpriced disabled, no overflow');
  }
  if(process.argv.includes('--catalog-only')){report.checks.push('catalog-only fixture exit before unrelated order review flows');return;}
+ await page.getByLabel('Số lượng '+products[0].name,{exact:true}).fill('10');
+ for(const toppingName of ['Sốt cà','Sốt tương ớt'])for(let count=0;count<5;count++)await page.getByRole('button',{name:'Tăng '+toppingName,exact:true}).click();
+ if(!await page.locator('.public-cart-toppings').innerText().then(value=>value.includes('5 Sốt cà')&&value.includes('5 Sốt tương ớt')))throw new Error('Topping portions were not split across 10 ordered portions');
  await page.getByLabel('Tên người nhận *',{exact:true}).fill('Khách kiểm thử');
  await page.getByLabel('Số điện thoại *',{exact:true}).fill('0900000035');
  await page.getByLabel('Địa chỉ / điểm giao *',{exact:true}).fill('Địa chỉ kiểm thử không phải dữ liệu thật');
@@ -44,8 +47,9 @@ export async function checkPublicPortal(page,base,out,report){
  await page.getByRole('button',{name:'Kiểm tra lại lần gửi',exact:true}).click();await page.getByText('Đã nhận đơn #public-s',{exact:true}).waitFor();
  if(requests.length!==2||JSON.stringify(requests[0])!==JSON.stringify(requests[1]))throw new Error('Guest retry changed the request/key');
  if(requests[0].p_items.some(item=>!['15000','25000'].includes(item.price_vnd)))throw new Error('Quote missing from submission');
+ const toppingPayload=requests[0].p_items.find(item=>item.product_id===products[0].product_id)?.toppings??[];if(toppingPayload.length!==2||toppingPayload.some(topping=>topping.quantity!=='5'))throw new Error('Split topping counts were not included in public order payload');
  if(!['AM','PM'].includes(requests[0].p_shift))throw new Error('Hidden Vietnam shift is missing from the submitted order');
- report.checks.push('guest503/retry keeps identical request and idempotency key; confirmation only after server success');
+ report.checks.push('guest503/retry keeps identical request and idempotency key; 10 items split into 5 portions per topping; confirmation only after server success');
  priceChanged=true;
  await page.getByRole('button',{name:'Tăng '+products[0].name,exact:true}).click();
  await page.getByRole('button',{name:'Gửi đơn đặt hàng',exact:true}).click();

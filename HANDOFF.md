@@ -1,3 +1,11 @@
+# 2026-11-24 — Chia topping theo số món, gắn kế hoạch và xuất kho khi giao (KH-01/KH-03/KH-05/KH-10/KH-12)
+- Cổng đặt hàng cho phép phân bổ số topping nguyên theo từng loại, tối đa một topping trên mỗi món và có thể bỏ chọn. Ví dụ 10 món có thể chia 5 sốt cà, 5 tương ớt; máy chủ kiểm tra tổng phân bổ không vượt số món. Giữ nguyên giá bán và doanh thu; topping không tự cộng phụ thu.
+- Bỏ yêu cầu nhập sản lượng đầu ra trong thao tác công bố công thức. Dùng tỷ lệ món bán đã liên kết; nếu chưa có thì cần thiết lập liên kết/quy đổi trước khi món vào thực đơn công khai, không tự đoán tỷ lệ.
+- Nhu cầu topping theo BOM được cộng vào preview/vật tư của kế hoạch đã gắn với đơn và kho nguyên liệu được gán. Khi xác nhận giao, một RPC giao dịch xuất BOM topping từ kho nguyên liệu của kế hoạch, liên kết movement + delivery với các dòng topping; thiếu kho/kế hoạch/tồn thì toàn bộ giao dịch bị rollback. Duyệt đơn vẫn chỉ tạo trạng thái/nhu cầu, không ghi kho hay doanh thu.
+- Migration: `202611240078_public_order_topping_allocations.sql`, `202611240079_order_topping_plan_inventory.sql`; cổng đặt hàng, chi tiết duyệt đơn, màn công thức và kiểu database được cập nhật.
+- Bằng chứng: `npm run typecheck`, `npm run lint`, `npm run db:types` đạt; `npm test` có 167 test đạt, 3 file test không khởi động được do Windows trả `spawn EPERM` từ esbuild. Các fixture PostgreSQL đã nạp được toàn bộ migrations; chưa có test UAT Supabase. `npm run build` cũng bị `spawn EPERM` khi Next khởi tạo worker. Chưa áp SQL cloud, chưa deploy.
+- Còn lại: chạy lại ba test bị chặn và build trong môi trường cho phép tiến trình con; kiểm tra UAT `/portal`, phân bổ topping, kế hoạch/kho và giao hàng trên DEV sau khi phát hành migration. Chưa commit/push.
+
 # 2026-11-24 — Công bố phiên bản công thức có topping cho cổng đặt hàng (KH-10/KH-12)
 - Sửa nguyên nhân cấu hình topping đã lưu nhưng không hiện trên `/portal`: trang công thức mặc định chọn phiên bản mới nhất (có thể là bản nháp), còn catalog công khai chỉ đọc phiên bản đã công bố và đã liên kết với món bán. Thêm thao tác công bố/liên kết ngay trên chi tiết công thức món ăn khi bản nháp có topping; chỉ tự tìm món bán trùng mã công thức, yêu cầu người dùng nhập tỷ lệ đầu ra/đơn vị bán đã xác minh, và gọi RPC `publish_recipe` có kiểm tra quyền hiện có. Không tự sửa snapshot đã chốt.
 - Số lượng đầu ra topping trên chi tiết giá vốn dùng formatter chung, bỏ phần thập phân dư như `1.000000` → `1`, giữ phần lẻ có ý nghĩa.
@@ -1163,8 +1171,16 @@ Còn lại: chưa UAT dữ liệu thật hoặc triển khai frontend; không c�
 - Added a printable order slip with seller branding, order code, delivery details, item quantities/prices and total. Per user choice it is explicitly an internal order slip, not a tax e-invoice.
 - Verification: web typecheck and lint passed; git diff --check passed at initial checkpoint. Migration is not applied to Supabase and production was not deployed. Remaining: apply migration through the authorized release process and verify with live order data; legal e-invoice issuance needs company tax profile and provider integration.
 
-## 2026-11-24 - Audit activity list cleanup control (KH-10)
+## 2026-11-24 - 30-day audit log retention (KH-10)
 
-- Added a “Dọn danh sách” control to clear the current activity-log view and reset its search/pagination. The UI explicitly states this does not delete durable audit records; existing audit history remains available for compliance and reconciliation.
-- Replaced raw operation/table headings with Vietnamese labels for common actions and business tables; unknown values remain visible as supplied by the database.
-- Verification: `npm run typecheck`, `npm run lint`, and `git diff --check` passed. No database changes, cloud SQL, or deployment performed. The button is a view cleanup, not persistent storage reclamation.
+- Added migration `202611240077_audit_log_30_day_retention.sql`: an admin-only RPC can delete audit rows older than 30 days, and a daily pg_cron job applies the same fixed retention rule automatically. Each purge that deletes rows records a new audit event with the cutoff and deletion count.
+- The audit page now labels the policy and provides a confirmed admin-only cleanup button; it does not allow deleting recent logs or choosing a custom cutoff. Common action/table names remain translated for readability.
+- Verification: `npm run typecheck`, `npm run lint`, and `git diff --check` passed. The migration has not been applied to Supabase; scheduled deletion will only start after the migration is applied to the intended database. No cloud SQL or deployment performed.
+
+## 2026-11-24 - Automatic order-to-production planning (KH-01/KH-05/KH-10/KH-12)
+
+- Added migration `202611240080_auto_order_production_plan.sql`. Approving a customer order now validates published product recipes and sale-unit ratios, creates or reuses the matching delivery-date/shift production plan, adds the ordered quantities, assigns the sole active ingredient warehouse, and marks the order scheduled. Topping BOM requirements follow the assigned plan warehouse.
+- Approval creates planning demand only. It does not post production, inventory movements, delivery, sales, cash or receivables. Actual production and delivery RPCs remain the posting points. Orders without an effective recipe/ratio fail atomically. Multiple active ingredient warehouses without an already assigned matching plan also fail clearly; no arbitrary warehouse is chosen.
+- Planning date assumption: when creating a new plan, production_date equals the order delivery_date because the app has no separate portal production-date rule. Existing matching plans retain their configured production date.
+- Evidence: all migrations loaded in local PGlite; an end-to-end PGlite check approved a seven-unit order, created/linked a plan to the single active ingredient warehouse, reserved quantity 7, and confirmed zero inventory movements. `npm run typecheck` and `npm run lint` passed. Targeted TypeScript test execution was blocked by Windows `spawn EPERM` from esbuild; full tests/build were not verified.
+- Remaining: resolve the production-date policy if production must precede delivery; configure a default or plan assignment rule if multiple ingredient warehouses are active; run the full web test/build suite in an environment that permits child process spawning; apply migration to intended DEV and perform live UAT. No cloud SQL or deployment performed.

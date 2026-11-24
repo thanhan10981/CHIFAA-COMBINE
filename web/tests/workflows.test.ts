@@ -66,11 +66,14 @@ test('customer A cannot see prices/orders of B, internal recipe/payroll or submi
  await asUser(db,identities.b,async()=>{assert.equal((await db.query('select * from customer_orders where id=$1',[orderA])).rows.length,0);assert.equal((await db.query('select * from customer_order_items where order_id=$1',[orderA])).rows.length,0);});
  await assert.rejects(()=>rpc('submit_order',[ids.storeB,date,'AM',items,'Tamper',randomUUID()],identities.a),/FORBIDDEN/);
 });
-test('approval/scheduling audit statuses but never creates revenue or double-adds a manual plan',async()=>{
+test('approval automatically creates and links a production plan without posting revenue or stock',async()=>{
  await assert.rejects(()=>rpc('review_order',[orderA,1,true,'',randomUUID()],identities.b),/FORBIDDEN/);
- await rpc('review_order',[orderA,1,true,'',randomUUID()]);await db.query("insert into production_plans(id,delivery_date,production_date,shift) values($1,'2090-01-01','2089-12-31','AM')",[ids.plan]);await db.query('insert into production_plan_lines(plan_id,product_id,planned_quantity) values($1,$2,100)',[ids.plan,ids.product]);
- const key=randomUUID();await rpc('schedule_order',[orderA,ids.plan,key]);await rpc('schedule_order',[orderA,ids.plan,key]);assert.equal(Number((await db.query<{planned_quantity:string}>('select planned_quantity from production_plan_lines where plan_id=$1',[ids.plan])).rows[0].planned_quantity),100);
- await assert.rejects(()=>rpc('schedule_order',[orderA,ids.plan,randomUUID()]),/ORDER_ALREADY_LINKED/);assert.equal((await db.query('select * from sales_documents')).rows.length,0);assert.equal((await db.query('select * from cash_ledger')).rows.length,0);assert.equal((await db.query('select * from order_status_history where order_id=$1',[orderA])).rows.length,3);
+ const key=randomUUID(),args=[orderA,1,true,'',key],review=await rpc('review_order',args);
+ assert.equal(review.rows[0].result.status,'scheduled');assert.equal((await rpc('review_order',args)).rows[0].result.plan_id,review.rows[0].result.plan_id);
+ const linked=(await db.query<{plan_id:string;status:string}>('select plan_id,status from customer_orders where id=$1',[orderA])).rows[0];assert.equal(linked.plan_id,review.rows[0].result.plan_id);assert.equal(linked.status,'scheduled');
+ const plan=(await db.query<{delivery_date:string;production_date:string;shift:string;status:string;ingredient_warehouse_id:string}>('select * from production_plans where id=$1',[linked.plan_id])).rows[0];assert.equal(plan.delivery_date,'2090-01-01');assert.equal(plan.production_date,'2090-01-01');assert.equal(plan.shift,'AM');assert.equal(plan.status,'approved');assert.equal(plan.ingredient_warehouse_id,ids.warehouse);
+ assert.equal(Number((await db.query<{planned_quantity:string}>('select planned_quantity from production_plan_lines where plan_id=$1 and product_id=$2',[linked.plan_id,ids.product])).rows[0].planned_quantity),100);
+ await assert.rejects(()=>rpc('schedule_order',[orderA,linked.plan_id,randomUUID()]),/ORDER_ALREADY_LINKED/);assert.equal((await db.query('select * from sales_documents')).rows.length,0);assert.equal((await db.query('select * from cash_ledger')).rows.length,0);assert.equal((await db.query('select * from inventory_movements')).rows.length,0);assert.equal((await db.query('select * from order_status_history where order_id=$1',[orderA])).rows.length,3);
 });
 test('order delivery consumes finished goods once and return support never restores stock or posts money',async()=>{
  const today=(await db.query<{date:string}>("select (now() at time zone 'Asia/Ho_Chi_Minh')::date::text date")).rows[0].date;
@@ -80,7 +83,8 @@ test('order delivery consumes finished goods once and return support never resto
  const overOrder=String((await rpc('submit_order',[ids.storeA,today,'PM',[{product_id:ids.product,quantity:overQuantity}],'Over-stock fixture',randomUUID()],identities.a)).rows[0].result.order_id);
  assert.equal(Number((await db.query<{quantity:string}>('select quantity from customer_order_items where order_id=$1',[overOrder])).rows[0].quantity),overQuantity);
  await rpc('review_order',[overOrder,1,true,'',randomUUID()]);
- await assert.rejects(()=>rpc('fulfill_order_delivery',[overOrder,2,randomUUID()]),/INSUFFICIENT_FINISHED_GOODS/);
+ const overVersion=Number((await db.query<{version:string}>('select version from customer_orders where id=$1',[overOrder])).rows[0].version);
+ await assert.rejects(()=>rpc('fulfill_order_delivery',[overOrder,overVersion,randomUUID()]),/INSUFFICIENT_FINISHED_GOODS/);
  assert.equal((await db.query('select * from deliveries where order_id=$1',[overOrder])).rows.length,0);
  const deliveryOrder=String((await rpc('submit_order',[ids.storeA,today,'AM',[{product_id:ids.product,quantity:100}],'Delivery fixture',randomUUID()],identities.a)).rows[0].result.order_id);
  await rpc('review_order',[deliveryOrder,1,true,'',randomUUID()]);

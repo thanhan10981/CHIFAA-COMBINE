@@ -25,7 +25,18 @@ async function loadOrderSummary(date:string){const {data,error}=await browserSup
 function discountRateFromPercent(value:string){if(!/^(100|(?:0|[1-9]\d?)(?:\.\d{1,2})?)$/.test(value))return '';const [whole,fraction='']=value.split('.'),basis=Number(whole)*100+Number(fraction.padEnd(2,'0'));return `${Math.floor(basis/10000)}.${String(basis%10000).padStart(4,'0')}`;}
 function errorMessage(error:{code?:string;message?:string},fallback:string){
  const message=error.message??'';
+ if(message.includes('ORDER_PRODUCTION_RECIPE_OR_RATIO_REQUIRED'))return 'Chưa thể duyệt: một món chưa có công thức đã công bố hoặc tỷ lệ món bán. Hãy thiết lập trước.';
+ if(message.includes('ORDER_TOPPING_RECIPE_REQUIRED'))return 'Chưa thể duyệt: công thức topping đang trống hoặc chưa đủ dữ liệu.';
+ if(message.includes('ACTIVE_INGREDIENT_WAREHOUSE_REQUIRED'))return 'Chưa thể tạo kế hoạch: cần ít nhất một kho nguyên liệu đang hoạt động.';
+ if(message.includes('MULTIPLE_ACTIVE_INGREDIENT_WAREHOUSES'))return 'Có nhiều kho nguyên liệu đang hoạt động. Hãy gán một kho cho kế hoạch sản xuất rồi duyệt lại đơn.';
+ if(message.includes('ORDER_PLAN_CLOSED'))return 'Kế hoạch ngày/ca này đã hoàn tất hoặc đã có sản xuất; không thể tự thêm đơn vào kế hoạch đã chốt.';
+ if(message.includes('ORDER_PLAN_INGREDIENT_WAREHOUSE_INACTIVE'))return 'Kho nguyên liệu đang gán cho kế hoạch đã ngừng hoạt động. Hãy cập nhật kế hoạch trước khi duyệt.';
+ if(message.includes('FORBIDDEN')&&fallback.includes('duyệt'))return 'Tài khoản cần quyền duyệt đơn, chỉnh sửa và duyệt kế hoạch sản xuất để tự động lập kế hoạch.';
  if(message.includes('INSUFFICIENT_FINISHED_GOODS'))return 'Tồn thành phẩm khả dụng chưa đủ. Hãy ghi nhận sản xuất hoặc kiểm tra các chứng từ giao/bán đã ghi.';
+ if(message.includes('INSUFFICIENT_STOCK'))return 'Kho nguyên liệu của kế hoạch không đủ để xuất topping. Kiểm tra tồn kho hoặc bổ sung vật tư trước khi giao.';
+ if(message.includes('ORDER_TOPPING_PRODUCTION_PLAN_REQUIRED'))return 'Đơn có topping cần được gắn vào kế hoạch sản xuất trước khi xác nhận giao.';
+ if(message.includes('ORDER_TOPPING_INGREDIENT_WAREHOUSE_REQUIRED'))return 'Kế hoạch sản xuất chưa được gán kho nguyên liệu đang hoạt động.';
+ if(message.includes('TOPPING_ALLOCATION_EXCEEDS_ORDER_QUANTITY'))return 'Tổng phần topping đang vượt số món trong đơn. Chỉnh lại phân bổ topping trước khi lưu.';
  if(message.includes('PERIOD_CLOSED'))return 'Ngày chứng từ thuộc kỳ đã khóa.';
  if(message.includes('RETURN_QUANTITY_EXCEEDS_DELIVERY'))return 'Số lượng hoàn vượt số lượng còn được ghi nhận hoàn của đơn.';
  if(message.includes('PAYMENT_EXCEEDS_BALANCE'))return 'Số tiền thu lớn hơn số phải thanh toán sau khi đã cấn hàng trả từ đơn trước.';

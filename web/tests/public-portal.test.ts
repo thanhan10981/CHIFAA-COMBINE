@@ -56,6 +56,13 @@ test('store-linked and review-assigned orders snapshot discounts and payment cho
   const store=(await db.query<{id:string}>("insert into stores(code,name,active) values('PAY-STORE','Payment store',true) returning id")).rows[0].id;
   const product=(await db.query<{id:string}>("insert into products(code,name,sale_unit,published) values('PAY-PRODUCT','Payment dish','Phần',true) returning id")).rows[0].id;
   await db.query("insert into product_prices(product_id,price_vnd,effective_from,evidence) values($1,10000,current_date-1,'Synthetic public price')",[product]);
+  await db.query("insert into warehouses(code,name,kind) values('PAY-ING','Payment ingredient warehouse','ingredient')");
+  const unit=(await db.query<{id:string}>("insert into material_units(code,name,dimension) values('PAY-U','Unit','count') returning id")).rows[0].id;
+  const material=(await db.query<{id:string}>("insert into materials(code,name,usage_unit_id) values('PAY-M','Planning material',$1) returning id",[unit])).rows[0].id;
+  const recipe=(await db.query<{id:string}>("insert into recipes(code,name,kind) values('PAY-R','Payment recipe','product') returning id")).rows[0].id;
+  const version=(await db.query<{id:string}>("insert into recipe_versions(recipe_id,revision,effective_from,output_quantity,output_unit_id,status) values($1,1,current_date-1,1,$2,'published') returning id",[recipe,unit])).rows[0].id;
+  await db.query('insert into recipe_items(recipe_version_id,material_id,quantity,unit_id) values($1,$2,1,$3)',[version,material,unit]);
+  await db.query('insert into product_recipe_links(product_id,recipe_version_id,output_quantity_per_product,effective_from) values($1,$2,1,current_date-1)',[product,version]);
   const policy=(await db.query<{id:string}>("insert into store_discount_policies(store_id,effective_from,common_rate,note,evidence) values($1,current_date-1,0.15,'Synthetic rate','Synthetic policy evidence') returning id",[store])).rows[0].id;
   await db.query('insert into store_discount_policy_items(policy_id,product_id,eligible) values($1,$2,true)',[policy,product]);
   const token='a'.repeat(64);await db.query('insert into private.public_order_links(token_hash,store_id,created_by) values($1,$2,$3)',[createHash('sha256').update(token).digest('hex'),store,identities.admin]);

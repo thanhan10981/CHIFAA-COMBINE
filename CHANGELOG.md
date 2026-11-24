@@ -752,3 +752,11 @@ Bỏ phụ thuộc vào việc liệt kê Supabase Auth khi mở trang Tài kho�
 ## 2026-11-24 — Khắc phục lỗi chi tiết công thức topping
 
 Sửa lỗi SQLSTATE 42702 do bí danh truy vấn topping trùng biến trong `recipe_detail`; bổ sung migration sửa cho môi trường đã chạy 073, thông báo lỗi cụ thể trên màn công thức và sửa các nhãn tiếng Việt của topping. Cần áp migration 074 và cập nhật frontend để mục Topping xuất hiện trên ứng dụng đang dùng.
+
+## 2026-11-24 - Automatic order-to-production planning (KH-01/KH-05/KH-10/KH-12)
+
+- Added migration `202611240080_auto_order_production_plan.sql`. Approving a customer order now validates published product recipes and sale-unit ratios, creates or reuses the matching delivery-date/shift production plan, adds the ordered quantities, assigns the sole active ingredient warehouse, and marks the order scheduled. Topping BOM requirements follow the assigned plan warehouse.
+- Approval creates planning demand only. It does not post production, inventory movements, delivery, sales, cash or receivables. Actual production and delivery RPCs remain the posting points. Orders without an effective recipe/ratio fail atomically. Multiple active ingredient warehouses without an already assigned matching plan also fail clearly; no arbitrary warehouse is chosen.
+- Planning date assumption: when creating a new plan, production_date equals the order delivery_date because the app has no separate portal production-date rule. Existing matching plans retain their configured production date.
+- Evidence: all migrations loaded in local PGlite; an end-to-end PGlite check approved a seven-unit order, created/linked a plan to the single active ingredient warehouse, reserved quantity 7, and confirmed zero inventory movements. `npm run typecheck` and `npm run lint` passed. Targeted TypeScript test execution was blocked by Windows `spawn EPERM` from esbuild; full tests/build were not verified.
+- Remaining: resolve the production-date policy if production must precede delivery; configure a default or plan assignment rule if multiple ingredient warehouses are active; run the full web test/build suite in an environment that permits child process spawning; apply migration to intended DEV and perform live UAT. No cloud SQL or deployment performed.
