@@ -71,6 +71,22 @@ test('generated source import replays stable drafts and preserves unresolved row
  const sql=buildRecipeImport(source,'2026-11-17');await db.exec(sql);const first=(await db.query<{id:string}>("select id from recipes where code='R-CAT-IMPORT'")).rows;await db.exec(sql);assert.deepEqual((await db.query("select id from recipes where code='R-CAT-IMPORT'")).rows,first);
  assert.equal((await db.query<{status:string}>("select status from recipe_versions where recipe_id=$1",[first[0].id])).rows[0].status,'draft');for(const table of ['inventory_movements','product_recipe_links','sales_documents'])assert.equal((await db.query('select * from '+table)).rows.length,0);
 });
+test('publishing a product recipe also publishes its selected draft toppings and exposes them in the public order catalog',async()=>{
+ const topping=await call('save_recipe_revision',[null,null,{...metadata('R-CAT-TOPPING'),kind:'topping'},[item],'Synthetic topping source',randomUUID()]);
+ const productId=randomUUID();await db.query("insert into products(id,code,name,sale_unit,published) values($1,'R-CAT-ORDER','Synthetic order product','phần',true)",[productId]);
+ const product=await call('save_recipe_revision',[null,null,{...metadata('R-CAT-ORDER'),topping_version_ids:[topping.version_id]},[item],'Synthetic product source',randomUUID()]);
+ const option=(await db.query<{topping_version_id:string}>('select topping_version_id from recipe_topping_options where parent_version_id=$1',[product.version_id])).rows[0];assert.equal(option.topping_version_id,topping.version_id);
+ await call('publish_recipe',[product.version_id,'1',productId,'2',randomUUID()]);
+ const statuses=await db.query<{parent:string;topping:string}>("select p.status parent,t.status topping from recipe_versions p join recipe_topping_options o on o.parent_version_id=p.id join recipe_versions t on t.id=o.topping_version_id where p.id=$1",[product.version_id]);assert.deepEqual(statuses.rows,[{parent:'published',topping:'published'}]);
+ const catalog=await call('public_order_topping_catalog',['2026-11-17']);const row=(catalog as unknown as {product_id:string;options:{version_id:string}[]}[]).find(x=>x.product_id===productId);assert.equal(row?.options[0]?.version_id,topping.version_id);
+});
+test('failed topping validation rolls back publication of both topping and product recipe',async()=>{
+ const topping=await call('save_recipe_revision',[null,null,{...metadata('R-CAT-BAD-TOPPING'),kind:'topping'},[item],'Synthetic topping source',randomUUID()]);
+ await db.query("insert into recipe_unresolved_items(recipe_version_id,label,quantity,unit_label,issue,sort_order) values($1,'Unresolved topping source',1,'g','Missing material mapping',2)",[topping.version_id]);
+ const product=await call('save_recipe_revision',[null,null,{...metadata('R-CAT-BAD-PRODUCT'),topping_version_ids:[topping.version_id]},[item],'Synthetic product source',randomUUID()]);
+ await assert.rejects(()=>call('publish_recipe',[product.version_id,'1',null,null,randomUUID()]),/RECIPE_NEEDS_REVIEW/);
+ const statuses=await db.query<{parent:string;topping:string}>("select p.status parent,t.status topping from recipe_versions p join recipe_topping_options o on o.parent_version_id=p.id join recipe_versions t on t.id=o.topping_version_id where p.id=$1",[product.version_id]);assert.deepEqual(statuses.rows,[{parent:'draft',topping:'draft'}]);
+});
 test('sheet parser preserves blank source quantities instead of silently dropping ingredients',()=>{
  const row=(...cells:string[])=>cells.join('\t');
  const text=[row('THÔNG SỐ CHUNG'),row('Khối lượng cơm chín / 1 mẻ (g)','','','','2.000'),row('1','CƠM NẮM KIỂM THỬ','','','','1 phần','999'),row('CƠM NẮM KIỂM THỬ'),row('STT','Mã SP','Thành phần','ĐVT','Định lượng'),row('1','SYN-M','Synthetic ingredient','g',''),row('CÔNG THỨC CƠM (1 MẺ = 1 KG GẠO)'),row('STT','Mã SP','Tên','ĐVT','Định lượng'),row('1','SYN-M','','g','800'),row('CHI PHÍ BAO BÌ / 1 ĐƠN VỊ BÁN'),row('STT','Mã SP','Thành phần','ĐVT','Số lượng'),row('','','Cơm cuộn & Cơm cuộn chiên (1 hộp)'),row('1','SYN-PACK','','cái','1'),row('','','6 món cơm nắm (1 phần)'),row('1','SYN-PACK','','cái','1')].join('\n');

@@ -760,3 +760,8 @@ Sửa lỗi SQLSTATE 42702 do bí danh truy vấn topping trùng biến trong `r
 - Planning date assumption: when creating a new plan, production_date equals the order delivery_date because the app has no separate portal production-date rule. Existing matching plans retain their configured production date.
 - Evidence: all migrations loaded in local PGlite; an end-to-end PGlite check approved a seven-unit order, created/linked a plan to the single active ingredient warehouse, reserved quantity 7, and confirmed zero inventory movements. `npm run typecheck` and `npm run lint` passed. Targeted TypeScript test execution was blocked by Windows `spawn EPERM` from esbuild; full tests/build were not verified.
 - Remaining: resolve the production-date policy if production must precede delivery; configure a default or plan assignment rule if multiple ingredient warehouses are active; run the full web test/build suite in an environment that permits child process spawning; apply migration to intended DEV and perform live UAT. No cloud SQL or deployment performed.
+## 2026-11-24 — Tự công bố topping cùng công thức món (KH-01/KH-10/KH-11/KH-12)
+
+- Công thức món lưu phiên bản topping đã chọn; topping nháp được kiểm tra và công bố cùng giao dịch khi công bố công thức món. Bỏ nút công bố topping riêng và hướng dẫn rõ ngay tại nơi chọn topping.
+- Catalog khách chỉ nhận phiên bản topping đã công bố gắn với phiên bản công thức món đang bán; giữ ngày hiệu lực và không trả giá vốn ra portal.
+- Kiểm chứng: PGlite `recipe-catalog.test.ts` 12/12, gồm rollback khi topping lỗi; `npm run typecheck`, `npm run lint` và `git diff --check` chạy cho checkpoint này. Chưa áp migration lên Supabase hoặc deploy frontend.
