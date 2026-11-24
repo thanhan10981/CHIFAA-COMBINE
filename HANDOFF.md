@@ -1,3 +1,9 @@
+# 2026-11-24 — Gỡ thẻ công bố công thức, tick topping theo món (KH-01/KH-10/KH-11/KH-12)
+- Gỡ thẻ cam “Phiên bản mới cần được công bố” khỏi chi tiết công thức; quyền duyệt vẫn có nút gọn “Công bố phiên bản” trong thanh thao tác. Không tự công bố hoặc đoán quy đổi món bán; cổng tiếp tục chỉ nhận món đã công bố và có liên kết hiệu lực.
+- Trong cổng đặt hàng, topping cấu hình cho từng món hiện thành checkbox sau khi nhập số lượng món. Tick thêm một phần mặc định, bỏ tick gỡ topping; bộ +/- chỉnh phân bổ, lựa chọn hiện trong giỏ. Giảm số món sẽ giới hạn topping đã phân bổ để không vượt số lượng đặt.
+- Bằng chứng: `npm run typecheck` và `npm run lint` đạt; `git diff --check` đạt. `npm test`: 161/162 đạt, `tests/workflows.test.ts` không khởi động do Windows `spawn EPERM` từ esbuild. `npm run build` và fixture `node scripts/design-check.mjs --public-portal` cũng bị chặn bởi `spawn EPERM`; chưa có kiểm tra trình duyệt thực.
+- Còn lại: chạy lại test/build/fixture ở môi trường cho phép tiến trình con; UAT topping theo món và quy đổi thực trên Supabase DEV. Không áp migration cloud hoặc deploy.
+
 # 2026-11-24 — Chia topping theo số món, gắn kế hoạch và xuất kho khi giao (KH-01/KH-03/KH-05/KH-10/KH-12)
 - Cổng đặt hàng cho phép phân bổ số topping nguyên theo từng loại, tối đa một topping trên mỗi món và có thể bỏ chọn. Ví dụ 10 món có thể chia 5 sốt cà, 5 tương ớt; máy chủ kiểm tra tổng phân bổ không vượt số món. Giữ nguyên giá bán và doanh thu; topping không tự cộng phụ thu.
 - Bỏ yêu cầu nhập sản lượng đầu ra trong thao tác công bố công thức. Dùng tỷ lệ món bán đã liên kết; nếu chưa có thì cần thiết lập liên kết/quy đổi trước khi món vào thực đơn công khai, không tự đoán tỷ lệ.

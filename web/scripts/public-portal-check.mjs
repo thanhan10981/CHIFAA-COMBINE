@@ -36,7 +36,8 @@ export async function checkPublicPortal(page,base,out,report){
  }
  if(process.argv.includes('--catalog-only')){report.checks.push('catalog-only fixture exit before unrelated order review flows');return;}
  await page.getByLabel('Số lượng '+products[0].name,{exact:true}).fill('10');
- for(const toppingName of ['Sốt cà','Sốt tương ớt'])for(let count=0;count<5;count++)await page.getByRole('button',{name:'Tăng '+toppingName,exact:true}).click();
+ if(await page.locator('.public-product').nth(1).locator('.public-topping-options').count())throw new Error('A dish without configured toppings showed topping choices');
+ for(const toppingName of ['Sốt cà','Sốt tương ớt']){await page.getByRole('checkbox',{name:toppingName}).check();if(!await page.locator('.public-cart-toppings').innerText().then(value=>value.includes('1 '+toppingName)))throw new Error('Checking a topping did not show it in the cart');for(let count=1;count<5;count++)await page.getByRole('button',{name:'Tăng '+toppingName+' cho '+products[0].name,exact:true}).click();}
  if(!await page.locator('.public-cart-toppings').innerText().then(value=>value.includes('5 Sốt cà')&&value.includes('5 Sốt tương ớt')))throw new Error('Topping portions were not split across 10 ordered portions');
  await page.getByLabel('Tên người nhận *',{exact:true}).fill('Khách kiểm thử');
  await page.getByLabel('Số điện thoại *',{exact:true}).fill('0900000035');
