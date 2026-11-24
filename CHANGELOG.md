@@ -2,6 +2,7 @@
 - Đưa số lượng món ngay dưới giá, bỏ kéo giãn thẻ không có topping và cho số cột thích ứng theo chiều rộng thực đơn.
 - Rút ngắn tiêu đề, bỏ đơn vị lặp trên nhãn hiển thị, làm gọn trạng thái phân bổ và tách bộ chỉnh số phần topping khỏi dòng tên. Checkbox vẫn có nhãn truy cập đầy đủ.
 - 184/184 tests, typecheck, lint, build và fixture trình duyệt ở 6 chiều rộng đạt; đã xem ảnh mobile/desktop có topping được chọn. Tiêu chí chọn đủ topping, giỏ hàng, payload và retry tiếp tục đạt.
+- Đã push và xác minh giao diện live trên Vercel với dữ liệu Supabase hiện tại; desktop/mobile hiển thị gọn, không tràn ngang, chọn topping bắt buộc hoạt động. Không gửi đơn thật khi kiểm tra.
 
 ## 2026-11-24 — Xác nhận kết nối topping trên Supabase thật (KH-01/KH-10/KH-11/KH-12)
 - Owner đã áp gói SQL 081–083. Kiểm tra RPC công khai xác nhận API v2 sẵn sàng và ba món CC/CCC/CCC-NC có STO/STC, bắt buộc chọn và không có lựa chọn chưa sẵn sàng.
