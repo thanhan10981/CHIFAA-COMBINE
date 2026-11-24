@@ -151,6 +151,32 @@ test('anonymous submit snapshots common price/contact; approval plans production
  }finally{await db.close();}
 });
 
+test('approval succeeds when recipe conversion is missing and leaves the order unscheduled',async()=>{
+ const {db,store}=await setup();try{
+  const product=(await db.query<{id:string}>("insert into products(code,name,sale_unit,published) values('NO-RECIPE-APPROVAL','Unconfigured dish','Phần',true) returning id")).rows[0].id;
+  await db.query("insert into product_prices(product_id,price_vnd,effective_from,evidence) values($1,12000,current_date-1,'Synthetic order price')",[product]);
+  const date=(await db.query<{delivery_day:string}>("select to_char((now() at time zone 'Asia/Ho_Chi_Minh')::date+1,'YYYY-MM-DD') delivery_day")).rows[0].delivery_day;
+  const submitted=(await anonymous(db,()=>db.query<{result:{order_id:string}}>("select submit_public_order_v2($1,'AM',$2,$3,'Unconfigured recipe order','cash',$4) result",[date,{name:'Unconfigured visitor',phone:'0900000060',address:'Review test address'},[{product_id:product,quantity:'3',price_vnd:'12000'}],randomUUID()]))).rows[0].result;
+  const version=(await db.query<{version:string}>('select version::text from customer_orders where id=$1',[submitted.order_id])).rows[0].version;
+  const reviewed=await asUser(db,identities.admin,()=>db.query<{result:{status:string;plan_id:string|null}}>('select review_public_order($1,$2,$3,true,\'\',$4) result',[submitted.order_id,version,store,randomUUID()]));
+  assert.equal(reviewed.rows[0].result.status,'approved');assert.equal(reviewed.rows[0].result.plan_id,null);
+  assert.equal((await db.query<{status:string}>('select status from customer_orders where id=$1',[submitted.order_id])).rows[0].status,'approved');
+  assert.equal((await db.query('select * from production_plans')).rows.length,0);
+  assert.equal((await db.query<{count:number}>("select count(*)::int count from order_status_history where order_id=$1 and to_status='approved'",[submitted.order_id])).rows[0].count,1);
+  assert.equal((await db.query('select * from notifications')).rows.length,0,'guest approval must not notify a nonexistent account');
+ }finally{await db.close();}
+});
+
+test('order item quantity revisions reject fractional quantities at the database boundary',async()=>{
+ const {db,submit,items}=await setup();try{
+  const submitted=(await submit()).rows[0].result;
+  const version=(await db.query<{version:string}>('select version::text from customer_orders where id=$1',[submitted.order_id])).rows[0].version;
+  await assert.rejects(()=>asUser(db,identities.admin,()=>db.query("select revise_submitted_order_item($1,$2,'edit',$3,1.5,'Customer change', $4)",[submitted.order_id,version,items[0].product_id,randomUUID()])),/INVALID_ORDER_QUANTITY/);
+  assert.equal((await db.query<{quantity:string}>('select quantity::text from customer_order_items where order_id=$1',[submitted.order_id])).rows[0].quantity,'2.000000');
+  assert.equal((await db.query('select * from customer_order_item_changes where order_id=$1',[submitted.order_id])).rows.length,0);
+ }finally{await db.close();}
+});
+
 test('guest validation, price changes, missing/unpublished dishes, capacity and rate limits roll back entire requests',async()=>{
  const {db,submit,items,ids,contact,day}=await setup();try{
   for(const lines of [[{...items[0],price_vnd:'1'}],[{...items[0],quantity:'0'}],[items[0],items[0]],[{...items[0],product_id:ids['PRIVATE-B']}],[{...items[0],product_id:ids['NO-PRICE']}],[{...items[0],quantity:'NaN'}],[{...items[0],discount_rate:'1'}]])await assert.rejects(()=>submit(lines),/PRICE_CHANGED|INVALID_ORDER_ITEMS|DUPLICATE_PRODUCT|PRODUCT_NOT_AVAILABLE/);

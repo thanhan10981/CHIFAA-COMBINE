@@ -1,3 +1,8 @@
+## 2026-11-24 — Cho duyệt đơn dù chưa đủ dữ liệu lập kế hoạch; sửa số lượng nguyên (KH-01/KH-10/KH-12)
+- Migration 084 tách quyết định duyệt đơn khỏi điều kiện tự lập kế hoạch: thiếu công thức/quy đổi hoặc công thức topping thì đơn vẫn được duyệt, còn ở trạng thái `approved` và không có kế hoạch cho đến khi thiết lập đủ. Khi dữ liệu đủ, tự lập kế hoạch vẫn chạy nguyên luồng.
+- Form sửa/thêm món dùng bước 1, làm gọn `10.000000` thành `10` và kiểm tra số nguyên dương; RPC từ chối số lượng lẻ trước khi thay đổi đơn/lịch sử.
+- 186/186 tests, typecheck, lint và build đạt. Migration cloud chưa được áp dụng; cần chạy `supabase/migrations/202611240084_allow_order_review_without_production_setup.sql` trên Supabase để lỗi trong ảnh hết.
+
 ## 2026-11-24 — Gọn thẻ món và topping trên cổng đặt hàng (KH-10/KH-12)
 - Đưa số lượng món ngay dưới giá, bỏ kéo giãn thẻ không có topping và cho số cột thích ứng theo chiều rộng thực đơn.
 - Rút ngắn tiêu đề, bỏ đơn vị lặp trên nhãn hiển thị, làm gọn trạng thái phân bổ và tách bộ chỉnh số phần topping khỏi dòng tên. Checkbox vẫn có nhãn truy cập đầy đủ.

@@ -1,3 +1,9 @@
+# 2026-11-24 — Duyệt đơn khi thiếu thiết lập sản xuất và chỉ nhận số lượng nguyên (KH-01/KH-10/KH-12)
+- Ảnh lỗi cho thấy `review_order` gọi tự lập kế hoạch sản xuất đồng bộ; thiếu công thức/quy đổi của một món làm rollback cả thao tác duyệt. Migration `202611240084_allow_order_review_without_production_setup.sql` cho phép giao dịch duyệt thành công và giữ trạng thái `approved` khi không thể lập kế hoạch do thiếu công thức/quy đổi hoặc BOM topping. Khi thiết lập đầy đủ, luồng tự lập kế hoạch và trạng thái `scheduled` tiếp tục như cũ. Không tạo kế hoạch một phần, tồn kho hay chứng từ tài chính.
+- Form thêm/sửa món chỉ nhận số nguyên dương, làm gọn số `10.000000` từ numeric thành `10`; RPC `revise_submitted_order_item` kiểm tra lại bằng `p_quantity = trunc(p_quantity)`. Lý do, version check, idempotency, audit và các dòng đơn đã chốt vẫn giữ nguyên.
+- Bằng chứng: `npm test` đạt 186/186 (gồm guest review thiếu công thức giữ `approved`, không có kế hoạch, và số lượng 1.5 bị DB từ chối không ghi audit); typecheck, lint và production build đạt.
+- Còn lại: migration 084 chưa áp lên Supabase. Chạy file migration trên môi trường đang dùng để mở khóa duyệt đơn; khi thiếu công thức/quy đổi, đơn cần được đưa vào kế hoạch sau khi dữ liệu được thiết lập. Agent không tự chạy SQL cloud hoặc phát hành production.
+
 # 2026-11-24 — Thu gọn thẻ món và bộ chọn topping trên cổng đặt hàng (KH-10/KH-12)
 - Theo ảnh owner gửi, thu gọn UI thẻ món: bộ số lượng đặt ngay dưới giá, món không có topping không kéo dài theo thẻ bên cạnh. Lưới dựa trên chiều rộng thực của khung thực đơn, từ 1–4 cột, để tên món và topping đủ chỗ đọc khi có cột giỏ hàng.
 - Topping dùng tiêu đề ngắn và nhãn `1 phần/món`, bỏ đơn vị lặp khỏi phần nhìn thấy nhưng giữ đầy đủ tên/đơn vị trong nhãn truy cập của checkbox. Số lượng từng topping nằm dưới nhãn khi được chọn; trạng thái phân bổ gọn, không lặp cảnh báo dài trong thẻ. Ảnh món dùng contain để tránh cắt logo/ảnh.
