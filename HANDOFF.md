@@ -1192,3 +1192,9 @@ Còn lại: chưa UAT dữ liệu thật hoặc triển khai frontend; không c�
 - Recipe editor now permits choosing saved draft toppings and explains that publication is automatic with the product recipe. Removed the standalone “Công bố topping” action. The public catalog returns only published topping versions tied to the effective published product-recipe version; it still requires the product to be published and its sale conversion/link to be effective.
 - Evidence: PGlite recipe-catalog tests 12/12 passed, including draft topping save → parent publish → topping published → option present in the public catalog, and rollback of both publications when topping validation fails. `npm run typecheck`, `npm run lint` and `git diff --check` passed. No Supabase cloud migration or frontend deployment performed.
 - Remaining: apply migration 081 through the authorized DEV release process and verify the real product conversion/link and public portal. If an existing option row has no topping version effective by its parent date, the legacy date-based published-version fallback remains in place; no cloud data was queried.
+## 2026-11-24 — Sửa lỗi CI generated database types (KH-01/KH-10/KH-11/KH-12)
+
+- GitHub Actions `CHIFAA standalone` dừng ở kiểm tra `git diff --exit-code -- lib/database/generated.ts`: migration 081 thêm `recipe_topping_options.topping_version_id` nhưng generated types chưa được cập nhật.
+- Chạy `npm run db:types`, cập nhật generated output. Cập nhật test fixtures: selected product recipes publish before adding immutable lines; customer order approval now expects an auto-created plan and no revenue/stock posting; stable date assertions use SQL formatting.
+- Evidence: 175/175 full web tests, `npm run db:types`, typecheck, lint, production build, and `git diff --check` passed. GitHub Actions has not yet rerun against the fix.
+- No Supabase cloud migration or Vercel deployment was performed.

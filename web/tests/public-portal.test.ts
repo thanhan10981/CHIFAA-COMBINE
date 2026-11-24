@@ -60,9 +60,9 @@ test('store-linked and review-assigned orders snapshot discounts and payment cho
   const unit=(await db.query<{id:string}>("insert into material_units(code,name,dimension) values('PAY-U','Unit','count') returning id")).rows[0].id;
   const material=(await db.query<{id:string}>("insert into materials(code,name,usage_unit_id) values('PAY-M','Planning material',$1) returning id",[unit])).rows[0].id;
   const recipe=(await db.query<{id:string}>("insert into recipes(code,name,kind) values('PAY-R','Payment recipe','product') returning id")).rows[0].id;
-  const version=(await db.query<{id:string}>("insert into recipe_versions(recipe_id,revision,effective_from,output_quantity,output_unit_id,status) values($1,1,current_date-1,1,$2,'published') returning id",[recipe,unit])).rows[0].id;
+  const version=(await db.query<{id:string}>("insert into recipe_versions(recipe_id,revision,effective_from,output_quantity,output_unit_id,status) values($1,1,current_date-1,1,$2,'draft') returning id",[recipe,unit])).rows[0].id;
   await db.query('insert into recipe_items(recipe_version_id,material_id,quantity,unit_id) values($1,$2,1,$3)',[version,material,unit]);
-  await db.query('insert into product_recipe_links(product_id,recipe_version_id,output_quantity_per_product,effective_from) values($1,$2,1,current_date-1)',[product,version]);
+  await asUser(db,identities.admin,()=>db.query('select publish_recipe($1,1,$2,1,$3)',[version,product,randomUUID()]));
   const policy=(await db.query<{id:string}>("insert into store_discount_policies(store_id,effective_from,common_rate,note,evidence) values($1,current_date-1,0.15,'Synthetic rate','Synthetic policy evidence') returning id",[store])).rows[0].id;
   await db.query('insert into store_discount_policy_items(policy_id,product_id,eligible) values($1,$2,true)',[policy,product]);
   const token='a'.repeat(64);await db.query('insert into private.public_order_links(token_hash,store_id,created_by) values($1,$2,$3)',[createHash('sha256').update(token).digest('hex'),store,identities.admin]);
@@ -103,6 +103,13 @@ async function setup(){
  const ids=Object.fromEntries(products.map(p=>[p.code,p.id]));
  await db.query("insert into product_prices(product_id,price_vnd,effective_from,evidence) values($1,15000,current_date-1,'Synthetic public price'),($2,9000,current_date-1,'Synthetic private price')",[ids['PUBLIC-A'],ids['PRIVATE-B']]);
  const store=(await db.query<{id:string}>("insert into stores(code,name,active) values('PUBLIC-STORE','Assigned internal store',true) returning id")).rows[0].id;
+ await db.query("insert into warehouses(code,name,kind) values('PUBLIC-ING','Public order ingredient warehouse','ingredient')");
+ const unit=(await db.query<{id:string}>("insert into material_units(code,name,dimension) values('PUBLIC-U','Public order unit','count') returning id")).rows[0].id;
+ const material=(await db.query<{id:string}>("insert into materials(code,name,usage_unit_id) values('PUBLIC-M','Public order ingredient',$1) returning id",[unit])).rows[0].id;
+ const recipe=(await db.query<{id:string}>("insert into recipes(code,name,kind) values('PUBLIC-R','Public rice recipe','product') returning id")).rows[0].id;
+ const version=(await db.query<{id:string}>("insert into recipe_versions(recipe_id,revision,effective_from,output_quantity,output_unit_id,status) values($1,1,current_date-1,1,$2,'draft') returning id",[recipe,unit])).rows[0].id;
+ await db.query('insert into recipe_items(recipe_version_id,material_id,quantity,unit_id) values($1,$2,1,$3)',[version,material,unit]);
+ await asUser(db,identities.admin,()=>db.query('select publish_recipe($1,1,$2,1,$3)',[version,ids['PUBLIC-A'],randomUUID()]));
  await db.query("insert into store_product_prices(store_id,product_id,price_vnd,effective_from) values($1,$2,123,current_date-1)",[store,ids['PUBLIC-A']]);
  const contact={name:'Synthetic visitor',phone:'0900000035',address:'Synthetic delivery address'};
  const items=[{product_id:ids['PUBLIC-A'],quantity:'2',price_vnd:'15000'}];
@@ -123,7 +130,7 @@ test('anonymous catalog exposes only published active dishes and common prices; 
  }finally{await db.close();}
 });
 
-test('anonymous submit snapshots common price/contact, replays once and never posts revenue, cash, stock or plans',async()=>{
+test('anonymous submit snapshots common price/contact; approval plans production without posting revenue, cash or stock',async()=>{
  const {db,submit,items,contact,store}=await setup();try{
   const key=randomUUID(),first=await submit(items,key);assert.deepEqual(await submit(items,key),first);
   assert.equal((await db.query('select * from customer_orders')).rows.length,1);
@@ -137,9 +144,10 @@ test('anonymous submit snapshots common price/contact, replays once and never po
   await assert.rejects(()=>asUser(db,identities.admin,()=>db.query('select review_order($1,$2,true,\'\',$3)',[order.id,order.version,randomUUID()])),/STORE_REQUIRED/);
   const reviewKey=randomUUID(),review=()=>asUser(db,identities.admin,()=>db.query('select review_public_order($1,$2,$3,true,\'\',$4)',[order.id,order.version,store,reviewKey]));
   await review();await review();
-  assert.equal((await db.query<{status:string}>('select status from customer_orders')).rows[0].status,'approved');
-  assert.equal((await db.query('select * from order_status_history')).rows.length,2);
-  for(const table of ['sales_documents','cash_ledger','inventory_movements','production_plans','notifications'])assert.equal((await db.query('select * from '+table)).rows.length,0);
+  assert.equal((await db.query<{status:string}>('select status from customer_orders')).rows[0].status,'scheduled');
+  assert.equal((await db.query('select * from order_status_history')).rows.length,3);
+  assert.equal((await db.query('select * from production_plans')).rows.length,1);
+  for(const table of ['sales_documents','cash_ledger','inventory_movements','notifications'])assert.equal((await db.query('select * from '+table)).rows.length,0);
  }finally{await db.close();}
 });
 

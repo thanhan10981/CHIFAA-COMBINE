@@ -765,3 +765,8 @@ Sửa lỗi SQLSTATE 42702 do bí danh truy vấn topping trùng biến trong `r
 - Công thức món lưu phiên bản topping đã chọn; topping nháp được kiểm tra và công bố cùng giao dịch khi công bố công thức món. Bỏ nút công bố topping riêng và hướng dẫn rõ ngay tại nơi chọn topping.
 - Catalog khách chỉ nhận phiên bản topping đã công bố gắn với phiên bản công thức món đang bán; giữ ngày hiệu lực và không trả giá vốn ra portal.
 - Kiểm chứng: PGlite `recipe-catalog.test.ts` 12/12, gồm rollback khi topping lỗi; `npm run typecheck`, `npm run lint` và `git diff --check` chạy cho checkpoint này. Chưa áp migration lên Supabase hoặc deploy frontend.
+## 2026-11-24 — Đồng bộ database types cho CI topping
+
+- Cập nhật `web/lib/database/generated.ts` từ migrations sau khi migration 081 thêm `recipe_topping_options.topping_version_id`; CI trước đó thất bại ở bước kiểm tra diff của file types được sinh tự động.
+- Cập nhật fixture/test duyệt đơn để kiểm tra việc tự tạo kế hoạch sản xuất, không ghi doanh thu/kho; chuẩn hóa ngày đọc từ PGlite.
+- Kiểm tra: full suite 175/175, `db:types`, typecheck, lint, production build và `git diff --check` đạt. Chưa xác minh GitHub Actions sau khi push.
