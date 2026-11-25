@@ -7,7 +7,8 @@
 - [x] Gói SQL087–090 có kiểm tra nền086, bỏ qua bước đã có, từ chối cài dở, replay không ghi dữ liệu và rollback nguyên tử khi090 lỗi; có SQL chẩn đoán chỉ đọc và hướng dẫn phát hành.
 - [x] 213/213 tests, typecheck, lint, production build và `git diff --check` đạt; tạo hai file SQL phát hành/chẩn đoán trong `output/`.
 - [x] Owner chạy gói SQL và gửi hai cờ sẵn sàng `true`; đã cho phép push và cập nhật frontend.
-- [ ] Phát hành frontend tương thích, xác minh Vercel phục vụ bản mới và UAT công thức/nhu cầu thật. Chưa đánh dấu sự cố production đã hết.
+- [x] Push frontend tương thích và gói phát hành tại `041d416`; GitHub status xác nhận Vercel triển khai hoàn tất.
+- [ ] Xác minh UI/request trong phiên đăng nhập và UAT công thức/nhu cầu thật. Chưa đánh dấu sự cố production đã hết; không có browser/session được kết nối ở lượt xác minh.
 
 ## Tổng hợp giá vốn công thức — 2026-11-22 (KH-01/KH-10/KH-11)
 

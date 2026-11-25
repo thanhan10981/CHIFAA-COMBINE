@@ -1,6 +1,7 @@
 ## 2026-11-25 — Xác nhận SQL công thức sẵn sàng phát hành (KH-01/KH-10/KH-11/KH-12)
 
 - Owner đã chạy gói SQL 087–090 và gửi cả hai cờ sẵn sàng bằng `true`; cho phép push frontend tương ứng lên nhánh Vercel. Chưa xác nhận UAT công bố dữ liệu thật.
+- Đã push `041d416` lên `chifaa-next-dev`, gồm bản sửa 089/090; GitHub status xác nhận Vercel triển khai hoàn tất. Chưa có phiên đăng nhập được kết nối để UAT công bố/nhu cầu thật; không ghi dữ liệu nghiệp vụ.
 
 ## 2026-11-25 — Kiểm chứng đơn vị kho cũ và chuẩn bị gói công bố công thức (KH-01/KH-10/KH-11/KH-12)
 
