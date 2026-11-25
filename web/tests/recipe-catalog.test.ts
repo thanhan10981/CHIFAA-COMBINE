@@ -92,7 +92,10 @@ test('recipe publication reports the exact material and units when its formula c
  const piece=randomUUID(),unmappedMaterial=randomUUID();
  await db.query("insert into material_units(id,code,name,dimension) values($1,'piece','Synthetic piece','count')",[piece]);
  await db.query("insert into materials(id,code,name,purchase_unit_id,usage_unit_id) values($1,'R-CAT-UNIT-BLOCK','Synthetic unmapped material',$2,$2)",[unmappedMaterial,kg]);
- const row=await save('R-CAT-UNIT-BLOCK-RECIPE',[{material_id:unmappedMaterial,child_version_id:null,quantity:'1',unit_id:piece}]);
+ const row=await save('R-CAT-UNIT-BLOCK-RECIPE',[{material_id:unmappedMaterial,child_version_id:null,quantity:'1',unit_id:kg}]);
+ // Simulate an existing imported draft whose mapping is no longer available.
+ // The normal save RPC correctly rejects a newly entered unmapped unit.
+ await db.query('update recipe_items set unit_id=$1 where recipe_version_id=$2',[piece,row.version_id]);
  await assert.rejects(()=>call('publish_recipe',[row.version_id,'1',null,null,randomUUID()]),/UNIT_NEEDS_VERIFICATION\|material=R-CAT-UNIT-BLOCK\|from=piece\|to=kg/);
  assert.equal((await db.query<{status:string}>('select status from recipe_versions where id=$1',[row.version_id])).rows[0].status,'draft');
 });

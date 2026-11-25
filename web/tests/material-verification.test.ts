@@ -151,6 +151,10 @@ test('formula-only unit conversion lets recipes use pieces while inventory stays
   assert.equal(retained.formula_unit_id,piece);assert.equal(retained.formula_quantity,'100.000000000');assert.equal(retained.formula_verified,true);
   assert.equal(Number((await db.query<{quantity:string}>('select private.recipe_convert_quantity_at($1,$2,$3,100,$4)::text quantity',[material.id,piece,bag,'2026-11-18'])).rows[0].quantity),1);
   assert.equal(Number((await db.query<{quantity:string}>('select private.recipe_convert_quantity_at($1,$2,$3,1,$4)::text quantity',[material.id,bag,piece,'2026-11-18'])).rows[0].quantity),100);
+  const planned=(await db.query<{needs:{unit_id:string;quantity:string}[]}>('select private.order_demand_formula_units($1::jsonb,$2) needs',[
+   JSON.stringify([{material_id:material.id,unit_id:bag,quantity:'0.01',product_id:'10000000-0000-4000-8000-000000000001'}]),'2026-11-18'
+  ])).rows[0].needs[0];
+  assert.equal(planned.unit_id,piece);assert.equal(Number(planned.quantity),1,'one hundred formula pieces per stock bag');
   await assert.rejects(()=>db.query('select private.convert_quantity_at($1,$2,$3,1,$4)',[material.id,bag,piece,'2026-11-18']),/UNIT_NEEDS_VERIFICATION/);
 
   const recipe=await asUser(db,identities.admin,()=>db.query<{result:{recipe_id:string;version_id:string}}>("select save_recipe_revision(null,null,$1::jsonb,$2::jsonb,'',$3) result",[

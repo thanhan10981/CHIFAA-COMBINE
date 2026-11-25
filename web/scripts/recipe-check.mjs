@@ -5,13 +5,13 @@ export async function checkRecipes(page,base,out,report){
   await page.setViewportSize({width,height:900});await page.goto(base+'/app/'+route);await page.locator(route==='cost'?'.cost-summary-total':'.recipe-catalog .recipe-row').first().waitFor();await page.evaluate(()=>document.fonts.ready);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,'Page overflow '+route+' '+width);
   assert.ok((await page.locator('.recipe-total').textContent()).includes('Chưa đủ dữ liệu'));
-  if(route==='recipes'&&width===1440){const ingredient=page.getByRole('row').filter({hasText:'SYN-M'}).first();assert.ok((await ingredient.innerText()).includes('100 g'),'A 0.1 kg recipe amount should display as 100 g');}
+  if(route==='recipes'&&width===1440){const ingredient=page.getByRole('row').filter({hasText:'SYN-M'}).first();assert.ok((await ingredient.innerText()).includes('100 g'),'A 0.1 kg recipe amount should display as 100 g');assert.ok((await ingredient.innerText()).includes('1 kg = 1.000 g'),'Formula conversion must display the saved material specification');assert.equal(await page.getByRole('columnheader',{name:'Quy đổi kho',exact:true}).count(),0);assert.equal(await page.getByRole('columnheader',{name:'Quy đổi công thức',exact:true}).count(),1);}
   if(route==='recipes')assert.equal(await page.getByRole('button',{name:'Công bố / liên kết món bán',exact:true}).count(),0,'Redundant publish/link button is still rendered');
   if(route==='recipes'){
    await page.getByRole('button',{name:'Chỉnh sửa',exact:true}).click();const dialog=page.getByRole('dialog');await dialog.waitFor();const box=await dialog.boundingBox();assert.ok(box.x>=0&&box.x+box.width<=width+1&&box.y>=0&&box.y+box.height<=901,'Dialog fit '+width);
    assert.ok(await dialog.getByText(/Quy đổi công thức đã xác minh: 1 kg = 1000 g/).count()>0,'The recipe editor must show the separate verified formula ratio');
    assert.equal(await dialog.getByLabel('Đơn vị 1',{exact:true}).inputValue(),'kg');assert.equal(await dialog.locator('.recipe-edit-line').count(),2);assert.equal(await dialog.locator('.recipe-cost-exempt input').count(),2);
-   await dialog.getByRole('button',{name:'Thêm thành phần',exact:true}).click();assert.equal(await dialog.locator('.recipe-edit-line').count(),3);await dialog.getByRole('button',{name:'Bỏ thành phần 3',exact:true}).click();
+   await dialog.getByRole('button',{name:'Thêm thành phần',exact:true}).click();assert.equal(await dialog.locator('.recipe-edit-line').count(),3);await dialog.getByLabel('Thành phần 3',{exact:true}).selectOption('material-0');assert.equal(await dialog.getByLabel('Đơn vị 3',{exact:true}).inputValue(),'g','New materials must use the verified formula unit');await dialog.getByRole('button',{name:'Bỏ thành phần 3',exact:true}).click();
    await page.screenshot({path:path.join(out,'recipe-edit-'+width+'.png')});await page.keyboard.press('Escape');await dialog.waitFor({state:'detached'});
   }
   if(width===1440||width===390)await page.screenshot({path:path.join(out,route+'-'+width+'.png')});
@@ -22,5 +22,17 @@ export async function checkRecipes(page,base,out,report){
  const requests=[];await page.route('**/rest/v1/rpc/save_recipe_revision',async route=>{requests.push(route.request().postDataJSON());await route.fulfill(requests.length===1?{status:503,json:{message:'Synthetic uncertain commit',code:'503'}}:{status:200,json:{recipe_id:'recipe-product',version_id:'new-version'}});});
  await dialog.getByRole('button',{name:'Lưu công thức',exact:true}).click();await dialog.getByRole('button',{name:'Kiểm tra lại lần lưu',exact:true}).waitFor();assert.equal(await dialog.getByLabel('Tên công thức *',{exact:true}).isDisabled(),true);assert.equal(await dialog.getByRole('button',{name:'Đóng hộp thoại',exact:true}).isDisabled(),true);
  await dialog.getByRole('button',{name:'Kiểm tra lại lần lưu',exact:true}).click();await dialog.waitFor({state:'detached'});assert.equal(requests.length,2);assert.deepEqual(requests[0],requests[1]);assert.equal(requests[0].p_items[0].unit_id,'g');assert.equal(requests[0].p_items[0].quantity,'100');assert.equal(requests[0].p_items[0].cost_exempt,true);
- report.checks.push('5 recipe routes × 5 widths, scrollable source/detail tables, separate formula conversion displayed and selected in a recipe line, add/remove lines, clone, unresolved cost, same-key uncertain retry, removed redundant publish/link button; synthetic data only');
+ await page.goto(base+'/app/recipes?approve-recipe');
+ await page.route('**/rest/v1/recipe_versions?*',route=>route.fulfill({status:200,json:{version:'1'}}));
+ const published=[];
+ await page.route('**/rest/v1/rpc/publish_recipe',async route=>{published.push(route.request().postDataJSON());await route.fulfill(published.length===1?{status:400,json:{code:'P0001',message:'UNIT_NEEDS_VERIFICATION|material=SYN-M|from=piece|to=bag|date=2026-11-24|formula_from=2026-11-25'}}:published.length===2?{status:503,json:{code:'503',message:'Synthetic uncertain response'}}:{status:200,json:{status:'published'}});});
+ await page.getByRole('button',{name:'Kiểm tra & công bố',exact:true}).click();
+ await page.getByText(/Vật tư SYN-M có quy đổi công thức từ 25\/11\/2026/).waitFor();
+ await page.getByRole('button',{name:'Kiểm tra & công bố',exact:true}).click();
+ await page.getByRole('button',{name:'Kiểm tra lại lần công bố',exact:true}).waitFor();
+ assert.equal(await page.getByRole('button',{name:'Chỉnh sửa',exact:true}).isDisabled(),true);
+ await page.getByRole('button',{name:'Kiểm tra lại lần công bố',exact:true}).click();
+ await page.waitForFunction(()=>document.body.textContent.includes('Đã kiểm tra và công bố công thức cùng các công thức con.'));
+ assert.equal(published.length,3);assert.deepEqual(published[1],published[2],'Uncertain publication must retry the identical request');assert.equal(published[0].p_expected_version,'1');
+ report.checks.push('5 recipe routes × 5 widths; verified formula conversion column and default unit; add/remove, clone, date-specific publication blocker, live draft publication, identical uncertain retry; synthetic data only');
 }

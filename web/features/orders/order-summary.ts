@@ -3,14 +3,19 @@ export type SummaryOrder={id:string;code:string;store_id:string|null;store_code:
 export type SummaryStore={id:string;code:string;name:string;phone:string|null};
 export type SummaryProduct={product_id:string;code:string;name:string;unit:string;total_quantity:string;by_store:Record<string,string>};
 export type SummaryMaterial={code:string;name:string;unit_code:string;quantity:string;stock_quantity:string|null;minimum_quantity:string|null;shortage_quantity:string|null;status:'unknown'|'insufficient'|'low'|'ok'};
-export type OrderMaterialDemandData={issues:{issue:string;product_id?:string;product_code?:string;product_name?:string}[];materials:SummaryMaterial[]};
+export type OrderMaterialDemandData={issues:{issue:string;issue_detail?:string;product_id?:string;product_code?:string;product_name?:string;topping_name?:string}[];materials:SummaryMaterial[]};
 export type OrderSummaryData={date:string;orders:SummaryOrder[];stores:SummaryStore[];products:SummaryProduct[];planned_quantity_total:string};
 
 export function orderDemandIssueText(issue:OrderMaterialDemandData['issues'][number],products:OrderSummaryData['products']){
  const product=issue.product_name?null:products.find(item=>item.product_id===issue.product_id),name=issue.product_name??product?.name,code=issue.product_code??product?.code;
  const item=name?` món ${name}${code?` (${code})`:''}`:'';
  if(issue.issue==='PRODUCT_RECIPE_RATIO_REQUIRED')return `Đã tìm thấy công thức đã công bố${item}, nhưng đơn vị đầu ra khác đơn vị bán và chưa có tỷ lệ quy đổi hiệu lực ngày giao. Cần xác minh tỷ lệ trong Danh mục món bán rồi tải lại bảng tổng hợp.`;
- if(issue.issue==='PUBLISHED_PRODUCT_RECIPE_REQUIRED')return `Chưa tính được nhu cầu nguyên liệu của${item}: cần liên kết công thức đã công bố và tỷ lệ quy đổi món bán có hiệu lực trong ngày giao. Thiết lập tại Danh mục món bán rồi tải lại bảng tổng hợp.`;
+ if(issue.issue==='PUBLISHED_PRODUCT_RECIPE_REQUIRED')return `Chưa tính được nhu cầu nguyên liệu của${item}: chưa tìm thấy phiên bản công thức đã công bố. Mở Công thức món ăn, kiểm tra trạng thái và công bố phiên bản đủ dữ liệu. Ngày bắt đầu áp dụng chỉ cần đặt khi tạo hoặc sửa công thức.`;
+ if(issue.issue==='UNIT_NEEDS_VERIFICATION'){
+  const material=issue.issue_detail?.match(/\|material=([^|]+)/)?.[1];
+  return `Chưa tính đủ nguyên liệu${item}${issue.topping_name?` · topping ${issue.topping_name}`:''}: ${material?`vật tư ${material}`:'có vật tư'} chưa có quy đổi công thức đã xác minh cho ngày này. Kiểm tra phần Quy đổi riêng dành cho công thức trong Danh mục vật tư.`;
+ }
+ if(issue.issue==='RECIPE_NEEDS_REVIEW')return `Chưa tính đủ nguyên liệu${item}: công thức còn thành phần hoặc định lượng chưa xác minh. Mở công thức để kiểm tra các dòng cảnh báo.`;
  return `Chưa tính được một phần nhu cầu${item}: ${issue.issue}`;
 }
 
@@ -53,7 +58,7 @@ export async function createOrderSummaryWorkbook(data:OrderSummaryData,demand:Or
  for(const [index,store] of data.stores.entries()){const storeTotal=data.products.reduce((sum,product)=>sum+Number(product.by_store[store.id]??0),0);const cell=matrix.getCell(totalRow,index+3);cell.value=storeTotal;cell.numFmt='#,##0.###';cell.font={bold:true};}
  matrix.getCell(totalRow,totalColumn).value=totalQuantity;matrix.getCell(totalRow,totalColumn).numFmt='#,##0.###';matrix.getCell(totalRow,totalColumn).font={bold:true,color:{argb:'FFCF2733'}};
  for(let col=1;col<=totalColumn;col++){const cell=matrix.getCell(totalRow,col);cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF4F6F8'}};cell.border={top:{style:'thin',color:{argb:'FF394B59'}},bottom:{style:'thin',color:{argb:'FF394B59'}},left:{style:'thin',color:{argb:'FF394B59'}},right:{style:'thin',color:{argb:'FF394B59'}}};cell.alignment={vertical:'middle',horizontal:col<=2?'left':'center',wrapText:true};}matrix.getRow(totalRow).height=26;
- const materialStart=totalRow+2;matrix.mergeCells(materialStart,1,materialStart,totalColumn);matrix.getCell(materialStart,1).value='NHU CẦU NGUYÊN LIỆU TỪ ĐƠN ĐÃ DUYỆT';matrix.getCell(materialStart,1).font={bold:true,size:12,color:{argb:'FF173349'}};matrix.getCell(materialStart+1,1).value='Tính theo công thức và đơn vị vật tư đang hiệu lực. Đây là nhu cầu dự kiến; chưa trừ tồn hoặc ghi sản xuất.';matrix.mergeCells(materialStart+1,1,materialStart+1,totalColumn);matrix.getCell(materialStart+1,1).font={italic:true,color:{argb:'FF66798A'}};
+ const materialStart=totalRow+2;matrix.mergeCells(materialStart,1,materialStart,totalColumn);matrix.getCell(materialStart,1).value='NHU CẦU NGUYÊN LIỆU TỪ ĐƠN ĐÃ DUYỆT';matrix.getCell(materialStart,1).font={bold:true,size:12,color:{argb:'FF173349'}};matrix.getCell(materialStart+1,1).value='Tổng định lượng của đơn đã duyệt, đã xếp kế hoạch hoặc đã giao theo đơn vị công thức. Tồn sổ quy về cùng đơn vị để đối chiếu; đây không phải số cần sản xuất thêm.';matrix.mergeCells(materialStart+1,1,materialStart+1,totalColumn);matrix.getCell(materialStart+1,1).font={italic:true,color:{argb:'FF66798A'}};
  const materialHeader=matrix.getRow(materialStart+3);materialHeader.values=['Mã vật tư','Vật tư','ĐVT','Cần','Tồn sổ','Thiếu','Cảnh báo'];styleHeader(materialHeader);
  if(demand.materials.length){for(const material of demand.materials){const row=matrix.addRow([material.code,material.name,material.unit_code,excelNumber(material.quantity),material.stock_quantity===null?'Chưa có tồn':excelNumber(material.stock_quantity),material.shortage_quantity===null?'—':excelNumber(material.shortage_quantity),materialStatus(material.status)]);row.eachCell((cell,column)=>{cell.alignment={vertical:'middle',wrapText:true};if(column>=4&&column<=6&&typeof cell.value==='number')cell.numFmt='#,##0.###';});}}
  else {const row=matrix.addRow(['Chưa có nhu cầu nguyên liệu đủ dữ liệu công thức cho đơn đã duyệt.']);matrix.mergeCells(row.number,1,row.number,7);row.getCell(1).alignment={horizontal:'center',vertical:'middle',wrapText:true};}
