@@ -4,10 +4,10 @@ export async function checkPublicPortal(page,base,out,report){
  await page.routeWebSocket('**',socket=>socket.close());
  await page.clock.install();
  const products=[{product_id:'public-rice',code:'CN',name:'Cơm nắm kiểm thử với tên dài trên màn hình điện thoại',sale_unit:'Phần',price_vnd:'15000'},{product_id:'public-roll',code:'CC',name:'Cơm cuộn kiểm thử',sale_unit:'Hộp',price_vnd:'25000'},{product_id:'public-missing',code:'CG',name:'Món công bố chưa có giá',sale_unit:'Phần',price_vnd:null}];
- let empty=false,priceChanged=false,toppingState='ready',toppingCalls=0;const requests=[];
+ let empty=false,priceChanged=false,toppingState='ready',toppingCalls=0,linkedCatalogCalls=0;const requests=[];
  const configuredToppings=[{version_id:'topping-tomato',code:'STC',name:'Sốt cà',unit:'phần'},{version_id:'topping-chili',code:'STO',name:'Sốt tương ớt',unit:'phần'}];
  await page.route('**/rest/v1/rpc/public_order_catalog',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({rows:empty?[]:products,total:empty?'0':'3'})}));
- await page.route('**/rest/v1/rpc/public_order_catalog_linked',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({rows:products.map(product=>({...product,discount_rate:'0.1'})),total:'3',store_contact:{name:'Điểm bán kiểm thử',phone:'0900000038',address:'Địa chỉ điểm bán kiểm thử'}})}));
+ await page.route('**/rest/v1/rpc/public_order_catalog_linked',route=>{linkedCatalogCalls++;return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({rows:products.map(product=>({...product,discount_rate:'0.1'})),total:'3',store_contact:{name:'Điểm bán kiểm thử',phone:'0900000038',address:'Địa chỉ điểm bán kiểm thử'}})});});
  await page.route('**/rest/v1/rpc/public_order_topping_catalog_v2',route=>{toppingCalls++;return route.fulfill({status:toppingState==='error'?503:200,contentType:'application/json',body:toppingState==='error'?'{}':toppingState==='unsupported'?'[]':JSON.stringify({schema_version:1,rows:[{product_id:products[0].product_id,required:true,unavailable_count:toppingState==='unavailable'?1:0,options:toppingState==='unavailable'?[]:toppingState==='stale'?[configuredToppings[1]]:configuredToppings}]})});});
  await page.route('**/rest/v1/rpc/submit_public_order_with_toppings',async route=>{
   requests.push(route.request().postDataJSON());
@@ -95,13 +95,19 @@ export async function checkPublicPortal(page,base,out,report){
  await page.waitForFunction(()=>document.querySelector('input[autocomplete="name"]')?.value==='Điểm bán kiểm thử');
  if(await page.locator('input[autocomplete="tel"]').inputValue()!=='0900000038'||await page.locator('textarea[autocomplete="street-address"]').inputValue()!=='Địa chỉ điểm bán kiểm thử')throw new Error('Store link did not prefill the saved store name/contact/address');
  await page.locator('input[autocomplete="name"]').fill('Tên khách đã chỉnh');
- if(await page.locator('input[autocomplete="name"]').inputValue()!=='Tên khách đã chỉnh')throw new Error('Prefilled contact must remain editable');
+ await page.locator('input[autocomplete="tel"]').fill('0900000099');
+ await page.locator('textarea[autocomplete="street-address"]').fill('Địa chỉ giao khách đã chỉnh');
+ const beforeContactRefresh=linkedCatalogCalls;
+ await Promise.all([page.waitForResponse(response=>response.url().includes('/rpc/public_order_catalog_linked')),page.clock.runFor(30_050)]);
+ if(linkedCatalogCalls<=beforeContactRefresh)throw new Error('Linked catalog did not refetch while testing editable contact');
+ if(await page.locator('input[autocomplete="name"]').inputValue()!=='Tên khách đã chỉnh'||await page.locator('input[autocomplete="tel"]').inputValue()!=='0900000099'||await page.locator('textarea[autocomplete="street-address"]').inputValue()!=='Địa chỉ giao khách đã chỉnh')throw new Error('Catalog refetch overwrote the customer edits to prefilled contact');
+ report.checks.push('linked catalog prefills the saved store contact once and preserves edited name, phone and address through a confirmed 30-second refetch');
  await page.locator('input[type=radio][name=payment_method][value=bank]').check();
  await page.getByRole('button',{name:'Tăng '+products[0].name,exact:true}).click();
  await page.getByRole('checkbox',{name:'Sốt cà'}).check();
  await page.getByRole('button',{name:'Gửi đơn đặt hàng',exact:true}).click();await page.getByText('Đã nhận đơn #public-s',{exact:true}).waitFor();
  if(requests.at(-1)?.p_link_token!=='a'.repeat(64)||requests.at(-1)?.p_payment_method!=='bank')throw new Error('Store link token or selected payment method was not passed to the order RPC');
- if(JSON.stringify(requests.at(-1)?.p_contact)!==JSON.stringify({name:'Tên khách đã chỉnh',phone:'0900000038',address:'Địa chỉ điểm bán kiểm thử'}))throw new Error('Editable prefilled store contact was not included in the submitted order');
+ if(JSON.stringify(requests.at(-1)?.p_contact)!==JSON.stringify({name:'Tên khách đã chỉnh',phone:'0900000099',address:'Địa chỉ giao khách đã chỉnh'}))throw new Error('Editable prefilled store contact was not included in the submitted order');
  if(!['AM','PM'].includes(requests.at(-1)?.p_shift))throw new Error('Hidden Vietnam shift was not passed with the store order');
  if(!page.url().endsWith('#'+'a'.repeat(64)))throw new Error('Reusable store link was removed after its first order');
  report.checks.push('store-link portal retains the capability token until submit and includes it in the idempotent order request');

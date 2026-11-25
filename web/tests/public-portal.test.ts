@@ -84,6 +84,47 @@ test('store-linked and review-assigned orders snapshot discounts and payment cho
  }finally{await db.close();}
 });
 
+test('contact prefill patch repairs a newer database missing 085 without changing prices, data or link privacy',async()=>{
+ const db=await database(undefined,['202611240085_prefill_public_order_contact_from_store.sql']);try{
+  assert.equal((await db.query<{ready:boolean}>("select to_regprocedure('public.publish_recipe_at(uuid,bigint,date,uuid)') is not null ready")).rows[0].ready,true);
+  const stores=(await db.query<{id:string;code:string}>("insert into stores(code,name,address,contact,active) values('PREFILL-A','Synthetic first store','First synthetic delivery address','0900000085',true),('PREFILL-B','Synthetic second store','Second synthetic delivery address','0900000086',true) returning id,code")).rows;
+  const product=(await db.query<{id:string}>("insert into products(code,name,sale_unit,published) values('PREFILL-DISH','Synthetic prefill dish','Phần',true) returning id")).rows[0].id;
+  await db.query("insert into product_prices(product_id,price_vnd,effective_from,evidence) values($1,10000,current_date-1,'Synthetic common price')",[product]);
+  const tokens=['a'.repeat(64),'b'.repeat(64)];
+  for(const [index,store] of stores.entries()){
+   await db.query('insert into private.public_order_links(token_hash,store_id,created_by) values($1,$2,$3)',[createHash('sha256').update(tokens[index]).digest('hex'),store.id,identities.admin]);
+   await db.query('insert into store_product_prices(store_id,product_id,price_vnd,effective_from) values($1,$2,$3,current_date-1)',[store.id,product,3500+index*1000]);
+   const policy=(await db.query<{id:string}>("insert into store_discount_policies(store_id,effective_from,common_rate,note,evidence) values($1,current_date-1,$2,'Synthetic discount','Synthetic policy evidence') returning id",[store.id,index===0?'0.17':'0.12'])).rows[0].id;
+   await db.query('insert into store_discount_policy_items(policy_id,product_id,eligible) values($1,$2,true)',[policy,product]);
+  }
+  const date=(await db.query<{delivery_day:string}>("select to_char((now() at time zone 'Asia/Ho_Chi_Minh')::date+1,'YYYY-MM-DD') delivery_day")).rows[0].delivery_day;
+  type Catalog={rows:Record<string,unknown>[];total:string;store_contact?:{name:string;phone:string;address:string}};
+  const linked=async(token:string)=>(await anonymous(db,()=>db.query<{result:Catalog}>('select public_order_catalog_linked($1,0,100,$2) result',[date,token]))).rows[0].result;
+  const before=[];for(const token of tokens)before.push(await linked(token));
+  for(const response of before)assert.equal(Object.hasOwn(response,'store_contact'),false,'the older RPC reproduces the blank contact fields');
+  const protectedTables=['public.stores','private.public_order_links','public.products','public.product_prices','public.store_product_prices','public.store_discount_policies','public.store_discount_policy_items','public.customer_orders','public.customer_order_items','public.audit_logs'];
+  const snapshot=async()=>{const result=[];for(const table of protectedTables)result.push((await db.query(`select coalesce(jsonb_agg(to_jsonb(t) order by to_jsonb(t)::text),'[]') value from ${table} t`)).rows[0]);return result;};
+  const originalData=await snapshot(),migration=await readFile('../supabase/migrations/202611240085_prefill_public_order_contact_from_store.sql','utf8');
+  await db.exec(migration);assert.deepEqual(await snapshot(),originalData,'installing contact prefill must not write business data or audit rows');
+  const contacts=[{name:'Synthetic first store',phone:'0900000085',address:'First synthetic delivery address'},{name:'Synthetic second store',phone:'0900000086',address:'Second synthetic delivery address'}];
+  for(const [index,token] of tokens.entries()){
+   const after=await linked(token);assert.deepEqual(after.store_contact,contacts[index]);
+   assert.deepEqual(after.rows,before[index].rows);assert.equal(after.total,before[index].total);
+   assert.equal(after.rows[0].price_vnd,'10000');assert.equal(after.rows[0].discount_rate,index===0?'0.170000':'0.120000');
+   assert.equal(JSON.stringify(after).includes(contacts[1-index].phone),false,'one link must not expose another store contact');
+  }
+  const normal=(await anonymous(db,()=>db.query<{result:Catalog}>('select public_order_catalog($1,0,100) result',[date]))).rows[0].result;
+  assert.equal(Object.hasOwn(normal,'store_contact'),false);
+  for(const table of ['public.stores','private.public_order_links','public.customer_orders','public.customer_order_items','public.store_product_prices','public.audit_logs'])await assert.rejects(()=>anonymous(db,()=>db.query('select * from '+table)),/permission denied/);
+  await assert.rejects(()=>linked('c'.repeat(64)),/INVALID_LINK/);
+  await db.query('update stores set active=false where id=$1',[stores[1].id]);await assert.rejects(()=>linked(tokens[1]),/INVALID_LINK/);
+  await db.query('update stores set active=true where id=$1',[stores[1].id]);
+  await db.query('update private.public_order_links set revoked_at=now() where store_id=$1',[stores[0].id]);await assert.rejects(()=>linked(tokens[0]),/INVALID_LINK/);
+  const beforeReplay=await snapshot();await db.exec(migration);assert.deepEqual(await snapshot(),beforeReplay,'replaying the schema correction must not alter business rows or audit history');
+  assert.deepEqual((await linked(tokens[1])).store_contact,contacts[1]);
+ }finally{await db.close();}
+});
+
 test('order review queue shows the assigned store with orders:view and does not require stores:view',async()=>{
  const db=await database();try{
   const store=(await db.query<{id:string}>("insert into stores(code,name) values('QUEUE-STORE','Review queue store') returning id")).rows[0].id;

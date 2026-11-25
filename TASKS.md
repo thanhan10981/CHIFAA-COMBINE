@@ -1,5 +1,12 @@
 # Theo dõi công việc
 
+## Điền sẵn thông tin từ link điểm bán — 2026-11-25 (KH-10/KH-12)
+
+- [x] Đối chiếu frontend prefill đang có và migration085; bundle public đang triển khai có linked catalog/store_contact.
+- [x] Chuẩn bị owner SQL085 có guard/replay/readiness; kiểm chứng nâng cấp từ DB090 thiếu085, quyền/phạm vi liên hệ và không ghi dữ liệu nghiệp vụ.
+- [x] 12/12 tests public portal, browser6 chiều rộng, giữ chỉnh sửa ba ô qua refetch, typecheck/lint/build đạt.
+- [ ] Owner áp SQL, nhận `store_contact_ready=true` và UAT mở link riêng lấy đủ liên hệ từ Danh mục điểm bán; chưa chạy cloud từ agent.
+
 ## Thứ tự món tổng hợp khách đặt hàng — 2026-11-25 (KH-01/KH-10/KH-12)
 
 - [x] Đối chiếu11 mã món và thứ tự theo ảnh mẫu, chỉ đổi dòng sản phẩm của ma trận tổng hợp.

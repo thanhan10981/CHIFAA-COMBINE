@@ -1,3 +1,8 @@
+## 2026-11-25 — Kiểm chứng điền sẵn thông tin trên link điểm bán (KH-10/KH-12)
+
+- Chuẩn bị file SQL cài phần085 còn thiếu để linked catalog trả tên/điện thoại/địa chỉ của đúng điểm bán; áp dụng cho link cũ và mới, không thay dữ liệu điểm bán/đơn/giá.
+- 12/12 tests DB, browser6 kích thước, typecheck/lint/build đạt. Thêm hồi quy link riêng không lộ liên hệ điểm khác, nâng cấp DB thiếu085 và giữ ba ô khách đã sửa qua refetch. Frontend live đã có mã prefill; chưa áp SQL cloud hoặc xác nhận response của link thật.
+
 ## 2026-11-25 — Thứ tự món trong bảng tổng hợp khách đặt hàng (KH-01/KH-10/KH-12)
 
 - Sắp cơm nắm theo ảnh mẫu, tiếp đến cơm cuộn/cơm cuộn chiên, mì trộn rồi hai món nguyên cây; cùng thứ tự trên màn hình, bản in và Excel. Theo mã món ổn định, giữ tên thực tế, món ngoài danh sách ở cuối và không thay số lượng/tổng.
