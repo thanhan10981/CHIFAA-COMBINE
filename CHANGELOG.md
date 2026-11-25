@@ -2,6 +2,7 @@
 
 - Sắp cơm nắm theo ảnh mẫu, tiếp đến cơm cuộn/cơm cuộn chiên, mì trộn rồi hai món nguyên cây; cùng thứ tự trên màn hình, bản in và Excel. Theo mã món ổn định, giữ tên thực tế, món ngoài danh sách ở cuối và không thay số lượng/tổng.
 - 219/219 full tests, typecheck, lint, build và browser orders320/390/1280px đạt, gồm kiểm tra bảng/Excel giữ thứ tự và số lượng. Chi tiết phát hành trong `HANDOFF.md`. Không cần SQL hoặc thay dữ liệu nghiệp vụ.
+- Đã push `c302c3b`; Vercel xác nhận triển khai hoàn tất. Chưa UAT trong phiên đăng nhập với dữ liệu thật.
 
 ## 2026-11-25 — Xác minh quy đổi bán có hiệu lực cho ngày tương lai (KH-01/KH-10/KH-11/KH-12)
 

@@ -5,7 +5,7 @@
 - [x] Đối chiếu11 mã món và thứ tự theo ảnh mẫu, chỉ đổi dòng sản phẩm của ma trận tổng hợp.
 - [x] Dùng chung thứ tự màn hình/in/Excel; giữ số lượng, tổng, cache và món mới ngoài danh sách.
 - [x] 219/219 full tests, typecheck/lint/build và browser orders320/390/1280px đạt.
-- [ ] Phát hành frontend và xác nhận Vercel; không cần SQL/migration.
+- [x] Push frontend `c302c3b`; Vercel xác nhận triển khai hoàn tất. Không cần SQL/migration; UAT dữ liệu thật trong phiên owner còn lại.
 
 ## Khai báo tỷ lệ món bán với công thức — 2026-11-25 (KH-01/KH-10/KH-11/KH-12)
 
