@@ -6,7 +6,7 @@ import {useQuery,useQueries,useMutation,useQueryClient} from '@tanstack/react-qu
 import {browserSupabase} from '@/lib/supabase/browser';
 import {formatNumber,formatQuantity,formatVnd} from '@/lib/format';
 import {Icon} from '@/components/icons';
-import {createOrderSummaryWorkbook,orderDemandIssueText,saveOrderSummaryWorkbook,type OrderMaterialDemandData,type OrderSummaryData,type SummaryOrder} from './order-summary';
+import {createOrderSummaryWorkbook,orderDemandIssueText,saveOrderSummaryWorkbook,sortOrderSummaryProducts,type OrderMaterialDemandData,type OrderSummaryData,type SummaryOrder} from './order-summary';
 
 type Order={id:string;version:number|string;store_id:string|null;customer_id:string|null;delivery_date:string;shift:string;status:string;note:string|null;guest_name:string|null;guest_phone:string|null;guest_address:string|null;store_code:string|null;store_name:string|null;customer_payment_method:'cash'|'bank'|null};
 type OrderLine={order_item_id:string;product_id:string;product_code:string|null;product_name:string|null;sale_unit:string|null;ordered_quantity:string;price_vnd:string;discount_rate:string;available_quantity:string|null;delivery_item_id:string|null;delivered_quantity:string;returned_quantity:string};
@@ -22,7 +22,7 @@ const statusLabel:Record<string,string>={submitted:'Chờ duyệt',approved:'Đ�
 const todayInVietnam=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh'}).format(new Date());
 const displayOrderDate=(value:string)=>{const parts=value.split('-');return parts.length===3?`${parts[2]}/${parts[1]}/${parts[0]}`:value;};
 const orderQuantityInput=(value:string)=>value.replace(/(\.\d*?[1-9])0+$|\.0+$/,(match,fraction:string|undefined)=>fraction??'');
-async function loadOrderSummary(date:string){const {data,error}=await browserSupabase().rpc('order_customer_summary',{p_date:date});if(error)throw new Error('Không thể tải dữ liệu thanh toán đơn hàng.');return data as OrderSummaryData;}
+async function loadOrderSummary(date:string){const {data,error}=await browserSupabase().rpc('order_customer_summary',{p_date:date});if(error)throw new Error('Không thể tải dữ liệu thanh toán đơn hàng.');const summary=data as OrderSummaryData;return {...summary,products:sortOrderSummaryProducts(summary.products)};}
 function discountRateFromPercent(value:string){if(!/^(100|(?:0|[1-9]\d?)(?:\.\d{1,2})?)$/.test(value))return '';const [whole,fraction='']=value.split('.'),basis=Number(whole)*100+Number(fraction.padEnd(2,'0'));return `${Math.floor(basis/10000)}.${String(basis%10000).padStart(4,'0')}`;}
 function errorMessage(error:{code?:string;message?:string},fallback:string){
  const message=error.message??'';

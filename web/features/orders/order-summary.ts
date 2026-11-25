@@ -6,6 +6,16 @@ export type SummaryMaterial={code:string;name:string;unit_code:string;quantity:s
 export type OrderMaterialDemandData={issues:{issue:string;issue_detail?:string;product_id?:string;product_code?:string;product_name?:string;topping_name?:string}[];materials:SummaryMaterial[]};
 export type OrderSummaryData={date:string;orders:SummaryOrder[];stores:SummaryStore[];products:SummaryProduct[];planned_quantity_total:string};
 
+// Product row order requested for the customer summary, printout and export.
+// Unknown products keep their server order after the configured menu.
+const summaryProductOrder=new Map([
+ 'CN-XXPM','CN-XXMY','CN-TERI','CN-GPM','CN-BV','CN-CNM','CC','CCC','CN-MY','CC-NC','CCC-NC'
+].map((code,index)=>[code,index]));
+export function sortOrderSummaryProducts(products:readonly SummaryProduct[]){
+ const rank=(product:SummaryProduct)=>summaryProductOrder.get(product.code.trim().toUpperCase())??summaryProductOrder.size;
+ return [...products].sort((left,right)=>rank(left)-rank(right));
+}
+
 export function orderDemandIssueText(issue:OrderMaterialDemandData['issues'][number],products:OrderSummaryData['products']){
  const product=issue.product_name?null:products.find(item=>item.product_id===issue.product_id),name=issue.product_name??product?.name,code=issue.product_code??product?.code;
  const item=name?` món ${name}${code?` (${code})`:''}`:'';
@@ -47,7 +57,7 @@ export async function createOrderSummaryWorkbook(data:OrderSummaryData,demand:Or
  if(data.stores.length){const lastStoreColumn=excelColumn(totalColumn-1);if(data.stores.length>1)matrix.mergeCells(`C2:${lastStoreColumn}2`);matrix.getCell('C2').value='Danh sách khách đặt hàng';for(const [index,store] of data.stores.entries())matrix.getCell(3,index+3).value=`${store.name}\n${store.code}`;}
  styleMatrixHeader(matrix.getRow(2));styleMatrixHeader(matrix.getRow(3));
  let totalQuantity=0;
- for(const [index,product] of data.products.entries()){
+ for(const [index,product] of sortOrderSummaryProducts(data.products).entries()){
   const row=matrix.getRow(index+4);row.getCell(1).value=index+1;row.getCell(2).value=product.name;
   for(const [storeIndex,store] of data.stores.entries()){const quantity=excelNumber(product.by_store[store.id]);row.getCell(storeIndex+3).value=Number(quantity)===0?'':quantity;row.getCell(storeIndex+3).numFmt='#,##0.###';}
   const quantity=excelNumber(product.total_quantity);row.getCell(totalColumn).value=quantity;row.getCell(totalColumn).numFmt='#,##0.###';totalQuantity+=Number(quantity||0);

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import ExcelJS from 'exceljs';
-import {createOrderSummaryWorkbook,orderDemandIssueText,type OrderMaterialDemandData,type OrderSummaryData} from '../features/orders/order-summary';
+import {createOrderSummaryWorkbook,orderDemandIssueText,sortOrderSummaryProducts,type OrderMaterialDemandData,type OrderSummaryData} from '../features/orders/order-summary';
 
 test('order demand warnings identify a missing effective recipe and product conversion without guessing requirements',()=>{
  const message=orderDemandIssueText({product_id:'product-1',issue:'PUBLISHED_PRODUCT_RECIPE_REQUIRED'},[{product_id:'product-1',code:'MON-1',name:'Món kiểm thử',unit:'phần',total_quantity:'10',by_store:{}}]);
@@ -50,4 +50,28 @@ test('daily order workbook puts the store matrix and ingredient demand first, th
   assert.equal(details.getRow(4).getCell(9).value,1700);
   assert.equal(details.getImages().length,1);
  } finally {globalThis.fetch=originalFetch;}
+});
+
+test('customer summary and workbook follow the requested menu order while preserving quantities and unknown products',async()=>{
+ const expected=['CN-XXPM','CN-XXMY','CN-TERI','CN-GPM','CN-BV','CN-CNM','CC','CCC','CN-MY','CC-NC','CCC-NC'];
+ const codes=['NEW-Z',...[...expected].reverse(),'NEW-A'];
+ const products=codes.map((code,index)=>({product_id:'product-'+index,code,name:'Tên đã sửa '+code,unit:'phần',total_quantity:String((index+1)/2),by_store:{'store-1':String((index+1)/2),'store-2':'0'}}));
+ const before=structuredClone(products),ordered=sortOrderSummaryProducts(products),orderedCodes=[...expected,'NEW-Z','NEW-A'];
+ assert.deepEqual(ordered.map(product=>product.code),orderedCodes);
+ assert.deepEqual(products,before,'sorting must not mutate query data or change decimal quantities');
+ for(const product of ordered)assert.equal(product,products.find(original=>original.product_id===product.product_id));
+ assert.deepEqual(sortOrderSummaryProducts([]),[]);
+ const data:OrderSummaryData={date:'2026-11-25',planned_quantity_total:'45.5',stores:[{id:'store-1',code:'STORE-1',name:'Điểm thử',phone:null},{id:'store-2',code:'STORE-2',name:'Điểm chưa đặt',phone:null}],orders:[],products};
+ const originalFetch=globalThis.fetch;globalThis.fetch=async()=>new Response(null,{status:404});
+ try{
+  const blob=await createOrderSummaryWorkbook(data,{issues:[],materials:[]}),workbook=new ExcelJS.Workbook();await workbook.xlsx.load(await blob.arrayBuffer());
+  const matrix=workbook.getWorksheet('Bảng tổng hợp')!;
+  for(const [index,code] of orderedCodes.entries()){
+   const original=products.find(product=>product.code===code)!,row=matrix.getRow(index+4);
+   assert.equal(row.getCell(1).value,index+1);assert.equal(row.getCell(2).value,original.name);
+   assert.equal(row.getCell(3).value,Number(original.by_store['store-1']));assert.equal(row.getCell(4).value,'');assert.equal(row.getCell(5).value,Number(original.total_quantity));
+  }
+  const total=matrix.getRow(products.length+4);assert.equal(total.getCell(1).value,'TỔNG SỐ LƯỢNG');assert.equal(total.getCell(3).value,45.5);assert.equal(total.getCell(4).value,0);assert.equal(total.getCell(5).value,45.5);
+  assert.deepEqual(data.products,before);
+ }finally{globalThis.fetch=originalFetch;}
 });

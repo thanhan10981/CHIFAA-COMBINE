@@ -1,5 +1,12 @@
 # Theo dõi công việc
 
+## Thứ tự món tổng hợp khách đặt hàng — 2026-11-25 (KH-01/KH-10/KH-12)
+
+- [x] Đối chiếu11 mã món và thứ tự theo ảnh mẫu, chỉ đổi dòng sản phẩm của ma trận tổng hợp.
+- [x] Dùng chung thứ tự màn hình/in/Excel; giữ số lượng, tổng, cache và món mới ngoài danh sách.
+- [x] 219/219 full tests, typecheck/lint/build và browser orders320/390/1280px đạt.
+- [ ] Phát hành frontend và xác nhận Vercel; không cần SQL/migration.
+
 ## Khai báo tỷ lệ món bán với công thức — 2026-11-25 (KH-01/KH-10/KH-11/KH-12)
 
 - [x] Khôi phục nút Liên kết công thức ở Danh mục món bán; dùng RPC/quyền/phiên bản/audit hiện có.
