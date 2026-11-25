@@ -1,3 +1,10 @@
+## 2026-11-25 — Công bố bản nháp theo ngày đang chọn và nhận đúng công thức đã sửa (KH-01/KH-10/KH-11/KH-12)
+
+- Migration 090 thêm `publish_recipe_at`: tạo phiên bản mới cho cây công thức con/topping còn nháp từ ngày cũ rồi kiểm tra/công bố trong một transaction theo ngày đã chọn. Giữ định lượng, đơn vị, tỷ lệ bán có nguồn, cờ miễn giá, dòng chưa xác định và tham chiếu bản đã công bố; thiếu quy đổi vẫn chặn toàn bộ lần công bố.
+- Cho công bố chỉnh sửa nhiều lần cùng ngày, giữ các phiên bản cũ và audit liên kết món bán. Tỷ lệ bán được giữ đúng cho từng liên kết đang dùng; thay đơn vị đầu ra phải xác minh lại tỷ lệ.
+- Form tự kiểm tra/công bố mọi nhóm công thức khi đủ quyền; dùng đúng phiên bản/ngày được server trả về, giữ đúng tên công thức con vừa sửa và khóa nội dung/khóa gửi lại khi phản hồi chưa chắc chắn. Giao diện báo rõ nếu máy chủ chưa cài 090.
+- Bằng chứng kiểm tra và bước phát hành được ghi ở checkpoint tương ứng trong `HANDOFF.md`.
+
 # 2026-11-24 — Đồng bộ công thức cùng mã với nhu cầu đơn đã duyệt (KH-01/KH-10/KH-12)
 - `planning_needs` nay dùng công thức sản phẩm cùng mã đã công bố khi chưa có liên kết tường minh; chỉ dùng hệ số 1 nếu đơn vị đầu ra trùng đơn vị bán, còn quy đổi khác đơn vị phải có tỷ lệ nguồn/lưu đã xác minh.
 - Cảnh báo nhu cầu phân biệt thiếu công thức với thiếu tỷ lệ và được dùng chung trong Excel.

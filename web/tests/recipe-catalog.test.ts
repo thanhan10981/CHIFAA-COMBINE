@@ -56,7 +56,9 @@ test('recipe full edits are atomic/idempotent, preserve old versions and reject 
  assert.equal((await db.query<{q:string}>('select quantity::text q from recipe_items where recipe_version_id=$1',[row.version_id])).rows[0].q,'200.000000');
  const sameDay=await save('R-CAT-REPLAY',[item],row.recipe_id as string,'3','2026-11-18');assert.equal(sameDay.revision,3);
  const dayVersions=(await db.query<{id:string;version:string}>("select id,version::text from recipe_versions where recipe_id=$1 and effective_from='2026-11-18' order by revision",[row.recipe_id])).rows;
- await call('publish_recipe',[dayVersions[0].id,dayVersions[0].version,null,null,randomUUID()]);await assert.rejects(()=>call('publish_recipe',[dayVersions[1].id,dayVersions[1].version,null,null,randomUUID()]),/unique constraint/);
+ await call('publish_recipe',[dayVersions[0].id,dayVersions[0].version,null,null,randomUUID()]);await call('publish_recipe',[dayVersions[1].id,dayVersions[1].version,null,null,randomUUID()]);
+ const publishedCatalog=await call('recipe_catalog',['product','2026-11-18','R-CAT-REPLAY',0,25]);assert.equal((publishedCatalog.rows as Record<string,unknown>[])[0].version_id,dayVersions[1].id);
+ assert.equal((await db.query("select * from recipe_versions where recipe_id=$1 and status='published'",[row.recipe_id])).rows.length,2,'Same-day corrections preserve both published revisions');
 });
 test('recipe-only users can read quantities but cannot see financial source or prices or bypass write permissions',async()=>{
  await db.query("insert into user_permissions values($1,'recipes','view',true)",[identities.accountant]);

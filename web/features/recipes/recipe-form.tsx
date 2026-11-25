@@ -6,18 +6,19 @@ import {browserSupabase} from '@/lib/supabase/browser';
 import {ActionDialog,LoadingState,useNotify} from '@/components/feedback';
 import {Icon} from '@/components/icons';
 import {recipeKinds,today,type Recipe,type Detail} from './recipe-types';
-import {publicationFailure,uncertainRecipeResponse} from './recipe-publication';
+import {publicationFailure,uncertainRecipeResponse,type RecipePublicationRequest,type RecipePublicationResult} from './recipe-publication';
 import {recipeCalculationQueryKeys} from './recipe-cache';
 type Line={type:'material'|'recipe';id:string;quantity:string;unit:string;cost_exempt:boolean;source?:string};
 type Option={id:string;code:string;name:string;usage_unit_id?:string;formula_unit_id?:string|null;formula_source_unit_id?:string|null;formula_quantity?:string|null;formula_verified?:boolean};
 type Child={id:string;recipe_id:string;revision:number;status:string;effective_from:string;output_unit_id:string;recipe:{name:string;code:string;kind:string}|null};
 type RecipeOption={id:string;code:string;name:string;kind:string;archived:boolean};
-type Request={p_id:string|null;p_expected_version:string|null;p_recipe:Record<string,unknown>;p_items:Record<string,unknown>[];p_evidence:string;p_key:string;publishKey:string|null};
-type SaveResult={recipe_id:string;version_id:string;published:boolean;toppingsReady:boolean;publishError?:string};
+type SavedRevision={recipe_id:string;version_id:string;toppings_ready?:boolean};
+type Request={p_id:string|null;p_expected_version:string|null;p_recipe:Record<string,unknown>;p_items:Record<string,unknown>[];p_evidence:string;p_key:string;publishKey:string|null;saved?:SavedRevision;publication?:RecipePublicationRequest};
+type SaveResult={recipe_id:string;version_id:string;effective_from:string;published:boolean;toppingsReady:boolean;publishError?:string};
 function roundedComponentQuantity(value:string|null|undefined){if(value==null||!value.trim())return '';try{return new Decimal(value).toDecimalPlaces(2,Decimal.ROUND_HALF_UP).toString();}catch{return value;}}
 const materialFormulaUnit=(material:Option|undefined)=>material?.formula_verified&&material.formula_unit_id?material.formula_unit_id:material?.usage_unit_id;
 async function allRows<T>(table:string,columns:string,filter?:string){const rows:T[]=[];for(let start=0;start<5000;start+=200){let q=browserSupabase().from(table).select(columns).order('id').range(start,start+199);if(filter)q=q.eq('archived',false);const {data,error}=await q;if(error)throw new Error('Chưa tải được danh mục '+table+' ('+(error.code??'Supabase')+'): '+error.message);rows.push(...data as T[]);if(data.length<200)return rows;}throw new Error('Danh mục quá lớn, cần thu hẹp lựa chọn.');}
-export function RecipeForm({userId,recipe,detail,kind,clone=false,canApprove=false,defaultDate=today(),onClose,onSaved}:{userId:string;recipe?:Recipe;detail?:Detail;kind:string;clone?:boolean;canApprove?:boolean;defaultDate?:string;onClose:()=>void;onSaved:(id:string,versionId:string)=>void}){
+export function RecipeForm({userId,recipe,detail,kind,clone=false,canApprove=false,defaultDate=today(),onClose,onSaved}:{userId:string;recipe?:Recipe;detail?:Detail;kind:string;clone?:boolean;canApprove?:boolean;defaultDate?:string;onClose:()=>void;onSaved:(id:string,versionId:string,effectiveFrom:string)=>void}){
  const notify=useNotify(),client=useQueryClient();
  const [code,setCode]=useState(clone?'':recipe?.code??''),[name,setName]=useState((recipe?.name??'')+(clone?' (bản sao)':'')),[type,setType]=useState(recipe?.kind??kind),[date,setDate]=useState(defaultDate),[output,setOutput]=useState(roundedComponentQuantity(detail?.version.output_quantity??'1')),[unit,setUnit]=useState(detail?.version.output_unit_id??''),[pending,setPending]=useState<Request|null>(null);
  const [lines,setLines]=useState<Line[]>(detail?.lines.map(l=>({type:l.type==='recipe'?'recipe':'material',id:l.target_id??'',quantity:roundedComponentQuantity(l.quantity),unit:l.unit_id??'',cost_exempt:l.cost_exempt??false,source:l.type==='unresolved'?l.name+' · '+l.issue:undefined}))??[{type:'material',id:'',quantity:'',unit:'',cost_exempt:false}]);
@@ -25,14 +26,50 @@ export function RecipeForm({userId,recipe,detail,kind,clone=false,canApprove=fal
  const options=useQuery({queryKey:[userId,'recipe-form-options',date],queryFn:async()=>{const [materialResult,units,children,recipes]=await Promise.all([browserSupabase().rpc('recipe_material_units',{p_date:date}),allRows<Option>('material_units','id,code,name','active'),allRows<Omit<Child,'recipe'>>('recipe_versions','id,recipe_id,revision,status,effective_from,output_unit_id'),allRows<RecipeOption>('recipes','id,code,name,kind,archived','active')]);if(materialResult.error)throw new Error('Chưa tải được đơn vị và quy đổi công thức đã xác minh từ danh mục vật tư.');const materials=materialResult.data as unknown as Option[];const recipeById=new Map(recipes.map(r=>[r.id,r]));const childrenWithRecipe:Child[]=children.map(c=>({...c,recipe:recipeById.get(c.recipe_id)??null}));return {materials,units,children:childrenWithRecipe.filter(c=>c.status!=='retired'&&(!recipe||clone||c.recipe_id!==recipe.id)),toppings:childrenWithRecipe.filter(c=>(c.status==='draft'||c.status==='published')&&c.effective_from<=date&&c.recipe?.kind==='topping').sort((a,b)=>b.effective_from.localeCompare(a.effective_from)||b.revision-a.revision)};}});
  const toppingChoices=Array.from((options.data?.toppings??[]).reduce((choices,t)=>{if(choices.has(t.recipe_id))return choices;choices.set(t.recipe_id,options.data!.toppings.find(candidate=>candidate.recipe_id===t.recipe_id&&toppingVersions.includes(candidate.id))??t);return choices;},new Map<string,Child>()).values());
  const locked=!!pending;const patch=(index:number,change:Partial<Line>)=>setLines(rows=>rows.map((r,i)=>i===index?{...r,...change}:r));
- const save=useMutation({retry:false,mutationFn:async():Promise<SaveResult>=>{let request=pending;if(!request){const outputDecimal=/^[0-9]{1,12}(\.[0-9]{1,2})?$/,componentDecimal=/^[0-9]{1,12}(\.[0-9]{1,2})?$/;if(!code.trim()||!name.trim()||!unit||!outputDecimal.test(roundedComponentQuantity(output))||Number(output)<=0)throw new Error('Nhập mã, tên, sản lượng dương và đơn vị.');const items=lines.map(l=>{const quantity=roundedComponentQuantity(l.quantity);if(!l.id||!l.unit||!componentDecimal.test(quantity)||Number(quantity)<=0)throw new Error('Liên kết và nhập đủ định lượng/đơn vị dương cho mọi dòng. Thành phần tối đa 2 chữ số thập phân.');return {material_id:l.type==='material'?l.id:null,child_version_id:l.type==='recipe'?l.id:null,quantity,unit_id:l.unit,cost_exempt:l.cost_exempt};});request={p_id:clone?null:recipe?.id??null,p_expected_version:clone?null:recipe?.version??null,p_recipe:{code:code.trim(),name:name.trim(),kind:type,effective_from:date,output_quantity:roundedComponentQuantity(output),output_unit_id:unit,topping_version_ids:type==='product'?toppingVersions:[]},p_items:items,p_evidence:'',p_key:crypto.randomUUID(),publishKey:canApprove&&type==='product'?crypto.randomUUID():null};setPending(request);}const {publishKey,...saveRequest}=request;const {data,error}=await browserSupabase().rpc('save_recipe_revision',saveRequest);if(error){if(error.code&&!uncertainRecipeResponse(error.code))setPending(null);throw new Error(error.message+(error.code?' ['+error.code+']':''));}const saved=data as {recipe_id:string;version_id:string;toppings_ready?:boolean},toppingsReady=saved.toppings_ready===true;if(!publishKey)return {...saved,published:false,toppingsReady};let publishError:string|undefined;try{const {data:current,error:readError}=await browserSupabase().from('recipe_versions').select('version').eq('id',saved.version_id).single();if(readError)throw readError;const {error}=await browserSupabase().rpc('publish_recipe',{p_version:saved.version_id,p_expected_version:current.version,p_product:null,p_output_per_product:null,p_key:publishKey});if(error)throw error;}catch(error){const issue=error as {code?:string;message?:string};if(uncertainRecipeResponse(issue.code))throw error;publishError=publicationFailure(issue.message??issue.code??'Lỗi RPC');setPending(null);}return {...saved,published:!publishError,toppingsReady,publishError};},onSuccess:data=>{
+ const save=useMutation({retry:false,mutationFn:async():Promise<SaveResult>=>{
+  let request=pending;
+  if(!request){
+   const outputDecimal=/^[0-9]{1,12}(\.[0-9]{1,2})?$/,componentDecimal=/^[0-9]{1,12}(\.[0-9]{1,2})?$/;
+   if(!code.trim()||!name.trim()||!unit||!date||!outputDecimal.test(roundedComponentQuantity(output))||Number(output)<=0)throw new Error('Nhập mã, tên, ngày áp dụng, sản lượng dương và đơn vị.');
+   const items=lines.map(l=>{const quantity=roundedComponentQuantity(l.quantity);if(!l.id||!l.unit||!componentDecimal.test(quantity)||Number(quantity)<=0)throw new Error('Liên kết và nhập đủ định lượng/đơn vị dương cho mọi dòng. Thành phần tối đa 2 chữ số thập phân.');return {material_id:l.type==='material'?l.id:null,child_version_id:l.type==='recipe'?l.id:null,quantity,unit_id:l.unit,cost_exempt:l.cost_exempt};});
+   request={p_id:clone?null:recipe?.id??null,p_expected_version:clone?null:recipe?.version??null,p_recipe:{code:code.trim(),name:name.trim(),kind:type,effective_from:date,output_quantity:roundedComponentQuantity(output),output_unit_id:unit,topping_version_ids:type==='product'?toppingVersions:[]},p_items:items,p_evidence:'',p_key:crypto.randomUUID(),publishKey:canApprove?crypto.randomUUID():null};
+   setPending(request);
+  }
+  let saved=request.saved;
+  if(!saved){
+   const {p_id,p_expected_version,p_recipe,p_items,p_evidence,p_key}=request;
+   const {data,error}=await browserSupabase().rpc('save_recipe_revision',{p_id,p_expected_version,p_recipe,p_items,p_evidence,p_key});
+   if(error){if(!uncertainRecipeResponse(error.code))setPending(null);throw new Error(error.message+(error.code?' ['+error.code+']':''));}
+   saved=data as SavedRevision;request={...request,saved};setPending(request);
+  }
+  const toppingsReady=saved.toppings_ready===true,effectiveFrom=String(request.p_recipe.effective_from);
+  if(!request.publishKey)return {...saved,effective_from:effectiveFrom,published:false,toppingsReady};
+  let publishError:string|undefined;
+  try{
+   if(!request.publication){
+    const {data:current,error:readError}=await browserSupabase().from('recipe_versions').select('version').eq('id',saved.version_id).single();
+    if(readError)throw readError;
+    request={...request,publication:{p_version:saved.version_id,p_expected_version:String(current.version),p_effective_from:String(request.p_recipe.effective_from),p_key:request.publishKey}};setPending(request);
+   }
+   const {data,error}=await browserSupabase().rpc('publish_recipe_at',request.publication!);
+   if(error)throw error;
+   const published=data as RecipePublicationResult;
+   if(!published?.version_id)throw new Error('Chưa nhận đủ xác nhận công bố. Kiểm tra lại lần lưu để nhận đúng phiên bản.');
+   return {recipe_id:published.recipe_id,version_id:published.version_id,effective_from:published.effective_from,published:true,toppingsReady};
+  }catch(error){
+   const issue=error as {code?:string;message?:string};
+   if(uncertainRecipeResponse(issue.code))throw new Error('Bản nháp đã lưu; chưa nhận được xác nhận công bố. Bấm “Kiểm tra lại lần lưu” để tiếp tục đúng lần công bố này.');
+   publishError=publicationFailure(issue.message??issue.code??'Lỗi RPC',issue.code);setPending(null);
+  }
+  return {...saved,effective_from:effectiveFrom,published:false,toppingsReady,publishError};
+ },onSuccess:data=>{
  setPending(null);
  for(const key of recipeCalculationQueryKeys)void client.invalidateQueries({queryKey:[userId,key]});
- if(data.publishError)notify((toppingVersions.length&&data.toppingsReady?'Đã lưu và cập nhật lựa chọn topping. Công thức món còn ở bản nháp: ':'Đã lưu bản nháp nhưng chưa công bố được: ')+data.publishError,'error');
- else if(data.published)notify(toppingVersions.length?'Đã lưu và công bố công thức món cùng các topping đã chọn.':'Đã lưu, kiểm tra và công bố công thức món.','success');
+ if(data.publishError)notify((toppingVersions.length&&data.toppingsReady?'Đã lưu và cập nhật lựa chọn topping. Công thức còn ở bản nháp: ':'Đã lưu bản nháp nhưng chưa công bố được: ')+data.publishError,'error');
+ else if(data.published)notify(toppingVersions.length?'Đã lưu và công bố công thức cùng các topping đã chọn.':'Đã lưu, kiểm tra và công bố công thức.','success');
  else if(toppingVersions.length&&data.toppingsReady)notify('Đã lưu và cập nhật lựa chọn topping của món.','success');
  else notify(type==='product'&&toppingVersions.length?'Đã lưu. Có topping chưa sẵn sàng; cần tài khoản có quyền duyệt lưu lại món.':'Đã lưu phiên bản mới và làm mới công thức.','success');
- onSaved(data.recipe_id,data.version_id);
+ onSaved(data.recipe_id,data.version_id,data.effective_from);
  },onError:error=>notify(error.message,'error')});
  return <ActionDialog title={clone?'Sao chép công thức':recipe?'Chỉnh sửa công thức — phiên bản mới':'Thêm công thức'} onClose={onClose} busy={locked||save.isPending} className="recipe-form">
   <form onSubmit={e=>{e.preventDefault();save.mutate();}}>
@@ -44,7 +81,7 @@ export function RecipeForm({userId,recipe,detail,kind,clone=false,canApprove=fal
       <label className="recipe-full">Tên công thức *<input required value={name} onChange={e=>setName(e.target.value)}/></label>
       <label>Sản lượng / mẻ *<input inputMode="decimal" value={output} onChange={e=>setOutput(e.target.value)} onBlur={e=>setOutput(roundedComponentQuantity(e.currentTarget.value))}/></label>
       <label>Đơn vị sản lượng<select value={unit} onChange={e=>setUnit(e.target.value)}><option value="">Chọn đơn vị</option>{options.data?.units.map(u=><option key={u.id} value={u.id}>{u.code} · {u.name}</option>)}</select></label>
-      <label>Ngày bắt đầu áp dụng<input required type="date" value={date} onChange={e=>setDate(e.target.value)}/><small>Áp dụng từ ngày này trở đi đến khi có phiên bản thay thế; không cần lưu lại mỗi ngày.</small></label>
+      <label>Ngày bắt đầu áp dụng<input aria-label="Ngày bắt đầu áp dụng" required type="date" value={date} onChange={e=>setDate(e.target.value)}/><small>Áp dụng từ ngày này trở đi đến khi có phiên bản thay thế; không cần lưu lại mỗi ngày.</small></label>
      </div>
      <div className="recipe-line-heading"><h3>Thành phần & định lượng</h3><button type="button" className="button" disabled={lines.length>=200} onClick={()=>setLines([...lines,{type:'material',id:'',quantity:'',unit:'',cost_exempt:false}])}><Icon name="plus" size={15}/>Thêm thành phần</button></div>
      <div className="recipe-form-lines">
@@ -57,7 +94,7 @@ export function RecipeForm({userId,recipe,detail,kind,clone=false,canApprove=fal
         {line.source&&<p className="recipe-full warning-note">Nguồn: {line.source}. Chọn liên kết đúng bên dưới hoặc bỏ dòng có lý do.</p>}
         {material&&<p className="recipe-full note">{material.formula_verified&&material.formula_unit_id&&formulaUnit?<>Quy đổi công thức đã xác minh: 1 {formulaSourceUnit?.code??'đơn vị nguồn'} = {material.formula_quantity} {formulaUnit.code}. Định lượng theo {formulaUnit.code}.</>:<>Chưa có quy đổi công thức đã xác minh tại ngày đã chọn. Khai báo và lưu tỷ lệ trong Quy cách của <a href="/app/materials" target="_blank" rel="noreferrer">Danh mục vật tư</a> nếu cần dùng đơn vị khác {stockUnit?.code??'đơn vị kho'}.</>}</p>}
         <label>Loại<select aria-label={'Loại thành phần '+(index+1)} value={line.type} onChange={e=>patch(index,{type:e.target.value as Line['type'],id:'',unit:''})}><option value="material">Vật tư</option><option value="recipe">Công thức con</option></select></label>
-        <label>Thành phần<select aria-label={'Thành phần '+(index+1)} value={line.id} onChange={e=>{const id=e.target.value;patch(index,{id,unit:(line.type==='material'?materialFormulaUnit(options.data?.materials.find(m=>m.id===id)):options.data?.children.find(c=>c.id===id)?.output_unit_id)??''});}}><option value="">Chọn thành phần…</option>{line.type==='material'?options.data?.materials.map(m=><option key={m.id} value={m.id}>{m.code} — {m.name}</option>):options.data?.children.map(c=><option key={c.id} value={c.id}>{c.recipe?.code} — {c.recipe?.name}</option>)}</select></label>
+        <label>Thành phần<select aria-label={'Thành phần '+(index+1)} value={line.id} onChange={e=>{const id=e.target.value;patch(index,{id,unit:(line.type==='material'?materialFormulaUnit(options.data?.materials.find(m=>m.id===id)):options.data?.children.find(c=>c.id===id)?.output_unit_id)??''});}}><option value="">Chọn thành phần…</option>{line.type==='material'?options.data?.materials.map(m=><option key={m.id} value={m.id}>{m.code} — {m.name}</option>):options.data?.children.filter(c=>c.id===line.id||c.effective_from<=date).map(c=><option key={c.id} value={c.id}>{c.recipe?.code} — {c.recipe?.name} · v{c.revision} · {c.status==='published'?'Đã công bố':'Bản nháp'} · {c.effective_from?.split('-').reverse().join('/')}{c.effective_from>date?' (sau ngày đang chọn)':''}</option>)}</select></label>
         <label>Số lượng<input aria-label={'Định lượng '+(index+1)} inputMode="decimal" value={line.quantity} onChange={e=>patch(index,{quantity:e.target.value})} onBlur={e=>patch(index,{quantity:roundedComponentQuantity(e.currentTarget.value)})}/></label>
         <label>ĐVT<select aria-label={'Đơn vị '+(index+1)} value={line.unit} onChange={e=>patch(index,{unit:e.target.value})}><option value="">Chọn</option>{options.data?.units.map(u=><option key={u.id} value={u.id}>{u.code}</option>)}</select></label>
         <label className="recipe-cost-exempt"><input type="checkbox" checked={line.cost_exempt} onChange={e=>patch(index,{cost_exempt:e.target.checked})}/>Không tính giá</label>
@@ -69,6 +106,7 @@ export function RecipeForm({userId,recipe,detail,kind,clone=false,canApprove=fal
      <p className="note">Định lượng thành phần tối đa 2 chữ số thập phân (ví dụ 1.12); số lẻ thêm được làm tròn khi rời ô hoặc lưu. Chọn đơn vị nhỏ hơn nếu cần định lượng chính xác hơn.</p>
      <p className="note">Tích “Không tính giá” để bỏ dòng này khỏi tổng cost; định lượng vẫn được giữ trong nhu cầu và kho.</p>
      <p className="note">Đơn giá và nhu cầu được tính theo quy đổi riêng dành cho công thức, tách khỏi đơn vị nhập/kho. Khi thiếu tỷ lệ đã xác minh, chỉ dùng được đơn vị kho. Sửa công thức tạo phiên bản mới; công thức con giữ đúng phiên bản đã chọn.</p>
+     {canApprove&&<p className="note">Khi lưu, hệ thống kiểm tra và công bố từ ngày bắt đầu áp dụng đã chọn. Các công thức con còn nháp từ ngày cũ được tạo phiên bản mới tại ngày này với cùng định lượng và đơn vị; công thức đã công bố và chứng từ đã chốt giữ lịch sử của mình.</p>}
     </fieldset>
     <footer className="toolbar"><button type="button" className="button" disabled={locked||save.isPending} onClick={onClose}>Hủy</button><button className="button primary" disabled={save.isPending}>{save.isPending?'Đang lưu…':pending?'Kiểm tra lại lần lưu':'Lưu công thức'}</button></footer>
    </>}
