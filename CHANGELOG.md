@@ -3,6 +3,7 @@
 - Trang Nhu cầu nguyên liệu mặc định lấy đơn đã duyệt theo ngày giao; giữ kế hoạch và sản xuất thực tế thành nguồn riêng để tránh cộng trùng. Không tự ghi sản xuất hoặc xuất kho.
 - Hiện nguồn món, phần công thức/quy đổi còn thiếu và tồn toàn bộ kho; giữ “Chưa rõ” khi thiếu dữ liệu, có lỗi/thử lại và phân quyền xem đơn. Không cần SQL mới.
 - 222/222 full tests, typecheck/lint/build và browser30 tổ hợp route/kích thước cùng các ca đổi ngày/partial/quyền/lỗi đạt. Chi tiết phát hành và giới hạn UAT trong `HANDOFF.md`.
+- Đã push `821ccd2`; Vercel xác nhận triển khai hoàn tất. Chưa UAT dữ liệu đơn thật trong phiên đăng nhập.
 
 ## 2026-11-25 — Kiểm chứng điền sẵn thông tin trên link điểm bán (KH-10/KH-12)
 

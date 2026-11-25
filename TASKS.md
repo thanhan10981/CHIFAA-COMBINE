@@ -5,7 +5,8 @@
 - [x] Đối chiếu nguồn planned với đơn approved/plan_id=null; giữ đơn hàng, kế hoạch và sản lượng thực tế riêng.
 - [x] Mặc định nguồn đơn đã duyệt theo ngày giao, RPC/quyền hiện có; hiển thị nguồn món, thiếu dữ liệu/partial, tồn toàn bộ kho và lỗi/thử lại.
 - [x] 222/222 full tests, typecheck/lint/build và browser30 tổ hợp + ca ngày/quyền/thiếu kho/partial/lỗi đạt; giữ kho/snapshot/audit trong hồi quy.
-- [ ] Phát hành frontend theo quyền owner đã cấp; chưa UAT đơn thật trong phiên đăng nhập.
+- [x] Push frontend `821ccd2`; Vercel xác nhận triển khai hoàn tất. Không cần SQL mới.
+- [ ] Owner tải lại trang và UAT đơn thật đúng ngày giao; chưa có phiên đăng nhập được kết nối cho agent.
 
 ## Điền sẵn thông tin từ link điểm bán — 2026-11-25 (KH-10/KH-12)
 
