@@ -1,5 +1,15 @@
 import path from 'node:path';
 export async function checkProduction(page,base,out,report){
+ const orderRequests=[],workspaceRequests=[];
+ let orderScenario='normal';
+ const orderMaterial={material_id:'order-m',code:'ORDER-M',name:'Nguyên liệu kiểm thử đối chiếu',unit_code:'kg',quantity:'1.25',stock_quantity:'10',minimum_quantity:'1',shortage_quantity:'0',status:'ok',sources:[{product_id:'order-p',product_code:'ORDER-P',product_name:'Món trong đơn kiểm thử',quantity:'1.25'}]};
+ await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/order_material_demand',async route=>{
+  const args=route.request().postDataJSON();orderRequests.push(args);
+  if(orderScenario==='error')return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({code:'503',message:'Synthetic demand failure'})});
+  const empty=orderScenario==='empty',partial=orderScenario==='partial';
+  await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({date:args.p_date,products:empty?[]:[{product_id:'order-p',quantity:'5'}],issues:partial?[{product_id:'order-missing',product_code:'ORDER-MISSING',product_name:'Món thiếu công thức kiểm thử',issue:'PUBLISHED_PRODUCT_RECIPE_REQUIRED'}]:[],materials:empty?[]:[{...orderMaterial,quantity:orderScenario==='changed-date'?'2.5':'1.25'},...(partial?[{...orderMaterial,material_id:'order-unknown',code:'ORDER-UNKNOWN',name:'Nguyên liệu chưa rõ tồn theo đơn',quantity:'2',stock_quantity:null,minimum_quantity:null,shortage_quantity:null,status:'unknown',sources:[]}]:[])]})});
+ });
+ page.on('request',request=>{if(request.url().includes('/rpc/production_material_workspace'))workspaceRequests.push(request.postDataJSON());});
  await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/production_plan_requirements',async route=>{
   const args=route.request().postDataJSON(),entered=Number(args.p_lines.find(l=>l.product_id==='pm-p')?.quantity??0),quantity=args.p_mode==='append'?100+entered:entered;
   await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({complete:true,products:[{product_id:'pm-p',name:'Món kiểm thử kế hoạch',unit:'phần',quantity:String(quantity)}],materials:[{material_id:'pm-m',code:'SYN-M',name:'Nguyên liệu kiểm thử đối chiếu',unit_id:'kg',unit:'kg',quantity:String(quantity*.004),stock:'10',package:{unit:'kg',usage_per_package:'1',verified:true}}],sources:[]})});
@@ -16,6 +26,60 @@ export async function checkProduction(page,base,out,report){
   }
  }
  await page.setViewportSize({width:1440,height:1000});
+ await page.goto(base+'/app/requirements');
+ const demandTable=page.getByRole('table',{name:'Nguyên liệu theo đơn đã duyệt',exact:true});
+ await demandTable.getByText('Nguyên liệu kiểm thử đối chiếu',{exact:true}).waitFor();
+ if(await page.getByLabel('Căn cứ tính',{exact:true}).inputValue()!=='orders')throw new Error('Requirements does not default to approved customer orders');
+ if((await demandTable.locator('tbody tr').first().locator('td').nth(1).innerText()).trim()!=='1,25 kg')throw new Error('Order requirements were merged with saved production-plan demand');
+ if(await demandTable.getByRole('columnheader',{name:'Tồn toàn bộ kho',exact:true}).count()!==1)throw new Error('Order stock scope is not stated');
+ await demandTable.getByText('Nguồn món trong đơn',{exact:true}).click();
+ await demandTable.getByText('Món trong đơn kiểm thử (ORDER-P): 1,25 kg',{exact:true}).waitFor();
+ await page.getByLabel('Căn cứ tính',{exact:true}).selectOption('planned');
+ await page.getByRole('heading',{name:'Nguyên liệu cần chuẩn bị',exact:true}).waitFor();
+ const planTable=page.locator('.pm-needs-table');
+ if((await planTable.locator('tbody tr').first().locator('td').nth(1).innerText()).trim()!=='0,52 kg')throw new Error('Saved-plan requirements changed to customer-order quantities');
+ await page.getByLabel('Căn cứ tính',{exact:true}).selectOption('actual');
+ await page.getByRole('heading',{name:'Đối chiếu định mức và thực dùng',exact:true}).waitFor();
+ await page.locator('.pm-materials').getByText('8%',{exact:true}).waitFor();
+ if(await page.locator('.pm-order-needs').count())throw new Error('Order demand remains combined with posted production');
+ await page.getByLabel('Căn cứ tính',{exact:true}).selectOption('orders');
+ await demandTable.getByText('Nguyên liệu kiểm thử đối chiếu',{exact:true}).waitFor();
+ const initialDate=orderRequests.at(-1).p_date,nextDate=new Date(initialDate+'T00:00:00Z');nextDate.setUTCDate(nextDate.getUTCDate()+1);
+ const changedDate=nextDate.toISOString().slice(0,10),workspaceBeforeDate=workspaceRequests.length;
+ orderScenario='changed-date';
+ await page.locator('.pm-controls input[type="date"]').first().fill(changedDate);
+ await demandTable.locator('tbody tr').first().locator('td').nth(1).getByText('2,5',{exact:true}).waitFor();
+ if(orderRequests.at(-1).p_date!==changedDate||workspaceRequests.length!==workspaceBeforeDate)throw new Error('Order requirements date does not query the delivery date independently of production');
+ orderScenario='normal';
+ await page.goto(base+'/app/requirements?no-ingredient-warehouse');
+ await demandTable.getByText('Nguyên liệu kiểm thử đối chiếu',{exact:true}).waitFor();
+ if((await demandTable.locator('tbody tr').first().locator('td').nth(1).innerText()).trim()!=='1,25 kg')throw new Error('Order demand incorrectly requires an assigned ingredient warehouse');
+ orderScenario='empty';
+ await page.goto(base+'/app/requirements');
+ await page.getByText('Chưa có đơn đã duyệt cho ngày giao này. Mở Đơn hàng để kiểm tra ngày giao và duyệt đơn đang chờ.',{exact:true}).waitFor();
+ if(await page.getByText('Chưa có nguyên liệu để tính. Nhập lượng món và kiểm tra công thức đã công bố.',{exact:true}).count())throw new Error('Empty order demand gives production-plan input guidance');
+ orderScenario='partial';
+ await page.goto(base+'/app/requirements');
+ await page.getByText('Chưa tính đủ nhu cầu — cần kiểm tra các mục sau:',{exact:true}).waitFor();
+ await demandTable.getByText('Nguyên liệu kiểm thử đối chiếu',{exact:true}).waitFor();
+ const unknownRow=demandTable.getByRole('row').filter({hasText:'ORDER-UNKNOWN'}),unknownCells=unknownRow.locator('td');
+ if(await unknownCells.nth(2).innerText()!=='Chưa rõ'||await unknownCells.nth(3).innerText()!=='Chưa rõ'||await unknownCells.nth(4).innerText()!=='Chưa cài')throw new Error('Unknown stock, shortage or minimum became a fabricated zero');
+ await page.getByLabel('Tìm nguyên liệu theo đơn',{exact:true}).fill('ORDER-UNKNOWN');
+ if(await demandTable.locator('tbody tr').count()!==1)throw new Error('Order-material search did not filter independently');
+ await page.screenshot({path:path.join(out,'requirements-order-partial-1440.png')});
+ orderScenario='error';
+ await page.goto(base+'/app/requirements');
+ await page.getByRole('alert').getByRole('button',{name:'Tải lại nhu cầu theo đơn',exact:true}).waitFor();
+ if(await page.getByText('Chưa có đơn đã duyệt cho ngày giao này. Mở Đơn hàng để kiểm tra ngày giao và duyệt đơn đang chờ.',{exact:true}).count()||await page.locator('.pm-order-needs .empty').count())throw new Error('Order-demand API failure is presented as no orders');
+ orderScenario='normal';const beforeRetry=orderRequests.length;
+ await page.getByRole('button',{name:'Tải lại nhu cầu theo đơn',exact:true}).click();
+ await demandTable.getByText('Nguyên liệu kiểm thử đối chiếu',{exact:true}).waitFor();
+ if(orderRequests.length<=beforeRetry||await page.locator('.pm-order-needs [role="alert"]').count())throw new Error('Order-demand read retry did not recover');
+ const beforeNoPermission=orderRequests.length;
+ await page.goto(base+'/app/requirements?no-order-demand');
+ await page.getByRole('heading',{name:'Nguyên liệu cần chuẩn bị',exact:true}).waitFor();
+ if(await page.getByLabel('Căn cứ tính',{exact:true}).inputValue()!=='planned'||await page.getByRole('option',{name:'Đơn khách đã duyệt',exact:true}).count()||orderRequests.length!==beforeNoPermission)throw new Error('Order demand is fetched or exposed without order-view permission');
+ report.checks.push('Order requirements defaults to approved delivery-date demand, preserves separate saved-plan and posted-production sources, works without a warehouse, exposes partial issues and unknown stock, retries read failures and respects order-view permission');
  await page.goto(base+'/app/production');
  await page.getByRole('button',{name:'Thêm sản xuất',exact:true}).click();
  await page.getByLabel('Chế độ kế hoạch',{exact:false}).selectOption('append');

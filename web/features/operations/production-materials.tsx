@@ -4,6 +4,7 @@ import {useState,type ReactNode} from 'react';
 import Link from 'next/link';
 import {useSearchParams} from 'next/navigation';
 import {PlanRequirements,PlannedMaterialsTable} from './plan-requirements';
+import {OrderRequirements} from './order-requirements';
 import Decimal from 'decimal.js';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
 import {browserSupabase} from '@/lib/supabase/browser';
@@ -23,7 +24,7 @@ type Source={material_id?:string;unit_id?:string;quantity?:string;product_id:str
 type Workspace={capabilities?:{reconciliation:boolean;production_correction:boolean};usage_sources?:{id:string;material_id:string;snapshot:UsageEvidence}[];adjustments?:{id:string;date:string;reason:string;created_at:string;replacement_batch_id:string;documents:{id:string;kind:string}[]}[];products:Product[];materials:Material[];sources:Source[];plan_id:string|null;production_version:string;approved_plans?:{id:string;shift:string;version:string;warehouse_id:string|null}[];batches?:{id:string;produced_on:string;status:string;replaced_by_id:string|null;started_at:string|null;finished_at:string|null;delivery_date:string|null;production_note:string|null;created_at:string;created_by:string}[];plan_lines:{product_id:string;quantity:string}[];history:{id:string;reason:string;created_at:string;created_by:string}[];from:string;to:string;calculated_at:string};
 type Report={id:string;starts_on:string;ends_on:string;created_at:string;created_by:string};
 type Request={name:string;args:Record<string,unknown>};
-type Permissions={returns?:boolean;plan:boolean;produce:boolean;correct?:boolean;count:boolean;classify?:boolean;ledger?:boolean;freeze:boolean;history:boolean};
+type Permissions={orders?:boolean;returns?:boolean;plan:boolean;produce:boolean;correct?:boolean;count:boolean;classify?:boolean;ledger?:boolean;freeze:boolean;history:boolean};
 const today=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh'}).format(new Date());
 const fmt=formatQuantity;
 const valid=(value:string)=>/^\d+(?:\.\d{1,6})?$/.test(value)&&new Decimal(value).lt('1e14');
@@ -38,17 +39,18 @@ export function ProductionMaterials({slug,userId,permissions}:{slug:string;userI
  const [stage,setStage]=useState<'plan'|'actual'>(slug==='entry-production'?'actual':'plan'),[ledgerDraft,setLedgerDraft]=useState(false);
  const [editingProduction,setEditingProduction]=useState(false);
  const planning=production&&stage==='plan';
- const [date,setDate]=useState(initialDate),[period,setPeriod]=useState('day'),[from,setFrom]=useState(today),[to,setTo]=useState(today),[basis,setBasis]=useState<'planned'|'actual'>('planned');
+ const [date,setDate]=useState(initialDate),[period,setPeriod]=useState('day'),[from,setFrom]=useState(today),[to,setTo]=useState(today),[basis,setBasis]=useState<'orders'|'planned'|'actual'>(slug==='requirements'&&permissions.orders?'orders':'planned');
  const [search,setSearch]=useState(''),[selected,setSelected]=useState(''),[threshold,setThreshold]=useState('5');
  const [draft,setDraft]=useState<Record<string,Record<string,string>>>({}),[planMode,setPlanMode]=useState('replace'),[productionMode,setProductionMode]=useState('append'),[reason]=useState('Ghi nhận sản xuất');
  const [started,setStarted]=useState(''),[finished,setFinished]=useState(''),[delivery,setDelivery]=useState(today);
  const [documentDraft,setDocumentDraft]=useState(false),[cancelConfirmed,setCancelConfirmed]=useState(false);
  const [pending,setPending]=useState<Request|null>(null),[message,setMessage]=useState(''),[frozen,setFrozen]=useState<{id:string;payload:Workspace}|null>(null);
  const range=reporting?(period==='custom'?{from,to}:periodRange(date,period)):{from:date,to:date};
- const mode=production||counting||reporting?'actual':basis;
- const options=useQuery({queryKey:[userId,'production','options',date],queryFn:async()=>{const {data,error}=await browserSupabase().rpc('production_options',{p_date:date});if(error)throw new Error('Chưa tải được kho. Cần quyền xem Sản xuất.');return data as {warehouses:{id:string;name:string}[]};}});
+ const orderBased=slug==='requirements'&&basis==='orders'&&!!permissions.orders;
+ const mode=production||counting||reporting?'actual':basis==='orders'?'planned':basis;
+ const options=useQuery({queryKey:[userId,'production','options',date],enabled:!orderBased,queryFn:async()=>{const {data,error}=await browserSupabase().rpc('production_options',{p_date:date});if(error)throw new Error('Chưa tải được kho. Cần quyền xem Sản xuất.');return data as {warehouses:{id:string;name:string}[]};}});
  const warehouse=ingredientWarehouseId(options.data?.warehouses);
- const query=useQuery({queryKey:[userId,'production-materials',warehouse,range.from,range.to,mode],enabled:!!warehouse&&!!range.from&&!!range.to,queryFn:async()=>{
+ const query=useQuery({queryKey:[userId,'production-materials',warehouse,range.from,range.to,mode],enabled:!orderBased&&!!warehouse&&!!range.from&&!!range.to,queryFn:async()=>{
   const {data,error}=await browserSupabase().rpc('production_material_workspace',{p_warehouse:warehouse,p_from:range.from,p_to:range.to,p_mode:mode});
   if(error)throw new Error('Chưa tải được dữ liệu. Cần bản cập nhật 028 và quyền xem Sản xuất, Nhu cầu nguyên liệu, Kho. Khoảng ngày tối đa 367 ngày.');return data as Workspace;
  }});
@@ -87,19 +89,20 @@ export function ProductionMaterials({slug,userId,permissions}:{slug:string;userI
  };
  return <section className="production-materials">
   {slug==='entry-production'&&permissions.returns&&<div className="toolbar"><Link className="button" href={'/app/kiosk?date='+date}>Thu hồi được duyệt / nhận về theo phiếu bán →</Link><Link className="button" href={'/app/sales?date='+date}>Đối soát bán hàng →</Link></div>}
-  <div className="page-heading"><div><p className="eyebrow">CHIFAA / SẢN XUẤT & NGUYÊN LIỆU</p><h1>{production?'Kế hoạch & ghi nhận sản xuất':counting?'Kiểm kê nguyên liệu & đối chiếu':reporting?'Tiêu hao & đối chiếu hao hụt':'Nhu cầu nguyên liệu'}</h1><p>Kế hoạch → sản xuất thực tế → định mức theo phiên bản → đối chiếu kiểm kê có nguồn.</p></div></div>
+  <div className="page-heading"><div><p className="eyebrow">CHIFAA / SẢN XUẤT & NGUYÊN LIỆU</p><h1>{production?'Kế hoạch & ghi nhận sản xuất':counting?'Kiểm kê nguyên liệu & đối chiếu':reporting?'Tiêu hao & đối chiếu hao hụt':'Nhu cầu nguyên liệu'}</h1><p>{slug==='requirements'?'Xem nhu cầu từ đơn khách, kế hoạch hoặc sản xuất thực tế theo nguồn đang chọn.':'Kế hoạch → sản xuất thực tế → định mức theo phiên bản → đối chiếu kiểm kê có nguồn.'}</p></div></div>
   <nav className="pm-links" aria-label="Sản xuất và nguyên liệu">{[['production','Kế hoạch & sản xuất'],['requirements','Nhu cầu nguyên liệu'],['counts','Kiểm kê chung'],['consumption','Tiêu hao theo kỳ'],['variance','Đối chiếu hao hụt']].map(([id,label])=><Link key={id} href={'/app/'+id+'?date='+date} aria-current={slug===id?'page':undefined}>{label}</Link>)}</nav>
-  <div className="pm-note">Định mức lấy từ <b>số lượng chính + sản xuất thêm</b>, gồm phần lỗi đã khai báo; phần tốt = tổng − lỗi. Giao hàng, bán, hủy tại điểm và thu hồi có chứng từ riêng. Tồn tối thiểu phục vụ cảnh báo mua thêm.</div>
+  {!orderBased&&<div className="pm-note">{mode==='planned'?<>Nhu cầu lấy từ kế hoạch đã lưu và các đơn đã xếp kế hoạch, phân vào kho nguyên liệu. Để xem đơn đã duyệt chưa vào kế hoạch, chọn căn cứ “Đơn khách đã duyệt”.</>:<>Định mức lấy từ <b>số lượng chính + sản xuất thêm</b>, gồm phần lỗi đã khai báo; phần tốt = tổng − lỗi. Giao hàng, bán, hủy tại điểm và thu hồi có chứng từ riêng. Tồn tối thiểu phục vụ cảnh báo mua thêm.</>}</div>}
   <div className="panel"><fieldset disabled={locked||hasDraft||readSnapshot.isPending}><div className="pm-controls">
-   <div className="pm-default-warehouse"><span>Kho</span><strong>Nguyên liệu</strong></div>
-   <label>{reporting?'Ngày thuộc kỳ':'Ngày kinh doanh'}<input type="date" value={date} onChange={e=>{setDate(e.target.value);setFrozen(null);}}/></label>
-   {reporting?<><label>Chu kỳ<select aria-label="Chu kỳ" value={period} onChange={e=>{setPeriod(e.target.value);setFrozen(null);}}>{[['day','Ngày'],['week','Tuần (thứ hai–chủ nhật)'],['rolling7','7 ngày gần nhất'],['month','Tháng'],['quarter','Quý'],['custom','Khoảng ngày']].map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>{period==='custom'&&<><label>Từ<input type="date" value={from} onChange={e=>{setFrom(e.target.value);setFrozen(null);}}/></label><label>Đến<input type="date" value={to} onChange={e=>{setTo(e.target.value);setFrozen(null);}}/></label></>}</>:!production&&!counting&&<label>Căn cứ tính<select aria-label="Căn cứ tính" value={basis} onChange={e=>setBasis(e.target.value as 'planned'|'actual')}><option value="planned">Kế hoạch dự kiến</option><option value="actual">Sản xuất thực tế đã ghi</option></select></label>}
+   <div className="pm-default-warehouse"><span>{orderBased?'Phạm vi tồn':'Kho'}</span><strong>{orderBased?'Toàn bộ kho':'Nguyên liệu'}</strong></div>
+   <label>{reporting?'Ngày thuộc kỳ':orderBased?'Ngày giao':'Ngày kinh doanh'}<input type="date" value={date} onChange={e=>{setDate(e.target.value);setFrozen(null);}}/></label>
+   {reporting?<><label>Chu kỳ<select aria-label="Chu kỳ" value={period} onChange={e=>{setPeriod(e.target.value);setFrozen(null);}}>{[['day','Ngày'],['week','Tuần (thứ hai–chủ nhật)'],['rolling7','7 ngày gần nhất'],['month','Tháng'],['quarter','Quý'],['custom','Khoảng ngày']].map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></label>{period==='custom'&&<><label>Từ<input type="date" value={from} onChange={e=>{setFrom(e.target.value);setFrozen(null);}}/></label><label>Đến<input type="date" value={to} onChange={e=>{setTo(e.target.value);setFrozen(null);}}/></label></>}</>:!production&&!counting&&<label>Căn cứ tính<select aria-label="Căn cứ tính" value={basis} onChange={e=>setBasis(e.target.value as 'orders'|'planned'|'actual')}>{slug==='requirements'&&permissions.orders&&<option value="orders">Đơn khách đã duyệt</option>}<option value="planned">Kế hoạch dự kiến</option><option value="actual">Sản xuất thực tế đã ghi</option></select></label>}
   </div></fieldset><div className="toolbar"><span>{data?.from??range.from} → {data?.to??range.to} · Giờ Việt Nam (UTC+7)</span>{hasDraft&&!documentDraft&&!ledgerDraft&&<button className="button" disabled={locked} onClick={()=>{setDraft({});}}>Bỏ nhập chưa lưu</button>}</div>
-  {(options.isFetching||query.isFetching||readSnapshot.isPending)&&<LoadingState compact label="Đang tải sản lượng và nguyên liệu…"/>}
-  {(options.isError||query.isError||history.isError)&&<ToastNotice tone="error" message={options.error?.message??query.error?.message??history.error?.message}/>}
-  <IngredientWarehouseStatus rows={options.data?.warehouses}/>
+  {!orderBased&&(options.isFetching||query.isFetching||readSnapshot.isPending)&&<LoadingState compact label="Đang tải sản lượng và nguyên liệu…"/>}
+  {!orderBased&&(options.isError||query.isError||history.isError)&&<ToastNotice tone="error" message={options.error?.message??query.error?.message??history.error?.message}/>}
+  {!orderBased&&<IngredientWarehouseStatus rows={options.data?.warehouses}/>}
+  {orderBased&&<OrderRequirements userId={userId} date={date}/>}
   {counting&&<StockCount userId={userId} canPost={(permissions.ledger??false)&&!documentDraft&&!locked} businessDate={date} onDirty={setLedgerDraft}/>}
-  {data&&<><div className="pm-summary"><span><b>{data.products.filter(p=>p.main_quantity!==null).length}</b> mã món có sản xuất</span><span><b>{data.materials.filter(m=>m.quantity!==null).length}</b> mã / đơn vị nguyên liệu</span><span><b>{data.materials.filter(m=>m.actual!==null).length}</b> mã có kiểm kê</span><span><b>{data.materials.filter(m=>m.percent!==null&&new Decimal(m.percent).abs().gt(threshold)).length}</b> chênh vượt {threshold}%</span></div>
+  {!orderBased&&data&&<><div className="pm-summary"><span><b>{data.products.filter(p=>mode==='planned'?new Decimal(data.plan_lines.find(line=>line.product_id===p.id)?.quantity??'0').plus(p.approved_quantity??'0').gt(0):p.main_quantity!==null).length}</b> {mode==='planned'?'mã món có kế hoạch':'mã món có sản xuất'}</span><span><b>{data.materials.filter(m=>m.quantity!==null).length}</b> mã / đơn vị nguyên liệu</span><span><b>{data.materials.filter(m=>m.actual!==null).length}</b> mã có kiểm kê</span><span><b>{data.materials.filter(m=>m.percent!==null&&new Decimal(m.percent).abs().gt(threshold)).length}</b> chênh vượt {threshold}%</span></div>
   <div className="toolbar"><input aria-label="Tìm món hoặc vật tư" placeholder="Tìm tên hoặc mã…" value={search} onChange={e=>setSearch(e.target.value)}/>{reporting&&<label>Ngưỡng cảnh báo<select value={threshold} onChange={e=>setThreshold(e.target.value)}>{['3','5','8','10'].map(v=><option key={v} value={v}>Trên {v}%</option>)}</select></label>}</div>
   {production&&!editingProduction&&<div className="toolbar"><button className="button primary" aria-label="Thêm sản xuất" onClick={()=>setEditingProduction(true)}><Icon name="plus" size={18}/> Thêm sản xuất</button>{permissions.correct&&<button className="button" aria-label="Sửa sản lượng ngày" onClick={()=>{setStage('actual');setProductionMode('replace');setEditingProduction(true);}}><Icon name="edit" size={17}/></button>}{permissions.correct&&<button className="button" aria-label="Xóa sản lượng ngày" onClick={()=>{setStage('actual');setProductionMode('cancel');setEditingProduction(true);}}><Icon name="trash" size={17}/></button>}</div>}
   {production&&!editingProduction&&<div className="table-wrap"><table><thead><tr><th>Món</th><th>Đã sản xuất</th><th>Sản xuất thêm</th><th>Lỗi</th><th>Đã bán</th></tr></thead><tbody>{products.map(p=><tr key={p.id}><td>{p.name}</td><td>{fmt(add(p.main_quantity,p.extra_quantity))}</td><td>{fmt(p.extra_quantity)}</td><td>{fmt(p.rejected_quantity)}</td><td>{fmt(p.sales?.sold)}</td></tr>)}</tbody></table></div>}
