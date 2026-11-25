@@ -3,6 +3,7 @@
 - Danh mục món bán có lại **Liên kết công thức**, cho lưu tỷ lệ đã xác minh từ đơn vị bán sang đơn vị đầu ra và ngày áp dụng qua RPC hiện có.
 - Form nêu rõ hướng quy đổi, không tự mặc định tỷ lệ 1, lọc phiên bản theo ngày đang nhập và làm mới nhu cầu/kế hoạch sau lưu. Không cần SQL mới, không tự nhập quy cách kinh doanh.
 - 214/214 tests và kiểm tra trình duyệt 20 tổ hợp danh mục/kích thước đạt; quyền xem, payload và gửi lại được xác minh. Chi tiết phát hành/UAT trong `HANDOFF.md`.
+- Đã push `5da32e9`; Vercel báo triển khai hoàn tất. Còn xác nhận tỷ lệ kinh doanh và lưu liên kết/UAT thật; không tự ghi 14/16 vào dữ liệu cloud.
 
 ## 2026-11-25 — Xác nhận SQL công thức sẵn sàng phát hành (KH-01/KH-10/KH-11/KH-12)
 
