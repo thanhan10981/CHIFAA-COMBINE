@@ -1,3 +1,13 @@
+## 2026-11-25 — Xác minh quy đổi bán có hiệu lực cho ngày tương lai (KH-01/KH-10/KH-11/KH-12)
+
+- Bổ sung hồi quy cho liên kết lưu một lần tiếp tục dùng ngày hôm sau/tháng sau/năm sau; sửa/công bố nguyên liệu theo ngày mới giữ quy cách bán và không đổi kết quả ngày cũ/snapshot.
+- 4/4 tests tập trung, typecheck, lint và build đạt; không đổi runtime/schema hoặc áp SQL cloud. JSON/evidence là dữ liệu khai báo và căn cứ audit; ngày25/11 là ngày bắt đầu hiệu lực.
+
+## 2026-11-25 — Gói sửa liên kết món bán đã được xác nhận (KH-01/KH-10/KH-11/KH-12)
+
+- Chuẩn bị SQL owner cho các tỷ lệ/ngày do người dùng xác nhận, với kiểm tra công thức published, đơn vị, kỳ mở, xung đột và replay; lưu audit/provenance, tăng version món bán như luồng commercial hiện có. Config và SQL chứa dữ liệu thật chỉ nằm trong ignored `output/`.
+- 217/217 tests, typecheck, lint và build đạt. Ba hồi quy PostgreSQL xác minh một đơn vị bán dùng đủ một mẻ, hai tỷ lệ độc lập, giữ lịch sử sản xuất/kho và rollback toàn bộ khi dữ liệu mâu thuẫn. Chưa chạy cloud; cần áp file dữ liệu và UAT báo cáo đúng ngày. Chi tiết xác nhận và kiểm chứng cuối trong `HANDOFF.md`.
+
 ## 2026-11-25 — Khôi phục nút liên kết công thức trong món bán (KH-01/KH-10/KH-11/KH-12)
 
 - Danh mục món bán có lại **Liên kết công thức**, cho lưu tỷ lệ đã xác minh từ đơn vị bán sang đơn vị đầu ra và ngày áp dụng qua RPC hiện có.

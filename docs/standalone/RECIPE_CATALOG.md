@@ -17,6 +17,14 @@ Nếu UAT không đạt, giữ schema/lịch sử, rollback frontend về bản 
 
 ## Phạm vi và ảnh chuẩn
 
+### Cảnh báo thiếu tỷ lệ bán sau khi công thức đã công bố
+
+`PRODUCT_RECIPE_RATIO_REQUIRED` nghĩa là chưa có hệ số có nguồn giữa đơn vị bán và đầu ra công thức tại ngày giao. Sản lượng/mẻ không tự xác nhận số đầu ra của một đơn vị bán. Khi quy cách đã được owner xác nhận, vào **Danh mục món bán → Liên kết công thức**, chọn bản published, nhập số đầu ra cho một đơn vị bán, ngày hiệu lực và bằng chứng rồi lưu. Tải lại báo cáo đúng ngày sau khi lưu.
+
+Ngày hiệu lực là ngày bắt đầu, không phải ngày hết hạn: liên kết lưu một lần tiếp tục áp dụng cho các ngày giao sau đến khi có liên kết mới hiệu lực. JSON trong SQL là dữ liệu đầu vào; `evidence` chỉ ghi nguồn/căn cứ xác nhận. Sau khi lưu, báo cáo đọc liên kết trong PostgreSQL. Sửa nguyên liệu rồi công bố bằng `publish_recipe_at` giữ tỷ lệ đã thiết lập khi quy cách bán không đổi; nếu đổi số lát mỗi cây, đơn vị hoặc công thức dùng cho món bán thì khai báo liên kết/tỷ lệ mới đúng ngày. Món mới cũng khai báo qua giao diện này, không cần viết SQL riêng mỗi ngày.
+
+Trường hợp cần gói sửa dữ liệu qua SQL Editor owner, chạy từ `web/`: `npx tsx scripts/prepare-recipe-sale-link-correction.ts --config=../output/confirmed-links.json --date=YYYY-MM-DD`. Config riêng là mảng `{productCode,recipeCode,saleUnit,outputUnit,quantity,evidence}`; chỉ dùng tỷ lệ/ngày đã được xác nhận. Bỏ `--date` chỉ sinh chẩn đoán, không suy ngày hôm nay. Script không kết nối cloud. File `output/CHIFAA_FIX_CONFIRMED_RECIPE_SALE_LINKS.sql` kiểm tra đúng sản lượng một mẻ/một đơn vị bán, từ chối liên kết khác công thức/xung đột cùng ngày/kỳ khóa, lưu provenance/audit và không sửa chứng từ đã chốt. Đã có liên kết đúng thì giữ phiên bản đang ghim; không âm thầm chuyển sang bản công thức khác. Kiểm tra ngày, `output_per_sale` và `one_sale_demand` trong kết quả trước khi xác nhận UAT.
+
 Áp dụng KH-01, KH-03, KH-10 trong `CUSTOMER_REQUIREMENTS_2026-11-17.md`: định lượng đa tầng, cộng đúng vật tư, giữ phiên bản và giá đã xác minh làm nền cho nhu cầu nguyên liệu. Checkpoint này hoàn thiện danh mục công thức; chưa triển khai toàn bộ báo cáo tiêu hao/đối chiếu kho theo kỳ của KH-01.
 
 Bảy ảnh người dùng gửi là chuẩn bố cục và thao tác: thẻ số liệu, danh sách/chọn công thức bên trái, chi tiết bên phải, sửa/sao chép, cơm chín, bao bì và bảng tổng giá vốn. Những điểm của bản mô phỏng không được bê vào nghiệp vụ thật: không lưu tạm trong phiên, không thay giá thiếu bằng0, không coi tổng một phần là giá vốn chính thức, không tạo bản sao thử nghiệm không có trong dữ liệu nguồn.

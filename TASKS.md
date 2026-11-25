@@ -6,7 +6,10 @@
 - [x] Làm rõ đơn vị/hướng tỷ lệ, để trống tỷ lệ mới, lọc công thức theo ngày hiệu lực, làm mới nhu cầu sau lưu.
 - [x] 214/214 tests và fixture trình duyệt 4 danh mục × 5 kích thước đạt; không tự sửa dữ liệu thật.
 - [x] Phát hành frontend `5da32e9`; GitHub status xác nhận Vercel triển khai hoàn tất.
-- [ ] Owner xác nhận số lát mỗi cây, lưu liên kết đúng ngày và UAT nhu cầu thật cho CC-NC/CCC-NC.
+- [x] Owner xác nhận quy cách riêng của hai công thức và ngày giao25/11/2026; tỷ lệ cụ thể ở config riêng ignored `output/checks/confirmed-recipe-sale-links.json`.
+- [x] Chuẩn bị SQL owner sửa đúng hai liên kết/ngày đã xác nhận, guard xung đột/kỳ khóa, replay và audit/provenance; 3/3 hồi quy giữ snapshot đạt.
+- [x] Kiểm chứng tỷ lệ tiếp tục dùng ngày hôm sau/tháng sau/năm sau và sau sửa/công bố nguyên liệu mới; 4/4 hồi quy tập trung đạt, không ghi lại ngày cũ/snapshot.
+- [ ] Owner chạy file sửa dữ liệu và UAT nhu cầu thật ngày25/11/2026; chưa có phiên quản trị kết nối để agent ghi/kiểm tra dữ liệu thật.
 
 ## Công thức dùng quy đổi mới, chuẩn bị phát hành — 2026-11-25 (KH-01/KH-10/KH-11/KH-12)
 
