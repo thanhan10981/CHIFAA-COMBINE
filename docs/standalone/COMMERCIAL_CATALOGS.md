@@ -1,5 +1,13 @@
 # Điểm bán, món bán, nhân viên và chiết khấu
 
+## Quy đổi món bán sang công thức — 25/11/2026 (KH-01/KH-10/KH-11/KH-12)
+
+Khi bảng nhu cầu báo đã tìm thấy công thức nhưng thiếu tỷ lệ, mở **Danh mục món bán → Liên kết công thức** ở đúng dòng món → **Thêm phiên bản**. Chọn công thức đã công bố, ngày hiệu lực, nhập số đơn vị đầu ra công thức cho một đơn vị bán và căn cứ đối chiếu, rồi lưu. Form hiển thị đơn vị và bản xem trước `1 đơn vị bán = số lượng đơn vị công thức`; không tự điền tỷ lệ 1 cho liên kết mới. Khi đổi phiên bản, cần nhập lại tỷ lệ để tránh mang hệ số sai sang đơn vị khác.
+
+Tỷ lệ phải là quy cách đã xác minh; `16 lát/mẻ` không tự chứng minh `1 cây = 16 lát`. Không sửa đơn vị công thức hoặc đơn vị bán để bỏ qua cảnh báo. Ngày liên kết không được trước ngày phiên bản công thức; nhu cầu chỉ nhận liên kết đã có hiệu lực trong ngày giao. Liên kết mới không tự áp ngược vào ngày cũ. Giữ nguyên công thức/BOM, kho và snapshot đã chốt.
+
+Luồng dùng RPC `save_commercial_terms('recipe',...)` có sẵn, quyền create/approve công thức và quyền xem món bán, kiểm tra version, idempotency và audit. Người chỉ xem được mở lịch sử nhưng không thêm liên kết. Sau lưu, làm mới catalog, lịch sử và các query nhu cầu/xem trước kế hoạch. Bản sửa khôi phục nút bị thiếu trên danh sách, không cần SQL/migration mới và không tự ghi tỷ lệ vào dữ liệu thật.
+
 Chủ sở hữu xác nhận ở026: **không có phụ cấp mặc định**. Lương giờ và phụ cấp tháng là hai phần riêng. Trong nhân viên chọn “Phụ cấp tháng”, chọn tháng và nhập tổng phụ cấp kèm lý do; chỉnh lại tạo phiên bản mới thay thế tổng của tháng đó, không cộng dồn và không chuyển sang tháng khác. Chưa nhập là chưa xác định, số0 phải nhập rõ. Tháng đã chốt lương/khóa kỳ không được sửa. Dữ liệu cũ giữ nguyên, không tự chuyển mức mặc định cũ thành phụ cấp tháng và không tạo phiếu trả tiền. Các trường mặc định cũ chỉ còn để lưu lịch sử; ca mới không sao chép chúng.
 
 Migration025 nối bốn màn hình với PostgreSQL. Có tìm theo mã/tên, lọc hoạt động/cần bổ sung, ngày xem và phân trang25 dòng. Thêm/sửa danh mục dùng quyền create/edit, version và khóa idempotency; ngừng sử dụng thay cho xóa lịch sử. Tất cả tiền hiển thị theo định dạng Việt Nam và đi qua API dưới dạng chuỗi.

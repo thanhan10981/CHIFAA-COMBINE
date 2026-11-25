@@ -1,5 +1,13 @@
 # Theo dõi công việc
 
+## Khai báo tỷ lệ món bán với công thức — 2026-11-25 (KH-01/KH-10/KH-11/KH-12)
+
+- [x] Khôi phục nút Liên kết công thức ở Danh mục món bán; dùng RPC/quyền/phiên bản/audit hiện có.
+- [x] Làm rõ đơn vị/hướng tỷ lệ, để trống tỷ lệ mới, lọc công thức theo ngày hiệu lực, làm mới nhu cầu sau lưu.
+- [x] 214/214 tests và fixture trình duyệt 4 danh mục × 5 kích thước đạt; không tự sửa dữ liệu thật.
+- [ ] Hoàn tất phát hành frontend và xác minh trạng thái Vercel.
+- [ ] Owner xác nhận số lát mỗi cây, lưu liên kết đúng ngày và UAT nhu cầu thật cho CC-NC/CCC-NC.
+
 ## Công thức dùng quy đổi mới, chuẩn bị phát hành — 2026-11-25 (KH-01/KH-10/KH-11/KH-12)
 
 - [x] Đối chiếu ảnh gọi `publish_recipe` ngày cũ với code090 gọi `publish_recipe_at`; xác nhận hai commit089/090 chưa có trên remote tracking branch.

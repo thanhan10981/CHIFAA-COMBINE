@@ -26,9 +26,7 @@ export async function checkCommercial(page,base,out,report){
     if(kind==='employees'&&!await page.getByLabel('Bộ phận',{exact:true}).locator('option').filter({hasText:'KHO-01 · Kho nguyên liệu'}).count())throw new Error('Custom department option is missing from employee form');
     await close();
    }
-   const captions=kind==='stores'?['Giá riêng','Chiết khấu']:kind==='products'?['Giá bán']:kind==='employees'?['Lương giờ']:['Chi tiết / lịch sử'];
-   if(kind==='products'){
-   }
+   const captions=kind==='stores'?['Giá riêng','Chiết khấu']:kind==='products'?['Giá bán','Liên kết công thức']:kind==='employees'?['Lương giờ']:['Chi tiết / lịch sử'];
    for(const caption of captions){
     await page.getByRole('button',{name:caption,exact:true}).first().click();
     if(caption==='Giá bán'){
@@ -41,6 +39,13 @@ export async function checkCommercial(page,base,out,report){
     if(kind==='employees'&&!await page.getByText('KHO-01 · Kho nguyên liệu · 25.000 đ/giờ',{exact:true}).count())throw new Error('Pay history does not show the linked department code and name');
     await page.getByRole('button',{name:'Thêm phiên bản',exact:true}).click();await page.getByRole('button',{name:'Lưu phiên bản mới',exact:true}).waitFor();await dialog(kind+' '+caption);
     if(kind==='employees'){const payDepartments=await page.locator('select[aria-label="Bộ phận áp dụng mức lương"] option').allTextContents();if(!payDepartments.some(label=>label.includes('KHO-01 · Kho nguyên liệu')))throw new Error('Custom department option is missing from pay form: '+JSON.stringify(payDepartments));}
+    if(caption==='Liên kết công thức'){
+     const quantity=page.getByLabel('Số lượng đầu ra công thức / đơn vị bán',{exact:true});
+     if(await quantity.inputValue()!=='')throw new Error('Unverified product/recipe ratio defaults to a quantity');
+     await page.getByLabel('Phiên bản đã công bố',{exact:true}).selectOption('commercial-recipe-version');
+     await quantity.fill('16');await page.getByText('1 cây = 16 lát',{exact:true}).waitFor();
+     await page.screenshot({path:path.join(out,'recipe-sale-conversion-'+width+'.png')});
+    }
     if(caption==='Chiết khấu'||kind==='discounts'){
      const excluded=page.getByRole('checkbox',{name:'SYN-W · Món nguyên cây kiểm thử',exact:true});if(await excluded.isChecked())throw new Error('Excluded product was ticked');
      await page.getByRole('button',{name:'Chọn tất cả',exact:true}).click();if(!await excluded.isChecked())throw new Error('Select all failed');
@@ -53,6 +58,18 @@ export async function checkCommercial(page,base,out,report){
  }
  await page.goto(base+'/app/employees?role=staff');await page.locator('tbody tr').first().waitFor();
  if(await page.getByRole('button',{name:'Lương giờ',exact:true}).count()||await page.getByRole('button',{name:'Sửa',exact:true}).count()||await page.getByText('25.000 đ',{exact:true}).count())throw new Error('Unauthorized payroll/action rendered');
+ await page.goto(base+'/app/products?role=catalog-viewer');await page.getByRole('button',{name:'Liên kết công thức',exact:true}).click();
+ await page.getByText('Nguồn kiểm thử tổng hợp',{exact:true}).waitFor();
+ if(await page.getByRole('button',{name:'Thêm phiên bản',exact:true}).count())throw new Error('Read-only recipe viewer can edit a sale conversion');
+ await close();
+ const linkRequests=[];
+ await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/save_commercial_terms',async route=>{linkRequests.push(route.request().postDataJSON());await route.fulfill(linkRequests.length===1?{status:503,json:{code:'503',message:'Synthetic uncertain response'}}:{status:200,json:{id:'synthetic-link',version:'2'}});});
+ await page.goto(base+'/app/products');await page.getByRole('button',{name:'Liên kết công thức',exact:true}).click();await page.getByRole('button',{name:'Thêm phiên bản',exact:true}).click();
+ const effectiveDate=await page.getByLabel('Ngày hiệu lực *',{exact:true}).inputValue();
+ await page.getByLabel('Phiên bản đã công bố',{exact:true}).selectOption('commercial-recipe-version');await page.getByLabel('Số lượng đầu ra công thức / đơn vị bán',{exact:true}).fill('16');await page.getByLabel('Nguồn / lý do *',{exact:true}).fill('Synthetic verified whole-roll conversion');
+ await page.getByRole('button',{name:'Lưu phiên bản mới',exact:true}).click();await page.getByRole('button',{name:'Kiểm tra lại lần lưu',exact:true}).waitFor();await page.getByRole('button',{name:'Kiểm tra lại lần lưu',exact:true}).click();await page.getByRole('dialog').waitFor({state:'detached'});
+ if(linkRequests.length!==2||JSON.stringify(linkRequests[0])!==JSON.stringify(linkRequests[1])||linkRequests[0].p_kind!=='recipe'||linkRequests[0].p_id!=='product-fixture'||linkRequests[0].p_input.quantity!=='16'||linkRequests[0].p_input.date!==effectiveDate||linkRequests[0].p_input.recipe_version_id!=='commercial-recipe-version')throw new Error('Sale conversion lost its selected product, units, date, quantity or same-key retry');
+ await page.unroute('https://visual-fixture.supabase.co/rest/v1/rpc/save_commercial_terms');
  const requests=[];
  await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/save_commercial_terms',async route=>{requests.push(route.request().postDataJSON());await route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({code:'NETWORK',message:'Synthetic uncertain response'})});});
  await page.goto(base+'/app/products');await page.getByRole('button',{name:'Giá bán',exact:true}).click();await page.getByLabel('Giá bán (đ) *',{exact:true}).fill('15.000');if(await page.getByLabel('Nguồn / lý do *',{exact:true}).count())throw new Error('Price form still asks for a source/reason');await page.getByRole('button',{name:'Lưu phiên bản mới',exact:true}).click();await page.getByRole('button',{name:'Kiểm tra lại lần lưu',exact:true}).waitFor();await page.getByRole('button',{name:'Kiểm tra lại lần lưu',exact:true}).click();await page.waitForFunction(()=>document.querySelectorAll('.chifaa-toast').length>0);

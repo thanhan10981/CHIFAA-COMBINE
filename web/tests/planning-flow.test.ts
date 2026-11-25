@@ -27,6 +27,29 @@ test('KH-01 plan100 expands nested recipe and packaging without stock write; app
  const replaced=await preview('2026-11-19','90',saved.id as string);assert.equal(Number(replaced.materials.find(m=>m.material_id===rice)?.quantity),4.5);
  await assert.rejects(()=>preview('2026-11-19','100'),/VERSION_CONFLICT/);assert.deepEqual((await db.query('select * from inventory_movement_lines order by id')).rows,before);
 });
+test('KH-01 an explicit dated sale-to-slice link resolves whole-roll demand without changing the recipe or stock',async()=>{
+ const sourceDay='2092-04-01',linkDay='2092-04-02';
+ const stock=(await db.query('select * from inventory_movement_lines order by id')).rows;
+ for(const slices of [16,14]){
+  const code='FLOW-ROLL-'+slices;
+  const sale=(await db.query<{id:string}>("insert into products(code,name,sale_unit) values($1,'Synthetic whole roll','whole-roll') returning id",[code])).rows[0].id;
+  const saved=await rpc<{version_id:string}>('save_recipe',[{code,name:'Synthetic slices',kind:'product',effective_from:sourceDay,output_quantity:String(slices),output_unit_id:each},[{material_id:rice,quantity:String(slices/100),unit_id:kg}],randomUUID()]);
+  await rpc('publish_recipe',[saved.version_id,'1',null,null,randomUUID()]);
+  const needs=(day:string)=>rpc<Preview>('production_plan_requirements',[warehouse,day,null,'replace',[{product_id:sale,quantity:'2'}]]);
+  const missing=await needs(sourceDay);assert.equal(missing.complete,false);assert.ok(missing.sources.some(row=>row.issue==='PRODUCT_RECIPE_RATIO_REQUIRED'));
+  const original=(await db.query('select * from recipe_versions where id=$1',[saved.version_id])).rows;
+  const expected=(await db.query<{version:string}>('select version::text from products where id=$1',[sale])).rows[0].version;
+  const input={date:linkDay,recipe_version_id:saved.version_id,quantity:String(slices),evidence:'Synthetic explicitly verified slices per sold whole roll'};
+  await assert.rejects(()=>rpc('save_commercial_terms',['recipe',sale,expected,input,randomUUID()],identities.a),/FORBIDDEN/);
+  const key=randomUUID(),result=await rpc('save_commercial_terms',['recipe',sale,expected,input,key]);
+  assert.deepEqual(await rpc('save_commercial_terms',['recipe',sale,expected,input,key]),result);
+  const linked=await needs(linkDay);assert.equal(linked.complete,true);assert.equal(Number(linked.materials.find(row=>row.material_id===rice)?.quantity),slices/50);
+  assert.equal((await needs(sourceDay)).complete,false,'a new sale conversion cannot silently apply before its effective date');
+  assert.deepEqual((await db.query('select * from recipe_versions where id=$1',[saved.version_id])).rows,original);
+ }
+ assert.deepEqual((await db.query('select * from inventory_movement_lines order by id')).rows,stock);
+});
+
 test('KH-01 missing recipe stays incomplete and missing stock stays null, preview respects live permissions',async()=>{
  const p=await rpc<Preview>('production_plan_requirements',[warehouse,'2026-11-20',null,'replace',[{product_id:missing,quantity:'100'}]]);assert.equal(p.complete,false);assert.equal(p.materials.length,0);assert.ok(p.sources.some(s=>s.issue==='PUBLISHED_PRODUCT_RECIPE_REQUIRED'));
  await assert.rejects(()=>rpc('production_plan_requirements',[warehouse,'2026-11-20',null,'replace',lines('100')],identities.a),/FORBIDDEN/);
