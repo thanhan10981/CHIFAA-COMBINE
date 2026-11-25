@@ -1,5 +1,14 @@
 # Theo dõi công việc
 
+## Công thức dùng quy đổi mới, chuẩn bị phát hành — 2026-11-25 (KH-01/KH-10/KH-11/KH-12)
+
+- [x] Đối chiếu ảnh gọi `publish_recipe` ngày cũ với code090 gọi `publish_recipe_at`; xác nhận hai commit089/090 chưa có trên remote tracking branch.
+- [x] Kiểm thử hồi quy đơn vị kho cũ → mới với quy đổi công thức đã xác minh: báo đúng đơn vị/ngày cũ, công bố ngày mới thành công và giữ lịch sử.
+- [x] Gói SQL087–090 có kiểm tra nền086, bỏ qua bước đã có, từ chối cài dở, replay không ghi dữ liệu và rollback nguyên tử khi090 lỗi; có SQL chẩn đoán chỉ đọc và hướng dẫn phát hành.
+- [x] 213/213 tests, typecheck, lint, production build và `git diff --check` đạt; tạo hai file SQL phát hành/chẩn đoán trong `output/`.
+- [x] Owner chạy gói SQL và gửi hai cờ sẵn sàng `true`; đã cho phép push và cập nhật frontend.
+- [ ] Phát hành frontend tương thích, xác minh Vercel phục vụ bản mới và UAT công thức/nhu cầu thật. Chưa đánh dấu sự cố production đã hết.
+
 ## Tổng hợp giá vốn công thức — 2026-11-22 (KH-01/KH-10/KH-11)
 
 - [x] Hiển thị cost/mẻ và cost/đơn vị bán từ toàn bộ BOM đã có, làm tròn giá bán đến đồng; có phân trang.

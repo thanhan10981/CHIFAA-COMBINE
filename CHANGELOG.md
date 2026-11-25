@@ -1,3 +1,13 @@
+## 2026-11-25 — Xác nhận SQL công thức sẵn sàng phát hành (KH-01/KH-10/KH-11/KH-12)
+
+- Owner đã chạy gói SQL 087–090 và gửi cả hai cờ sẵn sàng bằng `true`; cho phép push frontend tương ứng lên nhánh Vercel. Chưa xác nhận UAT công bố dữ liệu thật.
+
+## 2026-11-25 — Kiểm chứng đơn vị kho cũ và chuẩn bị gói công bố công thức (KH-01/KH-10/KH-11/KH-12)
+
+- Xác nhận hồi quy khi snapshot cũ dùng túi nhưng quy đổi công thức mới dùng bì/cái: công bố theo ngày mới giữ đúng tỷ lệ đã xác minh, không sửa lịch sử.
+- Gói cập nhật087–090 và SQL kiểm tra chỉ đọc giúp phát hành đủ backend trước frontend; hỗ trợ cài nối tiếp, replay và rollback toàn bộ nếu lỗi. Không tự áp cloud hoặc công bố công thức thật.
+- Nhánh local vẫn có hai commit 089/090 chưa có trên remote tracking; ảnh đang gọi luồng frontend cũ. 213/213 tests, typecheck, lint và build đạt. Chi tiết bằng chứng và phần phát hành/UAT còn lại ở `HANDOFF.md`.
+
 ## 2026-11-25 — Công bố bản nháp theo ngày đang chọn và nhận đúng công thức đã sửa (KH-01/KH-10/KH-11/KH-12)
 
 - Migration 090 thêm `publish_recipe_at`: tạo phiên bản mới cho cây công thức con/topping còn nháp từ ngày cũ rồi kiểm tra/công bố trong một transaction theo ngày đã chọn. Giữ định lượng, đơn vị, tỷ lệ bán có nguồn, cờ miễn giá, dòng chưa xác định và tham chiếu bản đã công bố; thiếu quy đổi vẫn chặn toàn bộ lần công bố.

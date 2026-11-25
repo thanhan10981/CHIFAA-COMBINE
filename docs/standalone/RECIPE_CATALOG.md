@@ -1,5 +1,20 @@
 # Danh mục công thức — checkpoint027
 
+## Cập nhật công bố ngày 25/11/2026 (KH-01/KH-10/KH-11/KH-12)
+
+Các quy tắc checkpoint027 bên dưới là lịch sử. Từ migration090, có thể công bố nhiều lần cùng ngày; mỗi lần giữ phiên bản riêng, truy vấn hiệu lực chọn revision mới nhất, chứng từ đã chốt giữ version/snapshot cũ.
+
+Ảnh lỗi `date=2026-11-17|formula_from=2026-11-25` là công bố nháp cũ theo ngày cũ, trong khi quy đổi công thức mới bắt đầu từ25/11. Đích “túi” có thể là đơn vị kho trong bản xác minh ngày cũ; không được tự đồng nhất túi với bì hay áp quy đổi mới ngược về quá khứ. `publish_recipe_at` chuẩn bị cây nháp theo ngày người dùng chọn, giữ bản published đã ghim và kiểm tra quy đổi đúng ngày đó. Frontend phải gọi RPC mới; chỉ cài SQL không thay đổi payload từ frontend cũ.
+
+Chuẩn bị bản phát hành bằng `npm --prefix web run db:recipe-publication-update`:
+
+1. Chạy file chỉ đọc `output/CHIFAA_RECIPE_PUBLICATION_CHECK.sql` trên đúng dự án để biết các bước088/089/090 và ngày/đơn vị đã xác minh.
+2. Sau khi được phép cập nhật cloud, áp `output/CHIFAA_RECIPE_PUBLICATION_087_090.sql` qua SQL Editor bằng tài khoản owner. Gói yêu cầu nền086, tự bỏ qua bước đã có; phát hiện cài dở hoặc lỗi bất kỳ thì rollback toàn bộ. Kết quả cuối cần `recipe_publication_ready=true` và `formula_units_ready=true`. SQL Editor không cập nhật lịch sử migrations của CLI.
+3. Phát hành frontend chứa commit`1dd7bba` và bản sửa089 đi kèm. Không push nhánh tự deploy trước khi database sẵn sàng. Tải lại ứng dụng, chọn ngày xem/công bố từ ngày quy đổi đã xác minh, bấm “Kiểm tra & công bố” hoặc lưu công thức. Network phải gọi`publish_recipe_at` với`p_effective_from` đúng ngày đang chọn; nhận version trả về có trạng thái published. Không cần nhập lại tỷ lệ đúng sẵn trong danh mục.
+4. Kiểm tra nhu cầu vật tư trên đơn đã duyệt cùng ngày có hiệu lực. Nhu cầu là dữ liệu dự kiến, thao tác đọc/công bố không tự ghi xuất kho hay sản lượng. Đơn lịch sử trước ngày công bố vẫn có thể thiếu công thức hiệu lực; không tự backdate để che thiếu dữ liệu.
+
+Nếu UAT không đạt, giữ schema/lịch sử, rollback frontend về bản tương thích rồi sửa bằng migration tiếp theo. Không xóa phiên bản hoặc snapshot để đảo cập nhật. Gói SQL chỉ thay schema/hàm; không tự xác minh tỷ lệ hoặc công bố dữ liệu thật. Local tests không thay thế UAT Supabase.
+
 ## Phạm vi và ảnh chuẩn
 
 Áp dụng KH-01, KH-03, KH-10 trong `CUSTOMER_REQUIREMENTS_2026-11-17.md`: định lượng đa tầng, cộng đúng vật tư, giữ phiên bản và giá đã xác minh làm nền cho nhu cầu nguyên liệu. Checkpoint này hoàn thiện danh mục công thức; chưa triển khai toàn bộ báo cáo tiêu hao/đối chiếu kho theo kỳ của KH-01.

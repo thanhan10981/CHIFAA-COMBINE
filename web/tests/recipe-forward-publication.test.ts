@@ -248,3 +248,31 @@ test('changing an explicitly linked recipe output unit cannot inherit its previo
  assert.equal(active.recipe_version_id,first.version_id);assert.equal(Number(active.quantity),2);
  assert.equal((await db.query<{status:string}>('select status from recipe_versions where id=$1',[changed.version_id])).rows[0].status,'draft');
 });
+
+test('an older bag snapshot does not override the verified sack-to-piece conversion on forward publication',async()=>{
+ const dates=(await db.query<{old:string;current:string}>("select (current_date-1)::text old,current_date::text current")).rows[0];
+ const oldBag=(await db.query<{id:string}>("insert into material_units(code,name,dimension) values('FWD-OLD-BAG','Synthetic old bag','package') returning id")).rows[0].id;
+ const material=(await db.query<{id:string}>("insert into materials(code,name,purchase_unit_id,usage_unit_id) values('FWD-UNIT-CHANGE','Synthetic changed package',$1,$1) returning id",[oldBag])).rows[0].id;
+ const resolve=async(date:string,stock:string,formula:boolean)=>rpc('resolve_material',[material,await versionOf(material,'materials'),date,{
+  purchase_unit_id:stock,usage_unit_id:stock,basis_unit_id:stock,amount:'12000',verification:'verified',
+  package_unit_id:null,package_content_unit_id:null,package_quantity:null,package_verified:false,
+  stock_conversion_factor:formula?'1':null,formula_unit_id:formula?ids.piece:null,formula_quantity:formula?'100':null,
+  evidence:'Synthetic explicitly verified old bag equals one sack; sack contains 100 pieces',issue:''
+ },randomUUID()]);
+ await resolve(dates.old,oldBag,false);
+ const child=await save('FWD-CHANGED-PACK',[{material_id:material,unit_id:oldBag,quantity:'0.01'}],'packaging',dates.old);
+ await db.query('update recipe_items set unit_id=$1,quantity=1 where recipe_version_id=$2',[ids.piece,child.version_id]);
+ const root=await save('FWD-CHANGED-MEAL',[childLine(child)],'product',dates.old);
+ await resolve(dates.current,ids.bag,true);
+ await assert.rejects(async()=>rpc('publish_recipe',[root.version_id,await versionOf(root.version_id),null,null,randomUUID()]),error=>{
+  assert.ok(String(error).includes('from=FWD-PIECE|to=FWD-OLD-BAG|date='+dates.old+'|formula_from='+dates.current));return true;
+ });
+ const history=(await db.query('select * from material_resolutions where material_id=$1 order by revision',[material])).rows;
+ const source=(await db.query('select * from recipe_items where recipe_version_id=$1',[child.version_id])).rows;
+ const result=await publishAt(root,dates.current);
+ const detail=await rpc<{lines:{target_id:string;formula_source_unit:string;formula_unit:string;formula_quantity:string}[]}>('recipe_detail',[(await publishedVersions(child)).rows[0].id,dates.current]);
+ assert.equal(detail.lines[0].formula_source_unit,'FWD-BAG');assert.equal(detail.lines[0].formula_unit,'FWD-PIECE');assert.equal(Number(detail.lines[0].formula_quantity),100);
+ const cost=await rpc<{complete:boolean;total_vnd:string}>('recipe_cost',[result.version_id,'1',dates.current]);assert.equal(cost.complete,true);assert.equal(Number(cost.total_vnd),120);
+ assert.deepEqual((await db.query('select * from material_resolutions where material_id=$1 order by revision',[material])).rows,history);
+ assert.deepEqual((await db.query('select * from recipe_items where recipe_version_id=$1',[child.version_id])).rows,source);
+});

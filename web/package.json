@@ -26,7 +26,8 @@
     "db:toppings-update": "tsx scripts/package-toppings-update.ts",
     "db:kiosk-update": "tsx scripts/package-kiosk-update.ts",
     "db:order-kiosk-update": "tsx scripts/package-order-kiosk-update.ts",
-    "db:material-stock-update": "tsx scripts/package-material-stock-unit-update.ts"
+    "db:material-stock-update": "tsx scripts/package-material-stock-unit-update.ts",
+    "db:recipe-publication-update": "tsx scripts/package-recipe-publication-update.ts"
   },
   "engines": {
     "node": ">=22"
