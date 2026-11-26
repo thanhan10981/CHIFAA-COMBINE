@@ -1,3 +1,11 @@
+## 2026-11-26 — Đồng bộ kiểu RPC, sửa GitHub verify (KH-10/KH-12)
+
+- Sinh lại `web/lib/database/generated.ts` để cóRPC `public_order_links_v2`; sửa lỗi schema drift khiến GitHub Actions dừng dù push/Vercel đã thành công. Generator chạy lại ổn định; typecheck/lint/build và4/4 tests liên quan đạt. Giữ nguyên bước kiểm tra CI.
+
+## 2026-11-26 — Phát hành link cố định/chiết khấu mới (KH-05/KH-10/KH-12)
+
+- Owner xác nhận SQL091/092 đều ready; đã push631d2c6 cùngb0b5a59 lênchifaa-next-dev. Vercel xác nhận hoàn tất; kiểm tra portalHTTP200 và bundle công khai có quy tắc chiết khấu mới. Còn UAT giỏ/đơn thật sau tải lại trang; không sửa đơn cũ.
+
 ## 2026-11-26 — Chiết khấu theo số lượng từng món (KH-05/KH-10/KH-12)
 
 - Món bật chiết khấu: dưới50 giảm15%, từ50 giảm17% cho toàn bộ SL món đó. Giỏ hàng/tổng tiền và server gửi đơn/sửa số lượng đồng bộ; giữ món bị loại và snapshot đơn cũ.

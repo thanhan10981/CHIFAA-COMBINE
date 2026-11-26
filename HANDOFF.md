@@ -1,3 +1,16 @@
+## 2026-11-26 — Sửa GitHub Actions lỗi database types (KH-10/KH-12)
+
+- Owner báo push GitHub lỗi. Đọc GitHub API: push631d2c6/Vercel đều thành công, nhưng `verify` của run45783124975/job139783180882 dừng ở `git diff --exit-code -- lib/database/generated.ts`; `npm ci` và `npm run db:types` trước đó đều đạt. Không phải lỗiSQL cloud hoặc deploy. Bỏ sót generated types cho RPC091 trong commit trước.
+- Chạy `npm run db:types` từ migrations local:102 bảng/99RPCs. Diff chỉ thêm `public_order_links_v2` vào generated.ts; không đổi runtime, migrations, tiền hoặc dữ liệu. Chạy lại generator và so SHA256 xác nhận file ổn định, không tạo diff mới. Typecheck/lint/build và4/4 tests link/quantity-discount đạt. Full234 đã đạt ở checkpoint nghiệp vụ; không chạy lại local vì chỉ đổi type generated, CI sẽ chạy toàn bộ.
+- Chuẩn bị push bản sửa và kiểm tra cả GitHub verify lẫn Vercel; kết quả ghi bổ sung khi hoàn tất. Không áp SQL cloud, không tắt/bỏ qua bước CI đang phát hiện lỗi.
+
+## 2026-11-26 — Phát hành link cố định và chiết khấu từng món (KH-05/KH-10/KH-12)
+
+- Owner gửi ảnh49 hộp×15.000 vẫnCK17% (124.950, còn610.050). Git xác nhận branch còn ahead2: code mới chưa push, ảnh là cách tính cũ. Owner sau đó xác nhận đã chạy gói mới, cả `persistent_store_links_ready` và `quantity_discounts_ready` đều true. Đây là xác nhận của owner, agent không tự áp hoặc đọc SQL cloud.
+- Đã push `b0b5a59` và `631d2c6` lên `origin/chifaa-next-dev` theo quyền cập nhật web đã cấp. GitHub status của631d2c6 xác nhận Vercel `success / Deployment has completed` lúc15:28 ngày26/11/2026 (Asia/Saigon). Deployment https://vercel.com/thanhan10981s-projects/chifaa-combine-web/9tn5eTvEy3nw2M2MwfmpJXYxgcF8 ; bằng chứng ignored `output/checks/order-links-quantity-discounts-deploy.json`.
+- Kiểm tra chỉ đọc URL public `/portal`: HTTP200,18 scripts tải được; bundle có `quantity_discount_rule` và `discount_eligible`, bằng chứng ignored `output/checks/quantity-discounts-live-assets.json`. Không đọc token/liên hệ thật, không gửi đơn hoặc thay chứng từ. Không sửa runtime sau234 tests của checkpoint trước, không chạy lại tests không cần thiết cho bước phát hành.
+- Đề nghị owner tải lại mạnh Ctrl+F5 và kiểm tra giỏ49 hộp:CK15%=110.250, còn624.750;50 hộp:CK17%=127.500, còn622.500. Còn UAT bằng link/giỏ thật và đối chiếu đơn mới/hóa đơn; không tính lại chứng từ đã nhận trước khi đổi quy tắc. Các dòng chờ SQL/push ở checkpoint trước là lịch sử, đã được giải quyết bằng xác nhận owner và push lần này.
+
 ## 2026-11-26 — Chiết khấu từng món dưới50/đủ50 (KH-05/KH-10/KH-12)
 
 - Owner chốt qua trả lời trực tiếp: **chỉ món đang bật chiết khấu**, dưới50 giảm15%, từ50 trở lên giảm17% cho **toàn bộ số lượng của riêng món đó** trong đơn; không cộng25 mónA+25 mónB, không tính từng phần topping hoặc tự đổi đơn vị. Đã ghi bổ sung vào tài liệu yêu cầu khách hàng.

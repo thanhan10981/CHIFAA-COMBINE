@@ -1,13 +1,20 @@
 # Theo dõi công việc
 
+## Sửa GitHub Actions schema drift — 2026-11-26 (KH-10/KH-12)
+
+- [x] Xác định verify dừng ở generated.ts khác migrations; sinh lại file và kiểm tra regeneration ổn định.
+- [x] Typecheck/lint/build và4/4 tests link/chiết khấu đạt.
+- [ ] Push bản sửa và xác nhận GitHub verify/Vercel thành công.
+
 ## Chiết khấu từng món đủ50 — 2026-11-26 (KH-05/KH-10/KH-12)
 
 - [x] Owner chốt dưới50=15%, đủ50=17% toàn bộ SL riêng món; chỉ món bậtCK.
 - [x] UI và server cổng công khai/link, sửa món submitted dùng đúng mốc; snapshot đơn cũ giữ nguyên.
 - [x] Typecheck/lint/build,full234 tests,test cuối3/3,browser390/1440 và ảnh đạt.
 - [x] Gói ownerSQL091+092 atomic/apply/replay/rollback đã kiểm tra; file `output/CHIFAA_ORDER_LINKS_AND_DISCOUNTS.sql`.
-- [ ] Owner chạy gói mới, xác nhận cả `persistent_store_links_ready` và `quantity_discounts_ready` bằngtrue.
-- [ ] Push frontend, xác nhận Vercel và UAT đơn/hóa đơn thật sau khi SQL sẵn sàng.
+- [x] Owner xác nhận cả `persistent_store_links_ready` và `quantity_discounts_ready` bằngtrue.
+- [x] Push631d2c6 lênchifaa-next-dev; Vercel success, portalHTTP200/bundle có code mới.
+- [ ] UAT giỏ49/50 và đơn/hóa đơn thật sau tải lại mạnh trang.
 
 ## Link điểm bán cố định, popup gọn — 2026-11-26 (KH-10/KH-12)
 
