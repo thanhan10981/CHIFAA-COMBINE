@@ -14,11 +14,37 @@ export async function checkPublicPortal(page,base,out,report){
   await route.fulfill({status:priceChanged?400:requests.length===1?503:200,contentType:'application/json',body:priceChanged?'{"code":"P0001","message":"PRICE_CHANGED"}':requests.length===1?'{}':'{"order_id":"public-synthetic-order","status":"submitted"}'});
  });
  await page.route('**/rest/v1/stores*',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify([{id:'store-fixture',code:'GUEST-S',name:'Điểm nhận đơn kiểm thử'}])}));
- await page.route('**/rest/v1/rpc/public_order_links',route=>route.fulfill({status:200,contentType:'application/json',body:'[]'}));
+ let savedLinks=[],linkFailure=false,createCount=0;
+ await page.route('**/rest/v1/rpc/public_order_links_v2',route=>route.fulfill({status:linkFailure?404:200,contentType:'application/json',body:linkFailure?JSON.stringify({code:'PGRST202'}):JSON.stringify(savedLinks)}));
  let createdLink;
  let reviewed;
- await page.route('**/rest/v1/rpc/create_public_order_link',async route=>{createdLink=route.request().postDataJSON();await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({link_id:'link-fixture',token:'a'.repeat(64),store_id:'store-fixture',store_code:'GUEST-S',store_name:'Điểm nhận đơn kiểm thử'})});});
+ await page.route('**/rest/v1/rpc/create_public_order_link',async route=>{createCount++;createdLink=route.request().postDataJSON();const link={link_id:'link-fixture',token:'a'.repeat(64),store_id:'store-fixture',store_code:'GUEST-S',store_name:'Điểm nhận đơn kiểm thử'};savedLinks=[link];await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(link)});});
  await page.route('**/rest/v1/rpc/review_public_order',async route=>{reviewed=route.request().postDataJSON();await route.fulfill({status:200,contentType:'application/json',body:'{"status":"approved"}'});});
+ if(process.argv.includes('--links-only')){
+  for(const width of [320,390,768,1440]){
+   await page.setViewportSize({width,height:844});await page.goto(base+'/app/materials');await page.getByRole('button',{name:'Cổng đặt hàng',exact:true}).click();
+   const dialog=page.getByRole('dialog',{name:'Link đặt hàng điểm bán'});await dialog.getByLabel('Điểm bán',{exact:true}).selectOption('store-fixture');
+   if(createCount===0)await dialog.getByRole('button',{name:'Lấy link cố định',exact:true}).click();
+   const input=dialog.getByLabel('Đường dẫn đặt hàng',{exact:true});await input.waitFor();
+   if(!(await input.inputValue()).endsWith('#'+'a'.repeat(64)))throw Error('Saved link changed');
+   const geometry=await dialog.evaluate(el=>({width:el.getBoundingClientRect().width,left:el.getBoundingClientRect().left,right:el.getBoundingClientRect().right,overflow:el.scrollWidth>el.clientWidth+1}));
+   if(geometry.width>481||geometry.left<12||geometry.right>width-12||geometry.overflow)throw Error('Link dialog not compact: '+JSON.stringify(geometry));
+   await page.screenshot({path:path.join(out,'persistent-link-'+width+'.png')});
+   await dialog.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();await page.getByRole('button',{name:'Cổng đặt hàng',exact:true}).click();
+   await page.getByLabel('Đường dẫn đặt hàng',{exact:true}).waitFor();
+   if(await page.getByRole('button',{name:'Lấy link cố định',exact:true}).count())throw Error('Reopened dialog offers duplicate create');
+   await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();
+  }
+  if(createCount!==1)throw Error('Link created more than once');
+  await page.route('**/rest/v1/rpc/revoke_public_order_link',route=>{savedLinks=[];return route.fulfill({status:200,contentType:'application/json',body:'{"revoked":true}'});});
+  await page.getByRole('button',{name:'Cổng đặt hàng',exact:true}).click();await page.getByLabel('Đường dẫn đặt hàng',{exact:true}).waitFor();
+  await page.getByText('Quản lý link',{exact:true}).click();await page.getByRole('button',{name:'Thu hồi link',exact:true}).click();
+  await page.getByRole('button',{name:'Lấy link cố định',exact:true}).waitFor();await page.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();
+  linkFailure=true;await page.reload();await page.getByRole('button',{name:'Cổng đặt hàng',exact:true}).click();
+  await page.getByLabel('Điểm bán',{exact:true}).selectOption('store-fixture');await page.getByRole('alert').filter({hasText:'Cần cập nhật database'}).waitFor();
+  if(await page.getByRole('button',{name:'Lấy link cố định',exact:true}).count())throw Error('Missing SQL allowed duplicate creation');
+  report.checks.push('persistent link created once; reload/reopen at 320/390/768/1440 keeps same URL; compact popup; missing SQL blocks creation');return;
+ }
  for(const width of [320,390,768,1024,1440,1920]){
   await page.setViewportSize({width,height:1000});await page.goto(base+'/portal');if(await page.locator('input[type=radio][name=payment_method]').count()!==2)throw new Error('Cash and bank transfer radio choices missing');
   if(await page.getByRole('link',{name:'Đơn điểm bán',exact:true}).count())throw new Error('Legacy store-order button is still shown on the public portal');
@@ -135,9 +161,9 @@ export async function checkPublicPortal(page,base,out,report){
  report.checks.push('catalog refetch blocks stale topping selections until explicitly replaced; unavailable saved configuration blocks submission; visible catalog error can retry without losing the basket');
  report.checks.push('versioned topping contract rejects an old/unsupported response visibly and blocks checkout until a compatible catalog is loaded');
  if(process.argv.includes('--catalog-only')||process.argv.includes('--public-shop-only')){report.checks.push('public-shop fixture exit before unrelated admin review flows');return;}
- await page.goto(base+'/app/materials');await page.getByRole('button',{name:'Cổng đặt hàng',exact:true}).click();const linkDialog=page.getByRole('dialog',{name:'Tạo link cho điểm bán'});await linkDialog.waitFor();
+ await page.goto(base+'/app/materials');await page.getByRole('button',{name:'Cổng đặt hàng',exact:true}).click();const linkDialog=page.getByRole('dialog',{name:'Link đặt hàng điểm bán'});await linkDialog.waitFor();
  if(!await linkDialog.getByLabel('Điểm bán',{exact:true}).count())throw new Error('Store picker missing: '+(await linkDialog.innerText()).slice(0,500));
- await linkDialog.getByLabel('Điểm bán',{exact:true}).selectOption('store-fixture');await page.getByRole('button',{name:'Tạo link',exact:true}).click();
+ await linkDialog.getByLabel('Điểm bán',{exact:true}).selectOption('store-fixture');await page.getByRole('button',{name:'Lấy link cố định',exact:true}).click();
  await page.getByLabel('Đường dẫn đặt hàng',{exact:true}).waitFor();
  if(createdLink?.p_store!=='store-fixture'||!createdLink?.p_key||!(await page.getByLabel('Đường dẫn đặt hàng',{exact:true}).inputValue()).endsWith('#'+'a'.repeat(64)))throw new Error('Store link popup did not create a copyable link for the selected store');
  await page.screenshot({path:path.join(out,'order-link-dialog.png')});report.orderLinkDialog=await page.getByRole('dialog').evaluate(dialog=>({dialog:dialog.getBoundingClientRect().toJSON(),close:dialog.querySelector('button[aria-label="Đóng hộp thoại"]')?.getBoundingClientRect().toJSON(),scrollTop:dialog.scrollTop,scrollHeight:dialog.scrollHeight}));

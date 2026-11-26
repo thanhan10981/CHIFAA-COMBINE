@@ -1,9 +1,18 @@
 # Theo dõi công việc
 
+## Link điểm bán cố định, popup gọn — 2026-11-26 (KH-10/KH-12)
+
+- [x] Popup tối đa480px, lấy lại/sao chép link đã lưu; không tạo thêm khi đóng/mở hoặc reload, thu hồi thu gọn.
+- [x] Migration091 bảo vệ link riêng, recovery legacy/reuse/idempotency/audit; tạo gói owner SQL, không áp cloud.
+- [x] Typecheck/lint/build, full231 tests, test cuối1/1 và browser320/390/768/1440 đạt; đã xem ảnh cuối.
+- [ ] Owner chạy `output/CHIFAA_PERSISTENT_STORE_LINKS.sql`, xác nhận `persistent_store_links_ready=true`.
+- [ ] Push frontend sau xác nhận SQL, kiểm tra Vercel và UAT hai trình duyệt với link thật.
+
 ## Bỏ dòng chữ cuối hóa đơn — 2026-11-26 (KH-05/KH-10/KH-12)
 
 - [x] Xóa footer mã đơn/chú thích và CSS dư; typecheck/lint/build, 7/7 tests liên quan và HTML render đạt.
-- [ ] Phát hành bản bỏ footer; UAT phiên đăng nhập/máy in thật.
+- [x] Đã push `b97cd5f`; Vercel xác nhận triển khai hoàn tất, bằng chứng ignored `output/checks/sales-invoice-no-footer-deploy.json`.
+- [ ] UAT phiên đăng nhập/máy in thật.
 
 ## Thu gọn phiếu bán hàng A5 — 2026-11-26 (KH-05/KH-10/KH-12)
 

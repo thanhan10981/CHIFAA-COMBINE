@@ -76,6 +76,18 @@ button, input, select, textarea {font-family: inherit;}
 .workspace button.reference-portal {border: 0; background: transparent; font-family: inherit; cursor: pointer;}
 .public-order-link-dialog>header {position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #fff; padding: 2px 0 12px; margin-bottom: 14px; border-bottom: 1px solid var(--line);}
 .public-order-link-dialog>header h2 {margin: 0;}
+.panel.modal.public-order-link-dialog {width: min(480px,100%); min-width: 0; max-width: 480px; padding: 20px; max-height: calc(100dvh - 48px); overflow-y: auto; font-size: 13px;}
+.public-order-link-dialog>header {margin-bottom: 12px; padding-bottom: 10px;}
+.public-order-link-dialog>header h2 {font-size: 18px; line-height: 1.4;}
+.public-order-link-dialog .order-link-intro {margin: 0 0 14px; color: #617185; line-height: 1.6;}
+.public-order-link-dialog label {display: grid; gap: 6px; font-size: 13px;}
+.public-order-link-dialog :is(select,input) {width: 100%; min-width: 0; border: 1px solid #d5dfeb; border-radius: 9px; padding: 10px 11px; font: inherit; background: #fff; color: #253b52;}
+.public-order-link-dialog .order-link-created {display: grid; gap: 12px; margin-top: 14px; padding: 14px; border: 1px solid #e0e7ef; border-radius: 12px; background: #f8fafc;}
+.public-order-link-dialog .order-link-created input {font-size: 12px;}
+.public-order-link-dialog .order-link-actions {display: flex; flex-wrap: wrap; gap: 8px;}
+.public-order-link-dialog .button {display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 12px; font-size: 13px; min-height: 38px;}
+.public-order-link-dialog small {color: #617185; line-height: 1.5;}
+.public-order-link-dialog .order-link-empty {margin-top: 14px;}
 .workspace .avatar {background: #eaf1f7; color: #294962; font-weight: 700; font-size: 12px;}
 .workspace .page-heading {margin-bottom: 26px;}
 .workspace .page-heading h1 {font-size: clamp(24px, 2.1vw, 30px); line-height: 1.45; font-weight: 700; letter-spacing: -.8px; margin-bottom: 7px;}

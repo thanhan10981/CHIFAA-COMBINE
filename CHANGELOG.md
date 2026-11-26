@@ -1,6 +1,11 @@
+## 2026-11-26 — Link điểm bán cố định và popup gọn (KH-10/KH-12)
+
+- Popup tối đa480px, chọn điểm bán để lấy lại link đã lưu, giữ Sao chép/Mở link và quản lý thu hồi thu gọn. Migration091 phục hồi token hợp lệ từ receipt cũ, dùng lại một link cố định mỗi điểm bán; giữ link cũ và quyền/private/audit, không đổi đơn hoặc tiền.
+- Typecheck/lint/build, full231 tests và browser320–1440 đạt; test replay chạy lại đạt sau sửa cuối. Chưa áp cloud hoặc phát hành: owner chạy gói `output/CHIFAA_PERSISTENT_STORE_LINKS.sql`, xác nhận ready rồi mới push giao diện. Chi tiết/bằng chứng/rollback tại HANDOFF.md.
+
 ## 2026-11-26 — Bỏ chú thích cuối hóa đơn (KH-05/KH-10/KH-12)
 
-- Xóa dòng mã đơn và chú thích hóa đơn nội bộ khỏi phiếu in A5 theo yêu cầu owner. Typecheck/lint/build, 7/7 kiểm thử liên quan và kiểm tra HTML render đạt; giữ tổng tiền/ký nhận.
+- Xóa dòng mã đơn và chú thích hóa đơn nội bộ khỏi phiếu in A5 theo yêu cầu owner. Typecheck/lint/build, 7/7 kiểm thử liên quan và kiểm tra HTML render đạt; giữ tổng tiền/ký nhận. Đã push `b97cd5f`; Vercel xác nhận triển khai hoàn tất.
 
 ## 2026-11-26 — Phiếu bán hàng khổ A5 (KH-05/KH-10/KH-12)
 
