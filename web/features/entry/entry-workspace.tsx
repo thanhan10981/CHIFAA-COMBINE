@@ -96,6 +96,7 @@ export function EntryWorkspace({module,userId,permissions}:{module:string;userId
   const endsNextDay=draft.end<=draft.start;
   const prior=line.journal?.input??{};
    const input:Row={...prior,employee_id:line.employee.id,starts_at:attendanceStart(date,draft.start),ends_at:attendanceStart(endsNextDay?nextBusinessDate(date):date,draft.end),break_minutes:draft.breakMinutes,department:draft.department};
+   for(const field of ['daily','support','advance','deduction'])input[field]=prior[field]??'0';
   const request:AttendanceRequest={line_key:line.key,employee_id:line.employee.id,p_action:'attendance',p_date:date,p_input:input,p_previous:line.journal?.id??null,p_key:crypto.randomUUID()};
   setAttendancePending(request);setMessage('');saveAttendance.mutate(request);
  };

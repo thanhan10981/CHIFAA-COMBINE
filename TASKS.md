@@ -1,5 +1,13 @@
 # Theo dõi công việc
 
+## Lỗi lưu chấm công INVALID_MONEY — 2026-11-26 (KH-02/KH-09/KH-10)
+
+- [x] Đối chiếu lỗi HTTP 400 từ ảnh với RPC và tìm bốn khoản tiền bị thiếu trong payload ca mới.
+- [x] Điền `0` cho khoản trống, giữ giá trị cũ khi sửa ca; typecheck/lint/build/browser `--entries` đạt.
+- [x] Full test 227/227 đạt.
+- [ ] Phát hành frontend.
+- [ ] UAT lưu ca thật qua phiên đăng nhập, xác nhận giờ công và bảng lương.
+
 
 ## Thứ tự Danh mục món bán theo ảnh — 2026-11-26 (KH-10, REQ-CAT-03)
 
