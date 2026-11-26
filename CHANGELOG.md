@@ -1,3 +1,10 @@
+## 2026-11-26 — Lọc ngày giao và sửa/hủy đơn đã duyệt (KH-01/KH-03/KH-10/KH-12)
+
+- Đơn đặt hàng mặc định hiển thị ngày giao kế tiếp, có bộ lọc ngày server-side. Cho sửa số lượng món và hủy đơn đã duyệt/lên kế hoạch nếu chưa có sản xuất/giao; cập nhật số lượng kế hoạch và giữ audit/lịch sử thay đổi. Hủy đơn loại đơn khỏi tổng hợp hiệu lực nhưng không xóa chứng từ.
+- Thêm migration 094, RPCs có quyền/version/idempotency, generated DB types và 2 kiểm thử PostgreSQL.
+- Typecheck/lint/build và 2/2 kiểm thử mới đạt. Full suite có 237 kiểm thử hiện hữu đạt; worker chạy file mới bị `spawn EPERM` trong sandbox, đã chạy riêng ngoài sandbox đạt.
+- Chưa áp SQL cloud, push hoặc deploy; cần migration 094 trước frontend và UAT trên đơn chưa sản xuất.
+
 ## 2026-11-26 — Bỏ qua món chưa đủ công thức trong đợt sản xuất (KH-01/KH-03/KH-10/KH-11)
 
 - Món chưa có công thức hiệu lực hoặc thiếu tỷ lệ không còn chặn các món khác; chúng bị bỏ qua khỏi payload. Món được ghi vẫn cần đủ số chính/thêm/lỗi, kể cả số 0, cùng thời gian và lý do.

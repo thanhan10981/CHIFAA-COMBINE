@@ -1,3 +1,10 @@
+## 2026-11-26 — Lọc ngày giao và sửa/hủy đơn đã duyệt (KH-01/KH-03/KH-10/KH-12)
+
+- Màn duyệt đơn mặc định lọc ngày giao kế tiếp theo múi giờ Việt Nam, có thể chọn ngày khác; lọc/paging thực hiện tại RPC. Thêm sửa số lượng món và hủy đơn ở trạng thái approved/scheduled trước khi phát sinh lô sản xuất hoặc giao. Sửa cập nhật phần số lượng đơn trong kế hoạch, nhu cầu nguyên liệu được tính lại từ đơn đã sửa; hủy loại đơn khỏi kế hoạch/tổng hợp active nhưng giữ chứng từ, dòng món, lịch sử trạng thái và audit. Mọi thao tác yêu cầu lý do, quyền approve, version và idempotency; scheduled cần thêm quyền production:edit. Không cho sửa/hủy khi đã giao, plan đóng, hoặc đã có batch sản xuất.
+- Migration `supabase/migrations/202611260094_order_date_review_and_approved_edits.sql`; RPC types sinh lại trong `web/lib/database/generated.ts`; UI tại `web/features/orders/review-orders.tsx`; kiểm thử tại `web/tests/approved-order-management.test.ts`.
+- Bằng chứng: test PostgreSQL mới 2/2 đạt (lọc ngày server, sửa/hủy, kế hoạch và giữ lịch sử); typecheck, lint, build và `git diff --check` đạt. Toàn suite có 237 test cũ đạt; tiến trình suite riêng file mới gặp `spawn EPERM` do esbuild worker trong sandbox, sau đó test file chạy riêng ngoài sandbox đạt 2/2.
+- Chưa áp migration lên Supabase, chưa push/deploy, chưa UAT bằng đơn thật. Cần triển khai migration 094 trước frontend để RPC date/edit/cancel có mặt; UAT bằng đơn approved chưa sản xuất, kiểm tra lại kế hoạch và nhu cầu. Đơn đã sản xuất/giao cần quy trình điều chỉnh chứng từ riêng, không bị xóa lịch sử.
+
 ## 2026-11-26 — Bỏ qua món chưa đủ công thức khi ghi sản xuất (KH-01/KH-03/KH-10/KH-11)
 
 - Giao diện ghi sản xuất giờ chỉ gửi món đã có công thức hiệu lực và tỷ lệ hợp lệ; món chưa có công thức hoặc còn thiếu tỷ lệ vẫn bị khóa và được bỏ qua. Có thể lưu cùng đợt các món đủ công thức; nếu không còn món hợp lệ, giao diện báo rõ. Với mỗi món gửi đi vẫn phải nhập đủ chính/thêm/lỗi, số 0 là đã xác nhận, cùng giờ và lý do.
