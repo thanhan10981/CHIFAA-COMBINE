@@ -1,3 +1,9 @@
+## 2026-11-26 — Bỏ qua món chưa đủ công thức trong đợt sản xuất (KH-01/KH-03/KH-10/KH-11)
+
+- Món chưa có công thức hiệu lực hoặc thiếu tỷ lệ không còn chặn các món khác; chúng bị bỏ qua khỏi payload. Món được ghi vẫn cần đủ số chính/thêm/lỗi, kể cả số 0, cùng thời gian và lý do.
+- Fixture bao gồm món đủ công thức, món chưa có công thức và món thiếu tỷ lệ; xác nhận payload chỉ ghi món hợp lệ. `npm test` 237/237, typecheck, lint, build, browser production fixture và responsive routes đạt.
+- Chưa xác nhận SQL 093 trên Supabase; cần owner xác nhận readiness và UAT bằng dữ liệu thật.
+
 ## 2026-11-26 — Sửa kế hoạch thủ công và công thức sản xuất (KH-01/KH-03/KH-09/KH-10/KH-11/KH-12)
 
 - Phân biệt phần kế hoạch thủ công đã lưu với đơn khách duyệt; mặc định chỉ nhập phần bổ sung, có xem nguồn/lý do và không tự ghi sản xuất hoặc trừ kho. Kế hoạch và sản xuất chọn công thức đã công bố theo ngày cùng quy tắc, báo rõ thiếu liên kết/tỷ lệ; đơn duyệt chưa có kế hoạch được tính vào kho nguyên liệu duy nhất khi có quyền xem đơn.

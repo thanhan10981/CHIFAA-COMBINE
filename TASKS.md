@@ -6,6 +6,13 @@
 - [x] Commit `df55d97` đã push lên `chifaa-next-dev`; GitHub verify và Vercel deployment thành công.
 - [ ] Owner chạy SQL trên đúng Supabase project, xác nhận `production_planning_ready=true`; sau đó UAT bằng dữ liệu thật. Chưa đối chiếu thủ công liệu các số 21/66 cũ có chứa lại đơn khách.
 
+## Bỏ qua món chưa đủ công thức trong đợt sản xuất — 2026-11-26 (KH-01/KH-03/KH-10/KH-11)
+
+- [x] Món chưa có công thức hiệu lực/thiếu tỷ lệ không chặn món đủ công thức; payload chỉ gồm món hợp lệ.
+- [x] Giữ yêu cầu nhập đủ chính/thêm/lỗi (số 0 được chấp nhận), thời gian và lý do cho từng món gửi đi.
+- [x] Test fixture chứa cả món không công thức, thiếu tỷ lệ và món hợp lệ; 237/237 tests, typecheck/lint/build và production browser fixture đạt.
+- [ ] Owner xác nhận migration 093 ready và UAT nguồn đơn/công thức bằng dữ liệu thật.
+
 # Theo dõi công việc
 
 ## Sửa GitHub Actions schema drift — 2026-11-26 (KH-10/KH-12)

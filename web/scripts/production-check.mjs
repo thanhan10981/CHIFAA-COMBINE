@@ -11,7 +11,7 @@ export async function checkProduction(page,base,out,report){
   if(page.url().includes('planning-source-check')){
    payload.manual_source={id:'pm-plan',created_at:payload.calculated_at,created_by:'synthetic-user',reason:'Nguồn ngoài đơn kiểm thử'};
    payload.planning_live_recipes=true;payload.products[0].approved_quantity=approvedQuantity;payload.products[0].unassigned_order_quantity='6';
-   payload.products[1].recipe_version_id='synthetic-ratio-version';payload.products[1].recipe_issue='PRODUCT_RECIPE_RATIO_REQUIRED';
+   payload.products[2].recipe_issue='PRODUCT_RECIPE_RATIO_REQUIRED';
    payload.plan_lines=[{product_id:'pm-p',quantity:manualQuantity}];
   }
   await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(payload)});
@@ -61,12 +61,19 @@ export async function checkProduction(page,base,out,report){
  await page.getByLabel('Chế độ kế hoạch',{exact:false}).selectOption('replace');
  if(await page.getByLabel('Kế hoạch SYN-P',{exact:true}).inputValue()!=='130')throw Error('Replacement included approved order quantities');
  await page.getByRole('button',{name:'2. Ghi sản xuất thực tế',exact:true}).click();
- if(await page.getByLabel('main SYN-P',{exact:true}).isDisabled()||!await page.getByLabel('main SYN-NO',{exact:true}).isDisabled())throw Error('Recipe readiness not enforced');
+ if(await page.getByLabel('main SYN-P',{exact:true}).isDisabled()||!await page.getByLabel('main SYN-NO',{exact:true}).isDisabled()||!await page.getByLabel('main SYN-RATIO',{exact:true}).isDisabled())throw Error('Recipe readiness not enforced');
  await page.getByText('Đã có công thức; còn thiếu tỷ lệ quy đổi',{exact:false}).waitFor();
  await page.screenshot({path:path.join(out,'production-recipe-status.png'),fullPage:true});
- await page.getByRole('dialog').getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();
+ await page.getByLabel('main SYN-P',{exact:true}).fill('1');await page.getByLabel('extra SYN-P',{exact:true}).fill('0');await page.getByLabel('rejected SYN-P',{exact:true}).fill('0');
+ await page.getByLabel('Bắt đầu thực tế',{exact:true}).fill('2026-11-26T04:54');await page.getByLabel('Kết thúc thực tế',{exact:true}).fill('2026-11-26T07:54');
+ let productionRequest;
+ await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/post_production_run',async route=>{productionRequest=route.request().postDataJSON();await route.fulfill({status:200,contentType:'application/json',body:'{"batch_id":"synthetic-partial-production"}'});});
+ await page.getByRole('button',{name:'Ghi đợt sản xuất & xuất định mức',exact:true}).click();
+ await page.getByText('Đã lưu — database xác nhận giao dịch và lịch sử.',{exact:true}).waitFor();
+ if(productionRequest?.p_lines?.length!==1||productionRequest.p_lines[0].product_id!=='pm-p'||productionRequest.p_lines[0].main_quantity!=='1'||productionRequest.p_lines[0].extra_quantity!=='0'||productionRequest.p_lines[0].rejected_quantity!=='0')throw Error('Production batch did not omit the product with no usable recipe');
+ await page.getByRole('dialog').waitFor({state:'hidden'});
  manualQuantity='100';approvedQuantity='12';
- report.checks.push('planning sources: live approved orders separate from saved manual100, append30 sends only30, replacement keeps130 outside orders, leading zeros normalize; valid recipe enabled and missing ratio explained');
+ report.checks.push('planning sources: live approved orders separate from saved manual100, append30 sends only30, replacement keeps130 outside orders, leading zeros normalize; products with no recipe or missing ratio are disabled and omitted while a valid product is recorded with explicit zero quantities');
  await page.goto(base+'/app/requirements');
  const demandTable=page.getByRole('table',{name:'Nguyên liệu theo đơn đã duyệt',exact:true});
  await demandTable.getByText('Nguyên liệu kiểm thử đối chiếu',{exact:true}).waitFor();

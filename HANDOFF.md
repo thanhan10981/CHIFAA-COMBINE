@@ -1,3 +1,9 @@
+## 2026-11-26 — Bỏ qua món chưa đủ công thức khi ghi sản xuất (KH-01/KH-03/KH-10/KH-11)
+
+- Giao diện ghi sản xuất giờ chỉ gửi món đã có công thức hiệu lực và tỷ lệ hợp lệ; món chưa có công thức hoặc còn thiếu tỷ lệ vẫn bị khóa và được bỏ qua. Có thể lưu cùng đợt các món đủ công thức; nếu không còn món hợp lệ, giao diện báo rõ. Với mỗi món gửi đi vẫn phải nhập đủ chính/thêm/lỗi, số 0 là đã xác nhận, cùng giờ và lý do.
+- Kiểm thử fixture xác nhận payload chỉ có món hợp lệ khi danh mục đồng thời có món chưa có công thức và món thiếu tỷ lệ; đủ 3 số (kể cả 0). Browser routes đạt 30 tổ hợp ở 320/390/768/1024/1440px, không overflow. `npm test` 237/237, `npm run typecheck`, `npm run lint`, `npm run build` và `npm run test:production` đạt. Build/typecheck được chạy tuần tự; một lần chạy đồng thời ban đầu gặp đua thư mục `.next`, đã chạy lại riêng thành công.
+- Chỉ sửa giao diện/test fixture, không thay đổi SQL hoặc dữ liệu. SQL 093 cho nguồn kế hoạch/công thức cùng mã vẫn chưa được xác nhận đã áp ở Supabase; còn owner xác nhận `production_planning_ready=true` và UAT đơn/công thức thật. Khi dùng chế độ thay thế toàn ngày, các món không gửi đi vẫn vắng khỏi sản lượng hiệu lực theo đúng semantics thay thế đã có; phiếu lịch sử không bị xóa.
+
 ## 2026-11-26 — Sửa nguồn kế hoạch và chọn công thức sản xuất (KH-01/KH-03/KH-09/KH-10/KH-11/KH-12)
 
 - Đã truy vết cột thủ công về `production_plan_revisions` (phiếu kế hoạch đã lưu gần nhất); hệ thống trước đây không tự cộng đơn khách vào cột này. Vì chưa có đối chiếu dữ liệu thật, giữ nguyên các số cũ như 21/66, không tự xóa hoặc coi là đơn hàng. Giao diện giờ tách đơn đã duyệt khỏi phần ngoài đơn, mặc định nhập phần bổ sung, có lựa chọn sửa tổng ngoài đơn, ghi lý do và hiện nguồn/người/ngày của phiếu cũ. Số đơn theo ngày được tải lại độc lập; khi lưu chỉ gửi phần thủ công.
