@@ -2,6 +2,20 @@ import path from 'node:path';
 export async function checkProduction(page,base,out,report){
  const orderRequests=[],workspaceRequests=[];
  let orderScenario='normal';
+ let approvedQuantity='12',manualQuantity='100';const planWrites=[];
+ await page.route('**/rest/v1/rpc/production_options',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({warehouses:page.url().includes('no-ingredient-warehouse')?[]:[{id:'pm-w',name:'Kho nguyên liệu kiểm thử'}]})}));
+ await page.route('**/rest/v1/rpc/production_material_workspace',async route=>{
+  const args=route.request().postDataJSON();
+  const payload=await page.evaluate(args=>window.__productionWorkspaces?.[args.p_from+'|'+args.p_to+'|'+args.p_mode],args);
+  if(!payload)throw Error('Workspace fixture missing for '+JSON.stringify(args));
+  if(page.url().includes('planning-source-check')){
+   payload.manual_source={id:'pm-plan',created_at:payload.calculated_at,created_by:'synthetic-user',reason:'Nguồn ngoài đơn kiểm thử'};
+   payload.planning_live_recipes=true;payload.products[0].approved_quantity=approvedQuantity;payload.products[0].unassigned_order_quantity='6';
+   payload.products[1].recipe_version_id='synthetic-ratio-version';payload.products[1].recipe_issue='PRODUCT_RECIPE_RATIO_REQUIRED';
+   payload.plan_lines=[{product_id:'pm-p',quantity:manualQuantity}];
+  }
+  await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(payload)});
+ });
  const orderMaterial={material_id:'order-m',code:'ORDER-M',name:'Nguyên liệu kiểm thử đối chiếu',unit_code:'kg',quantity:'1.25',stock_quantity:'10',minimum_quantity:'1',shortage_quantity:'0',status:'ok',sources:[{product_id:'order-p',product_code:'ORDER-P',product_name:'Món trong đơn kiểm thử',quantity:'1.25'}]};
  await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/order_material_demand',async route=>{
   const args=route.request().postDataJSON();orderRequests.push(args);
@@ -11,7 +25,7 @@ export async function checkProduction(page,base,out,report){
  });
  page.on('request',request=>{if(request.url().includes('/rpc/production_material_workspace'))workspaceRequests.push(request.postDataJSON());});
  await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/production_plan_requirements',async route=>{
-  const args=route.request().postDataJSON(),entered=Number(args.p_lines.find(l=>l.product_id==='pm-p')?.quantity??0),quantity=args.p_mode==='append'?100+entered:entered;
+  const args=route.request().postDataJSON(),entered=Number(args.p_lines.find(l=>l.product_id==='pm-p')?.quantity??0),quantity=(args.p_mode==='append'?Number(manualQuantity)+entered:entered)+(page.url().includes('planning-source-check')?Number(approvedQuantity):0);
   await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({complete:true,products:[{product_id:'pm-p',name:'Món kiểm thử kế hoạch',unit:'phần',quantity:String(quantity)}],materials:[{material_id:'pm-m',code:'SYN-M',name:'Nguyên liệu kiểm thử đối chiếu',unit_id:'kg',unit:'kg',quantity:String(quantity*.004),stock:'10',package:{unit:'kg',usage_per_package:'1',verified:true}}],sources:[]})});
  });
  const routes=['production','entry-production','requirements','counts','consumption','variance'];
@@ -26,6 +40,33 @@ export async function checkProduction(page,base,out,report){
   }
  }
  await page.setViewportSize({width:1440,height:1000});
+ for(const width of [390,1440]){
+  await page.setViewportSize({width,height:1000});await page.goto(base+'/app/production?planning-source-check');await page.getByRole('button',{name:'Thêm sản xuất',exact:true}).click();
+  const dialog=page.getByRole('dialog'),row=dialog.locator('.pm-plan-table tbody tr').first();
+  await row.locator('td').nth(1).getByText('12',{exact:false}).waitFor();
+  if(await page.getByLabel('Kế hoạch SYN-P',{exact:true}).inputValue()!=='')throw Error('Append prefilled saved quantity and could duplicate it');
+  if(!(await row.locator('td').last().innerText()).includes('112'))throw Error('Customer and outside-order quantities not separated');
+  await dialog.getByText('Nguồn phần ngoài đơn đã lưu',{exact:true}).click();await dialog.getByText('Nguồn ngoài đơn kiểm thử',{exact:false}).waitFor();
+  await page.getByLabel('Kế hoạch SYN-P',{exact:true}).fill('030');await page.getByLabel('Lý do / ghi chú phiếu',{exact:true}).click();
+  if(await page.getByLabel('Kế hoạch SYN-P',{exact:true}).inputValue()!=='30')throw Error('Leading zero remains after blur');
+  await dialog.locator('.pm-plan-products').getByText('142 phần',{exact:true}).waitFor();
+  await page.screenshot({path:path.join(out,'planning-sources-'+width+'.png'),fullPage:true});
+  await dialog.getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();
+ }
+ await page.route('**/rest/v1/rpc/save_production_plan',async route=>{const request=route.request().postDataJSON();planWrites.push(request);manualQuantity=request.p_mode==='append'?String(Number(manualQuantity)+Number(request.p_lines[0].quantity)):request.p_lines.find(row=>row.product_id==='pm-p').quantity;await route.fulfill({status:200,contentType:'application/json',body:'{"id":"synthetic-saved-plan"}'});});
+ await page.getByRole('button',{name:'Thêm sản xuất',exact:true}).click();await page.getByLabel('Kế hoạch SYN-P',{exact:true}).fill('30');await page.getByRole('button',{name:'Lưu kế hoạch',exact:true}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
+ if(planWrites.length!==1||planWrites[0].p_lines.length!==1||planWrites[0].p_lines[0].quantity!=='30'||planWrites[0].p_mode!=='append')throw Error('Saved customer quantity as a manual delta');
+ approvedQuantity='15';await page.getByRole('button',{name:'Thêm sản xuất',exact:true}).click();
+ await page.getByRole('dialog').locator('.pm-plan-table tbody tr').first().locator('td').nth(1).getByText('15',{exact:false}).waitFor();
+ await page.getByLabel('Chế độ kế hoạch',{exact:false}).selectOption('replace');
+ if(await page.getByLabel('Kế hoạch SYN-P',{exact:true}).inputValue()!=='130')throw Error('Replacement included approved order quantities');
+ await page.getByRole('button',{name:'2. Ghi sản xuất thực tế',exact:true}).click();
+ if(await page.getByLabel('main SYN-P',{exact:true}).isDisabled()||!await page.getByLabel('main SYN-NO',{exact:true}).isDisabled())throw Error('Recipe readiness not enforced');
+ await page.getByText('Đã có công thức; còn thiếu tỷ lệ quy đổi',{exact:false}).waitFor();
+ await page.screenshot({path:path.join(out,'production-recipe-status.png'),fullPage:true});
+ await page.getByRole('dialog').getByRole('button',{name:'Đóng hộp thoại',exact:true}).click();
+ manualQuantity='100';approvedQuantity='12';
+ report.checks.push('planning sources: live approved orders separate from saved manual100, append30 sends only30, replacement keeps130 outside orders, leading zeros normalize; valid recipe enabled and missing ratio explained');
  await page.goto(base+'/app/requirements');
  const demandTable=page.getByRole('table',{name:'Nguyên liệu theo đơn đã duyệt',exact:true});
  await demandTable.getByText('Nguyên liệu kiểm thử đối chiếu',{exact:true}).waitFor();

@@ -66,7 +66,9 @@ test('approved unscheduled orders become full dated material demand after a veri
  assert.deepEqual(beforeLink.materials,[]);
  assert.equal(beforeLink.issues.length,1);assert.equal(beforeLink.issues[0].issue,'PRODUCT_RECIPE_RATIO_REQUIRED');
  assert.equal(beforeLink.products.length,1);assert.equal(new Decimal(beforeLink.products[0].quantity).toString(),'3');
- assertNoProductionDemand(await workspace());
+ const incompletePlan=await workspace();
+ assert.equal(incompletePlan.sources[0].issue,'PRODUCT_RECIPE_RATIO_REQUIRED');
+ assert.equal(incompletePlan.plan_id,null);assert.deepEqual(incompletePlan.approved_plans,[]);
 
  const version=(await db.query<{version:string}>('select version::text from products where id=$1',[ids.product])).rows[0].version;
  await rpc('save_commercial_terms',['recipe',ids.product,version,{date:deliveryDay,recipe_version_id:recipe,quantity:'6',evidence:'Synthetic verified six recipe slices per whole sale'},randomUUID()]);
@@ -84,7 +86,8 @@ test('approved unscheduled orders become full dated material demand after a veri
   assert.equal(new Decimal(line.stock_quantity!).toString(),stock);
   assert.deepEqual(line.sources.map(source=>[source.product_id,new Decimal(source.quantity).toString()]),[[ids.product,quantity]]);
  }
- assertNoProductionDemand(await workspace());
+ const livePlan=await workspace();assert.equal(livePlan.plan_id,null);assert.deepEqual(livePlan.approved_plans,[]);
+ assert.equal(new Decimal(livePlan.materials.find(material=>material.material_id===ids.rice)!.quantity!).toString(),'1.8','production planning now includes approved orders without writing a saved plan');
  const actual=await workspace('actual');assertNoProductionDemand(actual);assert.deepEqual(actual.batches,[]);
  const stock=await rpc<InventoryResult>('inventory_workspace',[ids.warehouse,start,deliveryDay,'','','all',0]);
  assert.equal(stock.needs_complete,false,'saved plans cannot see these approved unscheduled orders');

@@ -1,6 +1,11 @@
+## 2026-11-26 — Sửa kế hoạch thủ công và công thức sản xuất (KH-01/KH-03/KH-09/KH-10/KH-11/KH-12)
+
+- Phân biệt phần kế hoạch thủ công đã lưu với đơn khách duyệt; mặc định chỉ nhập phần bổ sung, có xem nguồn/lý do và không tự ghi sản xuất hoặc trừ kho. Kế hoạch và sản xuất chọn công thức đã công bố theo ngày cùng quy tắc, báo rõ thiếu liên kết/tỷ lệ; đơn duyệt chưa có kế hoạch được tính vào kho nguyên liệu duy nhất khi có quyền xem đơn.
+- Giữ nguyên kế hoạch/snapshot cũ. Chuẩn bị migration 093 và gói owner SQL `output/CHIFAA_PRODUCTION_PLANNING_FIX.sql`; chưa áp SQL cloud hay phát hành web. Kiểm tra local: 237/237 tests, typecheck, lint, build, browser responsive 30 trường hợp và `git diff --check` đạt. Cần owner chạy SQL, xác nhận readiness rồi mới phát hành và UAT dữ liệu thật; chưa xác minh các lượng thủ công cũ có bị nhập trùng đơn.
+
 ## 2026-11-26 — Đồng bộ kiểu RPC, sửa GitHub verify (KH-10/KH-12)
 
-- Sinh lại `web/lib/database/generated.ts` để cóRPC `public_order_links_v2`; sửa lỗi schema drift khiến GitHub Actions dừng dù push/Vercel đã thành công. Generator chạy lại ổn định; typecheck/lint/build và4/4 tests liên quan đạt. Giữ nguyên bước kiểm tra CI.
+- Sinh lại `web/lib/database/generated.ts` để cóRPC `public_order_links_v2`; sửa lỗi schema drift khiến GitHub Actions dừng dù push/Vercel đã thành công. Generator chạy lại ổn định; typecheck/lint/build và4/4 tests liên quan đạt. Đã push `a0ea8dd`; GitHub verify (cả full tests/build) và Vercel đều success. Giữ nguyên bước kiểm tra CI.
 
 ## 2026-11-26 — Phát hành link cố định/chiết khấu mới (KH-05/KH-10/KH-12)
 

@@ -1,10 +1,17 @@
+## Kế hoạch thủ công và sản xuất dùng đơn/công thức đúng nguồn — 2026-11-26 (KH-01/KH-03/KH-09/KH-10/KH-11/KH-12)
+
+- [x] Truy vết kế hoạch thủ công về các phiếu kế hoạch lưu trong database; UI tách lượng ngoài đơn khỏi đơn đã duyệt, mặc định nhập bổ sung, hiển thị lịch sử/nguồn và lý do.
+- [x] Đồng bộ lựa chọn công thức đã công bố theo ngày giữa kế hoạch và sản xuất; giữ chặn khi thiếu tỷ lệ chính xác; tính đơn đã duyệt chưa lập kế hoạch vào kho nguyên liệu duy nhất, không tự ghi kế hoạch/tồn.
+- [x] Chuẩn bị migration 093 và owner package `output/CHIFAA_PRODUCTION_PLANNING_FIX.sql`; full tests237/237, typecheck/lint/build và browser responsive đạt.
+- [ ] Owner chạy SQL trên đúng Supabase project, xác nhận `production_planning_ready=true`; sau đó phát hành web và UAT bằng dữ liệu thật. Chưa đối chiếu thủ công liệu các số 21/66 cũ có chứa lại đơn khách.
+
 # Theo dõi công việc
 
 ## Sửa GitHub Actions schema drift — 2026-11-26 (KH-10/KH-12)
 
 - [x] Xác định verify dừng ở generated.ts khác migrations; sinh lại file và kiểm tra regeneration ổn định.
 - [x] Typecheck/lint/build và4/4 tests link/chiết khấu đạt.
-- [ ] Push bản sửa và xác nhận GitHub verify/Vercel thành công.
+- [x] Đã push `a0ea8dd`; GitHub verify run45784174288 (full tests/build) và Vercel đều success.
 
 ## Chiết khấu từng món đủ50 — 2026-11-26 (KH-05/KH-10/KH-12)
 
