@@ -3,6 +3,7 @@
 - Ảnh owner cho thấy `submit_entry` trả HTTP 400, `P0001 INVALID_MONEY` khi lưu ca từ bảng chấm công. Đối chiếu `private.entry_money` và nhánh attendance của RPC: bốn trường `daily`, `support`, `advance`, `deduction` bắt buộc là chuỗi số, kể cả khi không phát sinh tiền. Bảng chấm công mới chỉ gửi giờ/bộ phận nên thiếu bốn trường này; transaction rollback, không tạo ca từ lần lỗi.
 - Form bảng chấm công nay điền `0` cho khoản chưa có, giữ giá trị trong journal khi sửa ca. Không đổi SQL, mức lương, phụ cấp hoặc chứng từ đã chốt. Giữ idempotency và tham chiếu journal cũ.
 - Kiểm tra cục bộ: typecheck, lint, build, `git diff --check` và **227/227 kiểm thử PostgreSQL** đạt; `node scripts/design-check.mjs --entries` đạt với 50 bố cục, lưu ca mới/qua đêm và kiểm tra đủ bốn trường tiền bằng `0`, sửa ca/retry cùng khóa. Fixture/PGlite chưa phải UAT cloud bằng tài khoản owner.
+- Đã push frontend commit `377e93a` lên `chifaa-next-dev` theo quyền cập nhật đã cấp. GitHub commit status xác nhận Vercel `success / Deployment has completed` lúc 04:08:57 UTC; deployment https://vercel.com/thanhan10981s-projects/chifaa-combine-web/A5sjpk4mzBviMKpwVB6SVjApuCwC và bằng chứng ignored `output/checks/attendance-save-deploy.json`. Không áp SQL cloud hoặc ghi dữ liệu nghiệp vụ thật.
 - Còn lại: xác nhận lưu ca thật trên trang đã phát hành bằng phiên đăng nhập và xem bản ghi chấm công/bảng lương đúng ngày; chưa thay đổi quy tắc phụ cấp ca trong UI bảng này.
 
 ## 2026-11-26 — Thứ tự Danh mục món bán theo ảnh (KH-10, REQ-CAT-03)

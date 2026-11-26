@@ -1,7 +1,7 @@
 ## 2026-11-26 — Sửa lỗi lưu chấm công (KH-02/KH-09/KH-10)
 
 - Bảng chấm công gửi `0` cho bốn khoản tiền ca không phát sinh theo hợp đồng `submit_entry`; khi sửa ca giữ khoản đã lưu. Sửa lỗi `INVALID_MONEY` khi nhấn Lưu, không cần SQL mới.
-- Typecheck, lint, build, 227/227 full tests và browser `--entries` đạt. Trạng thái phát hành ghi trong HANDOFF.md.
+- Typecheck, lint, build, 227/227 full tests và browser `--entries` đạt. Đã push `377e93a`; Vercel xác nhận triển khai hoàn tất. Giới hạn UAT ở HANDOFF.md.
 
 ## 2026-11-26 — Sắp Danh mục món bán theo ảnh (KH-10, REQ-CAT-03)
 

@@ -5,7 +5,7 @@
 - [x] Đối chiếu lỗi HTTP 400 từ ảnh với RPC và tìm bốn khoản tiền bị thiếu trong payload ca mới.
 - [x] Điền `0` cho khoản trống, giữ giá trị cũ khi sửa ca; typecheck/lint/build/browser `--entries` đạt.
 - [x] Full test 227/227 đạt.
-- [ ] Phát hành frontend.
+- [x] Push `377e93a`; Vercel xác nhận triển khai hoàn tất.
 - [ ] UAT lưu ca thật qua phiên đăng nhập, xác nhận giờ công và bảng lương.
 
 
