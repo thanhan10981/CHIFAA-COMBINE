@@ -1,3 +1,8 @@
+## 2026-11-26 — Chiết khấu theo số lượng từng món (KH-05/KH-10/KH-12)
+
+- Món bật chiết khấu: dưới50 giảm15%, từ50 giảm17% cho toàn bộ SL món đó. Giỏ hàng/tổng tiền và server gửi đơn/sửa số lượng đồng bộ; giữ món bị loại và snapshot đơn cũ.
+- Typecheck/lint/build,234/234 tests,3/3 tests cuối và browser390/1440 đạt. Gói SQL mới `output/CHIFAA_ORDER_LINKS_AND_DISCOUNTS.sql` gồm091+092, apply/replay/rollback được kiểm tra cục bộ. Chưa áp cloud hoặc phát hành frontend; cần owner xác nhận hai readiness flags trước push.
+
 ## 2026-11-26 — Link điểm bán cố định và popup gọn (KH-10/KH-12)
 
 - Popup tối đa480px, chọn điểm bán để lấy lại link đã lưu, giữ Sao chép/Mở link và quản lý thu hồi thu gọn. Migration091 phục hồi token hợp lệ từ receipt cũ, dùng lại một link cố định mỗi điểm bán; giữ link cũ và quyền/private/audit, không đổi đơn hoặc tiền.

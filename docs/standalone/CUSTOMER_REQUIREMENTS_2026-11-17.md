@@ -161,6 +161,11 @@ Nghiệm thu: nhập sáng + bổ sung chiều cộng đúng; thay thế toàn n
 - Đơn gửi từ cổng công khai cần chờ nhân viên duyệt; không tự thành doanh thu, tiền thu, sản xuất hoặc xuất kho. Thông tin người đặt tự cung cấp không phải tài khoản/điểm bán đã xác thực.
 - Tiếp tục KH-01/03/05/10: giữ snapshot giá/đơn vị, kiểm tra món công bố và giá ở server, chống gửi trùng, phân quyền duyệt và bảo vệ dữ liệu nội bộ. Kênh điểm bán có tài khoản có thể giữ riêng quyền xem đơn/giá của mình.
 
+### Bổ sung 26/11/2026 — Chiết khấu theo số lượng từng món (KH-05/KH-10/KH-12)
+
+- Owner chốt: chỉ món đang bật chiết khấu mới áp dụng; dưới50 là15%, từ50 trở lên là17% cho **toàn bộ số lượng của riêng món đó** trong đơn. Không cộng các món khác nhau hoặc các phần topping để vượt mốc; không quy đổi ngầm cây/hộp/phần sang cái.
+- Món không bật hoặc chính sách chiết khấu bị tắt giữ0%. Server tính lại khi nhận đơn và khi sửa số lượng của đơn còn chờ duyệt; giao diện hiển thị cùng quy tắc. Hóa đơn/công nợ lấy snapshot của đơn, không tự sửa chứng từ đã chốt hoặc các đơn cũ chỉ vì đổi chính sách.
+
 ### Trạng thái checkpoint tài liệu ban đầu
 
 Đã ghi nhận toàn bộ nhóm yêu cầu và đặt quy tắc đọc tự động tại `AGENTS.md`. Chưa triển khai thêm schema, RPC hay giao diện cho các yêu cầu mới trong checkpoint tài liệu này. 026 đã có phụ cấp tháng; không xem đó là đã có phụ cấp ngày/ca. Kết quả các checkpoint code trước nằm ở `HANDOFF.md` và `TEST_RESULTS.md`.

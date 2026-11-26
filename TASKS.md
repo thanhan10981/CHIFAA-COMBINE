@@ -1,5 +1,14 @@
 # Theo dõi công việc
 
+## Chiết khấu từng món đủ50 — 2026-11-26 (KH-05/KH-10/KH-12)
+
+- [x] Owner chốt dưới50=15%, đủ50=17% toàn bộ SL riêng món; chỉ món bậtCK.
+- [x] UI và server cổng công khai/link, sửa món submitted dùng đúng mốc; snapshot đơn cũ giữ nguyên.
+- [x] Typecheck/lint/build,full234 tests,test cuối3/3,browser390/1440 và ảnh đạt.
+- [x] Gói ownerSQL091+092 atomic/apply/replay/rollback đã kiểm tra; file `output/CHIFAA_ORDER_LINKS_AND_DISCOUNTS.sql`.
+- [ ] Owner chạy gói mới, xác nhận cả `persistent_store_links_ready` và `quantity_discounts_ready` bằngtrue.
+- [ ] Push frontend, xác nhận Vercel và UAT đơn/hóa đơn thật sau khi SQL sẵn sàng.
+
 ## Link điểm bán cố định, popup gọn — 2026-11-26 (KH-10/KH-12)
 
 - [x] Popup tối đa480px, lấy lại/sao chép link đã lưu; không tạo thêm khi đóng/mở hoặc reload, thu hồi thu gọn.
