@@ -7,7 +7,7 @@
 - [x] Sắp trước phân trang 25, cache đầy đủ các trang RPC, giữ lọc/ngày/STT và các thao tác đúng sản phẩm.
 - [x] Typecheck/lint/build, browser 4 danh mục × 5 widths và các ca thứ tự/114 món/phân trang/tìm/lọc/lỗi/quyền đạt; không ghi nghiệp vụ khi xem.
 - [x] 227/227 full tests đạt, giữ hồi quy bảng tổng hợp/Excel khi dùng chung helper.
-- [ ] Phát hành frontend; không cần SQL cloud.
+- [x] Push 4e9e45e; Vercel xác nhận triển khai hoàn tất. Không cần SQL cloud.
 - [ ] UAT Danh mục món bán trong phiên dữ liệu thật sau khi tải lại.
 
 ## Cảnh báo/bổ sung theo đơn đã duyệt — 2026-11-26 (KH-01/KH-10/KH-12)

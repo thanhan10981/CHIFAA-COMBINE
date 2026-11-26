@@ -1,7 +1,7 @@
 ## 2026-11-26 — Sắp Danh mục món bán theo ảnh (KH-10, REQ-CAT-03)
 
 - Danh mục món bán theo đúng thứ tự 11 mã của ảnh, hai món nguyên cây ở cuối; dùng chung thứ tự với bảng tổng hợp đơn. Món mới được giữ ở sau danh sách.
-- Sắp toàn bộ kết quả trước phân trang để tìm kiếm/lọc/chuyển trang vẫn đúng. Giữ giá, đơn vị bán, trạng thái và thao tác đúng sản phẩm; không cần SQL mới. 227/227 full tests, typecheck/lint/build và browser 4 danh mục × 5 kích thước cùng các ca thứ tự/phân trang đạt. Trạng thái phát hành ở HANDOFF.md.
+- Sắp toàn bộ kết quả trước phân trang để tìm kiếm/lọc/chuyển trang vẫn đúng. Giữ giá, đơn vị bán, trạng thái và thao tác đúng sản phẩm; không cần SQL mới. 227/227 full tests, typecheck/lint/build và browser 4 danh mục × 5 kích thước cùng các ca thứ tự/phân trang đạt. Đã push 4e9e45e; Vercel xác nhận triển khai hoàn tất. Giới hạn UAT ở HANDOFF.md.
 
 ## 2026-11-26 — Đề xuất bổ sung theo đơn đã duyệt (KH-01/KH-10/KH-12)
 
