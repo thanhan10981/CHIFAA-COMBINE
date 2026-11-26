@@ -161,10 +161,10 @@ Nghiệm thu: nhập sáng + bổ sung chiều cộng đúng; thay thế toàn n
 - Đơn gửi từ cổng công khai cần chờ nhân viên duyệt; không tự thành doanh thu, tiền thu, sản xuất hoặc xuất kho. Thông tin người đặt tự cung cấp không phải tài khoản/điểm bán đã xác thực.
 - Tiếp tục KH-01/03/05/10: giữ snapshot giá/đơn vị, kiểm tra món công bố và giá ở server, chống gửi trùng, phân quyền duyệt và bảo vệ dữ liệu nội bộ. Kênh điểm bán có tài khoản có thể giữ riêng quyền xem đơn/giá của mình.
 
-### Bổ sung 26/11/2026 — Chiết khấu theo số lượng từng món (KH-05/KH-10/KH-12)
+### Bổ sung 27/11/2026 — Chiết khấu theo tổng đơn của điểm bán (KH-05/KH-10/KH-12)
 
-- Owner chốt: chỉ món đang bật chiết khấu mới áp dụng; dưới50 là15%, từ50 trở lên là17% cho **toàn bộ số lượng của riêng món đó** trong đơn. Không cộng các món khác nhau hoặc các phần topping để vượt mốc; không quy đổi ngầm cây/hộp/phần sang cái.
-- Món không bật hoặc chính sách chiết khấu bị tắt giữ0%. Server tính lại khi nhận đơn và khi sửa số lượng của đơn còn chờ duyệt; giao diện hiển thị cùng quy tắc. Hóa đơn/công nợ lấy snapshot của đơn, không tự sửa chứng từ đã chốt hoặc các đơn cũ chỉ vì đổi chính sách.
+- Owner cập nhật quy tắc: cộng số phần của mọi món trong một đơn/link điểm bán; dưới hoặc đúng 50 phần áp dụng tỷ lệ đang cài ở Danh mục điểm bán. Khi tổng vượt 50, điểm bán có tỷ lệ cấu hình 15% áp dụng 17% cho mọi món trong đơn. Các mức cấu hình khác giữ nguyên. Không cộng topping hoặc đơn của điểm bán khác; không quy đổi ngầm cây/hộp/phần sang cái.
+- Server tính theo tổng đơn khi nhận, gán điểm bán và sửa số lượng; giao diện hiển thị cùng tỷ lệ. Hóa đơn/công nợ dùng snapshot đã lưu, không tự sửa chứng từ đã chốt hoặc các đơn cũ chỉ vì đổi chính sách.
 
 ### Trạng thái checkpoint tài liệu ban đầu
 

@@ -1,3 +1,9 @@
+## 2026-11-27 — Chiết khấu gộp theo đơn của điểm bán (KH-05/KH-10/KH-12)
+
+- Quy tắc được cập nhật theo yêu cầu owner: tổng đơn không quá 50 phần dùng mức trong Danh mục điểm bán; trên 50 phần, điểm bán cấu hình 15% dùng 17% cho mọi món. Tổng chỉ tính các món trong cùng đơn, không tính topping.
+- Migration `202611270096_store_order_discount_tiers.sql` tính lại tỷ lệ ở server lúc gửi/gán điểm bán/chỉnh đơn; thay đổi snapshot từng dòng và audit cùng giao dịch. Giỏ hàng dùng cùng quy tắc; snapshot đơn cũ không bị cập nhật do đổi chính sách.
+- Xác minh: PGlite 239/239, typecheck, lint, Next.js build, browser fixture 390/1440px và `git diff --check` đạt. Chưa áp SQL Supabase, commit/push hoặc phát hành frontend.
+
 ## 2026-11-26 — Lọc ngày giao và sửa/hủy đơn đã duyệt (KH-01/KH-03/KH-10/KH-12)
 
 - Đơn đặt hàng mặc định hiển thị ngày giao kế tiếp, có bộ lọc ngày server-side. Cho sửa số lượng món và hủy đơn đã duyệt/lên kế hoạch nếu chưa có sản xuất/giao; cập nhật số lượng kế hoạch và giữ audit/lịch sử thay đổi. Hủy đơn loại đơn khỏi tổng hợp hiệu lực nhưng không xóa chứng từ.

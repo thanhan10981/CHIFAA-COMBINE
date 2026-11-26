@@ -1468,6 +1468,14 @@ Còn lại: chưa UAT dữ liệu thật hoặc triển khai frontend; không c�
 - GitHub commit status xác nhận Vercel `success / Deployment has completed` lúc 13:21 ngày 26/11/2026 (Asia/Saigon). Deployment: https://vercel.com/thanhan10981s-projects/chifaa-combine-web/2GZyNwKj15kwPbgZfeXW2xVtAX4T ; bằng chứng ignored `output/checks/sales-invoice-a5-deploy.json`. Thông tin bị chặn push ở checkpoint trước là lịch sử, đã được giải quyết bằng quyền mới của owner.
 - Còn UAT hóa đơn bằng phiên đăng nhập thật và máy in thật; chọn A5 dọc, tỷ lệ 100%. Không áp SQL cloud, sửa workbook hoặc ghi dữ liệu nghiệp vụ.
 
+## 2026-11-27 — Chiết khấu gộp theo tổng đơn điểm bán (KH-05/KH-10/KH-12)
+
+- Quyết định owner mới ghi đè quy tắc 26/11 theo từng món: cộng số phần của mọi món trong cùng đơn/link điểm bán. Tổng ≤50 áp dụng mức cài đặt ở Danh mục điểm bán; tổng >50 chỉ nâng điểm bán cấu hình 15% lên 17%, áp dụng cho tất cả món. Không cộng topping hoặc đơn của điểm bán khác.
+- Đã thêm migration `supabase/migrations/202611270096_store_order_discount_tiers.sql`: server tính lại lúc gửi đơn link, gán điểm bán cho đơn công khai, và sửa đơn chờ/đã duyệt; giao diện giỏ hàng lấy cùng tỷ lệ. Audit giữ phần thay đổi snapshot, đơn/chứng từ đã chốt không tự thay đổi theo chính sách mới.
+- Đã cập nhật helper frontend, kiểm tra PGlite cho tổng nhiều món, mốc 49/50/51, mức cấu hình 17%/0%, sửa đơn chờ/đã duyệt và snapshot cũ. Browser fixture xác nhận 49/50/51 = 15/15/17%, 25+25 giữ 15%, 26+25 chuyển mọi món lên 17%; giỏ khớp tổng tiền ở 390px và 1440px.
+- Bằng chứng cuối: PGlite toàn bộ **239/239**, typecheck, lint, production build, browser fixture và `git diff --check` đạt. Một lượt test đầu có lỗi thứ tự fixture khi bỏ migration 092; đã cập nhật fixture để loại migration 096 trong kịch bản phục hồi rồi chạy lại toàn bộ thành công.
+- Trạng thái: local implementation; chưa áp SQL cloud, chưa commit/push hoặc deploy. Giao diện/app và migration cần được phát hành cùng nhau; sau khi áp migration 096 mới kiểm tra UAT bằng link điểm bán thật.
+
 ## 2026-11-27 — Gọn màn hình sản xuất theo điểm bán (KH-03/KH-10/KH-12)
 
 - **Trạng thái:** triển khai cục bộ; chưa áp migration Supabase, chưa deploy/commit.

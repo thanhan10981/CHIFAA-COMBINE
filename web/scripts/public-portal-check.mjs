@@ -8,7 +8,7 @@ export async function checkPublicPortal(page,base,out,report){
  const configuredToppings=[{version_id:'topping-tomato',code:'STC',name:'Sốt cà',unit:'phần'},{version_id:'topping-chili',code:'STO',name:'Sốt tương ớt',unit:'phần'}];
  await page.route('**/rest/v1/rpc/public_order_catalog',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({rows:empty?[]:products,total:empty?'0':'3'})}));
  const quantityTiers=process.argv.includes('--quantity-discounts-only');
- await page.route('**/rest/v1/rpc/public_order_catalog_linked',route=>{linkedCatalogCalls++;return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({rows:products.map((product,index)=>({...product,price_vnd:quantityTiers&&index===2?'11000':product.price_vnd,discount_rate:'0.1',...(quantityTiers?{discount_eligible:index<2}:{})})),total:'3',...(quantityTiers?{quantity_discount_rule:{version:1,threshold:'50',below:'0.15',at_or_above:'0.17'}}:{}),store_contact:{name:'Điểm bán kiểm thử',phone:'0900000038',address:'Địa chỉ điểm bán kiểm thử'}})});});
+ await page.route('**/rest/v1/rpc/public_order_catalog_linked',route=>{linkedCatalogCalls++;return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({rows:products.map((product,index)=>({...product,price_vnd:quantityTiers&&index===2?'11000':product.price_vnd,discount_rate:'0.15',...(quantityTiers?{discount_eligible:index<2}:{})})),total:'3',...(quantityTiers?{quantity_discount_rule:{version:2,threshold:'50',base_rate:'0.15',upgraded_rate:'0.17'}}:{}),store_contact:{name:'Điểm bán kiểm thử',phone:'0900000038',address:'Địa chỉ điểm bán kiểm thử'}})});});
  await page.route('**/rest/v1/rpc/public_order_topping_catalog_v2',route=>{toppingCalls++;return route.fulfill({status:toppingState==='error'?503:200,contentType:'application/json',body:toppingState==='error'?'{}':toppingState==='unsupported'?'[]':JSON.stringify({schema_version:1,rows:[{product_id:products[0].product_id,required:true,unavailable_count:toppingState==='unavailable'?1:0,options:toppingState==='unavailable'?[]:toppingState==='stale'?[configuredToppings[1]]:configuredToppings}]})});});
  await page.route('**/rest/v1/rpc/submit_public_order_with_toppings',async route=>{
   requests.push(route.request().postDataJSON());
@@ -25,20 +25,22 @@ export async function checkPublicPortal(page,base,out,report){
   for(const width of [390,1440]){
    await page.setViewportSize({width,height:1000});await page.goto(base+'/portal?quantity-check='+width+'#'+'a'.repeat(64));
    const qty=page.getByLabel('Số lượng '+products[0].name,{exact:true});await qty.waitFor();
-   for(const [count,rate,total] of [['49','15','624.750'],['50','17','622.500'],['51','17','634.950']]){
+  for(const [count,rate,total] of [['49','15','624.750'],['50','15','637.500'],['51','17','634.950']]){
     await qty.fill(count);await page.locator('.public-cart').getByText('CK '+rate+'%',{exact:false}).waitFor();
     if(!(await page.locator('.public-total').filter({hasText:'Tổng thanh toán'}).innerText()).includes(total))throw Error('Wrong tier total '+count);
    }
    await qty.fill('25');await page.getByLabel('Số lượng '+products[1].name,{exact:true}).fill('25');
-   if((await page.locator('.public-cart').innerText()).includes('CK 17%'))throw Error('Two dishes were combined into quantity 50');
+  if((await page.locator('.public-cart').innerText()).includes('CK 17%'))throw Error('Exactly 50 portions must retain the configured 15%');
+  await qty.fill('26');
+  if((await page.locator('.public-cart').innerText()).split('CK 17%').length<3)throw Error('More than 50 combined portions must upgrade every dish to 17%');
    await page.getByLabel('Số lượng '+products[2].name,{exact:true}).fill('60');
    const excluded=page.locator('.public-cart li').filter({hasText:products[2].name});
-   if((await excluded.innerText()).includes('CK'))throw Error('Excluded dish discounted');
-   if(!(await page.locator('.public-total').filter({hasText:'Tổng thanh toán'}).innerText()).includes('1.510.000'))throw Error('Mixed total incorrect');
+  if(!(await excluded.innerText()).includes('CK 17%'))throw Error('Store-wide discount did not reach every dish');
+  if(!(await page.locator('.public-total').filter({hasText:'Tổng thanh toán'}).innerText()).includes('1.390.250'))throw Error('Mixed total incorrect');
    if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))throw Error('Quantity discount viewport overflow');
    await page.screenshot({path:path.join(out,'quantity-discounts-'+width+'.png'),fullPage:true});
   }
-  report.checks.push('49/50/51 full-line15/17/17%; 25+25 separate15%; excluded60 remains0%; exact mixed totals at390/1440');return;
+  report.checks.push('49/50/51 portions15/15/17%; split 25+25 retains15%, 26+25 upgrades all dishes; exact mixed totals at390/1440');return;
  }
  if(process.argv.includes('--links-only')){
   for(const width of [320,390,768,1440]){
