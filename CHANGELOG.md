@@ -1,3 +1,13 @@
+## 2026-11-26 — Phiếu bán hàng khổ A5 (KH-05/KH-10/KH-12)
+
+- Thu gọn phiếu sang A5 dọc, lề 7 mm, nội dung 10 pt; giữ đủ bảng món, tổng tiền và ký nhận. Tên/địa chỉ/ghi chú dài xuống dòng.
+- Typecheck/lint/build, 7/7 tests liên quan và browser đơn hàng đạt. Cả PDF thường và PDF thông tin khách dài đều đúng một trang A5, đã render/xem ảnh. Chưa phát hành hoặc in trên máy thật.
+
+## 2026-11-26 — Mẫu hóa đơn bán hàng theo ảnh (KH-05/KH-10/KH-12)
+
+- Đổi phiếu in chi tiết đơn thành bảng 6 cột theo mẫu, đúng thứ tự món, hai dòng CK15/17 và hai món nguyên cây ở cuối, tổng thanh toán vàng, tiền bằng chữ và ký nhận.
+- Giá/SL/chiết khấu lấy từ đơn, món không đặt để trống; giữ món mới và snapshot, làm tròn Decimal theo SQL. Không cần SQL mới. Typecheck/lint/build, 230/230 full tests và browser đơn hàng đạt; PDF đúng 1 trang A4 dọc, đã render/xem ảnh. Chưa phát hành; phạm vi và UAT theo HANDOFF.md.
+
 ## 2026-11-26 — Sửa lỗi lưu chấm công (KH-02/KH-09/KH-10)
 
 - Bảng chấm công gửi `0` cho bốn khoản tiền ca không phát sinh theo hợp đồng `submit_entry`; khi sửa ca giữ khoản đã lưu. Sửa lỗi `INVALID_MONEY` khi nhấn Lưu, không cần SQL mới.

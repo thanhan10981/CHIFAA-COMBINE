@@ -1,5 +1,20 @@
 # Theo dõi công việc
 
+## Thu gọn phiếu bán hàng A5 — 2026-11-26 (KH-05/KH-10/KH-12)
+
+- [x] Đổi A5 dọc, lề 7 mm, chữ 10 pt/ô bảng gọn; giữ toàn bộ nội dung và quy tắc tiền.
+- [x] Typecheck/lint/build, 7/7 tests liên quan và browser đơn hàng đạt.
+- [x] PDF thường và tên/địa chỉ/ghi chú dài đều 1 trang A5 420 × 594.96 pt; đã render/xem ảnh, không cắt chữ.
+- [ ] Phát hành frontend và UAT trên phiên đăng nhập/máy in thật.
+
+## Mẫu hóa đơn bán hàng theo ảnh — 2026-11-26 (KH-05/KH-10/KH-12)
+
+- [x] Đối chiếu phiếu in hiện tại, thứ tự 11 mã và quy tắc tiền làm tròn từng dòng của RPC PostgreSQL.
+- [x] Thay mẫu in 6 cột, CK theo đơn, hai món nguyên cây ở cuối, tổng vàng/tiền bằng chữ/ký nhận; giữ dữ liệu nguồn và món chưa đặt trống.
+- [x] Typecheck/lint/build, 230/230 full tests qua Node/loader đạt.
+- [x] Browser đơn hàng và tổng hợp đạt; PDF đúng 1 trang A4 dọc, đã render/xem ảnh và ghi bằng chứng cuối.
+- [ ] Phát hành frontend và UAT hóa đơn thật/máy in.
+
 ## Lỗi lưu chấm công INVALID_MONEY — 2026-11-26 (KH-02/KH-09/KH-10)
 
 - [x] Đối chiếu lỗi HTTP 400 từ ảnh với RPC và tìm bốn khoản tiền bị thiếu trong payload ca mới.
