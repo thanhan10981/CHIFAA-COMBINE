@@ -1,4 +1,5 @@
 import path from 'node:path';
+import {checkProductMenuOrder} from './product-menu-order-check.mjs';
 export async function checkCommercial(page,base,out,report){
  await page.routeWebSocket('**',socket=>socket.close());
  const names={stores:'Danh mục điểm bán',products:'Danh mục món bán',employees:'Danh mục nhân viên',discounts:'Bảng chiết khấu'};
@@ -76,4 +77,5 @@ export async function checkCommercial(page,base,out,report){
  if(requests.length!==2||requests[0].p_key!==requests[1].p_key||requests[0].p_input.amount!=='15000'||requests[0].p_input.evidence!=='Cập nhật trong danh mục món bán')throw new Error('Price retry lost its idempotency key, audit context, or exact VND amount');
  await page.goto(base+'/app/departments');await page.getByRole('button',{name:'Thêm mới',exact:true}).click();const departmentDialog=page.getByRole('dialog'),departmentCode=departmentDialog.getByLabel('Mã bộ phận',{exact:true});await departmentDialog.waitFor();if(await departmentCode.evaluate(element=>element.tagName!=='INPUT'||element.type!=='text'))throw new Error('Department code is still a fixed-choice control');await departmentCode.fill('kho-02');if(await departmentCode.inputValue()!=='KHO-02')throw new Error('Department code is not normalized for the shared catalog');await departmentDialog.getByRole('button',{name:'Đóng',exact:true}).click();
  report.checks.push('4 commercial catalogues ×5 widths, typed department-code entry and uppercase normalization, dynamic department code/name in employee rows, employee and salary selectors and pay history, direct price editor without history/reason, product recipe-link shortcut, metadata/pay/store-price/discount dialogs, Vietnamese money, unknown department retained, discount checkboxes, hidden salary/actions and same-key uncertain retry; synthetic offline fixture');
+ await checkProductMenuOrder(page,base,out,report);
 }

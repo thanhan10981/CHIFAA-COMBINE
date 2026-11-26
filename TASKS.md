@@ -1,5 +1,15 @@
 # Theo dõi công việc
 
+
+## Thứ tự Danh mục món bán theo ảnh — 2026-11-26 (KH-10, REQ-CAT-03)
+
+- [x] Dùng chung thứ tự 11 mã đã đối chiếu; giữ hai món nguyên cây ở cuối và món mới sau danh sách.
+- [x] Sắp trước phân trang 25, cache đầy đủ các trang RPC, giữ lọc/ngày/STT và các thao tác đúng sản phẩm.
+- [x] Typecheck/lint/build, browser 4 danh mục × 5 widths và các ca thứ tự/114 món/phân trang/tìm/lọc/lỗi/quyền đạt; không ghi nghiệp vụ khi xem.
+- [x] 227/227 full tests đạt, giữ hồi quy bảng tổng hợp/Excel khi dùng chung helper.
+- [ ] Phát hành frontend; không cần SQL cloud.
+- [ ] UAT Danh mục món bán trong phiên dữ liệu thật sau khi tải lại.
+
 ## Cảnh báo/bổ sung theo đơn đã duyệt — 2026-11-26 (KH-01/KH-10/KH-12)
 
 - [x] Xác định nguồn nhu cầu cũ chỉ đọc kế hoạch; dùng RPC đơn đã duyệt sẵn có theo ngày giao và quyền, giữ nguồn kế hoạch riêng.

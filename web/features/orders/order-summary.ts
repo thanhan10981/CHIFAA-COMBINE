@@ -1,3 +1,4 @@
+import {sortProductsByMenuOrder} from '../../lib/product-order';
 export type SummaryItem={product_id:string;code:string;name:string;quantity:string;unit:string;price_vnd:string;discount_rate:string;line_total_vnd:string};
 export type SummaryOrder={id:string;code:string;store_id:string|null;store_code:string|null;store_name:string|null;store_phone:string|null;customer_name:string|null;customer_phone:string|null;delivery_date:string;shift:string;status:string;note:string|null;total_quantity:string;discount_rate:string;discount_vnd:string;order_total_vnd:string;old_deduction_vnd:string|null;cancelled_loss_vnd:string;cash_received_vnd:string|null;bank_received_vnd:string|null;payment_method:string|null;outstanding_vnd:string|null;items:SummaryItem[]};
 export type SummaryStore={id:string;code:string;name:string;phone:string|null};
@@ -6,14 +7,8 @@ export type SummaryMaterial={code:string;name:string;unit_code:string;quantity:s
 export type OrderMaterialDemandData={issues:{issue:string;issue_detail?:string;product_id?:string;product_code?:string;product_name?:string;topping_name?:string}[];materials:SummaryMaterial[]};
 export type OrderSummaryData={date:string;orders:SummaryOrder[];stores:SummaryStore[];products:SummaryProduct[];planned_quantity_total:string};
 
-// Product row order requested for the customer summary, printout and export.
-// Unknown products keep their server order after the configured menu.
-const summaryProductOrder=new Map([
- 'CN-XXPM','CN-XXMY','CN-TERI','CN-GPM','CN-BV','CN-CNM','CC','CCC','CN-MY','CC-NC','CCC-NC'
-].map((code,index)=>[code,index]));
 export function sortOrderSummaryProducts(products:readonly SummaryProduct[]){
- const rank=(product:SummaryProduct)=>summaryProductOrder.get(product.code.trim().toUpperCase())??summaryProductOrder.size;
- return [...products].sort((left,right)=>rank(left)-rank(right));
+ return sortProductsByMenuOrder(products);
 }
 
 export function orderDemandIssueText(issue:OrderMaterialDemandData['issues'][number],products:OrderSummaryData['products']){
