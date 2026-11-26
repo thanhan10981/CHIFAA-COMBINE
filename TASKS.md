@@ -3,7 +3,8 @@
 - [x] Truy vết kế hoạch thủ công về các phiếu kế hoạch lưu trong database; UI tách lượng ngoài đơn khỏi đơn đã duyệt, mặc định nhập bổ sung, hiển thị lịch sử/nguồn và lý do.
 - [x] Đồng bộ lựa chọn công thức đã công bố theo ngày giữa kế hoạch và sản xuất; giữ chặn khi thiếu tỷ lệ chính xác; tính đơn đã duyệt chưa lập kế hoạch vào kho nguyên liệu duy nhất, không tự ghi kế hoạch/tồn.
 - [x] Chuẩn bị migration 093 và owner package `output/CHIFAA_PRODUCTION_PLANNING_FIX.sql`; full tests237/237, typecheck/lint/build và browser responsive đạt.
-- [ ] Owner chạy SQL trên đúng Supabase project, xác nhận `production_planning_ready=true`; sau đó phát hành web và UAT bằng dữ liệu thật. Chưa đối chiếu thủ công liệu các số 21/66 cũ có chứa lại đơn khách.
+- [x] Commit `df55d97` đã push lên `chifaa-next-dev`; GitHub verify và Vercel deployment thành công.
+- [ ] Owner chạy SQL trên đúng Supabase project, xác nhận `production_planning_ready=true`; sau đó UAT bằng dữ liệu thật. Chưa đối chiếu thủ công liệu các số 21/66 cũ có chứa lại đơn khách.
 
 # Theo dõi công việc
 
