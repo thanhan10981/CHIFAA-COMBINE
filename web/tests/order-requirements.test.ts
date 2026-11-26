@@ -4,6 +4,7 @@ import {randomUUID} from 'node:crypto';
 import Decimal from 'decimal.js';
 import type {PGlite} from '@electric-sql/pglite';
 import {database,asUser,identities} from './database-fixture';
+import {orderReplenishment,type InventoryResult,type ReplenishmentDemand} from '../features/operations/inventory-replenishment';
 
 // KH-01/KH-10/KH-12: approved customer orders are a demand source even when
 // approval could not schedule production before the sale conversion existed.
@@ -85,6 +86,13 @@ test('approved unscheduled orders become full dated material demand after a veri
  }
  assertNoProductionDemand(await workspace());
  const actual=await workspace('actual');assertNoProductionDemand(actual);assert.deepEqual(actual.batches,[]);
+ const stock=await rpc<InventoryResult>('inventory_workspace',[ids.warehouse,start,deliveryDay,'','','all',0]);
+ assert.equal(stock.needs_complete,false,'saved plans cannot see these approved unscheduled orders');
+ const replenishment=orderReplenishment(stock,report as unknown as ReplenishmentDemand,'all',0);
+ assert.equal(replenishment.needs_complete,true);
+ assert.equal(new Decimal(replenishment.rows.find(row=>row.id===ids.rice)!.needed!).toString(),'1.8');
+ assert.equal(new Decimal(replenishment.rows.find(row=>row.id===ids.rice)!.quantity!).toString(),'10','stock cutoff remains separate from order delivery date');
+ assert.equal(replenishment.rows.find(row=>row.id===ids.rice)!.suggested,null,'unset minimum is never assumed zero');
  const nextDay=await demand(nextDeliveryDay);
  assert.deepEqual(nextDay.issues,[]);assert.equal(new Decimal(nextDay.products[0].quantity).toString(),'5');
  assert.equal(new Decimal(nextDay.materials.find(material=>material.material_id===ids.rice)!.quantity).toString(),'3');

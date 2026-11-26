@@ -1,5 +1,14 @@
 # Theo dõi công việc
 
+
+## Cảnh báo/bổ sung theo đơn đã duyệt — 2026-11-26 (KH-01/KH-10/KH-12)
+
+- [x] Xác định nguồn nhu cầu cũ chỉ đọc kế hoạch; dùng RPC đơn đã duyệt sẵn có theo ngày giao và quyền, giữ nguồn kế hoạch riêng.
+- [x] Tính đề xuất theo tồn kho/ngày hiện tại, giữ null/partial/lỗi/khác ĐVT và truy món nguồn; lọc/phân trang sau khi ghép đủ dữ liệu.
+- [x] 227/227 full tests và7/7 liên quan cuối; typecheck/lint/build; browser5routes ×5widths cùng ca nguồn/ngày/quyền/issue/lỗi/104dòng, không ghi dữ liệu nghiệp vụ.
+- [ ] Ghi kết quả phát hành frontend; không cần migration/SQL cloud.
+- [ ] UAT đơn/tồn thật đúng ngày giao; kiểm kê/cài tối thiểu cho các mã chưa có dữ liệu nguồn.
+
 ## Nhu cầu từ đơn đã duyệt chưa lập kế hoạch — 2026-11-25 (KH-01/KH-10/KH-12)
 
 - [x] Đối chiếu nguồn planned với đơn approved/plan_id=null; giữ đơn hàng, kế hoạch và sản lượng thực tế riêng.

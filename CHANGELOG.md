@@ -1,3 +1,9 @@
+## 2026-11-26 — Đề xuất bổ sung theo đơn đã duyệt (KH-01/KH-10/KH-12)
+
+- Trang Cảnh báo & bổ sung hàng lấy nhu cầu từ đơn đã duyệt theo ngày giao, đối chiếu tồn riêng kho nguyên liệu; kế hoạch đã lưu là nguồn riêng. Hiện nguồn món, lỗi công thức/quy đổi, null và nút tải lại.
+- Tính max(0, tối thiểu + nhu cầu − tồn); giữ dữ liệu chưa biết, khóa mua khi nhu cầu/tồn lỗi hoặc chưa đủ. Lọc/phân trang sau khi ghép đủ các trang để không bỏ sót vật tư thiếu do đơn hàng.
+- 227/227 full tests,7/7 ca liên quan sau sửa cuối, typecheck/lint/build và browser kho25tổ hợp cùng các ca bổ sung đạt. Không cần SQL mới; trạng thái phát hành/UAT ở HANDOFF.md.
+
 ## 2026-11-25 — Hiện nhu cầu từ đơn đã duyệt dù chưa lập kế hoạch (KH-01/KH-10/KH-12)
 
 - Trang Nhu cầu nguyên liệu mặc định lấy đơn đã duyệt theo ngày giao; giữ kế hoạch và sản xuất thực tế thành nguồn riêng để tránh cộng trùng. Không tự ghi sản xuất hoặc xuất kho.

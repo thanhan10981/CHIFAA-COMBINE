@@ -1,6 +1,8 @@
+import {checkReplenishment} from './replenishment-check.mjs';
 import path from 'node:path';
 import ExcelJS from 'exceljs';
 export async function checkInventory(page,base,out,report){
+ await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/order_material_demand',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({products:[{product_id:'inv-p',quantity:'1'}],issues:[],materials:[{material_id:'inv-z',code:'INV-Z',name:'Vật tư tồn không đã xác nhận',unit_code:'kg',quantity:'12',stock_quantity:'0',minimum_quantity:'3',shortage_quantity:'12',status:'insufficient'}]})}));
  const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh'}).format(new Date());
  for(const width of [320,390,768,1024,1440]){
   await page.setViewportSize({width,height:900});
@@ -80,4 +82,5 @@ export async function checkInventory(page,base,out,report){
  report.checks.push('Inventory catalogue, movements, material-filtered receipt price history, reorder, entry at 5 widths; sole warehouse; empty warehouse guidance; decimal receipt retry preserves payload/key; insufficient stock error displays material, date, requested/available/shortage quantities without raw DB code; receipt correction retains selected line/reason; confirmed zero count with inventory token; no overflow or duplicate tabs');
  await page.goto(base+'/app/warehouses');await page.getByText('V\u1eadt t\u01b0 ki\u1ec3m th\u1eed nh\u1eadp kho',{exact:true}).waitFor();
  report.checks.push('Warehouse catalogue redirects to inventory; ingredient warehouse is resolved automatically without selector');
+ await checkReplenishment(page,base,out,report);
 }

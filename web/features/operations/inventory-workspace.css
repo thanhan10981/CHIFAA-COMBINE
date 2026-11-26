@@ -10,6 +10,12 @@
 .workspace .inventory-workspace .inventory-refresh{height:40px;white-space:nowrap}
 .inventory-default-warehouse,.pm-default-warehouse{display:grid;gap:6px;align-content:center;min-height:58px;font-size:13px}.inventory-default-warehouse span,.pm-default-warehouse span{font-size:12px;color:var(--muted)}
 .inventory-guide{font-size:12px;color:var(--muted);margin:0 0 8px}
+.inventory-demand-source{display:grid;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.inventory-demand-source>label{max-width:360px}.inventory-demand-source select{width:100%}
+.inventory-demand-source p,.inventory-demand-note p{font-size:12px;line-height:1.6;margin:4px 0}
+.inventory-demand-source>div{display:flex;flex-wrap:wrap;gap:8px}
+.inventory-demand-note{padding:10px 12px;margin:10px 0;background:#f3f8fc;border:1px solid #dbe8f0;border-radius:10px;font-size:12px;line-height:1.6}
+.inventory-demand-note [role=alert]{color:#a24618}.inventory-table details{max-width:230px;font-size:11px}.inventory-table summary{cursor:pointer;color:var(--muted)}
 .inventory-guide summary{display:flex;align-items:center;gap:6px;cursor:pointer;width:fit-content;padding:4px 0}
 .inventory-guide summary::after{content:'+';margin-left:3px}
 .inventory-guide[open] summary::after{content:'-'}
