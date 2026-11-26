@@ -18,5 +18,4 @@
  .sales-invoice-words,.sales-invoice-note{margin:1.2mm 0;overflow-wrap:anywhere}
  .sales-invoice-date{text-align:right;margin-top:2mm;break-after:avoid}
  .sales-invoice-signatures{display:flex;justify-content:space-around;min-height:18mm;break-inside:avoid}
- .sales-invoice footer{font-size:6.5pt;margin-top:1mm;color:#333;break-before:avoid}
 }

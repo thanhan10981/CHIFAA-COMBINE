@@ -1,3 +1,7 @@
+## 2026-11-26 — Bỏ chú thích cuối hóa đơn (KH-05/KH-10/KH-12)
+
+- Xóa dòng mã đơn và chú thích hóa đơn nội bộ khỏi phiếu in A5 theo yêu cầu owner. Typecheck/lint/build, 7/7 kiểm thử liên quan và kiểm tra HTML render đạt; giữ tổng tiền/ký nhận.
+
 ## 2026-11-26 — Phiếu bán hàng khổ A5 (KH-05/KH-10/KH-12)
 
 - Thu gọn phiếu sang A5 dọc, lề 7 mm, nội dung 10 pt; giữ đủ bảng món, tổng tiền và ký nhận. Tên/địa chỉ/ghi chú dài xuống dòng.
@@ -907,3 +911,10 @@ Sửa lỗi SQLSTATE 42702 do bí danh truy vấn topping trùng biến trong `r
 - Added exact material/unit details to recipe publication conversion errors and a Vietnamese editor message to guide the verified fix.
 - Added migration `202611250088_order_demand_uses_formula_units.sql`: approved-order material demand now uses each material's saved, verified formula unit (e.g. `cái`) and compares stock/minimum after conversion to that same unit. Recipe costing and inventory posting continue to use stock units. Added a regression for 1 bag = 100 pieces.
 - KH-01/KH-10/KH-11/KH-12: added migration 089 and connected recipe detail/form units to the saved formula specification; verified formula conversion now supports compatible physical units and price bases. Added explicit draft validation/publication, date-specific dependency errors, and refresh of dependent reports. Fixed scheduled/cancelled order scope, formula-unit stock/minimum comparison and isolation of incomplete topping/recipe data. Existing inventory postings and production snapshots retain their history. All 196 local tests (including six new PostgreSQL integration cases), typecheck, lint, build and 5-route/5-width browser fixtures pass; cloud migration/frontend release remains pending.
+## 2026-11-26 — Xác nhận mẫu hóa đơn A5 đã duyệt (KH-05/KH-10/KH-12)
+
+- Đối chiếu PDF owner duyệt với hóa đơn in hiện có: cùng component/CSS trong `c7922b3`, không cần thay đổi runtime thêm. Bản sửa vẫn local; automatic approval review chặn push do cần quyền push rõ ràng trong lượt hiện tại. Chưa xác nhận phát hành.
+
+## 2026-11-26 — Phát hành mẫu hóa đơn A5 (KH-05/KH-10/KH-12)
+
+- Đã push `c7922b3` lên `chifaa-next-dev` theo quyền trực tiếp của owner. Vercel xác nhận triển khai hoàn tất; bằng chứng `output/checks/sales-invoice-a5-deploy.json` (ignored). Còn UAT phiên đăng nhập/máy in thật; không thay SQL hoặc dữ liệu nghiệp vụ.

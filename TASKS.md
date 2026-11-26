@@ -1,11 +1,17 @@
 # Theo dõi công việc
 
+## Bỏ dòng chữ cuối hóa đơn — 2026-11-26 (KH-05/KH-10/KH-12)
+
+- [x] Xóa footer mã đơn/chú thích và CSS dư; typecheck/lint/build, 7/7 tests liên quan và HTML render đạt.
+- [ ] Phát hành bản bỏ footer; UAT phiên đăng nhập/máy in thật.
+
 ## Thu gọn phiếu bán hàng A5 — 2026-11-26 (KH-05/KH-10/KH-12)
 
 - [x] Đổi A5 dọc, lề 7 mm, chữ 10 pt/ô bảng gọn; giữ toàn bộ nội dung và quy tắc tiền.
 - [x] Typecheck/lint/build, 7/7 tests liên quan và browser đơn hàng đạt.
 - [x] PDF thường và tên/địa chỉ/ghi chú dài đều 1 trang A5 420 × 594.96 pt; đã render/xem ảnh, không cắt chữ.
-- [ ] Phát hành frontend và UAT trên phiên đăng nhập/máy in thật.
+- [x] Push `c7922b3` lên `chifaa-next-dev`; Vercel xác nhận triển khai hoàn tất ngày 26/11/2026, bằng chứng ignored `output/checks/sales-invoice-a5-deploy.json`.
+- [ ] UAT trên phiên đăng nhập/máy in thật.
 
 ## Mẫu hóa đơn bán hàng theo ảnh — 2026-11-26 (KH-05/KH-10/KH-12)
 

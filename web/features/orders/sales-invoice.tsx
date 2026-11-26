@@ -80,6 +80,5 @@ export function SalesInvoice({order,lines}:{order:{id:string;delivery_date:strin
   {order.note&&<div className="sales-invoice-note">Ghi chú: {order.note}</div>}
   <div className="sales-invoice-date">Bồng Sơn, ngày {day} tháng {month} năm {year}</div>
   <div className="sales-invoice-signatures"><strong>BÊN NHẬN HÀNG</strong><strong>BÊN GIAO HÀNG</strong></div>
-  <footer>Mã đơn: {order.id.slice(0,8).toUpperCase()} · Phiếu bán hàng nội bộ, không thay thế hóa đơn điện tử.</footer>
  </section>;
 }
