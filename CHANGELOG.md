@@ -954,3 +954,8 @@ Sửa lỗi SQLSTATE 42702 do bí danh truy vấn topping trùng biến trong `r
 ## 2026-11-26 — Phát hành mẫu hóa đơn A5 (KH-05/KH-10/KH-12)
 
 - Đã push `c7922b3` lên `chifaa-next-dev` theo quyền trực tiếp của owner. Vercel xác nhận triển khai hoàn tất; bằng chứng `output/checks/sales-invoice-a5-deploy.json` (ignored). Còn UAT phiên đăng nhập/máy in thật; không thay SQL hoặc dữ liệu nghiệp vụ.
+
+## 2026-11-27
+- Đơn giản hóa trang 04 thành bảng chuẩn bị sản xuất theo điểm bán và ngày giao (mặc định ngày mai); nhập chính/thêm/lỗi tạo phiếu qua RPC sản xuất hiện có.
+- Thêm xác nhận sẵn sàng theo điểm bán/toàn bộ, có audit và kiểm tra tồn thành phẩm; trang giao hàng tiếp tục chốt doanh thu và giảm tồn qua luồng hiện có.
+- `/app/production` chuyển hướng sang trang 04; ẩn mục menu cũ. Migration 095 chỉ tạo local, chưa áp Supabase.

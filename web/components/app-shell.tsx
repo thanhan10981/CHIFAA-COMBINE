@@ -45,7 +45,7 @@ export function AppShell({children,access,userLabel='Nội bộ'}:{children:Reac
  const context=(contextNavigation.find(group=>group.includes(slug))??[]).flatMap(path=>{const definition=modules.find(([key])=>key===path);return definition&&canView(definition[2])?[definition]:[];});
  const label=current?.label??modules.find(([slug])=>pathname==='/app/'+slug)?.[1]??'Không gian làm việc';
  const itemLink=(item:{id:string;label:string;icon:string})=>{
-  const route=referenceRoutes[item.id];if(!route||!canView(route.module))return null;
+  const route=referenceRoutes[item.id];if(item.id==='production'||!route||!canView(route.module))return null;
   const href='/app'+(route.slug?'/'+route.slug:''),active=activeSlug===route.slug;
   return <Link href={href} key={item.id} className={'navitem'+(active?' active':'')} aria-current={active?'page':undefined} onClick={()=>setMobile(false)}><span className="nav-icon"><Icon name={navigationIcon(item.id)}/></span><span className="nav-label">{item.label}</span>{item.id==='catalog'&&materialCount.data!=null&&<small>{materialCount.data}</small>}</Link>;
  };
