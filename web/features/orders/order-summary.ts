@@ -1,14 +1,32 @@
 import {sortProductsByMenuOrder} from '../../lib/product-order';
+import Decimal from 'decimal.js';
 export type SummaryItem={product_id:string;code:string;name:string;quantity:string;unit:string;price_vnd:string;discount_rate:string;line_total_vnd:string};
 export type SummaryOrder={id:string;code:string;store_id:string|null;store_code:string|null;store_name:string|null;store_phone:string|null;customer_name:string|null;customer_phone:string|null;delivery_date:string;shift:string;status:string;note:string|null;total_quantity:string;discount_rate:string;discount_vnd:string;order_total_vnd:string;old_deduction_vnd:string|null;cancelled_loss_vnd:string;cash_received_vnd:string|null;bank_received_vnd:string|null;payment_method:string|null;outstanding_vnd:string|null;items:SummaryItem[]};
 export type SummaryStore={id:string;code:string;name:string;phone:string|null};
 export type SummaryProduct={product_id:string;code:string;name:string;unit:string;total_quantity:string;by_store:Record<string,string>};
 export type SummaryMaterial={code:string;name:string;unit_code:string;quantity:string;stock_quantity:string|null;minimum_quantity:string|null;shortage_quantity:string|null;status:'unknown'|'insufficient'|'low'|'ok'};
 export type OrderMaterialDemandData={issues:{issue:string;issue_detail?:string;product_id?:string;product_code?:string;product_name?:string;topping_name?:string}[];materials:SummaryMaterial[]};
-export type OrderSummaryData={date:string;orders:SummaryOrder[];stores:SummaryStore[];products:SummaryProduct[];planned_quantity_total:string};
+export type OrderSummaryData={date:string;orders:SummaryOrder[];stores:SummaryStore[];products:SummaryProduct[];planned_quantity_total:string;sourceProducts?:SummaryProduct[]};
 
 export function sortOrderSummaryProducts(products:readonly SummaryProduct[]){
  return sortProductsByMenuOrder(products);
+}
+
+/** Re-express sliced roll portions as whole-tree equivalents for the customer order matrix only. */
+export function wholeRollOrderSummaryProducts(products:readonly SummaryProduct[]){
+ const result=new Map<string,SummaryProduct>();
+ for(const product of products){
+  const target=product.code==='CC'?'CC-NC':product.code==='CCC'?'CCC-NC':null;
+  const ratio=product.code==='CC'?new Decimal(12).div(14):product.code==='CCC'?new Decimal(16).div(10):null;
+  const targetProduct=target?products.find(item=>item.code===target):undefined;
+  const output=target?(targetProduct??{...product,product_id:`whole-equivalent:${target}`,code:target,name:target==='CC-NC'?'Cơm cuộn nguyên cây':'Cơm cuộn chiên nguyên cây',unit:'cây',total_quantity:'0',by_store:{}}):product;
+  const current=result.get(output.code)??{...output,total_quantity:'0',by_store:{}};
+  const factor=ratio??new Decimal(1);
+  current.total_quantity=new Decimal(current.total_quantity).plus(new Decimal(product.total_quantity).mul(factor)).toString();
+  for(const [storeId,quantity] of Object.entries(product.by_store))current.by_store[storeId]=new Decimal(current.by_store[storeId]??'0').plus(new Decimal(quantity).mul(factor)).toString();
+  result.set(current.code,current);
+ }
+ return sortOrderSummaryProducts([...result.values()]);
 }
 
 export function orderDemandIssueText(issue:OrderMaterialDemandData['issues'][number],products:OrderSummaryData['products']){
@@ -67,7 +85,7 @@ export async function createOrderSummaryWorkbook(data:OrderSummaryData,demand:Or
  const materialHeader=matrix.getRow(materialStart+3);materialHeader.values=['Mã vật tư','Vật tư','ĐVT','Cần','Tồn sổ','Thiếu','Cảnh báo'];styleHeader(materialHeader);
  if(demand.materials.length){for(const material of demand.materials){const row=matrix.addRow([material.code,material.name,material.unit_code,excelNumber(material.quantity),material.stock_quantity===null?'Chưa có tồn':excelNumber(material.stock_quantity),material.shortage_quantity===null?'—':excelNumber(material.shortage_quantity),materialStatus(material.status)]);row.eachCell((cell,column)=>{cell.alignment={vertical:'middle',wrapText:true};if(column>=4&&column<=6&&typeof cell.value==='number')cell.numFmt='#,##0.###';});}}
  else {const row=matrix.addRow(['Chưa có nhu cầu nguyên liệu đủ dữ liệu công thức cho đơn đã duyệt.']);matrix.mergeCells(row.number,1,row.number,7);row.getCell(1).alignment={horizontal:'center',vertical:'middle',wrapText:true};}
- for(const issue of demand.issues){const row=matrix.addRow([orderDemandIssueText(issue,data.products)]);matrix.mergeCells(row.number,1,row.number,Math.max(7,totalColumn));row.getCell(1).font={color:{argb:'FF9C4B28'}};row.getCell(1).alignment={wrapText:true,vertical:'middle'};}
+ for(const issue of demand.issues){const row=matrix.addRow([orderDemandIssueText(issue,data.sourceProducts??data.products)]);matrix.mergeCells(row.number,1,row.number,Math.max(7,totalColumn));row.getCell(1).font={color:{argb:'FF9C4B28'}};row.getCell(1).alignment={wrapText:true,vertical:'middle'};}
  for(let col=1;col<=7;col++)if(matrix.getColumn(col).width===undefined)matrix.getColumn(col).width=18;
  const finalRow=matrix.rowCount;matrix.pageSetup={orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0,paperSize:9};matrix.pageSetup.printTitlesRow='1:3';matrix.pageSetup.printArea=`A1:${excelColumn(Math.max(totalColumn,7))}${finalRow}`;
 

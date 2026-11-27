@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import ExcelJS from 'exceljs';
-import {createOrderSummaryWorkbook,orderDemandIssueText,sortOrderSummaryProducts,type OrderMaterialDemandData,type OrderSummaryData} from '../features/orders/order-summary';
+import {createOrderSummaryWorkbook,orderDemandIssueText,sortOrderSummaryProducts,wholeRollOrderSummaryProducts,type OrderMaterialDemandData,type OrderSummaryData} from '../features/orders/order-summary';
 
 test('order demand warnings identify a missing effective recipe and product conversion without guessing requirements',()=>{
  const message=orderDemandIssueText({product_id:'product-1',issue:'PUBLISHED_PRODUCT_RECIPE_REQUIRED'},[{product_id:'product-1',code:'MON-1',name:'Món kiểm thử',unit:'phần',total_quantity:'10',by_store:{}}]);
@@ -74,4 +74,18 @@ test('customer summary and workbook follow the requested menu order while preser
   const total=matrix.getRow(products.length+4);assert.equal(total.getCell(1).value,'TỔNG SỐ LƯỢNG');assert.equal(total.getCell(3).value,45.5);assert.equal(total.getCell(4).value,0);assert.equal(total.getCell(5).value,45.5);
   assert.deepEqual(data.products,before);
  }finally{globalThis.fetch=originalFetch;}
+});
+
+test('customer matrix converts sliced roll portions into whole-tree equivalents and preserves whole-tree orders',()=>{
+ const products=[
+  {product_id:'cc',code:'CC',name:'CÆ¡m cuá»™n',unit:'pháº§n',total_quantity:'12',by_store:{a:'12',b:'0'}},
+  {product_id:'ccnc',code:'CC-NC',name:'CÆ¡m cuá»™n nguyÃªn cÃ¢y',unit:'cÃ¢y',total_quantity:'2',by_store:{a:'0',b:'2'}},
+  {product_id:'ccc',code:'CCC',name:'CÆ¡m cuá»™n chiÃªn',unit:'pháº§n',total_quantity:'10',by_store:{a:'0',b:'10'}},
+  {product_id:'cccnc',code:'CCC-NC',name:'CÆ¡m cuá»™n chiÃªn nguyÃªn cÃ¢y',unit:'cÃ¢y',total_quantity:'1',by_store:{a:'1',b:'0'}},
+ ];
+ const output=wholeRollOrderSummaryProducts(products),plain=Object.fromEntries(output.map(row=>[row.code,row]));
+ assert.equal(plain['CC-NC'].unit,'cÃ¢y');assert.equal(plain['CC-NC'].total_quantity,'12.285714285714285714');
+ assert.equal(plain['CC-NC'].by_store.a,'10.285714285714285714');assert.equal(plain['CC-NC'].by_store.b,'2');
+ assert.equal(plain['CCC-NC'].total_quantity,'17');assert.equal(plain['CCC-NC'].by_store.a,'1');assert.equal(plain['CCC-NC'].by_store.b,'16');
+ assert.equal(products[0].total_quantity,'12','source quantities stay unchanged');
 });
