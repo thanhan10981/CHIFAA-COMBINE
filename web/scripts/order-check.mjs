@@ -28,8 +28,11 @@ export async function checkOrders(page,base,out,report){
  }));
  // The aggregate deliberately arrives in reverse order to exercise the report's SKU ordering.
  const summaryProducts=[...expectedSummaryProducts].reverse(),summaryQuantity=expectedSummaryProducts.reduce((sum,product)=>sum+Number(product.total_quantity),0);
- const expectedMatrixRows=expectedSummaryProducts.map((product,index)=>[String(index+1),product.name,...summaryStores.map(store=>product.by_store[store.id]==='0'?'':product.by_store[store.id]),product.total_quantity]);
- const expectedMatrixTotals=['TỔNG SỐ LƯỢNG',...summaryStores.map(store=>String(expectedSummaryProducts.reduce((sum,product)=>sum+Number(product.by_store[store.id]),0))),String(summaryQuantity)];
+ const mainProducts=expectedSummaryProducts.slice(0,9);
+ const quantityText=value=>new Intl.NumberFormat('vi-VN',{maximumFractionDigits:2}).format(value);
+ const wholeRows=[{portion:mainProducts[6],whole:expectedSummaryProducts[9],factor:12/14},{portion:mainProducts[7],whole:expectedSummaryProducts[10],factor:16/10}];
+ const expectedMatrixRows=[...mainProducts.map((product,index)=>[String(index+1),product.name,...summaryStores.map(store=>product.by_store[store.id]==='0'?'':product.by_store[store.id]),product.total_quantity]),...wholeRows.map(({portion,whole,factor})=>['#',whole.name,...summaryStores.map(store=>{const quantity=Number(whole.by_store[store.id])+Number(portion.by_store[store.id])*factor;return quantity===0?'':quantityText(quantity);}),quantityText(Number(whole.total_quantity)+Number(portion.total_quantity)*factor)])];
+ const expectedMatrixTotals=['TỔNG SỐ LƯỢNG',...summaryStores.map(store=>String(mainProducts.reduce((sum,product)=>sum+Number(product.by_store[store.id]),0))),String(mainProducts.reduce((sum,product)=>sum+Number(product.total_quantity),0))];
  async function assertSummaryMatrix(mode){
   const matrix=await page.locator('.order-summary-matrix-table').evaluate(table=>({
    rows:[...table.querySelectorAll('tbody tr:not(.order-summary-total-row)')].map(row=>[...row.querySelectorAll('td')].map(cell=>cell.textContent.trim())),
@@ -50,7 +53,7 @@ export async function checkOrders(page,base,out,report){
  await page.route('https://visual-fixture.supabase.co/rest/v1/rpc/order_material_demand',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({date:today,products:[],issues:[],materials:[{code:'GAO',name:'Gạo kiểm thử',unit_code:'kg',quantity:'1.25',stock_quantity:'3',minimum_quantity:'1',shortage_quantity:'0',status:'ok'}]})}));
  await page.goto(base+'/app/orders');await page.evaluate(()=>document.fonts.ready);
  await page.getByRole('button',{name:'Chi tiết đơn 90000000',exact:true}).waitFor();
- const orderTable=await page.locator('.panel.table-wrap').innerText(),expectedHeaders=['Mã','Điểm bán · số điện thoại','Ngày giao','Tổng SL','Mức chiết khấu','Chi tiết món','Trừ tiền đơn cũ','Hủy / lỗ','Tổng thanh toán','CK hoặc tiền mặt','Ghi chú'];if(expectedHeaders.some(header=>!orderTable.includes(header))||!orderTable.includes('225.000 đ'))throw new Error('Outer order table does not show the requested columns and order totals');
+ const orderTable=await page.locator('.order-review-table').innerText(),expectedHeaders=['Mã','Điểm bán · số điện thoại','Ngày giao','Tổng SL','Mức chiết khấu','Chi tiết món','Trừ tiền đơn cũ','Hủy / lỗ','Tổng thanh toán','CK hoặc tiền mặt','Ghi chú'];if(expectedHeaders.some(header=>!orderTable.includes(header))||!orderTable.includes('225.000 đ'))throw new Error('Outer order table does not show the requested columns and order totals');
  await page.getByRole('button',{name:'Duyệt đơn a0000000',exact:true}).waitFor();await page.getByRole('button',{name:'Từ chối đơn a0000000',exact:true}).waitFor();
  await page.screenshot({path:out+'/order-list-desktop.png',animations:'disabled'});
  await page.setViewportSize({width:390,height:844});
@@ -85,7 +88,7 @@ export async function checkOrders(page,base,out,report){
  await page.getByRole('heading',{name:'Bảng tổng hợp khách đặt hàng',exact:true}).waitFor();
  await page.getByRole('button',{name:'Xuất Excel',exact:true}).waitFor();await page.getByRole('button',{name:'In bảng',exact:true}).waitFor();
  await page.locator('.order-summary-stats').waitFor();
- const summaryCounts=await page.locator('.order-summary-stats span').allTextContents();if(JSON.stringify(summaryCounts)!==JSON.stringify(['2 đơn','11 món','12 điểm bán']))throw new Error('Order summary overview counts are missing: '+JSON.stringify(summaryCounts));
+ const summaryCounts=await page.locator('.order-summary-stats span').allTextContents();if(JSON.stringify(summaryCounts)!==JSON.stringify(['2 đơn','9 món','12 điểm bán']))throw new Error('Order summary overview counts are missing: '+JSON.stringify(summaryCounts));
  await page.locator('.order-summary-matrix-table').waitFor();await page.getByText('Gạo kiểm thử',{exact:true}).waitFor();
  const screenMatrix=await assertSummaryMatrix('screen'),materialText=await page.locator('.order-summary-material-table').innerText();if(!materialText.includes('Gạo kiểm thử')||!materialText.includes('1,25'))throw new Error('Order summary ingredient demand is missing from the popup');
  const summaryDesktop=await page.locator('.order-summary-dialog').evaluate(dialog=>{const r=dialog.getBoundingClientRect(),wrap=dialog.querySelector('.order-summary-matrix-table')?.parentElement,logo=dialog.querySelector('.order-summary-print-header');return {left:r.left,right:r.right,width:r.width,viewport:innerWidth,tableScrolls:!!wrap&&wrap.scrollWidth>wrap.clientWidth,totalVisible:!!wrap&&dialog.querySelector('.order-summary-matrix-table thead tr:first-child th:last-child').getBoundingClientRect().right<=wrap.getBoundingClientRect().right+1,logoDisplay:logo?getComputedStyle(logo).display:'missing'};});
@@ -97,8 +100,14 @@ export async function checkOrders(page,base,out,report){
  await page.setViewportSize({width:320,height:768});
  const summaryNarrow=await page.locator('.order-summary-dialog').evaluate(dialog=>{const r=dialog.getBoundingClientRect(),actions=dialog.querySelector('.order-summary-actions');return {left:r.left,right:r.right,width:r.width,viewport:innerWidth,bodyWidth:document.documentElement.scrollWidth,actionsOverflow:!!actions&&actions.scrollWidth>actions.clientWidth+1};});
  if(summaryNarrow.left<0||summaryNarrow.right>summaryNarrow.viewport||summaryNarrow.bodyWidth>summaryNarrow.viewport+1||summaryNarrow.actionsOverflow)throw new Error('Order summary narrow-mobile controls overflow the viewport: '+JSON.stringify(summaryNarrow));
+ await page.setViewportSize({width:1123,height:794});
  await page.emulateMedia({media:'print'});
  const printMatrix=await assertSummaryMatrix('print');
+ await page.screenshot({path:out+'/order-summary-print.png',fullPage:true,animations:'disabled'});
+ const summaryPdf=await page.pdf({path:out+'/order-summary-print.pdf',format:'A4',landscape:true,preferCSSPageSize:true,printBackground:false});
+ const summaryPdfPages=(summaryPdf.toString('latin1').match(/\/Type\s*\/Page\b/g)??[]).length;
+ if(summaryPdfPages!==1)throw new Error('The 9-dish customer summary plus 2 whole-roll totals and materials must fit one A4 landscape page: '+summaryPdfPages);
+ report.checks.push({customerSummaryPdfPages:summaryPdfPages,paper:'A4 landscape',mainProducts:mainProducts.map(product=>product.code),wholeRollTotalsAfterGrandTotal:true});
  if(JSON.stringify(printMatrix)!==JSON.stringify(screenMatrix))throw new Error('Print matrix order and all quantities must match the screen matrix');
  const printState=await page.locator('.order-summary-dialog').evaluate(dialog=>{const report=dialog.querySelector('.order-summary-print'),content=dialog.querySelector('.order-summary-content'),table=dialog.querySelector('.order-summary-matrix-table'),header=dialog.querySelector('.order-summary-print-header'),backdrop=dialog.closest('.modal-backdrop');return {logo:getComputedStyle(header).display,matrix:getComputedStyle(table).display,materials:getComputedStyle(dialog.querySelector('.order-summary-material-table')).display,dialogMaxHeight:getComputedStyle(dialog).maxHeight,dialogOverflow:getComputedStyle(dialog).overflow,contentOverflow:getComputedStyle(content).overflow,reportPosition:getComputedStyle(report).position,backdropPosition:getComputedStyle(backdrop).position,tableHeader:getComputedStyle(table.querySelector('thead')).display,reportTop:report.getBoundingClientRect().top,headerTop:header.getBoundingClientRect().top};});if(printState.logo==='none'||printState.matrix==='none'||printState.materials==='none'||printState.dialogMaxHeight!=='none'||printState.dialogOverflow!=='visible'||printState.contentOverflow!=='visible'||printState.reportPosition!=='static'||printState.backdropPosition!=='absolute'||printState.tableHeader!=='table-header-group'||printState.reportTop>20||Math.abs(printState.reportTop-printState.headerTop)>1)throw new Error('Print layout must start at the page top with the report header, flow at natural height, repeat table headings, and include ingredient demand: '+JSON.stringify(printState));await page.emulateMedia({media:'screen'});
  if(!summaryOpened)throw new Error('Order summary did not load the server-side aggregate');
@@ -112,6 +121,8 @@ export async function checkOrders(page,base,out,report){
  await page.locator('.sales-invoice tbody tr[data-product-code]').first().waitFor({state:'attached'});
  if(await page.locator('.sales-invoice').isVisible())throw new Error('Invoice must be hidden outside print');
  await page.setViewportSize({width:506,height:740});await page.emulateMedia({media:'print'});
+ const screenOrderCodes=await page.locator('.modal .table-wrap table tbody tr td:first-child small').allTextContents();
+ if(JSON.stringify(screenOrderCodes)!==JSON.stringify(expectedSummaryProducts.map(product=>product.code)))throw new Error('Order detail must sort snapshot items before display, including cached items: '+JSON.stringify(screenOrderCodes));
  const invoice=page.locator('.sales-invoice');
  await page.screenshot({path:out+'/sales-invoice-print.png',fullPage:true,animations:'disabled'});
  report.invoiceGeometry=await invoice.evaluate(sheet=>[...sheet.children].map(child=>({tag:child.tagName,class:child.className,height:child.getBoundingClientRect().height,style:getComputedStyle(child).padding,rows:[...child.querySelectorAll('tr')].map(row=>({height:row.getBoundingClientRect().height,padding:getComputedStyle(row.firstElementChild).padding,font:getComputedStyle(row.firstElementChild).fontSize}))})));

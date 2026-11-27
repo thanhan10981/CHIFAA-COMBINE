@@ -974,3 +974,8 @@ Sửa lỗi SQLSTATE 42702 do bí danh truy vấn topping trùng biến trong `r
 - Dùng một menu chung cho danh mục, thực đơn, giỏ/chi tiết đơn, hóa đơn, tổng hợp web/Excel, bán hàng, sản xuất và công thức món; sắp xếp đủ dữ liệu trước khi phân trang.
 - Bảng tổng hợp giữ 9 món chính ở trên dòng tổng; hai dòng tổng nguyên cây đứng riêng phía dưới và không lặp trong các hàng chính. Món khác vẫn được giữ.
 - Thêm migration 098 bổ sung mã món trong danh sách chọn sản xuất cũ; chưa áp cloud. Database types, typecheck, lint, build và 242/242 test đạt; bằng chứng kiểm tra và phạm vi còn lại ghi trong `HANDOFF.md`.
+## 2026-11-27 — Khôi phục trang công thức và kiểm tra đồng bộ đơn/bản in
+
+- Sửa lỗi `INVALID_QUERY`: giới hạn mỗi lần tải công thức là 50 theo RPC, vẫn sắp xếp toàn bộ trước phân trang.
+- Chi tiết đơn luôn theo thứ tự menu cả khi nhận dữ liệu cache; đồng bộ kiểm tra tổng hợp 9 món + tổng + 2 dòng cây và hóa đơn in.
+- Bổ sung test PostgreSQL cho 56 công thức và browser kiểm tra phân trang, thứ tự màn hình/print, PDF A4 ngang và A5 dọc. Không sửa dữ liệu hoặc áp SQL cloud.

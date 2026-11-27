@@ -481,3 +481,9 @@ Added authenticated owner-scoped requestStatus returning only journal state (no 
 - [x] Thêm migration 098 đưa mã món vào `production_options`, kiểm tra quyền và mã trả về bằng PostgreSQL cục bộ.
 - [x] Database types khớp GitHub Actions; typecheck/lint/build đạt; full suite 242/242 và `git diff --check` sạch.
 - [ ] Áp migration 098 vào môi trường được owner cho phép và UAT đăng nhập thật ở task phát hành; chưa commit/push/deploy.
+## Sửa regression công thức/đơn/in sau commit 3f88b5d — 2026-11-27
+
+- [x] Xác nhận build remote; truy vết lỗi runtime `recipe_catalog` do yêu cầu 100 > giới hạn 50 và sửa loader dùng chung.
+- [x] Kiểm tra PostgreSQL và Chrome: phân trang 56 công thức, 6 trang công thức × 5 widths; danh mục 114 món; chi tiết đơn và PDF tổng hợp A4/hóa đơn A5 đúng menu.
+- [x] Full suite 243/243, lint/build và kiểm tra diff đạt; browser fixture có ảnh/PDF trong `output/` được Git bỏ qua.
+- [ ] Commit/push bản sửa và đối chiếu GitHub Actions/Vercel trên đúng commit mới; báo kết quả phát hành cuối phiên.

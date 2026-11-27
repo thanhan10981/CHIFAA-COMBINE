@@ -1,6 +1,7 @@
 import test,{before,after} from 'node:test';import assert from 'node:assert/strict';import {randomUUID} from 'node:crypto';import type {PGlite} from '@electric-sql/pglite';
 import {database,asUser,identities} from './database-fixture';
 import {buildRecipeImport,parseRecipeSource} from '../lib/deploy/recipe-import';
+import {loadRecipeMenuPages} from '../features/recipes/recipe-catalog';
 let db:PGlite;const kg=randomUUID(),g=randomUUID(),portion=randomUUID(),material=randomUUID();
 const call=async(name:string,args:unknown[],user=identities.admin)=>(await asUser(db,user,()=>db.query<{result:Record<string,unknown>}>(`select public.${name}(${args.map((_,i)=>'$'+(i+1)).join(',')}) result`,args))).rows[0].result;
 const metadata=(code:string,date='2026-11-17')=>({code,name:'Synthetic '+code,kind:'product',effective_from:date,output_quantity:'2',output_unit_id:portion});
@@ -112,4 +113,24 @@ test('sheet parser preserves blank source quantities instead of silently droppin
  const row=(...cells:string[])=>cells.join('\t');
  const text=[row('THÔNG SỐ CHUNG'),row('Khối lượng cơm chín / 1 mẻ (g)','','','','2.000'),row('1','CƠM NẮM KIỂM THỬ','','','','1 phần','999'),row('CƠM NẮM KIỂM THỬ'),row('STT','Mã SP','Thành phần','ĐVT','Định lượng'),row('1','SYN-M','Synthetic ingredient','g',''),row('CÔNG THỨC CƠM (1 MẺ = 1 KG GẠO)'),row('STT','Mã SP','Tên','ĐVT','Định lượng'),row('1','SYN-M','','g','800'),row('CHI PHÍ BAO BÌ / 1 ĐƠN VỊ BÁN'),row('STT','Mã SP','Thành phần','ĐVT','Số lượng'),row('','','Cơm cuộn & Cơm cuộn chiên (1 hộp)'),row('1','SYN-PACK','','cái','1'),row('','','6 món cơm nắm (1 phần)'),row('1','SYN-PACK','','cái','1')].join('\n');
  const source=parseRecipeSource(text,[{code:'SYN-DISH',name:'CƠM NẮM KIỂM THỬ'}]);assert.equal(source.recipes.length,4);assert.equal(source.recipes.find(r=>r.code==='PK-CC')?.items.length,1);assert.equal(source.recipes[0].items[0].quantity,null);assert.equal(source.recipes[0].reference,'999');assert.equal(source.recipes.find(r=>r.kind==='rice')?.output,'2000');
+});
+
+
+test('recipe menu loader respects the real RPC limit and sorts dishes across more than 50 recipes',async()=>{
+ const menu=['CN-XXPM','CN-XXMY','CN-TERI','CN-GPM','CN-BV','CN-CNM','CC','CCC','CN-MY','CC-NC','CCC-NC'];
+ const codes=[...Array.from({length:45},(_,index)=>'PAGE-EXTRA-'+String(index).padStart(2,'0')),...menu];
+ const created:string[]=[];
+ try{
+  for(const [index,code] of codes.entries()){
+   const result=await db.query<{id:string}>("insert into recipes(code,name,kind) values($1,$2,'product') returning id",[code,'Pagination menu '+String(index).padStart(2,'0')]);created.push(result.rows[0].id);
+  }
+  const requests:{offset:number;limit:number}[]=[];
+  const result=await loadRecipeMenuPages(async(offset,limit)=>{
+   requests.push({offset,limit});
+   return await call('recipe_catalog',['product','2026-11-27','Pagination menu',offset,limit]) as {rows:{code:string}[];total:number};
+  });
+  assert.deepEqual(requests,[{offset:0,limit:50},{offset:50,limit:50}]);
+  assert.deepEqual(result.rows.slice(0,9).map(row=>row.code),menu.slice(0,9));
+  assert.deepEqual(result.rows.slice(-2).map(row=>row.code),menu.slice(-2));assert.equal(result.rows.length,56);
+ }finally{for(const id of created)await db.query('update recipes set archived=true where id=$1',[id]);}
 });

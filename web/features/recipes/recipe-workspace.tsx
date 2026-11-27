@@ -1,5 +1,6 @@
 'use client';
-import {loadMenuPages,sortProductsByMenuOrder} from '@/lib/product-order';
+import {sortProductsByMenuOrder} from '@/lib/product-order';
+import {loadRecipeMenuPages} from './recipe-catalog';
 import Link from 'next/link';
 import {useState} from 'react';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
@@ -51,7 +52,7 @@ type Catalog={rows:Recipe[];total:number;stats:{products:number;batches:number;m
 export function RecipeWorkspace({slug,userId,canCreate,canEdit,canReadCost,canApprove=false}:{slug:string;userId:string;canCreate:boolean;canEdit:boolean;canReadCost:boolean;canApprove?:boolean}){
  const meta=views[slug]??views.recipes,notify=useNotify(),cache=useQueryClient();
  const [search,setSearch]=useState(''),[filter,setFilter]=useState(''),[page,setPage]=useState(0),[date,setDate]=useState(today()),[selectedId,setSelectedId]=useState(''),[pinned,setPinned]=useState<Recipe|null>(null),[versionId,setVersionId]=useState(''),[editor,setEditor]=useState<'new'|'edit'|'clone'|null>(null),[showSource,setShowSource]=useState(false);
- const list=useQuery({queryKey:[userId,'recipe-catalog',meta.kind,date,filter,page],queryFn:async()=>{const read=async(offset:number)=>{const {data,error}=await browserSupabase().rpc('recipe_catalog',{p_kind:meta.kind,p_date:date,p_search:filter,p_offset:offset,p_limit:meta.kind==='product'?100:25});if(error)throw new Error('Chưa tải được công thức. Kiểm tra quyền và bản cập nhật027.');return data as unknown as Catalog;};if(meta.kind!=='product')return read(page*25);const all=await loadMenuPages(read);return {...all,rows:all.rows.slice(page*25,page*25+25)};}});
+ const list=useQuery({queryKey:[userId,'recipe-catalog',meta.kind,date,filter,page],queryFn:async()=>{const read=async(offset:number,limit=25)=>{const {data,error}=await browserSupabase().rpc('recipe_catalog',{p_kind:meta.kind,p_date:date,p_search:filter,p_offset:offset,p_limit:limit});if(error)throw new Error('Chưa tải được công thức. Kiểm tra quyền và bản cập nhật027.');return data as unknown as Catalog;};if(meta.kind!=='product')return read(page*25);const all=await loadRecipeMenuPages(read);return {...all,rows:all.rows.slice(page*25,page*25+25)};}});
  const catalogRows=meta.kind==='product'?sortProductsByMenuOrder(list.data?.rows??[]):list.data?.rows??[];
  const selected=pinned??catalogRows.find(r=>r.id===selectedId)??catalogRows[0];
  const activeId=versionId||selected?.version_id||'';

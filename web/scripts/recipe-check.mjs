@@ -1,6 +1,32 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
 export async function checkRecipes(page,base,out,report){
+ const menuCodes=['CN-XXPM','CN-XXMY','CN-TERI','CN-GPM','CN-BV','CN-CNM','CC','CCC','CN-MY','CC-NC','CCC-NC'];
+ const extraCodes=Array.from({length:45},(_,index)=>'PAGE-EXTRA-'+String(index).padStart(2,'0'));
+ const paginationSource=[...extraCodes,...menuCodes].map((code,index)=>({id:'pagination-'+index,code,name:'Menu '+code,kind:'product',version:'1',version_id:null,revision:null,status:null,effective_from:'2098-04-03',output_quantity:'1',output_unit:'phan',cost:null}));
+ const paginationRequests=[];
+ const paginationHandler=route=>{
+  const args=route.request().postDataJSON();paginationRequests.push(args);
+  if(args.p_limit>50)return route.fulfill({status:400,json:{code:'P0001',message:'INVALID_QUERY'}});
+  return route.fulfill({status:200,json:{rows:paginationSource.slice(args.p_offset,args.p_offset+args.p_limit),total:paginationSource.length,stats:{products:56,batches:0,materials:0,unpriced:0}}});
+ };
+ await page.route('**/rest/v1/rpc/recipe_catalog',paginationHandler);
+ await page.goto(base+'/app/recipes');
+ await page.getByLabel('Ng\u00e0y xem v\u00e0 c\u00f4ng b\u1ed1 c\u00f4ng th\u1ee9c',{exact:true}).fill('2098-04-03');
+ await page.locator('.recipe-row').filter({hasText:'Menu CN-XXPM'}).waitFor();
+ const recipeCodes=()=>page.locator('.recipe-list .recipe-row small').evaluateAll(nodes=>nodes.map(node=>node.textContent.split(' \u00b7 ')[0]));
+ assert.deepEqual(await recipeCodes(),[...menuCodes.slice(0,9),...extraCodes.slice(0,16)]);
+ assert.deepEqual(paginationRequests.map(args=>[args.p_offset,args.p_limit]),[[0,50],[50,50]]);
+ await page.getByRole('button',{name:'Sau',exact:true}).click();
+ await page.locator('.recipe-row').filter({hasText:'Menu PAGE-EXTRA-16'}).waitFor();
+ assert.deepEqual(await recipeCodes(),extraCodes.slice(16,41));
+ await page.getByRole('button',{name:'Sau',exact:true}).click();
+ await page.locator('.recipe-row').filter({hasText:'Menu CCC-NC'}).waitFor();
+ assert.deepEqual(await recipeCodes(),[...extraCodes.slice(41),...menuCodes.slice(-2)]);
+ await page.screenshot({path:path.join(out,'recipe-menu-pagination.png'),fullPage:true});
+ await page.unroute('**/rest/v1/rpc/recipe_catalog',paginationHandler);
+ report.checks.push('Actual recipe catalogue requests use the RPC maximum 50, sort 56 recipes across server pages, and paginate all three display pages without INVALID_QUERY');
+
  for(const width of [320,390,768,1024,1440])for(const route of ['recipes','toppings','batches','rice','packaging','cost']){
   await page.setViewportSize({width,height:900});await page.goto(base+'/app/'+route);await page.locator(route==='cost'?'.cost-summary-total':'.recipe-catalog .recipe-row').first().waitFor();await page.evaluate(()=>document.fonts.ready);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,'Page overflow '+route+' '+width);
