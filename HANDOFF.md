@@ -1,3 +1,8 @@
+## 2026-11-27 — Đã push chẩn đoán sản xuất, GitHub/Vercel đạt (KH-01/KH-03/KH-10/KH-12)
+
+- Code commit `7b70f46abdd9ad210ce0e0c9b41f2a431b9570ae` đã push lên `origin/chifaa-next-dev` theo yêu cầu owner. GitHub Actions run `45956449058` completed/success: npm ci, sinh types và kiểm tra drift, typecheck, lint, toàn bộ tests và production build đều đạt. Vercel deployment `CHi9fFZVQTK9v9tB839tRwXvxetG` success. Bằng chứng trạng thái đúng SHA lưu tại `output/checks/store-production-release-status.json` (ignored).
+- SQL099 đã sửa đúng dấu “tất cả điểm bán”; assertion PostgreSQL kiểm tra chuỗi này đạt. Nếu owner đã chạy bản099 trước sửa dấu, có thể chạy lại toàn bộ bản hiện tại; replay đã được kiểm thử không đổi chứng từ, tồn hay audit cũ. Chưa có xác nhận SQL cloud trong hội thoại; chưa UAT tồn/đơn/quyền trên phiên đăng nhập thật. Agent không áp SQL hoặc tạo chứng từ cloud.
+
 ## 2026-11-27 — Chuẩn bị commit/push chẩn đoán sản xuất theo yêu cầu owner (KH-01/KH-03/KH-10/KH-12)
 
 - Owner yêu cầu commit và push nhánh hiện tại. Sửa chuỗi tiếng Việt trong error detail bulk099 thành “tất cả điểm bán”, bổ sung assertion PostgreSQL chống lỗi dấu; 3/3 kiểm thử tập trung chạy lại đạt. Bằng chứng full246/246, browser390/1440px, typecheck/lint/build của checkpoint bên dưới vẫn giữ; lần sửa cuối chỉ đổi chuỗi SQL và assertion.

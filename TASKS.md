@@ -3,7 +3,8 @@
 - [x] Truy vết điều kiện duyệt thành phẩm và ghi sản xuất/nguyên liệu; nêu rõ món/vật tư, số cần/tồn/thiếu và lỗi công thức/quyền/dữ liệu.
 - [x] Chặn duyệt hàng loạt nếu tồn chung không đủ, giữ audit/idempotency/lịch sử; đơn đổi cần duyệt lại. Không dùng số đặt/lỗi0 làm sản lượng thực tế đã khai báo.
 - [x] Kiểm tra local246/246 tests, 3/3 ca tập trung, typecheck/lint/build và browser390/1440px.
-- [ ] Owner cài099 (cần095), phát hành frontend và UAT dữ liệu thật; chưa truy vấn/ghi Supabase cloud, chưa commit/push/deploy checkpoint này.
+- [x] Đã push code `7b70f46`; GitHub verify45956449058 và Vercel đều success.
+- [ ] Owner xác nhận099 (cần095) và UAT dữ liệu thật; agent chưa truy vấn/ghi Supabase cloud. Nếu đã chạy bản099 còn lỗi dấu, chạy lại bản hiện tại đã kiểm thử replay.
 
 ## Kế hoạch thủ công và sản xuất dùng đơn/công thức đúng nguồn — 2026-11-26 (KH-01/KH-03/KH-09/KH-10/KH-11/KH-12)
 
