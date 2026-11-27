@@ -1,3 +1,10 @@
+## 2026-11-27 — Hiển thị đặt trực tiếp cơm cuộn nguyên cây trong bảng tổng hợp (KH-01/KH-10/KH-12)
+
+- Bảng tổng hợp khách đặt hàng thêm hai dòng món đặt trực tiếp ngay sau `Cơm cuộn chiên`: `Cơm cuộn chiên nguyên cây` rồi `Cơm cuộn nguyên cây`. Dòng có đơn dùng đúng số lượng theo điểm bán và tổng SL từ RPC; khi chỉ có cơm cuộn phần, hai dòng vẫn hiện số 0/trống để kiểm tra không có đơn nguyên cây. Mì trộn Chifaa được giữ sau hai dòng này.
+- Hai dòng `#` vẫn là tổng chuẩn bị: số đặt nguyên cây cộng phần quy đổi, theo từng điểm bán và tổng. Cơm cuộn thường quy đổi `12/14`, cơm cuộn chiên quy đổi `16/10`; số quy đổi không được đưa vào hai dòng đặt trực tiếp. Không tạo đơn hàng/dòng đơn giả, không sửa snapshot hay dữ liệu PostgreSQL.
+- Màn hình, bản in A4 ngang và file Excel dùng cùng dữ liệu đã chuẩn bị nên có cùng thứ tự và số lượng. Đã kiểm tra focused `order-summary` 6/6, toàn bộ `npm test` 247/247, typecheck, lint, production build và browser fixture `/app/orders` ở desktop/mobile. PDF A4 ngang 1 trang; ảnh kiểm tra tại `output/design-parity/order-summary-print.png` (ignored).
+- Chưa commit/push ở checkpoint này; chưa áp SQL cloud và còn cần UAT với đơn thật sau khi phát hành frontend.
+
 ## 2026-11-27 — Đã push chẩn đoán sản xuất, GitHub/Vercel đạt (KH-01/KH-03/KH-10/KH-12)
 
 - Code commit `7b70f46abdd9ad210ce0e0c9b41f2a431b9570ae` đã push lên `origin/chifaa-next-dev` theo yêu cầu owner. GitHub Actions run `45956449058` completed/success: npm ci, sinh types và kiểm tra drift, typecheck, lint, toàn bộ tests và production build đều đạt. Vercel deployment `CHi9fFZVQTK9v9tB839tRwXvxetG` success. Bằng chứng trạng thái đúng SHA lưu tại `output/checks/store-production-release-status.json` (ignored).

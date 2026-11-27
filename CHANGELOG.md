@@ -1,3 +1,9 @@
+## 2026-11-27 — Bảng tổng hợp hiển thị đơn nguyên cây riêng (KH-01/KH-10/KH-12)
+
+- Thêm hai dòng số thứ tự đặt trực tiếp sau `Cơm cuộn chiên`: cơm cuộn chiên nguyên cây và cơm cuộn nguyên cây. Khi không có đơn trực tiếp, dòng vẫn hiện để đối chiếu nhưng để trống theo điểm bán và tổng là 0.
+- Giữ hai dòng `#` sau tổng số lượng cho tổng chuẩn bị nguyên cây: số khách đặt nguyên cây cộng cơm cuộn thường `12/14` và cơm cuộn chiên `16/10`. Số quy đổi không còn lẫn vào dòng đặt trực tiếp.
+- Đồng bộ thứ tự/số lượng cho màn hình, in A4 ngang và Excel; checked focused 6/6, full 247/247, typecheck, lint, build, browser desktop/mobile và PDF 1 trang.
+
 ## 2026-11-27 — Đã push chẩn đoán sản xuất, GitHub/Vercel đạt (KH-01/KH-03/KH-10/KH-12)
 
 - Code commit `7b70f46abdd9ad210ce0e0c9b41f2a431b9570ae` đã push lên `origin/chifaa-next-dev` theo yêu cầu owner. GitHub Actions run `45956449058` completed/success: npm ci, sinh types và kiểm tra drift, typecheck, lint, toàn bộ tests và production build đều đạt. Vercel deployment `CHi9fFZVQTK9v9tB839tRwXvxetG` success. Bằng chứng trạng thái đúng SHA lưu tại `output/checks/store-production-release-status.json` (ignored).

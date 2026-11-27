@@ -1,4 +1,4 @@
-import {sortProductsByMenuOrder,isWholeRollCode} from '../../lib/product-order';
+import {productMenu,sortProductsByMenuOrder,isWholeRollCode} from '../../lib/product-order';
 import Decimal from 'decimal.js';
 export type SummaryItem={product_id:string;code:string;name:string;quantity:string;unit:string;price_vnd:string;discount_rate:string;line_total_vnd:string};
 export type SummaryOrder={id:string;code:string;store_id:string|null;store_code:string|null;store_name:string|null;store_phone:string|null;customer_name:string|null;customer_phone:string|null;delivery_date:string;shift:string;status:string;note:string|null;total_quantity:string;discount_rate:string;discount_vnd:string;order_total_vnd:string;old_deduction_vnd:string|null;cancelled_loss_vnd:string;cash_received_vnd:string|null;bank_received_vnd:string|null;payment_method:string|null;outstanding_vnd:string|null;items:SummaryItem[]};
@@ -9,14 +9,23 @@ export type OrderMaterialDemandData={issues:{issue:string;issue_detail?:string;p
 export type OrderSummaryData={date:string;orders:SummaryOrder[];stores:SummaryStore[];products:SummaryProduct[];planned_quantity_total:string;sourceProducts?:SummaryProduct[];wholeRollTotals?:SummaryProduct[]};
 
 export function sortOrderSummaryProducts(products:readonly SummaryProduct[]){
- return sortProductsByMenuOrder(products);
+ const codes=productMenu.map(([code])=>code).filter(code=>!isWholeRollCode(code));
+ codes.splice(codes.indexOf('CCC')+1,0,'CCC-NC','CC-NC');
+ const ranks=new Map(codes.map((code,index)=>[code,index]));
+ return [...products].sort((a,b)=>(ranks.get(a.code.trim().toUpperCase())??codes.length)-(ranks.get(b.code.trim().toUpperCase())??codes.length));
 }
 
 export function prepareOrderSummary(data:OrderSummaryData):OrderSummaryData{
  const sourceProducts=data.sourceProducts??data.products;
+ const hasRolls=sourceProducts.some(product=>['CC','CCC','CC-NC','CCC-NC'].includes(product.code));
+ // Empty display rows make direct whole-roll orders visible without creating order items.
+ const directWholeRows=hasRolls?[
+  {code:'CCC-NC',name:'Cơm cuộn chiên nguyên cây'},
+  {code:'CC-NC',name:'Cơm cuộn nguyên cây'}
+ ].filter(row=>!sourceProducts.some(product=>product.code===row.code)).map(row=>({...row,product_id:`unordered:${row.code}`,unit:'cây',total_quantity:'0',by_store:{}})):[];
  return {...data,sourceProducts,
-  products:sortOrderSummaryProducts(sourceProducts.filter(product=>!isWholeRollCode(product.code))),
-  wholeRollTotals:sourceProducts.some(product=>['CC','CCC','CC-NC','CCC-NC'].includes(product.code))?wholeRollOrderSummaryProducts(sourceProducts):[],
+  products:sortOrderSummaryProducts([...sourceProducts,...directWholeRows]),
+  wholeRollTotals:hasRolls?wholeRollOrderSummaryProducts(sourceProducts):[],
   orders:data.orders.map(order=>({...order,items:sortProductsByMenuOrder(order.items)}))};
 }
 

@@ -56,7 +56,7 @@ test('customer summary and workbook follow the requested menu order while preser
  const expected=['CN-XXPM','CN-XXMY','CN-TERI','CN-GPM','CN-BV','CN-CNM','CC','CCC','CN-MY','CC-NC','CCC-NC'];
  const codes=['NEW-Z',...[...expected].reverse(),'NEW-A'];
  const products=codes.map((code,index)=>({product_id:'product-'+index,code,name:'Tên đã sửa '+code,unit:'phần',total_quantity:String((index+1)/2),by_store:{'store-1':String((index+1)/2),'store-2':'0'}}));
- const before=structuredClone(products),ordered=sortOrderSummaryProducts(products),orderedCodes=[...expected.slice(0,9),'NEW-Z','NEW-A',...expected.slice(9)];
+ const before=structuredClone(products),ordered=sortOrderSummaryProducts(products),orderedCodes=[...expected.slice(0,8),'CCC-NC','CC-NC','CN-MY','NEW-Z','NEW-A'];
  assert.deepEqual(ordered.map(product=>product.code),orderedCodes);
  assert.deepEqual(products,before,'sorting must not mutate query data or change decimal quantities');
  for(const product of ordered)assert.equal(product,products.find(original=>original.product_id===product.product_id));
@@ -66,13 +66,13 @@ test('customer summary and workbook follow the requested menu order while preser
  try{
   const blob=await createOrderSummaryWorkbook(data,{issues:[],materials:[]}),workbook=new ExcelJS.Workbook();await workbook.xlsx.load(await blob.arrayBuffer());
   const matrix=workbook.getWorksheet('Bảng tổng hợp')!;
-  const mainCodes=orderedCodes.filter(code=>!['CC-NC','CCC-NC'].includes(code));
+  const mainCodes=orderedCodes;
   for(const [index,code] of mainCodes.entries()){
    const original=products.find(product=>product.code===code)!,row=matrix.getRow(index+4);
    assert.equal(row.getCell(1).value,index+1);assert.equal(row.getCell(2).value,original.name);
    assert.equal(row.getCell(3).value,Number(original.by_store['store-1']));assert.equal(row.getCell(4).value,'');assert.equal(row.getCell(5).value,Number(original.total_quantity));
   }
-  const mainTotal=products.filter(product=>!['CC-NC','CCC-NC'].includes(product.code)).reduce((sum,product)=>sum+Number(product.total_quantity),0);
+  const mainTotal=products.reduce((sum,product)=>sum+Number(product.total_quantity),0);
   const total=matrix.getRow(mainCodes.length+4);assert.equal(total.getCell(1).value,'TỔNG SỐ LƯỢNG');assert.equal(total.getCell(3).value,mainTotal);assert.equal(total.getCell(4).value,0);assert.equal(total.getCell(5).value,mainTotal);
   assert.equal(matrix.getCell(mainCodes.length+5,2).value,'Cơm cuộn TT (nguyên cây)');assert.equal(matrix.getCell(mainCodes.length+6,2).value,'Cơm cuộn chiên (nguyên cây)');
   assert.deepEqual(data.products,before);
@@ -94,10 +94,36 @@ test('customer matrix keeps portion products and adds separate whole-tree totals
  const originalFetch=globalThis.fetch;globalThis.fetch=async()=>new Response(null,{status:404});
  try{
   const summary:OrderSummaryData={date:'2026-11-27',orders:[],stores:[{id:'a',code:'A',name:'Điểm A',phone:null},{id:'b',code:'B',name:'Điểm B',phone:null}],products,wholeRollTotals:rows,planned_quantity_total:'24'};
-  const prepared=prepareOrderSummary(summary);assert.deepEqual(prepared.products.map(product=>product.code),['CC','CCC']);assert.deepEqual(prepareOrderSummary(prepared),prepared,'preparing an already prepared summary must not convert again');
+  const prepared=prepareOrderSummary(summary);assert.deepEqual(prepared.products.map(product=>product.code),['CC','CCC','CCC-NC','CC-NC']);assert.deepEqual(prepareOrderSummary(prepared),prepared,'preparing an already prepared summary must not convert again');
   const blob=await createOrderSummaryWorkbook(summary,{issues:[],materials:[]}),workbook=new ExcelJS.Workbook();await workbook.xlsx.load(await blob.arrayBuffer());
   const matrix=workbook.getWorksheet('Bảng tổng hợp')!;
   assert.equal(matrix.getCell('B4').value,'Cơm cuộn');assert.equal(matrix.getCell('B5').value,'Cơm cuộn chiên');
-  assert.equal(matrix.getCell('A6').value,'TỔNG SỐ LƯỢNG');assert.equal(matrix.getCell('E6').value,22);assert.equal(matrix.getCell('B7').value,rows[0].name);assert.equal(matrix.getCell('E7').value,Number(rows[0].total_quantity));assert.equal(matrix.getCell('B8').value,rows[1].name);assert.equal(matrix.getCell('E8').value,17);
+  assert.equal(matrix.getCell('B6').value,'Cơm cuộn chiên nguyên cây');assert.equal(matrix.getCell('C6').value,1);assert.equal(matrix.getCell('D6').value,'');assert.equal(matrix.getCell('E6').value,1);
+  assert.equal(matrix.getCell('B7').value,'Cơm cuộn nguyên cây');assert.equal(matrix.getCell('C7').value,'');assert.equal(matrix.getCell('D7').value,2);assert.equal(matrix.getCell('E7').value,2);
+  assert.equal(matrix.getCell('A8').value,'TỔNG SỐ LƯỢNG');assert.equal(matrix.getCell('C8').value,13);assert.equal(matrix.getCell('D8').value,12);assert.equal(matrix.getCell('E8').value,25);
+  assert.equal(matrix.getCell('A9').value,'#');assert.equal(matrix.getCell('B9').value,rows[0].name);assert.equal(matrix.getCell('E9').value,Number(rows[0].total_quantity));assert.equal(matrix.getCell('A10').value,'#');assert.equal(matrix.getCell('B10').value,rows[1].name);assert.equal(matrix.getCell('E10').value,17);
  }finally{globalThis.fetch=originalFetch;}
+});
+
+test('summary shows two direct whole-roll rows after dish eight even when no one ordered them, without copying conversions',async()=>{
+ const codes=['CN-XXPM','CN-XXMY','CN-TERI','CN-GPM','CN-BV','CN-CNM','CC','CCC','CN-MY'];
+ const products=codes.map(code=>({product_id:code,code,name:code,unit:'phần',total_quantity:'2',by_store:{a:'2'}}));
+ const data:OrderSummaryData={date:'2026-11-27',orders:[],stores:[{id:'a',code:'A',name:'Điểm A',phone:null}],products,planned_quantity_total:'18'};
+ const before=structuredClone(data),prepared=prepareOrderSummary(data);
+ assert.deepEqual(prepared.products.map(p=>p.code),[...codes.slice(0,8),'CCC-NC','CC-NC','CN-MY']);
+ for(const code of ['CCC-NC','CC-NC']){
+  const direct=prepared.products.find(p=>p.code===code)!;assert.equal(direct.total_quantity,'0');assert.deepEqual(direct.by_store,{});
+  assert.notEqual(prepared.wholeRollTotals!.find(p=>p.code===code)!.total_quantity,'0','converted total stays only in # rows');
+ }
+ assert.deepEqual(prepareOrderSummary(prepared),prepared,'display rows never become order sources on repeated preparation');
+ assert.deepEqual(data,before,'no fabricated source products or order items');
+ const originalFetch=globalThis.fetch;globalThis.fetch=async()=>new Response(null,{status:404});
+ try{
+  const workbook=new ExcelJS.Workbook();await workbook.xlsx.load(await (await createOrderSummaryWorkbook(prepared,{issues:[],materials:[]})).arrayBuffer());
+  const sheet=workbook.getWorksheet('Bảng tổng hợp')!;
+  assert.equal(sheet.getCell('A12').value,9);assert.equal(sheet.getCell('B12').value,'Cơm cuộn chiên nguyên cây');assert.equal(sheet.getCell('C12').value,'');assert.equal(sheet.getCell('D12').value,0);
+  assert.equal(sheet.getCell('A13').value,10);assert.equal(sheet.getCell('B13').value,'Cơm cuộn nguyên cây');assert.equal(sheet.getCell('C13').value,'');
+  assert.equal(sheet.getCell('A15').value,'TỔNG SỐ LƯỢNG');assert.equal(sheet.getCell('D15').value,18);assert.equal(sheet.getCell('A16').value,'#');assert.equal(sheet.getCell('A17').value,'#');
+ }finally{globalThis.fetch=originalFetch;}
+ assert.deepEqual(prepareOrderSummary({...data,products:[]}).products,[],'empty day stays empty');
 });

@@ -1,3 +1,10 @@
+## Bảng tổng hợp khách đặt — đơn nguyên cây riêng — 2026-11-27 (KH-01/KH-10/KH-12)
+
+- [x] Hiển thị `Cơm cuộn chiên nguyên cây`, rồi `Cơm cuộn nguyên cây` sau món số 8; lấy số đặt trực tiếp theo điểm bán, không tạo dữ liệu đơn hàng giả.
+- [x] Giữ hai dòng `#` riêng cho tổng nguyên cây gồm số đặt trực tiếp và phần quy đổi 12/14, 16/10; đồng bộ màn hình, Excel và bản in.
+- [x] Focused 6/6, full 247/247, typecheck/lint/build và browser fixture desktop/mobile, PDF A4 ngang 1 trang đạt.
+- [ ] UAT với đơn thật sau khi phát hành frontend; chưa áp SQL cloud vì thay đổi này không cần migration.
+
 ## Duyệt sản xuất theo điểm bán — 2026-11-27 (KH-01/KH-03/KH-10/KH-12)
 
 - [x] Truy vết điều kiện duyệt thành phẩm và ghi sản xuất/nguyên liệu; nêu rõ món/vật tư, số cần/tồn/thiếu và lỗi công thức/quyền/dữ liệu.
