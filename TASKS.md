@@ -1,3 +1,10 @@
+## Giao diện Chi tiết trang 04 Sản xuất theo điểm bán — 2026-11-27 (KH-01/KH-03/KH-10/KH-12)
+
+- [x] Bỏ khoảng trống do chiều cao tối thiểu chung khi mở `Chi tiết`; phần chi tiết mở ngay dưới điểm bán.
+- [x] Trên điện thoại, đổi bảng điểm bán thành thẻ dễ đọc; bảng nhập giữ đủ cột chính/thêm/lỗi và có gợi ý vuốt ngang.
+- [x] Browser fixture 390/1440px, typecheck, lint, 247/247 kiểm thử và production build đạt.
+- [ ] UAT trên tài khoản và đơn thật sau khi phát hành frontend; không cần migration hoặc SQL cloud cho sửa giao diện này.
+
 ## Sửa số lượng đơn đã duyệt — 2026-11-27 (KH-01/KH-03/KH-10/KH-12)
 
 - [x] Mở nút `Lưu thay đổi` khi số lượng và lý do hợp lệ trên đơn approved/scheduled; trạng thái tải danh mục chỉ khóa thao tác thêm món của đơn submitted.

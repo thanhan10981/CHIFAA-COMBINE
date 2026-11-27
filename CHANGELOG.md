@@ -1,3 +1,9 @@
+## 2026-11-27 — Sửa giao diện chi tiết sản xuất theo điểm bán (KH-01/KH-03/KH-10/KH-12)
+
+- Bỏ khoảng trống của vùng bảng khi mở `Chi tiết` trên trang `04 · Sản xuất – Lỗi – Hủy`.
+- Bảng điểm bán trên điện thoại nay hiển thị dạng thẻ; bảng nhập sản xuất có gợi ý vuốt ngang để vẫn nhập đủ sản xuất chính, thêm và lỗi.
+- Xác minh: browser fixture 390/1440px, typecheck, lint, 247/247 kiểm thử và production build đạt. Không thay đổi schema, SQL, chứng từ hay dữ liệu cloud.
+
 ## 2026-11-27 — Sửa nút lưu số lượng đơn đã duyệt (KH-01/KH-03/KH-10/KH-12)
 
 - Nút `Lưu thay đổi` trong hộp thoại sửa/xóa món của đơn đã duyệt hoặc lên kế hoạch không còn bị khóa bởi truy vấn danh mục chỉ dành cho đơn chờ duyệt.

@@ -28,11 +28,15 @@ export async function checkStoreProduction(page,base,out,report){
   await page.setViewportSize({width,height:1000});await load();
   await page.getByRole('heading',{name:'Chưa đủ thành phẩm cho tất cả điểm bán',exact:true}).waitFor();
   await page.getByText('Thiếu 5 Hộp',{exact:true}).first().waitFor();
+  const layout=await page.locator('.store-production').evaluate(root=>{const summary=root.querySelector('.store-production-summary-table-wrap'),detail=root.querySelector('.store-production-detail'),detailTable=root.querySelector('.store-production-detail-table-wrap'),hint=root.querySelector('.store-production-scroll-hint');if(!summary||!detail||!detailTable||!hint)throw Error('Missing store production detail layout hooks');const table=summary.querySelector('table');return {summaryMinHeight:getComputedStyle(summary).minHeight,detailMinHeight:getComputedStyle(detailTable).minHeight,summaryExtra:table?summary.getBoundingClientRect().height-table.getBoundingClientRect().height:Infinity,detailGap:detail.getBoundingClientRect().top-summary.getBoundingClientRect().bottom,summaryScrolls:summary.scrollWidth>summary.clientWidth+1,detailScrolls:detailTable.scrollWidth>detailTable.clientWidth+1,hintVisible:getComputedStyle(hint).display!=='none'};});
+  if(layout.summaryMinHeight!=='0px'||layout.detailMinHeight!=='0px'||layout.summaryExtra>2||layout.detailGap>20)throw Error('Store production detail retains a blank table area at '+width+'px: '+JSON.stringify(layout));
+  if(width===390&&(layout.summaryScrolls||!layout.detailScrolls||!layout.hintVisible))throw Error('Mobile production summary/detail layout is not usable: '+JSON.stringify(layout));
   if(await page.getByLabel('main Cơm cuộn thử nghiệm SYN-S').inputValue()!=='')throw Error('Actual production silently copied from orders');
   if(await page.getByLabel('defect Cơm cuộn thử nghiệm SYN-S').inputValue()!=='')throw Error('Unknown defects silently became zero');
   if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1))throw Error('Store production overflows viewport '+width);
   await page.screenshot({path:path.join(out,'store-production-'+width+'.png'),fullPage:true});report.pages.push({slug:'store-production',width,overflow:false});
  }
+ report.checks.push('Store detail opens without the reserved blank table area; the mobile store summary remains readable and the production table has a horizontal-scroll cue');
  const close=async()=>{while(await page.getByRole('button',{name:'Đóng thông báo',exact:true}).count())await page.getByRole('button',{name:'Đóng thông báo',exact:true}).first().click();};
  await page.getByRole('button',{name:'Duyệt điểm bán đã chuẩn bị đủ',exact:true}).click();await page.getByRole('alert').filter({hasText:'thiếu 5 Hộp'}).waitFor();report.checks.push('individual shortage details');await close();
  await page.getByRole('button',{name:'Duyệt tất cả điểm bán đủ tồn',exact:true}).click();await page.getByRole('alert').filter({hasText:'thiếu 5 Hộp'}).waitFor();await close();

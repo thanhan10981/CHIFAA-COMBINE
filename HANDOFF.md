@@ -1,3 +1,9 @@
+## 2026-11-27 — Sửa giao diện Chi tiết trang 04 Sản xuất theo điểm bán (KH-01/KH-03/KH-10/KH-12)
+
+- Nguyên nhân: quy tắc dùng chung `.table-wrap` giữ `min-height: 250px`. Khi bấm `Chi tiết`, bảng điểm bán và bảng nhập sản xuất đều để khoảng trống lớn trước phần tiếp theo. Trên màn hình nhỏ, nút ở cột cuối còn kéo bảng điểm bán cuộn sang phải, làm khó đọc thông tin điểm bán.
+- Sửa riêng trang `04 · Sản xuất – Lỗi – Hủy`: hai vùng bảng không còn chiều cao dự phòng; chi tiết mở ngay sau điểm bán. Ở màn hình nhỏ, bảng điểm bán hiển thị thành thẻ gồm điểm bán, số món, giá trị, trạng thái và nút thao tác; bảng nhập vẫn cuộn ngang để giữ đủ cột chính/thêm/lỗi, kèm hướng dẫn vuốt ngang.
+- Bằng chứng: browser fixture `/app/store-production-check` đạt ở 390px và 1440px, không tràn ngang trang, kiểm tra chi tiết mở sát bảng và gợi ý cuộn ngang cho bảng nhập. `npm run verify` đạt: sinh types, typecheck, lint, 247/247 kiểm thử PostgreSQL/PGlite và production build. Ảnh/báo cáo local ở `output/store-production-design/` (ignored). Chưa UAT tài khoản và dữ liệu cloud; không áp SQL hoặc tạo/sửa chứng từ.
+
 ## 2026-11-27 — Mở nút lưu khi sửa số lượng đơn đã duyệt (KH-01/KH-03/KH-10/KH-12)
 
 - Nguyên nhân: truy vấn danh mục món chỉ được bật cho đơn `submitted`, nhưng cờ `productOptions.isPending` vẫn được dùng để khóa nút `Lưu thay đổi` ở cả hộp thoại sửa/xóa của đơn `approved` và `scheduled`. React Query giữ trạng thái pending cho truy vấn bị tắt, nên nút không sáng dù số lượng và lý do đều hợp lệ.
