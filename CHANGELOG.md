@@ -965,7 +965,7 @@ Sửa lỗi SQLSTATE 42702 do bí danh truy vấn topping trùng biến trong `r
 - Đơn giản hóa trang 04 thành bảng chuẩn bị sản xuất theo điểm bán và ngày giao (mặc định ngày mai); nhập chính/thêm/lỗi tạo phiếu qua RPC sản xuất hiện có.
 - Thêm xác nhận sẵn sàng theo điểm bán/toàn bộ, có audit và kiểm tra tồn thành phẩm; trang giao hàng tiếp tục chốt doanh thu và giảm tồn qua luồng hiện có.
 - `/app/production` chuyển hướng sang trang 04; ẩn mục menu cũ. Migration 095 chỉ tạo local, chưa áp Supabase.
-## 2026-11-27 — Quy đổi cơm cuộn sang nguyên cây trong ma trận khách đặt
+## 2026-11-27 — Giữ món cuộn dạng phần và thêm dòng tổng nguyên cây trong ma trận khách đặt
 
-- Ma trận và Excel gộp `CC` theo 12/14 và `CCC` theo 16/10 vào mã món nguyên cây tương ứng; số nguyên cây đặt trực tiếp được giữ nguyên. Chỉ thay cách trình bày số lượng tổng hợp, không sửa chi tiết đơn hoặc sản xuất.
-- Kiểm tra: typecheck đạt; test `order-summary.test.ts` đạt 5/5. Chi tiết và trạng thái kiểm tra ghi tại `HANDOFF.md`.
+- Đính chính commit `886961d`: giữ nguyên hàng `CC`/`CCC` và tổng số lượng ban đầu; thêm hai hàng riêng sau tổng. Hai hàng tính `CC × 12/14 + CC-NC` và `CCC × 16/10 + CCC-NC` theo từng điểm bán. Không cộng hàng phụ vào tổng số món.
+- Chi tiết và trạng thái kiểm tra ghi tại `HANDOFF.md`.

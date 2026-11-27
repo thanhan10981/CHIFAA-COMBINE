@@ -76,16 +76,24 @@ test('customer summary and workbook follow the requested menu order while preser
  }finally{globalThis.fetch=originalFetch;}
 });
 
-test('customer matrix converts sliced roll portions into whole-tree equivalents and preserves whole-tree orders',()=>{
+test('customer matrix keeps portion products and adds separate whole-tree totals after the grand total',async()=>{
  const products=[
-  {product_id:'cc',code:'CC',name:'CÆ¡m cuá»™n',unit:'pháº§n',total_quantity:'12',by_store:{a:'12',b:'0'}},
-  {product_id:'ccnc',code:'CC-NC',name:'CÆ¡m cuá»™n nguyÃªn cÃ¢y',unit:'cÃ¢y',total_quantity:'2',by_store:{a:'0',b:'2'}},
-  {product_id:'ccc',code:'CCC',name:'CÆ¡m cuá»™n chiÃªn',unit:'pháº§n',total_quantity:'10',by_store:{a:'0',b:'10'}},
-  {product_id:'cccnc',code:'CCC-NC',name:'CÆ¡m cuá»™n chiÃªn nguyÃªn cÃ¢y',unit:'cÃ¢y',total_quantity:'1',by_store:{a:'1',b:'0'}},
+  {product_id:'cc',code:'CC',name:'Cơm cuộn',unit:'phần',total_quantity:'12',by_store:{a:'12',b:'0'}},
+  {product_id:'ccnc',code:'CC-NC',name:'Cơm cuộn nguyên cây',unit:'cây',total_quantity:'2',by_store:{a:'0',b:'2'}},
+  {product_id:'ccc',code:'CCC',name:'Cơm cuộn chiên',unit:'phần',total_quantity:'10',by_store:{a:'0',b:'10'}},
+  {product_id:'cccnc',code:'CCC-NC',name:'Cơm cuộn chiên nguyên cây',unit:'cây',total_quantity:'1',by_store:{a:'1',b:'0'}},
  ];
- const output=wholeRollOrderSummaryProducts(products),plain=Object.fromEntries(output.map(row=>[row.code,row]));
- assert.equal(plain['CC-NC'].unit,'cÃ¢y');assert.equal(plain['CC-NC'].total_quantity,'12.285714285714285714');
- assert.equal(plain['CC-NC'].by_store.a,'10.285714285714285714');assert.equal(plain['CC-NC'].by_store.b,'2');
- assert.equal(plain['CCC-NC'].total_quantity,'17');assert.equal(plain['CCC-NC'].by_store.a,'1');assert.equal(plain['CCC-NC'].by_store.b,'16');
- assert.equal(products[0].total_quantity,'12','source quantities stay unchanged');
+ const rows=wholeRollOrderSummaryProducts(products);
+ assert.equal(products.find(product=>product.code==='CC')?.total_quantity,'12');assert.equal(products.find(product=>product.code==='CCC')?.total_quantity,'10');
+ assert.equal(rows[0].name,'Cơm cuộn TT (nguyên cây)');assert.equal(rows[0].unit,'cây');assert.equal(rows[0].total_quantity,'12.285714285714285714');
+ assert.equal(rows[0].by_store.a,'10.285714285714285714');assert.equal(rows[0].by_store.b,'2');
+ assert.equal(rows[1].name,'Cơm cuộn chiên (nguyên cây)');assert.equal(rows[1].total_quantity,'17');assert.equal(rows[1].by_store.a,'1');assert.equal(rows[1].by_store.b,'16');
+ const originalFetch=globalThis.fetch;globalThis.fetch=async()=>new Response(null,{status:404});
+ try{
+  const summary:OrderSummaryData={date:'2026-11-27',orders:[],stores:[{id:'a',code:'A',name:'Điểm A',phone:null},{id:'b',code:'B',name:'Điểm B',phone:null}],products,wholeRollTotals:rows,planned_quantity_total:'24'};
+  const blob=await createOrderSummaryWorkbook(summary,{issues:[],materials:[]}),workbook=new ExcelJS.Workbook();await workbook.xlsx.load(await blob.arrayBuffer());
+  const matrix=workbook.getWorksheet('Bảng tổng hợp')!;
+  assert.equal(matrix.getCell('B4').value,'Cơm cuộn');assert.equal(matrix.getCell('B5').value,'Cơm cuộn chiên');assert.equal(matrix.getCell('B6').value,'Cơm cuộn nguyên cây');assert.equal(matrix.getCell('B7').value,'Cơm cuộn chiên nguyên cây');
+  assert.equal(matrix.getCell('A8').value,'TỔNG SỐ LƯỢNG');assert.equal(matrix.getCell('B9').value,rows[0].name);assert.equal(matrix.getCell('E9').value,Number(rows[0].total_quantity));assert.equal(matrix.getCell('B10').value,rows[1].name);assert.equal(matrix.getCell('E10').value,17);
+ }finally{globalThis.fetch=originalFetch;}
 });

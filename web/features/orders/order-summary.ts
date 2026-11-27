@@ -6,27 +6,26 @@ export type SummaryStore={id:string;code:string;name:string;phone:string|null};
 export type SummaryProduct={product_id:string;code:string;name:string;unit:string;total_quantity:string;by_store:Record<string,string>};
 export type SummaryMaterial={code:string;name:string;unit_code:string;quantity:string;stock_quantity:string|null;minimum_quantity:string|null;shortage_quantity:string|null;status:'unknown'|'insufficient'|'low'|'ok'};
 export type OrderMaterialDemandData={issues:{issue:string;issue_detail?:string;product_id?:string;product_code?:string;product_name?:string;topping_name?:string}[];materials:SummaryMaterial[]};
-export type OrderSummaryData={date:string;orders:SummaryOrder[];stores:SummaryStore[];products:SummaryProduct[];planned_quantity_total:string;sourceProducts?:SummaryProduct[]};
+export type OrderSummaryData={date:string;orders:SummaryOrder[];stores:SummaryStore[];products:SummaryProduct[];planned_quantity_total:string;sourceProducts?:SummaryProduct[];wholeRollTotals?:SummaryProduct[]};
 
 export function sortOrderSummaryProducts(products:readonly SummaryProduct[]){
  return sortProductsByMenuOrder(products);
 }
 
-/** Re-express sliced roll portions as whole-tree equivalents for the customer order matrix only. */
+/** Add separate whole-tree totals while preserving the original portion rows. */
 export function wholeRollOrderSummaryProducts(products:readonly SummaryProduct[]){
- const result=new Map<string,SummaryProduct>();
- for(const product of products){
-  const target=product.code==='CC'?'CC-NC':product.code==='CCC'?'CCC-NC':null;
-  const ratio=product.code==='CC'?new Decimal(12).div(14):product.code==='CCC'?new Decimal(16).div(10):null;
-  const targetProduct=target?products.find(item=>item.code===target):undefined;
-  const output=target?(targetProduct??{...product,product_id:`whole-equivalent:${target}`,code:target,name:target==='CC-NC'?'Cơm cuộn nguyên cây':'Cơm cuộn chiên nguyên cây',unit:'cây',total_quantity:'0',by_store:{}}):product;
-  const current=result.get(output.code)??{...output,total_quantity:'0',by_store:{}};
-  const factor=ratio??new Decimal(1);
-  current.total_quantity=new Decimal(current.total_quantity).plus(new Decimal(product.total_quantity).mul(factor)).toString();
-  for(const [storeId,quantity] of Object.entries(product.by_store))current.by_store[storeId]=new Decimal(current.by_store[storeId]??'0').plus(new Decimal(quantity).mul(factor)).toString();
-  result.set(current.code,current);
- }
- return sortOrderSummaryProducts([...result.values()]);
+ const rollSpecs=[
+  {portionCode:'CC',wholeCode:'CC-NC',label:'Cơm cuộn TT (nguyên cây)',numerator:12,denominator:14},
+  {portionCode:'CCC',wholeCode:'CCC-NC',label:'Cơm cuộn chiên (nguyên cây)',numerator:16,denominator:10},
+ ];
+ return rollSpecs.map(({portionCode,wholeCode,label,numerator,denominator})=>{
+  const portion=products.find(item=>item.code===portionCode),whole=products.find(item=>item.code===wholeCode);
+  const storeIds=new Set([...Object.keys(portion?.by_store??{}),...Object.keys(whole?.by_store??{})]);
+  const factor=new Decimal(numerator).div(denominator);
+  const by_store=Object.fromEntries([...storeIds].map(storeId=>[storeId,new Decimal(whole?.by_store[storeId]??'0').plus(new Decimal(portion?.by_store[storeId]??'0').mul(factor)).toString()]));
+  const total_quantity=new Decimal(whole?.total_quantity??'0').plus(new Decimal(portion?.total_quantity??'0').mul(factor)).toString();
+  return {product_id:`whole-total:${wholeCode}`,code:wholeCode,name:label,unit:'cây',total_quantity,by_store};
+ });
 }
 
 export function orderDemandIssueText(issue:OrderMaterialDemandData['issues'][number],products:OrderSummaryData['products']){
@@ -81,7 +80,13 @@ export async function createOrderSummaryWorkbook(data:OrderSummaryData,demand:Or
  for(const [index,store] of data.stores.entries()){const storeTotal=data.products.reduce((sum,product)=>sum+Number(product.by_store[store.id]??0),0);const cell=matrix.getCell(totalRow,index+3);cell.value=storeTotal;cell.numFmt='#,##0.###';cell.font={bold:true};}
  matrix.getCell(totalRow,totalColumn).value=totalQuantity;matrix.getCell(totalRow,totalColumn).numFmt='#,##0.###';matrix.getCell(totalRow,totalColumn).font={bold:true,color:{argb:'FFCF2733'}};
  for(let col=1;col<=totalColumn;col++){const cell=matrix.getCell(totalRow,col);cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF4F6F8'}};cell.border={top:{style:'thin',color:{argb:'FF394B59'}},bottom:{style:'thin',color:{argb:'FF394B59'}},left:{style:'thin',color:{argb:'FF394B59'}},right:{style:'thin',color:{argb:'FF394B59'}}};cell.alignment={vertical:'middle',horizontal:col<=2?'left':'center',wrapText:true};}matrix.getRow(totalRow).height=26;
- const materialStart=totalRow+2;matrix.mergeCells(materialStart,1,materialStart,totalColumn);matrix.getCell(materialStart,1).value='NHU CẦU NGUYÊN LIỆU TỪ ĐƠN ĐÃ DUYỆT';matrix.getCell(materialStart,1).font={bold:true,size:12,color:{argb:'FF173349'}};matrix.getCell(materialStart+1,1).value='Tổng định lượng của đơn đã duyệt, đã xếp kế hoạch hoặc đã giao theo đơn vị công thức. Tồn sổ quy về cùng đơn vị để đối chiếu; đây không phải số cần sản xuất thêm.';matrix.mergeCells(materialStart+1,1,materialStart+1,totalColumn);matrix.getCell(materialStart+1,1).font={italic:true,color:{argb:'FF66798A'}};
+ for(const [index,product] of (data.wholeRollTotals??[]).entries()){
+  const row=matrix.getRow(totalRow+1+index);row.getCell(1).value='#';row.getCell(2).value=product.name;
+  for(const [storeIndex,store] of data.stores.entries()){const quantity=excelNumber(product.by_store[store.id]);row.getCell(storeIndex+3).value=Number(quantity)===0?'':quantity;row.getCell(storeIndex+3).numFmt='#,##0.###';}
+  row.getCell(totalColumn).value=excelNumber(product.total_quantity);row.getCell(totalColumn).numFmt='#,##0.###';row.height=24;
+  row.eachCell((cell,column)=>{cell.alignment={vertical:'middle',horizontal:column===2?'left':'center',wrapText:true};cell.border={top:{style:'thin',color:{argb:'FF77828A'}},bottom:{style:'thin',color:{argb:'FF77828A'}},left:{style:'thin',color:{argb:'FF77828A'}},right:{style:'thin',color:{argb:'FF77828A'}}};});
+ }
+ const materialStart=totalRow+2+(data.wholeRollTotals?.length??0);matrix.mergeCells(materialStart,1,materialStart,totalColumn);matrix.getCell(materialStart,1).value='NHU CẦU NGUYÊN LIỆU TỪ ĐƠN ĐÃ DUYỆT';matrix.getCell(materialStart,1).font={bold:true,size:12,color:{argb:'FF173349'}};matrix.getCell(materialStart+1,1).value='Tổng định lượng của đơn đã duyệt, đã xếp kế hoạch hoặc đã giao theo đơn vị công thức. Tồn sổ quy về cùng đơn vị để đối chiếu; đây không phải số cần sản xuất thêm.';matrix.mergeCells(materialStart+1,1,materialStart+1,totalColumn);matrix.getCell(materialStart+1,1).font={italic:true,color:{argb:'FF66798A'}};
  const materialHeader=matrix.getRow(materialStart+3);materialHeader.values=['Mã vật tư','Vật tư','ĐVT','Cần','Tồn sổ','Thiếu','Cảnh báo'];styleHeader(materialHeader);
  if(demand.materials.length){for(const material of demand.materials){const row=matrix.addRow([material.code,material.name,material.unit_code,excelNumber(material.quantity),material.stock_quantity===null?'Chưa có tồn':excelNumber(material.stock_quantity),material.shortage_quantity===null?'—':excelNumber(material.shortage_quantity),materialStatus(material.status)]);row.eachCell((cell,column)=>{cell.alignment={vertical:'middle',wrapText:true};if(column>=4&&column<=6&&typeof cell.value==='number')cell.numFmt='#,##0.###';});}}
  else {const row=matrix.addRow(['Chưa có nhu cầu nguyên liệu đủ dữ liệu công thức cho đơn đã duyệt.']);matrix.mergeCells(row.number,1,row.number,7);row.getCell(1).alignment={horizontal:'center',vertical:'middle',wrapText:true};}

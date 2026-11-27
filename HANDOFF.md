@@ -1513,9 +1513,8 @@ Còn lại: chưa UAT dữ liệu thật hoặc triển khai frontend; không c�
 - Chưa áp migration lên Supabase hoặc triển khai. Sau khi chạy kiểm tra mục tiêu, tiếp tục xác nhận migration 096 cài được trên schema local và UAT link điểm bán có cả món tick lẫn bỏ tick.
 
 \n
-## 2026-11-27 — Quy đổi món cuộn trong bảng tổng hợp khách đặt (KH-01/KH-03/KH-10/KH-12)
+## 2026-11-27 — Bảng tổng hợp giữ món phần và thêm dòng tổng nguyên cây (KH-01/KH-03/KH-10/KH-12)
 
-- Bảng ma trận khách đặt và trang tính tổng hợp Excel nay gộp món `CC` vào `CC-NC` theo tỷ lệ 12/14 cây/phần; `CCC` vào `CCC-NC` theo tỷ lệ 16/10 cây/phần. Số nguyên cây đã đặt được cộng nguyên trạng, theo từng điểm bán và tổng.
-- Dùng số thập phân chính xác, không làm tròn mất phần cây ở bước tính. Ghi chú tỷ lệ được hiển thị ngay dưới tiêu đề ma trận. Chi tiết đơn, lượng đã duyệt, nhu cầu nguyên liệu, kế hoạch và số lượng sản xuất không đổi; dữ liệu nguồn vẫn giữ đơn vị theo đặt hàng.
-- Kiểm tra: `npm run typecheck`, ESLint ba file sửa đổi và `git diff --check` đạt; `npx tsx --test --test-isolation=none tests/order-summary.test.ts` đạt 5/5, gồm test tỷ lệ hai món, cộng với món nguyên cây sẵn có và giữ nguyên nguồn. Chạy trong sandbox gặp `spawn EPERM`; chạy lại ngoài sandbox để test worker được phép và hoàn tất.
-- Chưa áp SQL cloud, sửa dữ liệu đơn hay deploy. KH-01/KH-03/KH-12 vẫn cần xác nhận riêng về nhu cầu sản xuất/nguyên liệu dựa trên dữ liệu công thức đang publish; quy đổi của checkpoint này chỉ phục vụ bảng tổng hợp khách đặt.
+- Đính chính commit `886961d`: không gộp/ẩn `CC` và `CCC`. Ma trận và Excel giữ nguyên hàng số phần đã đặt, hàng tổng ban đầu; thêm riêng hai hàng sau tổng: `Cơm cuộn TT (nguyên cây)` tính `CC × 12/14 + CC-NC`, và `Cơm cuộn chiên (nguyên cây)` tính `CCC × 16/10 + CCC-NC`, theo từng điểm bán.
+- Tính phần quy đổi bằng Decimal; không cộng hai hàng bổ sung vào tổng số lượng món. Chi tiết đơn, lượng đã duyệt, nhu cầu nguyên liệu, kế hoạch và sản xuất không đổi.
+- Kiểm tra: `npm run typecheck`, ESLint ba file sửa đổi, `git diff --check` đạt; `npx tsx --test --test-isolation=none tests/order-summary.test.ts` đạt 5/5. Test kiểm tra món phần vẫn còn, các món nguyên cây trực tiếp không đổi, hai dòng nguyên cây được cộng theo từng điểm bán và xuất sau dòng tổng trong Excel. Chưa áp SQL cloud, sửa dữ liệu đơn hay deploy.
