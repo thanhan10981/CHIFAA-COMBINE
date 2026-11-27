@@ -1,3 +1,14 @@
+## 2026-11-27 — Chuẩn bị commit/push chẩn đoán sản xuất theo yêu cầu owner (KH-01/KH-03/KH-10/KH-12)
+
+- Owner yêu cầu commit và push nhánh hiện tại. Sửa chuỗi tiếng Việt trong error detail bulk099 thành “tất cả điểm bán”, bổ sung assertion PostgreSQL chống lỗi dấu; 3/3 kiểm thử tập trung chạy lại đạt. Bằng chứng full246/246, browser390/1440px, typecheck/lint/build của checkpoint bên dưới vẫn giữ; lần sửa cuối chỉ đổi chuỗi SQL và assertion.
+- Chưa có xác nhận kết quả SQL099 trên Supabase trong hội thoại. Git không tự áp migration; cần owner kiểm tra099 đã chạy thành công (nền095). Agent không tự chạy SQL cloud hoặc duyệt phiếu thật. Trạng thái push/CI sẽ được xác minh trên đúng commit và báo khi hoàn tất; còn UAT dữ liệu thật.
+
+## 2026-11-27 — Trang04 giải thích lỗi duyệt sản xuất (KH-01/KH-03/KH-10/KH-12)
+
+- Hiện món/thành phẩm cần, tồn, thiếu theo điểm bán và cả ngày; server trả chi tiết thiếu và chặn duyệt tất cả nếu tổng tồn không đủ. Trạng thái duyệt cũ hết hiệu lực hiển thị khi đơn đổi nhưng giữ lịch sử.
+- Phân biệt lỗi thiếu nguyên liệu, công thức/quy đổi, quyền, kỳ khóa, dữ liệu nhập và máy chủ. Nhập sản xuất thực tế/lỗi rõ ràng; giữ key khi retry cùng phiếu. Chi tiết trên điện thoại không còn nằm trong bảng cuộn ngang.
+- Kiểm tra local: 246/246 tests, 3/3 ca tập trung, typecheck/lint/build; browser fixture390/1440px. Migration099 chưa áp cloud; chưa commit/push/deploy, chưa xác minh tồn thật.
+
 ## 2026-11-27 — Chiết khấu gộp theo đơn của điểm bán (KH-05/KH-10/KH-12)
 
 - Quy tắc được cập nhật theo yêu cầu owner: tổng đơn không quá 50 phần dùng mức trong Danh mục điểm bán; trên 50 phần, điểm bán cấu hình 15% dùng 17% cho mọi món. Tổng chỉ tính các món trong cùng đơn, không tính topping.
