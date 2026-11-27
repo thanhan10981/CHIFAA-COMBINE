@@ -51,6 +51,7 @@ test('store readiness diagnoses exact stock, rejects shared shortages atomically
   assert.deepEqual(await snapshot(),before,'diagnostics never write');
   await db.exec(await readFile('../supabase/migrations/202611270099_store_production_diagnostics.sql','utf8'));
   assert.deepEqual(await snapshot(),before,'migration replay keeps existing documents, stock and audit');
+  await db.exec(await readFile('../supabase/migrations/202611270100_complete_store_production_for_delivery.sql','utf8'));
   await assert.rejects(()=>rpc('confirm_store_production_ready',[date,stores[0],'Synthetic readiness',randomUUID()]),(error:unknown)=>{
    const e=error as {message:string;detail:string};assert.match(e.message,/INSUFFICIENT_FINISHED_GOODS/);const detail=JSON.parse(e.detail);assert.equal(detail.store_name,'Synthetic store 0');assert.equal(detail.products[0].code,'READY-P');assert.equal(Number(detail.products[0].available_quantity),0);assert.equal(Number(detail.products[0].shortage_quantity),6);return true;
   });
@@ -58,8 +59,12 @@ test('store readiness diagnoses exact stock, rejects shared shortages atomically
   const post=(quantity:string)=>rpc('post_store_production_run',[warehouse,date,date+'T00:00:00+07:00',date+'T07:00:00+07:00',date,lines(quantity),'Synthetic production',stores[0],[orders[0]],randomUUID()]);
   await assert.rejects(()=>post('101'),(error:unknown)=>{const e=error as {message:string;detail:string};assert.match(e.message,/INSUFFICIENT_STOCK/);assert.equal(JSON.parse(e.detail).material_code,'READY-M');return true;});
   assert.equal((await db.query('select * from production_batches')).rows.length,0,'failed raw stock posting rolls back');
-  await post('10');
-  const key=randomUUID(),ready=()=>rpc('confirm_store_production_ready',[date,stores[0],'Synthetic readiness',key]);assert.deepEqual(await ready(),await ready(),'approval replay is idempotent');
+  const beforeCombinedFailure=await snapshot();
+  await assert.rejects(()=>rpc('complete_store_production_for_delivery',[warehouse,date,date,lines('4'),stores[0],[orders[0]],randomUUID()]),/INSUFFICIENT_FINISHED_GOODS/);
+  assert.deepEqual(await snapshot(),beforeCombinedFailure,'failed readiness rolls the production batch, stock issue and audit back');
+  const key=randomUUID(),complete=()=>rpc('complete_store_production_for_delivery',[warehouse,date,date,lines('10'),stores[0],[orders[0]],key]);
+  const completed=await complete();assert.equal(completed.status,'ready');assert.deepEqual(await complete(),completed,'combined completion replays without another batch');
+  assert.equal((await db.query("select * from production_batches where status='posted'")).rows.length,1,'production and readiness commit together');
   const afterSingle=await snapshot();
   await assert.rejects(()=>rpc('confirm_all_store_production_ready',[date,'Synthetic all readiness',randomUUID()]),(error:unknown)=>{const e=error as {message:string;detail:string};assert.match(e.message,/INSUFFICIENT_FINISHED_GOODS/);assert.equal(JSON.parse(e.detail).store_name,'tất cả điểm bán');assert.equal(Number(JSON.parse(e.detail).products[0].shortage_quantity),4);return true;});
   assert.deepEqual(await snapshot(),afterSingle,'bulk shortage has no partial writes');
