@@ -63,6 +63,11 @@ export async function checkOrders(page,base,out,report){
  await page.getByRole('button',{name:'Chi tiết đơn 90000000',exact:true}).click();
  await page.getByRole('button',{name:'Xác nhận đã giao đủ',exact:true}).waitFor();
  if(!(await page.getByRole('dialog').innerText()).includes('Tồn thành phẩm'))throw new Error('Order detail does not show available finished goods');
+ const editDialog=page.getByRole('dialog',{name:'Sửa số lượng món',exact:true});
+ await page.getByRole('button',{name:'Sửa Món kiểm thử',exact:true}).click();await editDialog.getByLabel('Số lượng',{exact:true}).fill('11');
+ if(await editDialog.getByRole('button',{name:'Lưu thay đổi',exact:true}).isDisabled())throw new Error('Approved-order quantity edits must enable Lưu thay đổi without waiting for the submitted-order catalog');
+ await editDialog.getByRole('button',{name:'Hủy',exact:true}).click();await editDialog.waitFor({state:'detached'});
+ report.checks.push('Approved-order quantity edit enables saving after a valid quantity and reason');
  const heading=await page.locator('.page-heading').innerText();if(!heading.includes('không trừ lần hai'))throw new Error('Order page does not explain ingredient stock timing: '+heading);
  await page.getByRole('button',{name:'Xác nhận đã giao đủ',exact:true}).click();
  await page.getByRole('button',{name:'Giao hàng và ghi nhận',exact:true}).waitFor();

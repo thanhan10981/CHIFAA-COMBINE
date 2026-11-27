@@ -1,3 +1,9 @@
+## Sửa số lượng đơn đã duyệt — 2026-11-27 (KH-01/KH-03/KH-10/KH-12)
+
+- [x] Mở nút `Lưu thay đổi` khi số lượng và lý do hợp lệ trên đơn approved/scheduled; trạng thái tải danh mục chỉ khóa thao tác thêm món của đơn submitted.
+- [x] Browser fixture, full 247/247 tests, typecheck, lint và production build đạt.
+- [ ] UAT trên đơn thật chưa sản xuất/chưa giao sau khi phát hành frontend; không cần migration hoặc SQL cloud.
+
 ## Sửa tỷ lệ cơm cuộn chiên — 2026-11-27 (KH-01/KH-10/KH-12)
 
 - [x] Dùng `Cơm cuộn chiên × 10 / 16 + Cơm cuộn chiên nguyên cây`; 16 phần quy đổi thành 10 cây.

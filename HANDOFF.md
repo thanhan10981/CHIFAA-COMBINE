@@ -1,3 +1,9 @@
+## 2026-11-27 — Mở nút lưu khi sửa số lượng đơn đã duyệt (KH-01/KH-03/KH-10/KH-12)
+
+- Nguyên nhân: truy vấn danh mục món chỉ được bật cho đơn `submitted`, nhưng cờ `productOptions.isPending` vẫn được dùng để khóa nút `Lưu thay đổi` ở cả hộp thoại sửa/xóa của đơn `approved` và `scheduled`. React Query giữ trạng thái pending cho truy vấn bị tắt, nên nút không sáng dù số lượng và lý do đều hợp lệ.
+- Chỉ dùng trạng thái đang tải danh mục để khóa luồng `Thêm món` của đơn chờ duyệt. Hộp thoại `Sửa số lượng món` và xóa món của đơn đã duyệt/lên kế hoạch nay chỉ khóa khi chính thao tác lưu đang gửi. Lưu vẫn dùng `revise_approved_order_item`, kiểm tra version/quyền/kế hoạch chưa sản xuất, cập nhật nhu cầu và giữ lịch sử/audit tại PostgreSQL.
+- Bằng chứng: browser fixture `/app/orders` nhập số lượng 11 cùng lý do hợp lệ trên đơn đã duyệt và xác nhận nút `Lưu thay đổi` được bật; typecheck, lint, production build và full `npm test` 247/247 đạt. Chưa áp SQL cloud; cần UAT tài khoản thật với đơn approved/scheduled chưa giao sau khi phát hành frontend.
+
 ## 2026-11-27 — Sửa tỷ lệ quy đổi cơm cuộn chiên theo xác nhận owner (KH-01/KH-10/KH-12)
 
 - Owner xác nhận công thức hiện hành: `Cơm cuộn chiên × 10 / 16`, sau đó cộng số khách đặt `Cơm cuộn chiên nguyên cây`. Ví dụ 16 phần quy đổi thành 10 cây. Công thức này thay thế mọi mô tả `16/10` của checkpoint cũ; cơm cuộn thường vẫn là `12/14`.

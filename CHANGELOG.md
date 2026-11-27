@@ -1,3 +1,8 @@
+## 2026-11-27 — Sửa nút lưu số lượng đơn đã duyệt (KH-01/KH-03/KH-10/KH-12)
+
+- Nút `Lưu thay đổi` trong hộp thoại sửa/xóa món của đơn đã duyệt hoặc lên kế hoạch không còn bị khóa bởi truy vấn danh mục chỉ dành cho đơn chờ duyệt.
+- Giữ nguyên RPC điều chỉnh có version, quyền, kế hoạch, cập nhật nhu cầu và audit. Browser fixture xác nhận nhập số lượng hợp lệ bật nút lưu; typecheck, lint, build và full 247/247 tests đạt.
+
 ## 2026-11-27 — Sửa quy đổi cơm cuộn chiên thành 10/16 (KH-01/KH-10/KH-12)
 
 - Dòng `# Cơm cuộn chiên (nguyên cây)` dùng `số phần × 10 / 16 + số cây khách đặt trực tiếp`; 16 phần bằng 10 cây. Quy tắc này thay thế tỷ lệ 16/10 ghi ở checkpoint cũ.
