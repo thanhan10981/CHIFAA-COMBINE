@@ -1,4 +1,5 @@
 'use client';
+import {loadMenuPages,sortProductsByMenuOrder} from '@/lib/product-order';
 import {useEffect,useRef,useState,useSyncExternalStore} from 'react';
 import Image from 'next/image';
 import {useMutation,useQuery} from '@tanstack/react-query';
@@ -37,7 +38,7 @@ function toppingIssue(line:Line,configured:ToppingCatalogRow|undefined){
 export function PublicShop(){
  const [date,setDate]=useState(localDate),[offset,setOffset]=useState(0),[basket,setBasket]=useState<Record<string,Line>>({}),[name,setName]=useState(''),[phone,setPhone]=useState(''),[address,setAddress]=useState(''),[note,setNote]=useState(''),[paymentMethod,setPaymentMethod]=useState<'cash'|'bank'>('cash'),[pending,setPending]=useState<Submission|null>(null),[confirmation,setConfirmation]=useState(''),linkToken=useSyncExternalStore(subscribeLinkToken,getLinkToken,getServerLinkToken),shift=useSyncExternalStore(subscribeOrderShift,getOrderShift,getServerOrderShift);
  const prefilledLink=useRef<string|null>(null);
- const catalog=useQuery({queryKey:['public-portal','catalog',date,offset,linkToken],staleTime:0,refetchInterval:30_000,queryFn:async({signal})=>{const {data,error}=linkToken?await browserSupabase().rpc('public_order_catalog_linked',{p_date:date,p_offset:offset,p_limit:100,p_link_token:linkToken}).abortSignal(signal):await browserSupabase().rpc('public_order_catalog',{p_date:date,p_offset:offset,p_limit:100}).abortSignal(signal);if(error)throw new Error(error.code==='PGRST202'?'Cổng đặt hàng đang được cập nhật. Vui lòng thử lại sau.':'Chưa tải được thực đơn. Vui lòng thử lại.');return data as {rows:Product[];total:string;store_contact?:StoreContact;quantity_discount_rule?:QuantityDiscountRule};}});
+ const catalog=useQuery({queryKey:['public-portal','catalog',date,offset,linkToken],staleTime:0,refetchInterval:30_000,queryFn:async({signal})=>{const all=await loadMenuPages(async pageOffset=>{const {data,error}=linkToken?await browserSupabase().rpc('public_order_catalog_linked',{p_date:date,p_offset:pageOffset,p_limit:100,p_link_token:linkToken}).abortSignal(signal):await browserSupabase().rpc('public_order_catalog',{p_date:date,p_offset:pageOffset,p_limit:100}).abortSignal(signal);if(error)throw new Error(error.code==='PGRST202'?'Cổng đặt hàng đang được cập nhật. Vui lòng thử lại sau.':'Chưa tải được thực đơn. Vui lòng thử lại.');return data as {rows:Product[];total:string;store_contact?:StoreContact;quantity_discount_rule?:QuantityDiscountRule};});return {...all,rows:all.rows.slice(offset,offset+100)};}});
  useEffect(()=>{
   if(!linkToken){prefilledLink.current=null;return;}
   const contact=catalog.data?.store_contact;
@@ -46,7 +47,7 @@ export function PublicShop(){
  },[catalog.data?.store_contact,linkToken]);
  const toppingCatalog=useQuery({queryKey:['public-portal','toppings',date],staleTime:0,refetchInterval:30_000,retry:false,queryFn:async({signal})=>{const {data,error}=await browserSupabase().rpc('public_order_topping_catalog_v2',{p_date:date}).abortSignal(signal);if(error)throw new Error(error.code==='PGRST202'?'Cổng đặt hàng đang được cập nhật lựa chọn topping. Vui lòng thử lại sau.':'Chưa tải được lựa chọn topping. Vui lòng thử lại trước khi gửi đơn.');const result=data as {schema_version?:number;rows?:ToppingCatalogRow[]}|null;if(result?.schema_version!==1||!Array.isArray(result.rows))throw new Error('Cổng đặt hàng đang được cập nhật lựa chọn topping. Vui lòng thử lại sau.');return result.rows;}});
  const toppingsByProduct=new Map((toppingCatalog.data??[]).map(row=>[row.product_id,row]));
- const lines=Object.values(basket).filter(line=>Number(line.quantity)>0);
+ const lines=sortProductsByMenuOrder(Object.values(basket).filter(line=>Number(line.quantity)>0),line=>line.product.code);
  const allocationIssues=lines.flatMap(line=>{const issue=toppingIssue(line,toppingsByProduct.get(line.product.product_id));return issue?[{line,message:issue}]:[];});
  const allocationsValid=allocationIssues.length===0;
  const orderQuantity=lines.reduce((sum,line)=>sum.plus(line.quantity),new Decimal(0));
@@ -88,7 +89,7 @@ export function PublicShop(){
   {toppingCatalog.isError&&<div className="public-order-error" role="alert"><p>{toppingCatalog.error.message}</p><button type="button" className="button" disabled={toppingCatalog.isFetching||locked} onClick={()=>void toppingCatalog.refetch()}>Tải lại topping</button></div>}
   {catalog.isPending?<LoadingState label="Đang tải thực đơn…"/>:catalog.isError?<div role="alert"><p>{catalog.error.message}</p><button className="button" onClick={()=>void catalog.refetch()}>Thử lại</button></div>:<>
    {catalog.data.quantity_discount_rule?.version===2&&<p className="public-delivery-note">Chiết khấu tính trên tổng số phần của điểm bán: áp dụng mức đã cài đặt; điểm bán có mức 15% sẽ lên 17% khi đơn trên 50 phần.</p>}
-   <div className="public-products">{catalog.data.rows.map(product=>{
+   <div className="public-products">{sortProductsByMenuOrder(catalog.data.rows).map(product=>{
     const imageUrl=product.image_path?browserSupabase().storage.from('product-images').getPublicUrl(product.image_path).data.publicUrl:null;
     const line=basket[product.product_id],configured=toppingsByProduct.get(product.product_id),options=configured?.options??[],assigned=(line?.toppings??[]).reduce((sum,t)=>sum+Number(t.quantity),0),productQuantity=Number(line?.quantity??0);
     const unavailable=!!configured?.unavailable||Number(configured?.unavailable_count??0)>0||!!(configured?.required&&!options.length),issue=productQuantity>0&&line?toppingIssue(line,configured):null,stale=(line?.toppings??[]).some(t=>!options.some(option=>option.version_id===t.version_id));

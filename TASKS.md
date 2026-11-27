@@ -474,3 +474,10 @@ Added authenticated owner-scoped requestStatus returning only journal state (no 
 - [x] Giao th?nh c?ng t?o ??ng m?t ch?ng t? b?n h?ng v? kho?n ph?i thu theo snapshot ??n/chi?t kh?u; kh?ng t? ghi phi?u thu.
 - [ ] Ch?t/tri?n khai ri?ng lu?ng h?ng h?y t?i ?i?m b?n, h? tr? kh?ng nh?n l?i, nh?n h?ng v?t l? v?o kiosk v?i gi? mua l?i v? ?nh h??ng kho?n ph?i thu; ch?t quy t?c b? tr? c?ng n? ??n c? (D04/D16). Hi?n c?c m?c n?y kh?ng t? b? ti?n, kh?ng nh?p kho.
 - [ ] ?p migration trong DEV ???c ph?p v? UAT b?ng t?i kho?n th?t; ch?a ch?y cloud ho?c deploy.
+## Đồng bộ thứ tự sản phẩm toàn ứng dụng — 2026-11-27 (KH-01/KH-03/KH-05/KH-10/KH-11/KH-12)
+
+- [x] Dùng menu chung theo ảnh cho danh mục/đặt hàng/chi tiết đơn/hóa đơn/bảng bán hàng/sản xuất/công thức món; giữ dữ liệu nguồn và món ngoài danh sách.
+- [x] Bảng tổng hợp web, in và Excel có phần món chính theo thứ tự ảnh và hai dòng nguyên cây sau dòng tổng; không lặp hàng nguyên cây phía trên.
+- [x] Thêm migration 098 đưa mã món vào `production_options`, kiểm tra quyền và mã trả về bằng PostgreSQL cục bộ.
+- [x] Database types khớp GitHub Actions; typecheck/lint/build đạt; full suite 242/242 và `git diff --check` sạch.
+- [ ] Áp migration 098 vào môi trường được owner cho phép và UAT đăng nhập thật ở task phát hành; chưa commit/push/deploy.

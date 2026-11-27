@@ -1,4 +1,5 @@
 'use client';
+import {sortProductsByMenuOrder} from '@/lib/product-order';
 import {useEffect,useState} from 'react';
 import Decimal from 'decimal.js';
 import {useQuery} from '@tanstack/react-query';
@@ -6,7 +7,7 @@ import {browserSupabase} from '@/lib/supabase/browser';
 import {LoadingState,ToastNotice} from '@/components/feedback';
 import {formatQuantity as fmt} from '@/lib/format';
 export type PlannedMaterial={material_id:string;code:string;name:string;unit_id:string;unit:string;quantity:string|null;stock:string|null;package?:{unit:string|null;usage_per_package:string|null;verified:boolean}};
-type Preview={products:{product_id:string;name:string;unit:string;quantity:string}[];materials:PlannedMaterial[];sources:{material_id?:string;product_id:string;product_name?:string;quantity?:string;issue?:string}[];complete:boolean};
+type Preview={products:{product_id:string;code:string;name:string;unit:string;quantity:string}[];materials:PlannedMaterial[];sources:{material_id?:string;product_id:string;product_name?:string;quantity?:string;issue?:string}[];complete:boolean};
 const issueLabels:Record<string,string>={PUBLISHED_PRODUCT_RECIPE_REQUIRED:'Chưa tìm thấy công thức công bố có hiệu lực cho ngày đang chọn',PRODUCT_RECIPE_RATIO_REQUIRED:'Công thức đã công bố nhưng còn thiếu tỷ lệ quy đổi từ món sang đầu ra công thức',UNIT_NEEDS_VERIFICATION:'Quy đổi đơn vị chưa xác minh',RECIPE_NEEDS_REVIEW:'Công thức còn thành phần cần xác minh',CHILD_OUTPUT_UNIT_MISMATCH:'Đơn vị công thức con chưa khớp',EMPTY_RECIPE:'Công thức chưa có thành phần'};
 export function PlannedMaterialsTable({rows}:{rows:PlannedMaterial[]}){return <div className="table-wrap"><table className="pm-needs-table"><thead><tr><th>Mã / nguyên liệu</th><th>Lượng cần chuẩn bị</th><th>Quy đổi đóng gói</th><th>Tồn theo sổ</th><th>Còn sau dự kiến</th><th>Cần mua thêm cho kế hoạch</th></tr></thead><tbody>{rows.map(m=>{
  const remaining=m.stock!==null&&m.quantity!==null?new Decimal(m.stock).minus(m.quantity):null;
@@ -20,6 +21,6 @@ export function PlanRequirements({warehouse,date,previous,mode,lines,userId,dirt
  const current=valid&&settled===serialized?query.data:undefined;
  return <section className="pm-plan-needs"><h2>Nguyên liệu cần chuẩn bị {dirty?'· Xem trước chưa lưu':'· Theo kế hoạch đã lưu'}</h2><p>Nhập lượng món phía trên để tính theo công thức nhiều tầng. Lập kế hoạch chưa trừ tồn kho. Sản xuất thực tế sẽ ghi xuất định mức riêng.</p>
  {!valid&&<p className="pm-warning">Nhập số lượng không âm hợp lệ cho tất cả các món đã sửa.</p>}{(query.isFetching||settled!==serialized)&&<LoadingState compact label="Đang tính nguyên liệu theo kế hoạch…"/>}{query.isError&&valid&&<ToastNotice tone="error" message={query.error.message}/>}
- {current&&<><div className="pm-plan-products">{current.products.map(p=><span key={p.product_id}><b>{fmt(p.quantity)} {p.unit}</b> {p.name}</span>)}</div>{!current.complete&&<div className="pm-note">Công thức còn thiếu hoặc quy đổi chưa xác minh. Tổng dưới đây chưa đủ toàn bộ kế hoạch.{current.sources.filter(s=>s.issue).map((s,i)=><p key={i}>{s.product_name??current.products.find(p=>p.product_id===s.product_id)?.name}: {issueLabels[s.issue!]??'Cần kiểm tra công thức'}</p>)}</div>}<PlannedMaterialsTable rows={current.materials}/><details><summary>Chi tiết mỗi món đóng góp nguyên liệu</summary>{current.sources.filter(s=>s.material_id).map((s,i)=><p key={i}>{s.product_name} · {current.materials.find(m=>m.material_id===s.material_id)?.name}: {fmt(s.quantity)} {current.materials.find(m=>m.material_id===s.material_id)?.unit}</p>)}</details></>}
+ {current&&<><div className="pm-plan-products">{sortProductsByMenuOrder(current.products).map(p=><span key={p.product_id}><b>{fmt(p.quantity)} {p.unit}</b> {p.name}</span>)}</div>{!current.complete&&<div className="pm-note">Công thức còn thiếu hoặc quy đổi chưa xác minh. Tổng dưới đây chưa đủ toàn bộ kế hoạch.{current.sources.filter(s=>s.issue).map((s,i)=><p key={i}>{s.product_name??current.products.find(p=>p.product_id===s.product_id)?.name}: {issueLabels[s.issue!]??'Cần kiểm tra công thức'}</p>)}</div>}<PlannedMaterialsTable rows={current.materials}/><details><summary>Chi tiết mỗi món đóng góp nguyên liệu</summary>{current.sources.filter(s=>s.material_id).map((s,i)=><p key={i}>{s.product_name} · {current.materials.find(m=>m.material_id===s.material_id)?.name}: {fmt(s.quantity)} {current.materials.find(m=>m.material_id===s.material_id)?.unit}</p>)}</details></>}
  </section>;
 }

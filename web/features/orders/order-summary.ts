@@ -1,4 +1,4 @@
-import {sortProductsByMenuOrder} from '../../lib/product-order';
+import {sortProductsByMenuOrder,isWholeRollCode} from '../../lib/product-order';
 import Decimal from 'decimal.js';
 export type SummaryItem={product_id:string;code:string;name:string;quantity:string;unit:string;price_vnd:string;discount_rate:string;line_total_vnd:string};
 export type SummaryOrder={id:string;code:string;store_id:string|null;store_code:string|null;store_name:string|null;store_phone:string|null;customer_name:string|null;customer_phone:string|null;delivery_date:string;shift:string;status:string;note:string|null;total_quantity:string;discount_rate:string;discount_vnd:string;order_total_vnd:string;old_deduction_vnd:string|null;cancelled_loss_vnd:string;cash_received_vnd:string|null;bank_received_vnd:string|null;payment_method:string|null;outstanding_vnd:string|null;items:SummaryItem[]};
@@ -10,6 +10,14 @@ export type OrderSummaryData={date:string;orders:SummaryOrder[];stores:SummarySt
 
 export function sortOrderSummaryProducts(products:readonly SummaryProduct[]){
  return sortProductsByMenuOrder(products);
+}
+
+export function prepareOrderSummary(data:OrderSummaryData):OrderSummaryData{
+ const sourceProducts=data.sourceProducts??data.products;
+ return {...data,sourceProducts,
+  products:sortOrderSummaryProducts(sourceProducts.filter(product=>!isWholeRollCode(product.code))),
+  wholeRollTotals:sourceProducts.some(product=>['CC','CCC','CC-NC','CCC-NC'].includes(product.code))?wholeRollOrderSummaryProducts(sourceProducts):[],
+  orders:data.orders.map(order=>({...order,items:sortProductsByMenuOrder(order.items)}))};
 }
 
 /** Add separate whole-tree totals while preserving the original portion rows. */
@@ -58,6 +66,7 @@ async function addLogo(workbook:import('exceljs').Workbook,sheet:import('exceljs
 }
 
 export async function createOrderSummaryWorkbook(data:OrderSummaryData,demand:OrderMaterialDemandData){
+ data=prepareOrderSummary(data);
  const ExcelJS=(await import('exceljs')).default;
  const workbook=new ExcelJS.Workbook();workbook.creator='CHIFAA COMBINE';workbook.subject='Bảng tổng hợp khách đặt hàng';workbook.created=new Date();
  const totalColumn=data.stores.length+3,lastColumn=excelColumn(totalColumn);

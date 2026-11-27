@@ -85,7 +85,8 @@ test('store-linked and review-assigned orders snapshot discounts and payment cho
 });
 
 test('contact prefill patch repairs a newer database missing 085 without changing prices, data or link privacy',async()=>{
- const db=await database(undefined,['202611240085_prefill_public_order_contact_from_store.sql','202611260092_order_quantity_discounts.sql','202611270096_store_order_discount_tiers.sql']);try{
+ // Reproduce the pre-discount schema: 097 depends on the skipped 092/096 helpers.
+ const db=await database(undefined,['202611240085_prefill_public_order_contact_from_store.sql','202611260092_order_quantity_discounts.sql','202611270096_store_order_discount_tiers.sql','202611270097_order_discount_respects_selected_products.sql']);try{
   assert.equal((await db.query<{ready:boolean}>("select to_regprocedure('public.publish_recipe_at(uuid,bigint,date,uuid)') is not null ready")).rows[0].ready,true);
   const stores=(await db.query<{id:string;code:string}>("insert into stores(code,name,address,contact,active) values('PREFILL-A','Synthetic first store','First synthetic delivery address','0900000085',true),('PREFILL-B','Synthetic second store','Second synthetic delivery address','0900000086',true) returning id,code")).rows;
   const product=(await db.query<{id:string}>("insert into products(code,name,sale_unit,published) values('PREFILL-DISH','Synthetic prefill dish','Phần',true) returning id")).rows[0].id;

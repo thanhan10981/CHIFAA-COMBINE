@@ -68,6 +68,9 @@ test('recipe links require a published effective revision and units with transac
  await assert.rejects(()=>terms('recipe',ids.product,{date:'2026-11-17',recipe_version_id:draft,quantity:'1',evidence:'Link draft denied'}),/PUBLISHED_RECIPE_REQUIRED/);
  await db.query("update recipe_versions set status='published' where id=$1",[draft]);
  await terms('recipe',ids.product,{date:'2026-11-17',recipe_version_id:draft,quantity:'1',evidence:'Confirmed recipe link'});
+ const options=await rpc('production_options',['2026-11-18']);
+ assert.equal((options.products as {id:string;code:string}[]).find(product=>product.id===ids.product)?.code,'COMM-P');
+ await assert.rejects(()=>rpc('production_options',['2026-11-18'],identities.a),/FORBIDDEN/);
  await assert.rejects(async()=>rpc('save_catalog',['products',ids.product,await version('products',ids.product),JSON.stringify({sale_unit:'different unit'}),randomUUID()]),/PRODUCT_UNIT_HAS_HISTORY/);
  const history=await rpc('commercial_history',['recipe',ids.product]);assert.ok(JSON.stringify(history).includes('COMM-R'));assert.ok(JSON.stringify(history).includes('Confirmed recipe link'));
  await assert.rejects(()=>db.exec('update product_prices set price_vnd=1'),/TERMS_IMMUTABLE/);

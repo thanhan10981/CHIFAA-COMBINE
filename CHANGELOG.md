@@ -969,3 +969,8 @@ Sửa lỗi SQLSTATE 42702 do bí danh truy vấn topping trùng biến trong `r
 
 - Đính chính commit `886961d`: giữ nguyên hàng `CC`/`CCC` và tổng số lượng ban đầu; thêm hai hàng riêng sau tổng. Hai hàng tính `CC × 12/14 + CC-NC` và `CCC × 16/10 + CCC-NC` theo từng điểm bán. Không cộng hàng phụ vào tổng số món.
 - Chi tiết và trạng thái kiểm tra ghi tại `HANDOFF.md`.
+## 2026-11-27 — Đồng bộ thứ tự sản phẩm theo ảnh trên các màn hình, bản in và Excel
+
+- Dùng một menu chung cho danh mục, thực đơn, giỏ/chi tiết đơn, hóa đơn, tổng hợp web/Excel, bán hàng, sản xuất và công thức món; sắp xếp đủ dữ liệu trước khi phân trang.
+- Bảng tổng hợp giữ 9 món chính ở trên dòng tổng; hai dòng tổng nguyên cây đứng riêng phía dưới và không lặp trong các hàng chính. Món khác vẫn được giữ.
+- Thêm migration 098 bổ sung mã món trong danh sách chọn sản xuất cũ; chưa áp cloud. Database types, typecheck, lint, build và 242/242 test đạt; bằng chứng kiểm tra và phạm vi còn lại ghi trong `HANDOFF.md`.

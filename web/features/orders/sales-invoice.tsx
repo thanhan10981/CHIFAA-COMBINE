@@ -1,19 +1,9 @@
 import Decimal from 'decimal.js';
 import {formatNumber,formatQuantity,formatVnd} from '../../lib/format';
-import {sortProductsByMenuOrder} from '../../lib/product-order';
+import {sortProductsByMenuOrder,productMenu,isWholeRollCode} from '../../lib/product-order';
 
 export type InvoiceLine={order_item_id:string;product_code:string|null;product_name:string|null;sale_unit:string|null;ordered_quantity:string;price_vnd:string;discount_rate:string};
-const menu=[
- ['CN-XXPM','Cơm nắm xúc xích chà bông phô mai'],
- ['CN-XXMY','Cơm nắm xúc xích chà bông mayo'],
- ['CN-TERI','Cơm nắm gà sốt Teriyaki'],
- ['CN-GPM','Cơm nắm gà sốt phô mai'],
- ['CN-BV','Cơm nắm bò viên sốt bơ tỏi'],
- ['CN-CNM','Cơm nắm cá ngừ mayo'],
- ['CC','Cơm cuộn không chiên'],['CCC','Cơm cuộn chiên'],['CN-MY','Mì trộn Chifaa'],
- ['CC-NC','Cơm cuộn TT (Sỉ nguyên cây)'],['CCC-NC','Cơm cuộn chiên (Sỉ nguyên cây)']
-];
-const wholeCodes=new Set(['CC-NC','CCC-NC']);
+const menu=productMenu;
 const codeOf=(line:InvoiceLine)=>line.product_code?.trim().toUpperCase()??'';
 // Match PostgreSQL: round each gross/net line, then sum. Never use binary floats for money.
 export function invoiceAmounts(lines:readonly InvoiceLine[]){
@@ -34,7 +24,7 @@ export function invoiceRows(lines:readonly InvoiceLine[]){
  });
  const known=new Set(menu.map(([code])=>code));
  rows.push(...sortProductsByMenuOrder(lines.filter(line=>!known.has(codeOf(line))).map(line=>({code:codeOf(line),name:line.product_name??'Món chưa có tên',line}))));
- return {main:rows.filter(row=>!wholeCodes.has(row.code)),whole:rows.filter(row=>wholeCodes.has(row.code))};
+ return {main:rows.filter(row=>!isWholeRollCode(row.code)),whole:rows.filter(row=>isWholeRollCode(row.code))};
 }
 
 export function invoiceMoneyWords(value:string){
@@ -56,7 +46,7 @@ export function invoiceMoneyWords(value:string){
 }
 
 export function SalesInvoice({order,lines}:{order:{id:string;delivery_date:string;store_name:string|null;guest_name:string|null;guest_address:string|null;note:string|null};lines:readonly InvoiceLine[]}){
- const rows=invoiceRows(lines),mainAmounts=invoiceAmounts(lines.filter(line=>!wholeCodes.has(codeOf(line)))),amounts=invoiceAmounts(lines);
+ const rows=invoiceRows(lines),mainAmounts=invoiceAmounts(lines.filter(line=>!isWholeRollCode(codeOf(line)))),amounts=invoiceAmounts(lines);
  const rates=[...new Set(['0.15','0.17',...amounts.discounts.map(discount=>discount.rate)])];
  const [year,month,day]=order.delivery_date.split('-');
  const renderRow=(row:ReturnType<typeof invoiceRows>['main'][number],index?:number)=> <tr key={row.line?.order_item_id??row.code} data-product-code={row.code}><td>{index===undefined?'':index+1}</td><td>{row.name}</td><td>{row.line?.sale_unit??''}</td><td>{row.line?formatQuantity(row.line.ordered_quantity):''}</td><td>{row.line?formatVnd(row.line.price_vnd):''}</td><td>{row.line?formatVnd(invoiceAmounts([row.line]).gross):''}</td></tr>;
