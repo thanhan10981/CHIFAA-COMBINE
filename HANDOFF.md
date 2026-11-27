@@ -1603,3 +1603,10 @@ Còn lại: chưa UAT dữ liệu thật hoặc triển khai frontend; không c�
 - At delivery settlement, selecting bank transfer and a configured account lets the operator print the invoice with a VietQR Quick Link image. The QR carries the entered payment amount and `THANH TOAN DON HANG <first 8 order ID characters>`; QR is omitted if required details or a valid amount are missing. No transfer is recorded merely by printing.
 - VietQR's current documentation says the legacy `POST /v2/generate` endpoint stops on 2027-01-01; this implementation uses the documented Quick Link image endpoint instead. Account/payment changes remain local until the migration and frontend are released; no cloud SQL or production deployment was performed.
 - Evidence: `npm run db:types`, typecheck, lint and production build passed; invoice/VietQR tests 4/4 and database tests 13/13 passed. Full browser print QA was not run.
+
+
+## 2026-11-27 - Select VietQR bank from the live bank directory (KH-05/KH-10)
+
+- Replaced the manually typed 6-digit BIN field with a bank selector populated from the official VietQR GET https://api.vietqr.io/v2/banks directory. The selector only includes banks marked transfer-supported, displays their short/full names and logo, and stores the selected bank BIN used by Quick Link.
+- Added /api/vietqr/banks as a server-side proxy with a one-day cache; the browser no longer calls VietQR directly. Existing saved BINs are matched to the current directory; unmatched BINs are shown and must be replaced with a listed bank before saving.
+- Evidence: typecheck, lint, production build, and targeted invoice/bank-list tests passed (5/5); git diff --check pending final review. The external list is parsed in tests, but no live-account UAT or cloud SQL/deploy was performed.

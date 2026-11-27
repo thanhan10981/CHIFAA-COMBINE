@@ -1024,3 +1024,9 @@ Sửa lỗi SQLSTATE 42702 do bí danh truy vấn topping trùng biến trong `r
 - At delivery settlement, selecting bank transfer and a configured account lets the operator print the invoice with a VietQR Quick Link image. The QR carries the entered payment amount and `THANH TOAN DON HANG <first 8 order ID characters>`; QR is omitted if required details or a valid amount are missing. No transfer is recorded merely by printing.
 - VietQR's current documentation says the legacy `POST /v2/generate` endpoint stops on 2027-01-01; this implementation uses the documented Quick Link image endpoint instead. Account/payment changes remain local until the migration and frontend are released; no cloud SQL or production deployment was performed.
 - Evidence: `npm run db:types`, typecheck, lint and production build passed; invoice/VietQR tests 4/4 and database tests 13/13 passed. Full browser print QA was not run.
+
+
+## 2026-11-27 - Choose a receiving bank from VietQR
+
+- Replaced manual BIN entry with a selector backed by VietQR bank directory, showing bank name/logo and persisting the selected BIN. Added a server API route with daily caching.
+- Verified: typecheck, lint, build and targeted tests (5/5). No cloud SQL or deployment.
