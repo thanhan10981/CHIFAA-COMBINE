@@ -50,8 +50,7 @@ export function PublicShop(){
  const allocationIssues=lines.flatMap(line=>{const issue=toppingIssue(line,toppingsByProduct.get(line.product.product_id));return issue?[{line,message:issue}]:[];});
  const allocationsValid=allocationIssues.length===0;
  const orderQuantity=lines.reduce((sum,line)=>sum.plus(line.quantity),new Decimal(0));
- const orderRate=quantityDiscountRate({},orderQuantity.toString(),catalog.data?.quantity_discount_rule);
- const lineRate=(line:Line)=>linkToken&&Number(line.quantity)>0?orderRate:'0';
+ const lineRate=(line:Line)=>linkToken?quantityDiscountRate(line.product,orderQuantity.toString(),catalog.data?.quantity_discount_rule):'0';
  const lineTotal=(line:Line)=>{const gross=new Decimal(line.product.price_vnd??'0').times(line.quantity).toDecimalPlaces(0),rate=new Decimal(lineRate(line));return gross.minus(gross.times(new Decimal(1).minus(rate)).toDecimalPlaces(0));};
  const discount=lines.reduce((sum,line)=>sum.plus(lineTotal(line)),new Decimal(0));
  const total=lines.reduce((sum,line)=>sum.plus(new Decimal(line.product.price_vnd??'0').times(line.quantity).toDecimalPlaces(0)).minus(lineTotal(line)),new Decimal(0));
@@ -95,7 +94,7 @@ export function PublicShop(){
     const unavailable=!!configured?.unavailable||Number(configured?.unavailable_count??0)>0||!!(configured?.required&&!options.length),issue=productQuantity>0&&line?toppingIssue(line,configured):null,stale=(line?.toppings??[]).some(t=>!options.some(option=>option.version_id===t.version_id));
     return <article className={'public-product'+(productQuantity>0?' selected':'')} key={product.product_id}>
      <div className="public-food-image">{imageUrl?<Image src={imageUrl} alt={product.name} width={320} height={200} unoptimized/>:<span className="public-food-icon"><Icon name="box" size={24}/></span>}</div>
-     <div className="public-product-copy"><small>{product.code} · {product.sale_unit}</small><h3>{product.name}</h3><strong>{product.price_vnd===null?'Chưa có giá':formatVnd(product.price_vnd)+' đ'}<small> / {product.sale_unit}</small></strong>{linkToken&&Number(orderRate)>0&&<small>Chiết khấu đơn hàng {formatNumber(String(Number(orderRate)*100))}%</small>}</div>
+     <div className="public-product-copy"><small>{product.code} · {product.sale_unit}</small><h3>{product.name}</h3><strong>{product.price_vnd===null?'Chưa có giá':formatVnd(product.price_vnd)+' đ'}<small> / {product.sale_unit}</small></strong>{linkToken&&Number(lineRate({product,quantity:'1'}))>0&&<small>Chiết khấu đơn hàng {formatNumber(String(Number(lineRate({product,quantity:'1'}))*100))}%</small>}</div>
      <div className="public-quantity"><button type="button" aria-label={'Giảm '+product.name} disabled={locked||!productQuantity||product.price_vnd===null} onClick={()=>quantity(product,String(Math.max(0,productQuantity-1)))}>−</button><input aria-label={'Số lượng '+product.name} inputMode="numeric" type="number" min="0" max="999999" step="1" placeholder="0" disabled={locked||product.price_vnd===null} value={basket[product.product_id]?.quantity??''} onChange={e=>quantity(product,e.target.value)}/><button type="button" aria-label={'Tăng '+product.name} disabled={locked||productQuantity>=999999||product.price_vnd===null} onClick={()=>quantity(product,String(productQuantity+1))}>+</button></div>
      {(configured?.required||options.length>0||unavailable||stale)&&<fieldset className="public-topping-options" aria-label={'Topping cho '+product.name+' (bắt buộc)'}><legend>Topping <span>1 phần/món</span></legend>
       {unavailable?<p className="public-order-error">Topping của món đang được cập nhật. Vui lòng chọn món khác hoặc thử tải lại.</p>:options.map(t=>{

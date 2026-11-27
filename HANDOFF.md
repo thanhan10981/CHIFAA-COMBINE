@@ -1487,3 +1487,11 @@ Còn lại: chưa UAT dữ liệu thật hoặc triển khai frontend; không c�
 - Limitation: readiness checks current stock but does not reserve it; order delivery rechecks inventory. Production batches persist store_id and source_order_ids linked to approved orders. Browser UAT has not been run.
 - Bước kế tiếp: chạy typecheck/lint/build và test đích `design-contract` + `deploy-package`; kiểm tra diff; sau đó owner có thể yêu cầu commit/push hoặc áp migration môi trường DEV riêng. Không triển khai PROD.
 - **Kiểm tra cuối (2026-11-27):** typecheck/lint/build đạt; test đích design-contract + deploy-package đạt 5/5; toàn bộ npm test đạt 239/239; git diff --check sạch. PGlite xác nhận SQL Editor bootstrap cài migration 095 và rollback thành công; chưa áp lên Supabase project nào. `spawn EPERM` chỉ xuất hiện khi chạy trong sandbox; lệnh ngoài sandbox chạy thành công.
+## 2026-11-27 — Chỉ chiết khấu món được chọn trong chính sách (KH-05/KH-10/KH-12)
+
+- Giữ nguyên migration 096 và thêm migration tiến `202611270097_order_discount_respects_selected_products.sql`: mức theo tổng số lượng vẫn xác định bậc chung, nhưng mỗi dòng chỉ nhận tỷ lệ khi chính sách đang bật và món có `eligible=true`. Món bỏ tick lưu `discount_rate=0`, kể cả khi tổng đơn vượt ngưỡng. Áp dụng khi khách gửi đơn, duyệt đơn, sửa đơn chờ duyệt và sửa đơn đã duyệt; đơn cũ không bị viết lại.
+- Cổng đặt hàng tính/hiển thị theo `discount_eligible` của từng món; không hiện chiết khấu cho món bỏ tick. Bổ sung kiểm tra helper giao diện và sửa kỳ vọng PostgreSQL cho món được chọn/bỏ chọn.
+- Kiểm tra: `npm run typecheck`, `npm run lint` và `git diff --check` đạt. Lệnh test gọi kèm filter nhưng npm script vẫn chạy toàn suite: 224 test thành công; hai file `public-portal` và `quantity-discount` không khởi chạy do Windows sandbox trả `spawn EPERM` ở esbuild. Chạy riêng file tiếp tục gặp cùng lỗi. `npm run build` cũng bị sandbox chặn `spawn EPERM`; cần chạy test mục tiêu/build trong môi trường cho phép tiến trình con.
+- Chưa áp migration lên Supabase hoặc triển khai. Sau khi chạy kiểm tra mục tiêu, tiếp tục xác nhận migration 096 cài được trên schema local và UAT link điểm bán có cả món tick lẫn bỏ tick.
+
+\n
