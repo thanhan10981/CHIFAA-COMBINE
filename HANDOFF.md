@@ -1,3 +1,9 @@
+## 2026-11-27 — Đưa chi tiết sản xuất sát dòng điểm bán, thu gọn món thiếu (KH-03/KH-10/KH-12)
+
+- Sửa theo phản hồi giao diện: bấm “Chi tiết” mở khối nhập sản xuất ngay dưới dòng điểm bán tương ứng trong bảng; chỉ một điểm bán mở tại một thời điểm. Không còn đẩy chi tiết xuống sau toàn bộ danh sách.
+- Tóm tắt tồn thiếu bằng số món. Danh sách món thiếu toàn ngày và từng điểm bán được gấp mặc định, chỉ mở khi cần đối chiếu. Giữ nguyên dữ liệu kiểm tra tồn, trạng thái đủ/thiếu và luồng ghi sản xuất/duyệt; không đổi SQL hoặc chứng từ.
+- Kiểm tra: `npm run typecheck`, `npm run lint`, toàn bộ 247/247 kiểm thử đạt; `npm run build` đạt khi chạy ngoài sandbox do `spawn EPERM` trong sandbox. Browser fixture `node scripts/design-check.mjs --store-production` đạt tại 390px và 1440px, xác nhận chi tiết nằm ngay sau đúng hàng được chọn, danh sách thiếu mặc định gấp và không tràn ngang. `git diff --check` đạt.
+- Trạng thái local, chưa commit/push/deploy và chưa UAT phiên cloud. Còn lại: phát hành frontend qua quy trình được owner cho phép để người dùng thấy sửa đổi.
 ## 2026-11-27 — Sửa giao diện Chi tiết trang 04 Sản xuất theo điểm bán (KH-01/KH-03/KH-10/KH-12)
 
 - Nguyên nhân: quy tắc dùng chung `.table-wrap` giữ `min-height: 250px`. Khi bấm `Chi tiết`, bảng điểm bán và bảng nhập sản xuất đều để khoảng trống lớn trước phần tiếp theo. Trên màn hình nhỏ, nút ở cột cuối còn kéo bảng điểm bán cuộn sang phải, làm khó đọc thông tin điểm bán.
