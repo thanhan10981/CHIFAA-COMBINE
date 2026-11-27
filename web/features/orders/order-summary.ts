@@ -8,6 +8,12 @@ export type SummaryMaterial={code:string;name:string;unit_code:string;quantity:s
 export type OrderMaterialDemandData={issues:{issue:string;issue_detail?:string;product_id?:string;product_code?:string;product_name?:string;topping_name?:string}[];materials:SummaryMaterial[]};
 export type OrderSummaryData={date:string;orders:SummaryOrder[];stores:SummaryStore[];products:SummaryProduct[];planned_quantity_total:string;sourceProducts?:SummaryProduct[];wholeRollTotals?:SummaryProduct[]};
 
+export function selectOrderMaterialsForPrint(materials:readonly SummaryMaterial[],selectedCodes:readonly string[]|null){
+ if(selectedCodes===null)return [...materials];
+ const selected=new Set(selectedCodes);
+ return materials.filter(material=>selected.has(material.code));
+}
+
 export function sortOrderSummaryProducts(products:readonly SummaryProduct[]){
  const codes=productMenu.map(([code])=>code).filter(code=>!isWholeRollCode(code));
  codes.splice(codes.indexOf('CCC')+1,0,'CCC-NC','CC-NC');

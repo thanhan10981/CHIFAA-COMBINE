@@ -1030,3 +1030,18 @@ Sửa lỗi SQLSTATE 42702 do bí danh truy vấn topping trùng biến trong `r
 
 - Replaced manual BIN entry with a selector backed by VietQR bank directory, showing bank name/logo and persisting the selected BIN. Added a server API route with daily caching.
 - Verified: typecheck, lint, build and targeted tests (5/5). No cloud SQL or deployment.
+
+## 2026-11-27 - Compact bank receiving form
+
+- Reduced card spacing and field heights; bank and account number share one row on desktop, with responsive single-column layout on small screens.
+- Verified typecheck, lint, production build, and `git diff --check`.
+
+## 2026-11-27 - Choose ingredient rows to print
+
+- Added per-material print checkboxes and a select-all control. Unchecked rows remain on screen but are omitted from paper; all rows are selected by default. Demand calculations and Excel export are unchanged.
+- Verified order summary tests (7/7), typecheck, lint, production build, and `git diff --check`.
+
+## 2026-11-27 - Show subtotal quantity times price on invoice
+
+- The invoice subtotal row now shows total quantity × unit price; different prices or sale units are shown as separate terms. Monetary totals and discounts are unchanged.
+- Verified invoice tests (5/5), typecheck, lint, build, and `git diff --check`.

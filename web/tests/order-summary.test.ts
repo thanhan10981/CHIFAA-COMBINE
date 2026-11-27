@@ -3,7 +3,17 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import ExcelJS from 'exceljs';
-import {createOrderSummaryWorkbook,orderDemandIssueText,sortOrderSummaryProducts,prepareOrderSummary,wholeRollOrderSummaryProducts,type OrderMaterialDemandData,type OrderSummaryData} from '../features/orders/order-summary';
+import {createOrderSummaryWorkbook,orderDemandIssueText,sortOrderSummaryProducts,prepareOrderSummary,selectOrderMaterialsForPrint,wholeRollOrderSummaryProducts,type OrderMaterialDemandData,type OrderSummaryData} from '../features/orders/order-summary';
+
+test('ingredient print selection defaults to all and filters only chosen material rows without reordering',()=>{
+ const materials:OrderMaterialDemandData['materials']=[
+  {code:'GAO',name:'Gạo',unit_code:'kg',quantity:'1',stock_quantity:'2',minimum_quantity:null,shortage_quantity:'0',status:'ok'},
+  {code:'BO',name:'Bơ',unit_code:'hộp',quantity:'2',stock_quantity:null,minimum_quantity:null,shortage_quantity:null,status:'unknown'},
+ ];
+ assert.deepEqual(selectOrderMaterialsForPrint(materials,null),materials);
+ assert.deepEqual(selectOrderMaterialsForPrint(materials,['BO']),[materials[1]]);
+ assert.deepEqual(selectOrderMaterialsForPrint(materials,[]),[]);
+});
 
 test('order demand warnings identify a missing effective recipe and product conversion without guessing requirements',()=>{
  const message=orderDemandIssueText({product_id:'product-1',issue:'PUBLISHED_PRODUCT_RECIPE_REQUIRED'},[{product_id:'product-1',code:'MON-1',name:'Món kiểm thử',unit:'phần',total_quantity:'10',by_store:{}}]);

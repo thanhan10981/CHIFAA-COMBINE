@@ -24,6 +24,15 @@ export function invoiceAmounts(lines:readonly InvoiceLine[]){
  }
  return {gross:gross.toFixed(0),net:net.toFixed(0),discounts:[...discounts].map(([rate,amount])=>({rate,amount:amount.toFixed(0)}))};
 }
+export function invoiceSubtotalExpression(lines:readonly InvoiceLine[]){
+ const groups=new Map<string,{unit:string;price:string;quantity:Decimal}>();
+ for(const line of lines){
+  const unit=line.sale_unit?.trim()??'',price=new Decimal(line.price_vnd).toFixed(0),key=`${unit}\u0000${price}`,group=groups.get(key);
+  if(group)group.quantity=group.quantity.plus(line.ordered_quantity);
+  else groups.set(key,{unit,price,quantity:new Decimal(line.ordered_quantity)});
+ }
+ return [...groups.values()].map(group=>`${formatQuantity(group.quantity.toString())}${groups.size>1&&group.unit?` ${group.unit}`:''} × ${formatVnd(group.price)}`).join(' + ');
+}
 export function invoiceRows(lines:readonly InvoiceLine[]){
  const rows=menu.flatMap<{code:string;name:string;line:InvoiceLine|null}>(([code,name])=>{
   const matches=lines.filter(line=>codeOf(line)===code);
@@ -53,7 +62,7 @@ export function invoiceMoneyWords(value:string){
 }
 
 export function SalesInvoice({order,lines,payment}:{order:{id:string;delivery_date:string;store_name:string|null;guest_name:string|null;guest_address:string|null;note:string|null};lines:readonly InvoiceLine[];payment?:InvoicePaymentQr|null}){
- const rows=invoiceRows(lines),mainAmounts=invoiceAmounts(lines.filter(line=>!isWholeRollCode(codeOf(line)))),amounts=invoiceAmounts(lines);
+ const rows=invoiceRows(lines),mainLines=lines.filter(line=>!isWholeRollCode(codeOf(line))),mainAmounts=invoiceAmounts(mainLines),amounts=invoiceAmounts(lines);
  const rates=[...new Set(['0.15','0.17',...amounts.discounts.map(discount=>discount.rate)])];
  const [year,month,day]=order.delivery_date.split('-');
  const renderRow=(row:ReturnType<typeof invoiceRows>['main'][number],index?:number)=> <tr key={row.line?.order_item_id??row.code} data-product-code={row.code}><td>{index===undefined?'':index+1}</td><td>{row.name}</td><td>{row.line?.sale_unit??''}</td><td>{row.line?formatQuantity(row.line.ordered_quantity):''}</td><td>{row.line?formatVnd(row.line.price_vnd):''}</td><td>{row.line?formatVnd(invoiceAmounts([row.line]).gross):''}</td></tr>;
@@ -67,7 +76,7 @@ export function SalesInvoice({order,lines,payment}:{order:{id:string;delivery_da
   <table><colgroup><col style={{width:'7%'}}/><col style={{width:'43%'}}/><col style={{width:'9%'}}/><col style={{width:'8%'}}/><col style={{width:'15%'}}/><col style={{width:'18%'}}/></colgroup>
    <thead><tr><th>TT</th><th>TÊN SẢN PHẨM</th><th>ĐVT</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th></tr></thead>
    <tbody>{rows.main.map((row,index)=>renderRow(row,index))}
-    <tr className="sales-invoice-subtotal"><th colSpan={5}>Tổng cộng</th><td>{formatVnd(mainAmounts.gross)}</td></tr>
+     <tr className="sales-invoice-subtotal"><th colSpan={3}>Tổng cộng</th><td colSpan={2} className="sales-invoice-subtotal-expression">{invoiceSubtotalExpression(mainLines)}</td><td>{formatVnd(mainAmounts.gross)}</td></tr>
     {rates.map(rate=>{const discount=amounts.discounts.find(item=>item.rate===rate);return <tr key={rate}><th colSpan={5}>CK thương mại {formatNumber(new Decimal(rate).mul(100).toString())}%</th><td>{discount?formatVnd(discount.amount):''}</td></tr>;})}
     {rows.whole.map(row=>renderRow(row))}
     <tr className="sales-invoice-total"><th colSpan={5}>Tổng tiền thanh toán</th><td>{formatVnd(amounts.net)}</td></tr>

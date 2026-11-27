@@ -1610,3 +1610,18 @@ Còn lại: chưa UAT dữ liệu thật hoặc triển khai frontend; không c�
 - Replaced the manually typed 6-digit BIN field with a bank selector populated from the official VietQR GET https://api.vietqr.io/v2/banks directory. The selector only includes banks marked transfer-supported, displays their short/full names and logo, and stores the selected bank BIN used by Quick Link.
 - Added /api/vietqr/banks as a server-side proxy with a one-day cache; the browser no longer calls VietQR directly. Existing saved BINs are matched to the current directory; unmatched BINs are shown and must be replaced with a listed bank before saving.
 - Evidence: typecheck, lint, production build, and targeted invoice/bank-list tests passed (5/5); git diff --check pending final review. The external list is parsed in tests, but no live-account UAT or cloud SQL/deploy was performed.
+
+## 2026-11-27 - Compact bank receiving settings form (KH-05/KH-10)
+
+- Tightened the bank settings card spacing and input heights. Bank selector and account number now share a row on desktop; account holder remains full width, and the layout collapses to one column on small screens.
+- Evidence: `npm run typecheck`, `npm run lint`, `npm run build`, and `git diff --check` passed. No schema, QR, account, or payment behavior changed.
+
+## 2026-11-27 - Select ingredient demand rows for printing (KH-01/KH-10)
+
+- Added row checkboxes and a select-all control to the approved-order ingredient demand table. All rows remain selected by default; unchecked rows stay visible on screen but are omitted from print. If no materials are selected, the ingredient section is suppressed on paper. Changing delivery date resets selection to all. Excel export and demand calculations are unchanged.
+- Evidence: `tests/order-summary.test.ts` passed 7/7; `npm run typecheck`, `npm run lint`, `npm run build`, and `git diff --check` passed. No SQL or cloud changes.
+
+## 2026-11-27 - Show quantity times unit price in invoice subtotal (KH-05/KH-10)
+
+- Split the invoice subtotal row so the previously blank quantity/unit-price area shows the grouped expression, such as `76 × 15.000`. Different prices or sale units render as separate addends to avoid combining unlike units. The subtotal amount, line rounding, discounts, and payable total are unchanged.
+- Evidence: invoice tests passed 5/5, `npm run typecheck`, `npm run lint`, `npm run build`, and `git diff --check` passed. No SQL/cloud changes.
