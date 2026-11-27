@@ -19,6 +19,15 @@ test('catalog RPC commits audit/version, idempotently replays and rejects change
  await assert.rejects(()=>save(first.id,1,{name:'Stale'},randomUUID()),/VERSION_CONFLICT/);
  assert.equal((await db.query('select * from audit_logs where record_id=$1',[first.id])).rows.length,2);
 });
+test('VietQR receiving account settings require admin, validate fields and audit idempotently',async()=>{
+ const account=(await asUser(db,identities.admin,()=>db.query<{r:{id:string;version:number}}>("select public.save_catalog('bank_accounts',null,null,$1::jsonb,$2) r",[JSON.stringify({code:'QR-TEST',name:'Synthetic receiving account',kind:'bank'}),randomUUID()]))).rows[0].r;
+ const input={bank_bin:'970415',account_number:'123456789012',account_holder:'CHIFAA SYNTHETIC'};const key=randomUUID();
+ const save=()=>asUser(db,identities.admin,()=>db.query<{r:{id:string;version:number;bank_bin:string;account_number:string;account_holder:string}}>('select public.save_payment_bank_account($1,$2,$3::jsonb,$4) r',[account.id,account.version,JSON.stringify(input),key]));
+ const first=(await save()).rows[0].r,again=(await save()).rows[0].r;assert.equal(first.bank_bin,input.bank_bin);assert.equal(first.account_number,input.account_number);assert.equal(first.account_holder,input.account_holder);assert.equal(again.version,first.version);
+ assert.equal((await db.query<{n:number}>('select count(*)::int n from audit_logs where record_id=$1',[account.id])).rows[0].n,2);
+ await assert.rejects(()=>asUser(db,identities.accountant,()=>db.query('select public.save_payment_bank_account($1,2,$2::jsonb,$3)',[account.id,JSON.stringify({...input,bank_bin:'123'}),randomUUID()])),/FORBIDDEN/);
+ await assert.rejects(()=>asUser(db,identities.admin,()=>db.query('select public.save_payment_bank_account($1,2,$2::jsonb,$3)',[account.id,JSON.stringify({...input,bank_bin:'123'}),randomUUID()])),/INVALID_PAYMENT_BANK_ACCOUNT/);
+});
 test('accountant cannot read payroll/materials without grants or call an Admin catalog RPC',async()=>{
  await asUser(db,identities.accountant,async()=>{assert.equal((await db.query('select * from materials')).rows.length,0);assert.equal((await db.query('select * from payroll_lines')).rows.length,0);});
  await assert.rejects(()=>asUser(db,identities.accountant,()=>db.query("select save_catalog('materials',null,null,'{\"code\":\"X\",\"name\":\"X\"}',$1)",[randomUUID()])),/FORBIDDEN/);

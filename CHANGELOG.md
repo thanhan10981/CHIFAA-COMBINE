@@ -1017,3 +1017,10 @@ Sửa lỗi SQLSTATE 42702 do bí danh truy vấn topping trùng biến trong `r
 - Sửa lỗi `INVALID_QUERY`: giới hạn mỗi lần tải công thức là 50 theo RPC, vẫn sắp xếp toàn bộ trước phân trang.
 - Chi tiết đơn luôn theo thứ tự menu cả khi nhận dữ liệu cache; đồng bộ kiểm tra tổng hợp 9 món + tổng + 2 dòng cây và hóa đơn in.
 - Bổ sung test PostgreSQL cho 56 công thức và browser kiểm tra phân trang, thứ tự màn hình/print, PDF A4 ngang và A5 dọc. Không sửa dữ liệu hoặc áp SQL cloud.
+
+## 2026-11-27 - VietQR bank receiving settings and transfer invoice QR (KH-05/KH-10)
+
+- Added an administrator-only page under System Administration to configure BIN, account number and account holder for an existing bank account. The database RPC validates the fields, checks admin permission, uses an idempotency key and records changes through the existing audit trigger.
+- At delivery settlement, selecting bank transfer and a configured account lets the operator print the invoice with a VietQR Quick Link image. The QR carries the entered payment amount and `THANH TOAN DON HANG <first 8 order ID characters>`; QR is omitted if required details or a valid amount are missing. No transfer is recorded merely by printing.
+- VietQR's current documentation says the legacy `POST /v2/generate` endpoint stops on 2027-01-01; this implementation uses the documented Quick Link image endpoint instead. Account/payment changes remain local until the migration and frontend are released; no cloud SQL or production deployment was performed.
+- Evidence: `npm run db:types`, typecheck, lint and production build passed; invoice/VietQR tests 4/4 and database tests 13/13 passed. Full browser print QA was not run.

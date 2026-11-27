@@ -1,8 +1,15 @@
 import Decimal from 'decimal.js';
+import Image from 'next/image';
 import {formatNumber,formatQuantity,formatVnd} from '../../lib/format';
 import {sortProductsByMenuOrder,productMenu,isWholeRollCode} from '../../lib/product-order';
 
 export type InvoiceLine={order_item_id:string;product_code:string|null;product_name:string|null;sale_unit:string|null;ordered_quantity:string;price_vnd:string;discount_rate:string};
+export type InvoicePaymentQr={bank_bin:string;account_number:string;account_holder:string;amount:string;order_code:string};
+export function vietQrQuickLink(payment:InvoicePaymentQr){
+ if(!/^\d{6}$/.test(payment.bank_bin)||!/^[A-Za-z0-9]{6,19}$/.test(payment.account_number)||!/^[1-9]\d{0,12}$/.test(payment.amount))return null;
+ const memo=`THANH TOAN DON HANG ${payment.order_code}`;
+ return `https://img.vietqr.io/image/${encodeURIComponent(payment.bank_bin)}-${encodeURIComponent(payment.account_number)}-compact2.png?${new URLSearchParams({amount:payment.amount,addInfo:memo,accountName:payment.account_holder})}`;
+}
 const menu=productMenu;
 const codeOf=(line:InvoiceLine)=>line.product_code?.trim().toUpperCase()??'';
 // Match PostgreSQL: round each gross/net line, then sum. Never use binary floats for money.
@@ -45,7 +52,7 @@ export function invoiceMoneyWords(value:string){
  return result[0].toUpperCase()+result.slice(1);
 }
 
-export function SalesInvoice({order,lines}:{order:{id:string;delivery_date:string;store_name:string|null;guest_name:string|null;guest_address:string|null;note:string|null};lines:readonly InvoiceLine[]}){
+export function SalesInvoice({order,lines,payment}:{order:{id:string;delivery_date:string;store_name:string|null;guest_name:string|null;guest_address:string|null;note:string|null};lines:readonly InvoiceLine[];payment?:InvoicePaymentQr|null}){
  const rows=invoiceRows(lines),mainAmounts=invoiceAmounts(lines.filter(line=>!isWholeRollCode(codeOf(line)))),amounts=invoiceAmounts(lines);
  const rates=[...new Set(['0.15','0.17',...amounts.discounts.map(discount=>discount.rate)])];
  const [year,month,day]=order.delivery_date.split('-');
@@ -67,6 +74,7 @@ export function SalesInvoice({order,lines}:{order:{id:string;delivery_date:strin
    </tbody>
   </table>
   <div className="sales-invoice-words">(Viết bằng chữ): {invoiceMoneyWords(amounts.net)}.</div>
+  {payment&&vietQrQuickLink(payment)&&<div className="sales-invoice-payment"><strong>THANH TOÁN CHUYỂN KHOẢN</strong><span>Ngân hàng BIN {payment.bank_bin} · STK {payment.account_number}</span><span>Chủ tài khoản: {payment.account_holder}</span><span>Nội dung: THANH TOAN DON HANG {payment.order_code}</span><span>Số tiền: {formatVnd(payment.amount)} đ</span><Image src={vietQrQuickLink(payment)!} alt="Mã QR thanh toán VietQR" width={540} height={640} unoptimized/></div>}
   {order.note&&<div className="sales-invoice-note">Ghi chú: {order.note}</div>}
   <div className="sales-invoice-date">Bồng Sơn, ngày {day} tháng {month} năm {year}</div>
   <div className="sales-invoice-signatures"><strong>BÊN NHẬN HÀNG</strong><strong>BÊN GIAO HÀNG</strong></div>

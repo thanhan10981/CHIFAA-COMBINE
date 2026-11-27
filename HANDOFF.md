@@ -1590,3 +1590,16 @@ Còn lại: chưa UAT dữ liệu thật hoặc triển khai frontend; không c�
 - Chi tiết đơn sắp xếp tại thời điểm hiển thị để cả dữ liệu cache cũng theo menu; tương thích payload chưa có `return_supports` bằng danh sách rỗng. Giữ đủ món phần và nguyên cây trên chi tiết đơn/hóa đơn; tổng hợp và Excel giữ 9 món chính, dòng tổng, hai dòng nguyên cây theo ảnh.
 - Browser fixture đã đạt: 6 trang công thức × 5 kích thước màn hình, tải 56 công thức trên ba trang hiển thị; danh mục 114 món sắp xếp toàn bộ trước phân trang; đơn/giao/thu hồi; thứ tự chi tiết; tổng hợp web và print khớp nhau; PDF tổng hợp 1 trang A4 ngang, hóa đơn 1 trang A5 dọc kể cả thông tin khách dài. Đã xem ảnh `output/design-parity/order-summary-print.png` và `sales-invoice-print.png`; dữ liệu giả lập, chưa UAT phiên Supabase thật.
 - Kiểm tra cục bộ cuối: 25/25 test đích và full suite 243/243 đạt; lint, production build và `git diff --check` đạt. Log `output/recipe-order-fix-tests-20261127.log`, `output/recipe-order-fix-build-20261127.log` được Git bỏ qua. Bản sửa này không cần SQL cloud mới. Tiếp theo commit/push theo yêu cầu và đối chiếu CI/deployment của commit mới; chưa UAT dữ liệu thật.
+
+## 2026-11-27 - Additional production after delivery readiness approval (KH-03)
+
+- Page 04 now switches to a new run after the initial approval. It captures only additional production and defects; original main production is not resubmitted. `Duy?t s?n xu?t th?m` posts a separate batch through existing `post_store_production_run`, with recipe/material snapshots, idempotency key, store/order links, and readiness remains approved.
+- Files: `web/features/operations/store-production-desk.tsx`, `web/scripts/store-production-check.mjs`. No new migration required.
+- Evidence: `npm run typecheck`, `npm run lint`, `npx tsx --test --test-isolation=none tests/store-production.test.ts` (3/3), and `git diff --check` passed. Browser fixture was attempted but blocked by sandbox `spawn EPERM`. No cloud SQL applied and no live-account UAT.
+
+## 2026-11-27 - VietQR bank receiving settings and transfer invoice QR (KH-05/KH-10)
+
+- Added an administrator-only page under System Administration to configure BIN, account number and account holder for an existing bank account. The database RPC validates the fields, checks admin permission, uses an idempotency key and records changes through the existing audit trigger.
+- At delivery settlement, selecting bank transfer and a configured account lets the operator print the invoice with a VietQR Quick Link image. The QR carries the entered payment amount and `THANH TOAN DON HANG <first 8 order ID characters>`; QR is omitted if required details or a valid amount are missing. No transfer is recorded merely by printing.
+- VietQR's current documentation says the legacy `POST /v2/generate` endpoint stops on 2027-01-01; this implementation uses the documented Quick Link image endpoint instead. Account/payment changes remain local until the migration and frontend are released; no cloud SQL or production deployment was performed.
+- Evidence: `npm run db:types`, typecheck, lint and production build passed; invoice/VietQR tests 4/4 and database tests 13/13 passed. Full browser print QA was not run.

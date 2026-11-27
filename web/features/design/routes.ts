@@ -7,7 +7,7 @@ export const referenceRoutes:Record<string,{slug:string;module:string}>={
  recipes:{slug:'recipes',module:'recipes'},toppings:{slug:'toppings',module:'recipes'},batches:{slug:'batches',module:'recipes'},rice:{slug:'rice',module:'recipes'},packaging:{slug:'packaging',module:'recipes'},cost:{slug:'cost',module:'recipes'},
  production:{slug:'production',module:'production'},demand:{slug:'requirements',module:'requirements'},audit:{slug:'counts',module:'counts'},variance:{slug:'variance',module:'reports'},consumption:{slug:'consumption',module:'reports'},
  entry:{slug:'entry',module:'production'},'entry-stock':{slug:'entry-stock',module:'inventory'},'entry-sales':{slug:'sales',module:'sales'},'entry-attendance':{slug:'attendance',module:'attendance'},'entry-production':{slug:'entry-production',module:'production'},'entry-plans':{slug:'targets',module:'targets'},'entry-loans':{slug:'loans',module:'loans'},'entry-debts':{slug:'receivables',module:'receivables'},'entry-cash':{slug:'cash',module:'cash'},'entry-payroll':{slug:'payroll',module:'payroll'},
- kiosk:{slug:'kiosk',module:'kiosk'},assets:{slug:'assets',module:'assets'},orders:{slug:'orders',module:'orders'},admin:{slug:'admin',module:'admin'},health:{slug:'audit',module:'audit'},
+ kiosk:{slug:'kiosk',module:'kiosk'},assets:{slug:'assets',module:'assets'},orders:{slug:'orders',module:'orders'},admin:{slug:'admin',module:'admin'},'bank-settings':{slug:'bank-settings',module:'admin'},health:{slug:'audit',module:'audit'},
 };
 export const referenceNavigation=source;
 export const workspaceNavigation=workspace;

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {invoiceAmounts,invoiceRows,invoiceMoneyWords,type InvoiceLine} from '../features/orders/sales-invoice';
+import {invoiceAmounts,invoiceRows,invoiceMoneyWords,vietQrQuickLink,type InvoiceLine} from '../features/orders/sales-invoice';
 
 const line=(code:string,overrides:Partial<InvoiceLine>={}):InvoiceLine=>({order_item_id:code,product_code:code,product_name:code,sale_unit:'phần',ordered_quantity:'2',price_vnd:'15000',discount_rate:'0.17',...overrides});
 test('invoice follows template, keeps unlisted/duplicate lines and leaves missing products blank without mutating snapshots',()=>{
@@ -21,3 +21,5 @@ test('invoice totals match PostgreSQL per-line half-up rounding for mixed rates,
 test('invoice spells payable in Vietnamese without rounding through Number',()=>{
  for(const [value,expected] of [['0','Không đồng'],['597600','Năm trăm chín mươi bảy nghìn sáu trăm đồng'],['1000001','Một triệu không trăm lẻ một đồng'],['1015000000','Một tỷ không trăm mười lăm triệu đồng'],['25000','Hai mươi lăm nghìn đồng']])assert.equal(invoiceMoneyWords(value),expected);
 });
+
+test('VietQR link locks the payable amount and order reference into the bank transfer QR',()=>{const url=vietQrQuickLink({bank_bin:'970415',account_number:'113366668888',account_holder:'CHIFAA COMPANY',amount:'47350',order_code:'A1B2C3D4'});assert.ok(url);const parsed=new URL(url);assert.equal(parsed.hostname,'img.vietqr.io');assert.equal(parsed.searchParams.get('amount'),'47350');assert.equal(parsed.searchParams.get('addInfo'),'THANH TOAN DON HANG A1B2C3D4');assert.equal(parsed.searchParams.get('accountName'),'CHIFAA COMPANY');assert.equal(vietQrQuickLink({bank_bin:'9704',account_number:'12',account_holder:'A',amount:'0',order_code:'X'}),null);});

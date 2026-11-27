@@ -19,3 +19,5 @@
  .sales-invoice-date{text-align:right;margin-top:2mm;break-after:avoid}
  .sales-invoice-signatures{display:flex;justify-content:space-around;min-height:18mm;break-inside:avoid}
 }
+
+.sales-invoice-payment{display:grid;justify-items:center;gap:1mm;margin:1.5mm auto;max-width:64mm;text-align:center;break-inside:avoid;font-size:9pt}.sales-invoice-payment strong{font-size:10pt}.sales-invoice-payment img{display:block;width:34mm;height:auto;max-height:40mm;object-fit:contain}.sales-invoice-payment span{overflow-wrap:anywhere}

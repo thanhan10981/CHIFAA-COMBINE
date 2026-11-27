@@ -18,6 +18,7 @@ export async function checkStoreProduction(page,base,out,report){
    ready=true;return respond(route,{status:'ready',stores_confirmed:1});
   });
  }
+ await page.route('**/rest/v1/rpc/post_store_production_run',route=>{writes.push({name:'post_store_production_run',args:route.request().postDataJSON()});return respond(route,{batch_id:'sp-extra-batch',status:'posted'});});
  await page.route('**/rest/v1/rpc/complete_store_production_for_delivery',route=>{
   writes.push({name:'complete_store_production_for_delivery',args:route.request().postDataJSON()});
   if(mode==='forbidden')return respond(route,{code:'P0001',message:'FORBIDDEN'},400);
@@ -52,8 +53,11 @@ export async function checkStoreProduction(page,base,out,report){
  if(completions[1].args.p_lines[0].main_quantity!=='12'||completions[1].args.p_lines[0].extra_quantity!=='0'||completions[1].args.p_lines[0].rejected_quantity!=='0')throw Error('Combined completion submitted unexpected quantities');await close();
  mode='forbidden';await page.getByRole('button',{name:'Duyệt & sẵn sàng giao',exact:true}).click();await page.getByRole('alert').filter({hasText:'thiếu quyền'}).waitFor();await close();
  mode='normal';await page.getByRole('button',{name:'Tải lại kiểm tra',exact:true}).click();await page.locator('.store-production-shortage-summary').waitFor({state:'hidden'});
- await page.getByRole('button',{name:'Duyệt & sẵn sàng giao',exact:true}).click();await page.getByRole('button',{name:'Đã duyệt hoàn tất',exact:true}).waitFor();
- if(!await page.getByRole('button',{name:'Đã duyệt hoàn tất',exact:true}).isDisabled())throw Error('Successful approval remains enabled');
+ await page.getByRole('button',{name:'Duyệt & sẵn sàng giao',exact:true}).click();await page.getByRole('button',{name:'Duyệt sản xuất thêm',exact:true}).waitFor();
+ if(await page.getByLabel('main Cơm cuộn thử nghiệm SYN-S').count())throw Error('Initial production remains editable');
+ await page.getByLabel('extra Cơm cuộn thử nghiệm SYN-S',{exact:true}).fill('3');await page.getByLabel('defect Cơm cuộn thử nghiệm SYN-S',{exact:true}).fill('0');await page.getByRole('button',{name:'Duyệt sản xuất thêm',exact:true}).click();
+ await page.waitForFunction(()=>document.querySelector('input[aria-label^="extra "]')?.value==='');
+ const extraRun=writes.find(w=>w.name==='post_store_production_run');if(!extraRun||extraRun.args.p_lines.length!==1||extraRun.args.p_lines[0].main_quantity!=='0'||extraRun.args.p_lines[0].extra_quantity!=='3'||!extraRun.args.p_key)throw Error('Additional production was not recorded as a separate idempotent batch');if(!ready)throw Error('Additional production cleared readiness approval');
  mode='unavailable';await page.goto(base+'/app/store-production-check?date='+date);await page.getByRole('alert').filter({hasText:'cập nhật SQL'}).waitFor();
  mode='normal';ready=false;recipeIssue='PRODUCT_RECIPE_RATIO_REQUIRED';await load();await page.getByRole('status').filter({hasText:'Thiếu tỷ lệ quy đổi'}).waitFor();
  report.checks.push('Store preparation: confirmation auto-fills approved quantities, one atomic action records production and readiness, shortages/permissions block writes, retry key is stable, and manual time/reason fields are removed');

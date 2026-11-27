@@ -9,5 +9,5 @@ export const modules=[
  ['departments','Bộ phận','employees'],['warehouses','Danh mục kho','inventory'],
  ['recipes','Công thức & giá vốn','recipes'],['requirements','Nhu cầu nguyên liệu','requirements'],['production','Kế hoạch & sản xuất','production'],['inventory','Kho & tồn kho','inventory'],['counts','Kiểm kê','counts'],
  ['orders','Đơn đặt hàng','orders'],['deliveries','Giao hàng','deliveries'],['returns','Thu hồi','returns'],['kiosk','Ki-ốt','kiosk'],['sales','Doanh thu & đối soát','sales'],['receivables','Công nợ','receivables'],['cash','Sổ quỹ','cash'],['loans','Khoản vay','loans'],
- ['attendance','Chấm công','attendance'],['payroll','Bảng lương','payroll'],['targets','Kế hoạch & mục tiêu','targets'],['reports','Báo cáo điều hành','reports'],['strategy','Chiến lược kinh doanh','strategy'],['imports','Nhập dữ liệu cũ','imports'],['admin','Tài khoản & quyền','admin'],['audit','Nhật ký hoạt động','audit'],
+ ['attendance','Chấm công','attendance'],['payroll','Bảng lương','payroll'],['targets','Kế hoạch & mục tiêu','targets'],['reports','Báo cáo điều hành','reports'],['strategy','Chiến lược kinh doanh','strategy'],['imports','Nhập dữ liệu cũ','imports'],['admin','Tài khoản & quyền','admin'],['bank-settings','T\u00e0i kho\u1ea3n ng\u00e2n h\u00e0ng nh\u1eadn ti\u1ec1n','admin'],['audit','Nhật ký hoạt động','audit'],
 ] as const;
