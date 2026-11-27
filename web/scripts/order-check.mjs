@@ -30,7 +30,7 @@ export async function checkOrders(page,base,out,report){
  const summaryProducts=[...expectedSummaryProducts].reverse(),summaryQuantity=expectedSummaryProducts.reduce((sum,product)=>sum+Number(product.total_quantity),0);
  const mainProducts=[...expectedSummaryProducts.slice(0,8),expectedSummaryProducts[10],expectedSummaryProducts[9],expectedSummaryProducts[8]];
  const quantityText=value=>new Intl.NumberFormat('vi-VN',{maximumFractionDigits:2}).format(value);
- const wholeRows=[{portion:mainProducts[6],whole:expectedSummaryProducts[9],factor:12/14},{portion:mainProducts[7],whole:expectedSummaryProducts[10],factor:16/10}];
+ const wholeRows=[{portion:mainProducts[6],whole:expectedSummaryProducts[9],factor:12/14},{portion:mainProducts[7],whole:expectedSummaryProducts[10],factor:10/16}];
  const expectedMatrixRows=[...mainProducts.map((product,index)=>[String(index+1),product.name,...summaryStores.map(store=>product.by_store[store.id]==='0'?'':product.by_store[store.id]),product.total_quantity]),...wholeRows.map(({portion,whole,factor})=>['#',whole.name,...summaryStores.map(store=>{const quantity=Number(whole.by_store[store.id])+Number(portion.by_store[store.id])*factor;return quantity===0?'':quantityText(quantity);}),quantityText(Number(whole.total_quantity)+Number(portion.total_quantity)*factor)])];
  const expectedMatrixTotals=['TỔNG SỐ LƯỢNG',...summaryStores.map(store=>String(mainProducts.reduce((sum,product)=>sum+Number(product.by_store[store.id]),0))),String(mainProducts.reduce((sum,product)=>sum+Number(product.total_quantity),0))];
  async function assertSummaryMatrix(mode){

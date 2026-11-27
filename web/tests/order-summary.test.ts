@@ -90,7 +90,9 @@ test('customer matrix keeps portion products and adds separate whole-tree totals
  assert.equal(products.find(product=>product.code==='CC')?.total_quantity,'12');assert.equal(products.find(product=>product.code==='CCC')?.total_quantity,'10');
  assert.equal(rows[0].name,'Cơm cuộn TT (nguyên cây)');assert.equal(rows[0].unit,'cây');assert.equal(rows[0].total_quantity,'12.285714285714285714');
  assert.equal(rows[0].by_store.a,'10.285714285714285714');assert.equal(rows[0].by_store.b,'2');
- assert.equal(rows[1].name,'Cơm cuộn chiên (nguyên cây)');assert.equal(rows[1].total_quantity,'17');assert.equal(rows[1].by_store.a,'1');assert.equal(rows[1].by_store.b,'16');
+ assert.equal(rows[1].name,'Cơm cuộn chiên (nguyên cây)');assert.equal(rows[1].total_quantity,'7.25');assert.equal(rows[1].by_store.a,'1');assert.equal(rows[1].by_store.b,'6.25');
+ const friedOnly=wholeRollOrderSummaryProducts([{product_id:'fried',code:'CCC',name:'Cơm cuộn chiên',unit:'phần',total_quantity:'16',by_store:{a:'16'}}]);
+ assert.equal(friedOnly[1].total_quantity,'10');assert.equal(friedOnly[1].by_store.a,'10','16 phần cơm cuộn chiên × 10 / 16 phải bằng 10 cây');
  const originalFetch=globalThis.fetch;globalThis.fetch=async()=>new Response(null,{status:404});
  try{
   const summary:OrderSummaryData={date:'2026-11-27',orders:[],stores:[{id:'a',code:'A',name:'Điểm A',phone:null},{id:'b',code:'B',name:'Điểm B',phone:null}],products,wholeRollTotals:rows,planned_quantity_total:'24'};
@@ -101,7 +103,7 @@ test('customer matrix keeps portion products and adds separate whole-tree totals
   assert.equal(matrix.getCell('B6').value,'Cơm cuộn chiên nguyên cây');assert.equal(matrix.getCell('C6').value,1);assert.equal(matrix.getCell('D6').value,'');assert.equal(matrix.getCell('E6').value,1);
   assert.equal(matrix.getCell('B7').value,'Cơm cuộn nguyên cây');assert.equal(matrix.getCell('C7').value,'');assert.equal(matrix.getCell('D7').value,2);assert.equal(matrix.getCell('E7').value,2);
   assert.equal(matrix.getCell('A8').value,'TỔNG SỐ LƯỢNG');assert.equal(matrix.getCell('C8').value,13);assert.equal(matrix.getCell('D8').value,12);assert.equal(matrix.getCell('E8').value,25);
-  assert.equal(matrix.getCell('A9').value,'#');assert.equal(matrix.getCell('B9').value,rows[0].name);assert.equal(matrix.getCell('E9').value,Number(rows[0].total_quantity));assert.equal(matrix.getCell('A10').value,'#');assert.equal(matrix.getCell('B10').value,rows[1].name);assert.equal(matrix.getCell('E10').value,17);
+  assert.equal(matrix.getCell('A9').value,'#');assert.equal(matrix.getCell('B9').value,rows[0].name);assert.equal(matrix.getCell('E9').value,Number(rows[0].total_quantity));assert.equal(matrix.getCell('A10').value,'#');assert.equal(matrix.getCell('B10').value,rows[1].name);assert.equal(matrix.getCell('E10').value,7.25);
  }finally{globalThis.fetch=originalFetch;}
 });
 

@@ -33,7 +33,7 @@ export function prepareOrderSummary(data:OrderSummaryData):OrderSummaryData{
 export function wholeRollOrderSummaryProducts(products:readonly SummaryProduct[]){
  const rollSpecs=[
   {portionCode:'CC',wholeCode:'CC-NC',label:'Cơm cuộn TT (nguyên cây)',numerator:12,denominator:14},
-  {portionCode:'CCC',wholeCode:'CCC-NC',label:'Cơm cuộn chiên (nguyên cây)',numerator:16,denominator:10},
+  {portionCode:'CCC',wholeCode:'CCC-NC',label:'Cơm cuộn chiên (nguyên cây)',numerator:10,denominator:16},
  ];
  return rollSpecs.map(({portionCode,wholeCode,label,numerator,denominator})=>{
   const portion=products.find(item=>item.code===portionCode),whole=products.find(item=>item.code===wholeCode);

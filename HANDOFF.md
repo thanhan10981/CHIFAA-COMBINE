@@ -1,7 +1,13 @@
+## 2026-11-27 — Sửa tỷ lệ quy đổi cơm cuộn chiên theo xác nhận owner (KH-01/KH-10/KH-12)
+
+- Owner xác nhận công thức hiện hành: `Cơm cuộn chiên × 10 / 16`, sau đó cộng số khách đặt `Cơm cuộn chiên nguyên cây`. Ví dụ 16 phần quy đổi thành 10 cây. Công thức này thay thế mọi mô tả `16/10` của checkpoint cũ; cơm cuộn thường vẫn là `12/14`.
+- Áp dụng cùng một tỷ lệ cho bảng trên màn hình, bản in A4 ngang, file Excel và browser fixture. Dòng số thứ tự vẫn là số đặt trực tiếp; chỉ dòng `# Cơm cuộn chiên (nguyên cây)` nhận phần quy đổi. Không sửa đơn hàng, chứng từ, snapshot hoặc dữ liệu PostgreSQL.
+- Bằng chứng: focused `order-summary` 6/6 gồm case 16 × 10 / 16 = 10; toàn bộ `npm test` 247/247; typecheck, lint và production build đạt; browser fixture `/app/orders` đạt desktop/mobile, bảng in và PDF A4 ngang 1 trang. Chưa áp SQL cloud; cần UAT trên đơn thật sau khi phát hành frontend.
+
 ## 2026-11-27 — Hiển thị đặt trực tiếp cơm cuộn nguyên cây trong bảng tổng hợp (KH-01/KH-10/KH-12)
 
 - Bảng tổng hợp khách đặt hàng thêm hai dòng món đặt trực tiếp ngay sau `Cơm cuộn chiên`: `Cơm cuộn chiên nguyên cây` rồi `Cơm cuộn nguyên cây`. Dòng có đơn dùng đúng số lượng theo điểm bán và tổng SL từ RPC; khi chỉ có cơm cuộn phần, hai dòng vẫn hiện số 0/trống để kiểm tra không có đơn nguyên cây. Mì trộn Chifaa được giữ sau hai dòng này.
-- Hai dòng `#` vẫn là tổng chuẩn bị: số đặt nguyên cây cộng phần quy đổi, theo từng điểm bán và tổng. Cơm cuộn thường quy đổi `12/14`, cơm cuộn chiên quy đổi `16/10`; số quy đổi không được đưa vào hai dòng đặt trực tiếp. Không tạo đơn hàng/dòng đơn giả, không sửa snapshot hay dữ liệu PostgreSQL.
+- Hai dòng `#` vẫn là tổng chuẩn bị: số đặt nguyên cây cộng phần quy đổi, theo từng điểm bán và tổng. Cơm cuộn thường quy đổi `12/14`; theo yêu cầu owner xác nhận lại, cơm cuộn chiên quy đổi `10/16` (ví dụ 16 phần = 10 cây). Số quy đổi không được đưa vào hai dòng đặt trực tiếp. Không tạo đơn hàng/dòng đơn giả, không sửa snapshot hay dữ liệu PostgreSQL.
 - Màn hình, bản in A4 ngang và file Excel dùng cùng dữ liệu đã chuẩn bị nên có cùng thứ tự và số lượng. Đã kiểm tra focused `order-summary` 6/6, toàn bộ `npm test` 247/247, typecheck, lint, production build và browser fixture `/app/orders` ở desktop/mobile. PDF A4 ngang 1 trang; ảnh kiểm tra tại `output/design-parity/order-summary-print.png` (ignored).
 - Chưa commit/push ở checkpoint này; chưa áp SQL cloud và còn cần UAT với đơn thật sau khi phát hành frontend.
 
@@ -1540,7 +1546,7 @@ Còn lại: chưa UAT dữ liệu thật hoặc triển khai frontend; không c�
 \n
 ## 2026-11-27 — Bảng tổng hợp giữ món phần và thêm dòng tổng nguyên cây (KH-01/KH-03/KH-10/KH-12)
 
-- Đính chính commit `886961d`: không gộp/ẩn `CC` và `CCC`. Ma trận và Excel giữ nguyên hàng số phần đã đặt, hàng tổng ban đầu; thêm riêng hai hàng sau tổng: `Cơm cuộn TT (nguyên cây)` tính `CC × 12/14 + CC-NC`, và `Cơm cuộn chiên (nguyên cây)` tính `CCC × 16/10 + CCC-NC`, theo từng điểm bán.
+- Đính chính commit `886961d`: không gộp/ẩn `CC` và `CCC`. Ma trận và Excel giữ nguyên hàng số phần đã đặt, hàng tổng ban đầu; thêm riêng hai hàng sau tổng: `Cơm cuộn TT (nguyên cây)` tính `CC × 12/14 + CC-NC`, và `Cơm cuộn chiên (nguyên cây)` tính `CCC × 10/16 + CCC-NC`, theo từng điểm bán.
 - Tính phần quy đổi bằng Decimal; không cộng hai hàng bổ sung vào tổng số lượng món. Chi tiết đơn, lượng đã duyệt, nhu cầu nguyên liệu, kế hoạch và sản xuất không đổi.
 - Kiểm tra: `npm run typecheck`, ESLint ba file sửa đổi, `git diff --check` đạt; `npx tsx --test --test-isolation=none tests/order-summary.test.ts` đạt 5/5. Test kiểm tra món phần vẫn còn, các món nguyên cây trực tiếp không đổi, hai dòng nguyên cây được cộng theo từng điểm bán và xuất sau dòng tổng trong Excel. Chưa áp SQL cloud, sửa dữ liệu đơn hay deploy.
 ## 2026-11-27 — Đồng bộ thứ tự món trên toàn bộ danh sách và bản xuất (KH-01/KH-03/KH-05/KH-10/KH-11/KH-12)

@@ -1,7 +1,12 @@
+## 2026-11-27 — Sửa quy đổi cơm cuộn chiên thành 10/16 (KH-01/KH-10/KH-12)
+
+- Dòng `# Cơm cuộn chiên (nguyên cây)` dùng `số phần × 10 / 16 + số cây khách đặt trực tiếp`; 16 phần bằng 10 cây. Quy tắc này thay thế tỷ lệ 16/10 ghi ở checkpoint cũ.
+- Màn hình, bản in A4 ngang, file Excel và browser fixture dùng chung kết quả; 247/247 tests, typecheck, lint và production build đạt.
+
 ## 2026-11-27 — Bảng tổng hợp hiển thị đơn nguyên cây riêng (KH-01/KH-10/KH-12)
 
 - Thêm hai dòng số thứ tự đặt trực tiếp sau `Cơm cuộn chiên`: cơm cuộn chiên nguyên cây và cơm cuộn nguyên cây. Khi không có đơn trực tiếp, dòng vẫn hiện để đối chiếu nhưng để trống theo điểm bán và tổng là 0.
-- Giữ hai dòng `#` sau tổng số lượng cho tổng chuẩn bị nguyên cây: số khách đặt nguyên cây cộng cơm cuộn thường `12/14` và cơm cuộn chiên `16/10`. Số quy đổi không còn lẫn vào dòng đặt trực tiếp.
+- Giữ hai dòng `#` sau tổng số lượng cho tổng chuẩn bị nguyên cây: số khách đặt nguyên cây cộng cơm cuộn thường `12/14` và, theo công thức owner xác nhận lại, cơm cuộn chiên `10/16` (16 phần = 10 cây). Số quy đổi không còn lẫn vào dòng đặt trực tiếp.
 - Đồng bộ thứ tự/số lượng cho màn hình, in A4 ngang và Excel; checked focused 6/6, full 247/247, typecheck, lint, build, browser desktop/mobile và PDF 1 trang.
 
 ## 2026-11-27 — Đã push chẩn đoán sản xuất, GitHub/Vercel đạt (KH-01/KH-03/KH-10/KH-12)
@@ -989,7 +994,7 @@ Sửa lỗi SQLSTATE 42702 do bí danh truy vấn topping trùng biến trong `r
 - `/app/production` chuyển hướng sang trang 04; ẩn mục menu cũ. Migration 095 chỉ tạo local, chưa áp Supabase.
 ## 2026-11-27 — Giữ món cuộn dạng phần và thêm dòng tổng nguyên cây trong ma trận khách đặt
 
-- Đính chính commit `886961d`: giữ nguyên hàng `CC`/`CCC` và tổng số lượng ban đầu; thêm hai hàng riêng sau tổng. Hai hàng tính `CC × 12/14 + CC-NC` và `CCC × 16/10 + CCC-NC` theo từng điểm bán. Không cộng hàng phụ vào tổng số món.
+- Đính chính commit `886961d`: giữ nguyên hàng `CC`/`CCC` và tổng số lượng ban đầu; thêm hai hàng riêng sau tổng. Hai hàng tính `CC × 12/14 + CC-NC` và `CCC × 10/16 + CCC-NC` theo từng điểm bán. Không cộng hàng phụ vào tổng số món.
 - Chi tiết và trạng thái kiểm tra ghi tại `HANDOFF.md`.
 ## 2026-11-27 — Đồng bộ thứ tự sản phẩm theo ảnh trên các màn hình, bản in và Excel
 
