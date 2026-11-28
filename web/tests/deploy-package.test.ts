@@ -19,7 +19,7 @@ test('SQL Editor package installs atomically and rejects a second run without ch
   const sql=buildDevBootstrap(migrations);
   await db.exec(sql);
   const state=await db.query<{tablename:string;rowsecurity:boolean}>("select tablename,rowsecurity from pg_tables where schemaname='public' order by tablename");
-  assert.equal(state.rows.length,103,'current SQL Editor package installs all audited public tables');
+  assert.equal(state.rows.length,104,'current SQL Editor package installs all audited public tables');
   assert.ok(state.rows.some(row=>row.tablename==='store_production_readiness'&&row.rowsecurity),'store readiness is private to production permissions');
   assert.ok(state.rows.every(row=>row.rowsecurity));
   await assert.rejects(()=>db.exec(sql),/CHIFAA_DEV_NOT_EMPTY/);

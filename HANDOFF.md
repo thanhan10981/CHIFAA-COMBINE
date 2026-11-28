@@ -1,3 +1,17 @@
+## 2026-11-28 — Tab tồn thành phẩm và phiếu điều chỉnh có audit (KH-03/KH-10)
+
+- Trang `04 · Sản xuất – Lỗi – Hủy` có tab `Tồn thành phẩm`; hiển thị tồn theo ngày và chỉ cho nhập số tồn đúng kèm lý do.
+- Sửa tồn bằng phiếu delta bất biến có người tạo, lý do, idempotency, kiểm tra số dư cũ và quyền `production:edit`. Số dư được tính vào các lượt duyệt/giao sau ngày điều chỉnh; không viết lại phiếu sản xuất hoặc tiêu hao nguyên liệu.
+- Migration `202611280102_finished_goods_stock_adjustments.sql` chưa áp lên Supabase/cloud.
+- Files: migration 102, `store-production-desk.tsx`, `production-materials.css`, `store-production-errors.ts`, route permission, workflow test.
+- Bằng chứng local: workflows 15/15, typecheck, lint và production build đạt. Full suite 254/254; deploy-package và design-contract assertion đều pass sau khi cập nhật bảng ledger mới và menu bank-settings. Chưa UAT trên tài khoản/DB thật.
+## 2026-11-28 — Luôn in QR VietQR trên hóa đơn từ tài khoản đã lưu (KH-05/KH-10)
+
+- Hóa đơn trong chi tiết đơn luôn nhận cấu hình từ tài khoản ngân hàng đang hoạt động có BIN, số tài khoản và chủ tài khoản hợp lệ. Khi đang chọn tài khoản chuyển khoản lúc chốt giao, tài khoản đó được ưu tiên; còn lại dùng tài khoản VietQR hợp lệ đầu tiên theo mã. QR có nội dung `THANH TOAN DON HANG <mã đơn>`; dùng số tiền chuyển khoản đã nhập ở bước chốt giao, nếu chưa chọn thì dùng tổng thanh toán in trên hóa đơn. Tài khoản đang chọn mà thiếu cấu hình sẽ không âm thầm chuyển QR sang ngân hàng khác.
+- Danh sách tài khoản được tải khi mở chi tiết đơn nếu người dùng có quyền `cash:view` theo RLS hiện hành. Nếu chưa lưu cấu hình hợp lệ, giao diện báo để cài tài khoản trong Quản trị hệ thống; nếu chưa tải được danh sách thì báo tải lại trước khi in QR. Người thiếu quyền xem tài khoản sẽ được báo rõ và cần quản trị cấp quyền. In hóa đơn không tạo giao dịch thu tiền.
+- Files: `web/features/orders/sales-invoice.tsx`, `web/features/orders/review-orders.tsx`, `web/tests/sales-invoice.test.ts`.
+- Bằng chứng local: test hóa đơn/VietQR 6/6, typecheck, lint, production build và `git diff --check` đạt. Không sửa schema, migration, số dư hay dữ liệu cloud; chưa UAT tài khoản đăng nhập/máy in thật.
+
 ## 2026-11-28 — Cho phép duyệt khi tồn thành phẩm đã đủ, không ghi sản xuất (KH-03; liên thông KH-01/KH-10)
 
 - Trang `04 · Sản xuất – Lỗi – Hủy` cho phép nhập 0 ở sản xuất chính/thêm khi thành phẩm còn tồn đủ cho đơn. Dòng có tổng sản xuất bằng 0 được bỏ khỏi phiếu; nếu mọi dòng bằng 0, giao diện gọi RPC xác nhận tồn sẵn có để duyệt chuẩn bị, không tạo lô sản xuất và không trừ nguyên liệu. RPC vẫn kiểm tra tồn theo đơn ở server; thiếu thành phẩm thì bị chặn.

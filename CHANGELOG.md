@@ -1,3 +1,10 @@
+## 2026-11-28 — Tab tồn thành phẩm và phiếu điều chỉnh có audit (KH-03/KH-10)
+
+- Trang `04 · Sản xuất – Lỗi – Hủy` có tab `Tồn thành phẩm`; hiển thị tồn theo ngày và chỉ cho nhập số tồn đúng kèm lý do.
+- Sửa tồn bằng phiếu delta bất biến có người tạo, lý do, idempotency, kiểm tra số dư cũ và quyền `production:edit`. Số dư được tính vào các lượt duyệt/giao sau ngày điều chỉnh; không viết lại phiếu sản xuất hoặc tiêu hao nguyên liệu.
+- Migration `202611280102_finished_goods_stock_adjustments.sql` chưa áp lên Supabase/cloud.
+- Files: migration 102, `store-production-desk.tsx`, `production-materials.css`, `store-production-errors.ts`, route permission, workflow test.
+- Bằng chứng local: workflows 15/15, typecheck, lint và production build đạt. Full suite 254/254; deploy-package và design-contract assertion đều pass sau khi cập nhật bảng ledger mới và menu bank-settings. Chưa UAT trên tài khoản/DB thật.
 ## 2026-11-27 — Sửa giao diện chi tiết sản xuất theo điểm bán (KH-01/KH-03/KH-10/KH-12)
 
 - Bỏ khoảng trống của vùng bảng khi mở `Chi tiết` trên trang `04 · Sản xuất – Lỗi – Hủy`.
@@ -1000,6 +1007,8 @@ Sửa lỗi SQLSTATE 42702 do bí danh truy vấn topping trùng biến trong `r
 - Đã push `c7922b3` lên `chifaa-next-dev` theo quyền trực tiếp của owner. Vercel xác nhận triển khai hoàn tất; bằng chứng `output/checks/sales-invoice-a5-deploy.json` (ignored). Còn UAT phiên đăng nhập/máy in thật; không thay SQL hoặc dữ liệu nghiệp vụ.
 
 ## 2026-11-28
+
+- **QR trên hóa đơn:** Tự tạo QR VietQR từ tài khoản ngân hàng nhận tiền đã lưu cho mọi hóa đơn; ưu tiên tài khoản đang chọn ở bước chuyển khoản, nếu chưa chọn thì dùng tài khoản hợp lệ đầu tiên. QR lấy số tiền chuyển khoản đã nhập hoặc tổng hóa đơn nếu chưa vào bước thu tiền. Test hóa đơn/VietQR 6/6, typecheck, lint và build đạt.
 
 - **Sản xuất theo điểm bán:** Cho phép ghi 0 khi tồn thành phẩm hiện có đủ; bỏ dòng 0 khỏi phiếu sản xuất, và chỉ xác nhận tồn để sẵn sàng giao khi tất cả dòng bằng 0. Thiếu thành phẩm vẫn bị server chặn. Test tập trung 3/3, typecheck, lint và build đạt; full suite chưa xác minh.
 

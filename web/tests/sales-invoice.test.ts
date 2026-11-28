@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {invoiceAmounts,invoiceRows,invoiceMoneyWords,invoiceSubtotalExpression,vietQrQuickLink,type InvoiceLine} from '../features/orders/sales-invoice';
+import {invoiceAmounts,invoiceRows,invoiceMoneyWords,invoicePaymentForOrder,invoiceSubtotalExpression,vietQrQuickLink,type InvoiceLine} from '../features/orders/sales-invoice';
 
 const line=(code:string,overrides:Partial<InvoiceLine>={}):InvoiceLine=>({order_item_id:code,product_code:code,product_name:code,sale_unit:'phần',ordered_quantity:'2',price_vnd:'15000',discount_rate:'0.17',...overrides});
 test('invoice follows template, keeps unlisted/duplicate lines and leaves missing products blank without mutating snapshots',()=>{
@@ -28,3 +28,13 @@ test('invoice spells payable in Vietnamese without rounding through Number',()=>
 });
 
 test('VietQR link locks the payable amount and order reference into the bank transfer QR',()=>{const url=vietQrQuickLink({bank_bin:'970415',account_number:'113366668888',account_holder:'CHIFAA COMPANY',amount:'47350',order_code:'A1B2C3D4'});assert.ok(url);const parsed=new URL(url);assert.equal(parsed.hostname,'img.vietqr.io');assert.equal(parsed.searchParams.get('amount'),'47350');assert.equal(parsed.searchParams.get('addInfo'),'THANH TOAN DON HANG A1B2C3D4');assert.equal(parsed.searchParams.get('accountName'),'CHIFAA COMPANY');assert.equal(vietQrQuickLink({bank_bin:'9704',account_number:'12',account_holder:'A',amount:'0',order_code:'X'}),null);});
+test('every printed invoice uses a saved VietQR account and the full invoice payable amount',()=>{
+ const bankA={id:'bank-a',kind:'bank',bank_bin:'970415',account_number:'113366668888',account_holder:'CHIFAA COMPANY'},bankB={id:'bank-b',kind:'bank',bank_bin:'970416',account_number:'998877665544',account_holder:'CHIFAA SECOND'};
+ const lines=[line('A',{ordered_quantity:'2',price_vnd:'30000',discount_rate:'0.17'})];
+ assert.deepEqual(invoicePaymentForOrder([{...bankA,id:'cash',kind:'cash'},bankA,bankB],null,lines,'a1b2c3d4-0000'),{bank_bin:'970415',account_number:'113366668888',account_holder:'CHIFAA COMPANY',amount:'49800',order_code:'A1B2C3D4'});
+ assert.equal(invoicePaymentForOrder([bankA,bankB],'bank-b',lines,'a1b2c3d4-0000')?.bank_bin,'970416','settlement account is preferred when available');
+ assert.equal(invoicePaymentForOrder([bankA,bankB],'bank-b',lines,'a1b2c3d4-0000','12345')?.amount,'12345','entered transfer amount is retained while settling');
+ assert.equal(invoicePaymentForOrder([bankA,bankB],'bank-b',lines,'a1b2c3d4-0000','0')?.amount,'49800','invalid/zero override falls back to the full invoice total');
+ assert.equal(invoicePaymentForOrder([{...bankA,id:'bank-a',account_number:null},bankB],'bank-a',lines,'a1b2c3d4-0000'),null,'an incomplete selected bank is never silently replaced by a different account');
+ assert.equal(invoicePaymentForOrder([{...bankA,account_number:null}],null,lines,'a1b2c3d4-0000'),null,'incomplete saved accounts cannot create QR codes');
+});

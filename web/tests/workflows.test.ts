@@ -197,3 +197,22 @@ test('a recipe cannot publish using a child version that is only effective in th
  await assert.rejects(()=>rpc('publish_recipe',[parent.version_id,1,null,null,randomUUID()]),/CHILD_RECIPE_NOT_EFFECTIVE/);
  assert.equal((await db.query<{status:string}>('select status from recipe_versions where id=$1',[parent.version_id])).rows[0].status,'draft');
 });
+
+test('finished goods quantity corrections create audited immutable deltas with idempotency and stale checks',async()=>{
+ const date='2098-12-01';
+ const view=(await rpc('finished_goods_stock_workspace',[date])).rows[0].result as unknown as {product_id:string;quantity:string}[];
+ const baseline=view.find(row=>row.product_id===ids.product)?.quantity;assert.ok(baseline);
+ const key=randomUUID(),args=[ids.product,date,baseline,String(Number(baseline)+12),'Correct mistaken production approval',key];
+ const first=(await rpc('adjust_finished_goods_stock',args)).rows[0].result as {id:string;quantity:string;delta:string;unchanged:boolean};
+ assert.equal(Number(first.quantity),Number(baseline)+12);assert.equal(Number(first.delta),12);assert.equal(first.unchanged,false);
+ assert.deepEqual((await rpc('adjust_finished_goods_stock',args)).rows[0].result,first);
+ assert.equal(Number((await db.query<{balance:string}>('select private.finished_goods_balance($1,$2) balance',[ids.product,date])).rows[0].balance),Number(baseline)+12);
+ await assert.rejects(()=>rpc('adjust_finished_goods_stock',[ids.product,date,baseline,'8','Stale quantity correction',randomUUID()]),/FINISHED_GOODS_VERSION_CONFLICT/);
+ await assert.rejects(()=>rpc('adjust_finished_goods_stock',[ids.product,date,first.quantity,'-1','Correction below zero',randomUUID()]),/INVALID_FINISHED_GOODS_ADJUSTMENT/);
+ assert.equal((await db.query('select * from finished_goods_stock_adjustments where product_id=$1',[ids.product])).rows.length,1);
+ const ledger=(await db.query<{before_quantity:string;after_quantity:string;reason:string}>('select before_quantity,after_quantity,reason from finished_goods_stock_adjustments where id=$1',[first.id])).rows[0];
+ assert.equal(Number(ledger.before_quantity),Number(baseline));assert.equal(Number(ledger.after_quantity),Number(baseline)+12);assert.equal(ledger.reason,'Correct mistaken production approval');
+ await assert.rejects(()=>rpc('adjust_finished_goods_stock',[ids.product,date,first.quantity,'8','Unauthorized correction',randomUUID()],identities.a),/FORBIDDEN/);
+ await db.query("insert into accounting_periods(starts_on,ends_on,status) values($1,$1,'closed')",[date]);
+ await assert.rejects(()=>rpc('adjust_finished_goods_stock',[ids.product,date,first.quantity,'20','Closed period correction',randomUUID()]),/PERIOD_CLOSED/);
+});

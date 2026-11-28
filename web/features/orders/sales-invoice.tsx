@@ -5,6 +5,15 @@ import {sortProductsByMenuOrder,productMenu,isWholeRollCode} from '../../lib/pro
 
 export type InvoiceLine={order_item_id:string;product_code:string|null;product_name:string|null;sale_unit:string|null;ordered_quantity:string;price_vnd:string;discount_rate:string};
 export type InvoicePaymentQr={bank_bin:string;account_number:string;account_holder:string;amount:string;order_code:string};
+export type InvoiceReceivingAccount={id:string;kind:string;bank_bin:string|null;account_number:string|null;account_holder:string|null};
+const validReceivingAccount=(account:InvoiceReceivingAccount)=>account.kind==='bank'&&/^\d{6}$/.test(account.bank_bin??'')&&/^[A-Za-z0-9]{6,19}$/.test(account.account_number??'')&&!!account.account_holder?.trim();
+export function invoicePaymentForOrder(accounts:readonly InvoiceReceivingAccount[],preferredAccountId:string|null,lines:readonly InvoiceLine[],orderId:string,amountOverride?:string|null):InvoicePaymentQr|null{
+ const preferred=accounts.find(row=>row.id===preferredAccountId&&row.kind==='bank');
+ const account=preferred?(validReceivingAccount(preferred)?preferred:null):accounts.find(validReceivingAccount);
+ const amount=amountOverride&&/^[1-9]\d{0,12}$/.test(amountOverride)?amountOverride:invoiceAmounts(lines).net;
+ if(!account||!/^([1-9]\d{0,12})$/.test(amount))return null;
+ return {bank_bin:account.bank_bin!,account_number:account.account_number!,account_holder:account.account_holder!.trim(),amount,order_code:orderId.slice(0,8).toUpperCase()};
+}
 export function vietQrQuickLink(payment:InvoicePaymentQr){
  if(!/^\d{6}$/.test(payment.bank_bin)||!/^[A-Za-z0-9]{6,19}$/.test(payment.account_number)||!/^[1-9]\d{0,12}$/.test(payment.amount))return null;
  const memo=`THANH TOAN DON HANG ${payment.order_code}`;
