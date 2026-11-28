@@ -3,16 +3,22 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {database,asUser,identities} from './database-fixture';
-import {storeProductionLines} from '../features/operations/store-production-input';
+import {storeProductionLines,storeProductionInputsAreZero} from '../features/operations/store-production-input';
 import {storeProductionError,type FinishedStockCheck} from '../features/operations/store-production-errors';
 
 test('store production requires explicit actual quantities and reports recipe and input errors separately',()=>{
  const items=[{product_id:'p',name:'Món thử'}],products=[{id:'p',name:'Món thử',code:'P',recipe_version_id:'v'}];
  assert.throws(()=>storeProductionLines(items,products),/Món thử: nhập sản xuất chính/);
  assert.throws(()=>storeProductionLines(items,products,{p:{main:'6',extra:'0',defect:''}}),/lỗi SX/);
- assert.throws(()=>storeProductionLines(items,[{...products[0],recipe_issue:'PRODUCT_RECIPE_RATIO_REQUIRED'}]),/Thiếu tỷ lệ quy đổi/);
+ assert.throws(()=>storeProductionLines(items,[{...products[0],recipe_issue:'PRODUCT_RECIPE_RATIO_REQUIRED'}],{p:{main:'1',extra:'0',defect:'0'}}),/Thiếu tỷ lệ quy đổi/);
  assert.throws(()=>storeProductionLines(items,products,{p:{main:'6',extra:'0',defect:'7'}}),/không được vượt tổng/);
  assert.deepEqual(storeProductionLines(items,products,{p:{main:'6',extra:'0',defect:'0'}}),[{product_id:'p',recipe_version_id:'v',main_quantity:'6',extra_quantity:'0',rejected_quantity:'0'}]);
+ const zero={p:{main:'0',extra:'0',defect:'0'}};
+ assert.throws(()=>storeProductionLines(items,products,zero),/phải lớn hơn 0/,'ordinary production runs still require positive output');
+ assert.deepEqual(storeProductionLines(items,[{...products[0],recipe_version_id:null}],zero,{allowZeroProduction:true}),[],'zero output skips the recipe and produces no batch line');
+ assert.equal(storeProductionInputsAreZero(items,zero),true);
+ assert.equal(storeProductionInputsAreZero(items),false,'blank inputs are not treated as zero');
+ assert.deepEqual(storeProductionLines([{product_id:'p',name:'Món thử'},{product_id:'q',name:'Món khác'}],[products[0],{...products[0],id:'q'}],{...zero,q:{main:'2',extra:'0',defect:'0'}},{allowZeroProduction:true}),[{product_id:'q',recipe_version_id:'v',main_quantity:'2',extra_quantity:'0',rejected_quantity:'0'}],'zero rows are omitted from mixed production requests');
 });
 
 test('store production errors explain finished goods, raw materials and unavailable schema without inventing shortages',()=>{
@@ -70,7 +76,8 @@ test('store readiness diagnoses exact stock, rejects shared shortages atomically
   assert.deepEqual(await snapshot(),afterSingle,'bulk shortage has no partial writes');
   await post('4');
   const stockBefore=(await db.query('select * from inventory_movement_lines')).rows;
-  const bulkKey=randomUUID(),bulk=()=>rpc('confirm_all_store_production_ready',[date,'Synthetic all readiness',bulkKey]);const result=await bulk();assert.equal(result.stores_confirmed,1);assert.deepEqual(await bulk(),result);
+  const batchesBeforeReadiness=(await db.query('select * from production_batches')).rows;const bulkKey=randomUUID(),bulk=()=>rpc('confirm_all_store_production_ready',[date,'Synthetic all readiness',bulkKey]);const result=await bulk();assert.equal(result.stores_confirmed,1);assert.deepEqual(await bulk(),result);
+  assert.deepEqual((await db.query('select * from production_batches')).rows,batchesBeforeReadiness,'readiness from sufficient finished stock creates no production batch');
   assert.deepEqual((await db.query('select * from inventory_movement_lines')).rows,stockBefore,'readiness never consumes raw materials');
   assert.equal(Number((await rpc<Diagnostic>('store_production_diagnostics',[date])).products[0].available_quantity),14,'readiness never consumes finished goods');
   assert.equal((await db.query("select * from audit_logs where action='STORE_PRODUCTION_READY'")).rows.length,2);

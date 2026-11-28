@@ -1,3 +1,10 @@
+## 2026-11-28 — Cho phép duyệt khi tồn thành phẩm đã đủ, không ghi sản xuất (KH-03; liên thông KH-01/KH-10)
+
+- Trang `04 · Sản xuất – Lỗi – Hủy` cho phép nhập 0 ở sản xuất chính/thêm khi thành phẩm còn tồn đủ cho đơn. Dòng có tổng sản xuất bằng 0 được bỏ khỏi phiếu; nếu mọi dòng bằng 0, giao diện gọi RPC xác nhận tồn sẵn có để duyệt chuẩn bị, không tạo lô sản xuất và không trừ nguyên liệu. RPC vẫn kiểm tra tồn theo đơn ở server; thiếu thành phẩm thì bị chặn.
+- Dòng có sản lượng dương vẫn cần công thức hợp lệ và đi qua giao dịch ghi sản xuất + xác nhận chuẩn bị hiện tại. Đợt sản xuất riêng vẫn yêu cầu sản lượng dương. Không sửa migration hoặc dữ liệu cloud.
+- Files: `web/features/operations/store-production-input.ts`, `web/features/operations/store-production-desk.tsx`, `web/tests/store-production.test.ts`.
+- Bằng chứng local: test tập trung `store-production.test.ts` 3/3; `npm run typecheck`, `npm run lint` và `npm run build` đạt. Full suite chưa xác minh ở checkpoint này; lần gọi `npm test` đầu truyền sai option lọc, chạy rộng rồi bị dừng, với hai failure không thuộc test sản xuất (`database.test.ts`, menu group mapping). Chưa có UAT trên Supabase/cloud; không áp SQL, không tạo/sửa chứng từ live.
+
 ## 2026-11-27 — Xác nhận sản xuất và sẵn sàng giao trong một bước (KH-01/KH-03/KH-10/KH-12)
 
 - Theo yêu cầu owner trên trang Sản xuất theo điểm bán: bỏ nhập giờ bắt đầu/kết thúc và lý do; thêm checkbox “Xác nhận đã làm xong”. Tick xác nhận điền sản xuất chính bằng số đơn đã duyệt, sản xuất thêm = 0, lỗi SX = 0; các lượng vẫn có thể sửa trước khi duyệt.
