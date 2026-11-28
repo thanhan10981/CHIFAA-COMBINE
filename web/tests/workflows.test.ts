@@ -200,19 +200,33 @@ test('a recipe cannot publish using a child version that is only effective in th
 
 test('finished goods quantity corrections create audited immutable deltas with idempotency and stale checks',async()=>{
  const date='2098-12-01';
+ const materialBalance=async()=>Number((await db.query<{quantity:string}>("select coalesce(sum(l.quantity),0)::text quantity from inventory_movement_lines l join inventory_movements v on v.id=l.movement_id where l.material_id=$1 and v.warehouse_id=$2 and v.moved_on<=$3",[ids.rice,ids.warehouse,date])).rows[0].quantity);
+ const materialBefore=await materialBalance();
  const view=(await rpc('finished_goods_stock_workspace',[date])).rows[0].result as unknown as {product_id:string;quantity:string}[];
  const baseline=view.find(row=>row.product_id===ids.product)?.quantity;assert.ok(baseline);
  const key=randomUUID(),correctedQuantity=Math.round(Number(baseline))+12,args=[ids.product,date,baseline,String(correctedQuantity),'Correct mistaken production approval',key];
- const first=(await rpc('adjust_finished_goods_stock',args)).rows[0].result as {id:string;quantity:string;delta:string;unchanged:boolean};
+ const recipeAtDate=(await db.query<{recipe_version_id:string;output_quantity_per_product:string}>("select recipe_version_id,output_quantity_per_product from private.production_recipe_choice($1,$2)",[ids.product,date])).rows[0];
+ const expectedIngredient=(await db.query<{quantity:string}>("select coalesce(sum(quantity),0)::numeric(20,6)::text quantity from private.bom($1,$2,$3) where material_id=$4",[recipeAtDate.recipe_version_id,(correctedQuantity-Number(baseline))*Number(recipeAtDate.output_quantity_per_product),date,ids.rice])).rows[0].quantity;
+ const first=(await rpc('adjust_finished_goods_stock',args)).rows[0].result as {id:string;quantity:string;delta:string;unchanged:boolean;ingredient_movement_id:string;ingredient_movement_kind:string;recipe_version_id:string;ingredient_lines:{material_id:string;quantity:string}[]};
  assert.equal(Number(first.quantity),correctedQuantity);assert.equal(Number(first.delta),correctedQuantity-Number(baseline));assert.equal(first.unchanged,false);
+ assert.equal(first.ingredient_movement_kind,'issue');assert.equal(first.recipe_version_id,recipeAtDate.recipe_version_id);assert.ok(first.ingredient_movement_id);assert.equal(first.ingredient_lines[0].material_id,ids.rice);
+ assert.equal(await materialBalance(),materialBefore-Number(expectedIngredient),'more finished goods issue the exact recipe quantity');
  assert.deepEqual((await rpc('adjust_finished_goods_stock',args)).rows[0].result,first);
  assert.equal(Number((await db.query<{balance:string}>('select private.finished_goods_balance($1,$2) balance',[ids.product,date])).rows[0].balance),correctedQuantity);
+ await assert.rejects(()=>rpc('adjust_finished_goods_stock',[ids.product,date,first.quantity,String(correctedQuantity+10000),'Reject when recipe materials are short',randomUUID()]),/INSUFFICIENT_STOCK/);
+ assert.equal(await materialBalance(),materialBefore-Number(expectedIngredient),'insufficient stock rolls back both inventory and finished goods');
+ assert.equal((await db.query('select * from finished_goods_stock_adjustments where product_id=$1',[ids.product])).rows.length,1);
+ const correctionTarget=String(Math.round(Number(baseline))),returnDelta=Number(correctionTarget)-correctedQuantity;
+ const expectedReturn=(await db.query<{quantity:string}>("select coalesce(sum(quantity),0)::numeric(20,6)::text quantity from private.bom($1,$2,$3) where material_id=$4",[recipeAtDate.recipe_version_id,Math.abs(returnDelta)*Number(recipeAtDate.output_quantity_per_product),date,ids.rice])).rows[0].quantity;
+ const correctionBack=(await rpc('adjust_finished_goods_stock',[ids.product,date,first.quantity,correctionTarget,'Return ingredients for mistaken extra quantity',randomUUID()])).rows[0].result as {quantity:string;delta:string;ingredient_movement_kind:string;ingredient_movement_id:string};
+ assert.equal(correctionBack.ingredient_movement_kind,'receipt');assert.ok(correctionBack.ingredient_movement_id);assert.equal(await materialBalance(),materialBefore-Number(expectedIngredient)+Number(expectedReturn),'reducing finished goods returns the matching recipe quantity');
  await assert.rejects(()=>rpc('adjust_finished_goods_stock',[ids.product,date,baseline,'8','Stale quantity correction',randomUUID()]),/FINISHED_GOODS_VERSION_CONFLICT/);
  await assert.rejects(()=>rpc('adjust_finished_goods_stock',[ids.product,date,first.quantity,'-1','Correction below zero',randomUUID()]),/INVALID_FINISHED_GOODS_ADJUSTMENT/);
- await assert.rejects(()=>rpc('adjust_finished_goods_stock',[ids.product,date,first.quantity,String(Number(first.quantity)+0.5),'Fractional stock correction',randomUUID()]),/finished_goods_stock_adjustments_after_quantity_integer/);
- assert.equal((await db.query('select * from finished_goods_stock_adjustments where product_id=$1',[ids.product])).rows.length,1);
- const ledger=(await db.query<{before_quantity:string;after_quantity:string;reason:string}>('select before_quantity,after_quantity,reason from finished_goods_stock_adjustments where id=$1',[first.id])).rows[0];
+ await assert.rejects(()=>rpc('adjust_finished_goods_stock',[ids.product,date,correctionBack.quantity,String(Number(correctionBack.quantity)+0.5),'Fractional stock correction',randomUUID()]),/finished_goods_stock_adjustments_after_quantity_integer/);
+ assert.equal((await db.query('select * from finished_goods_stock_adjustments where product_id=$1',[ids.product])).rows.length,2);
+ const ledger=(await db.query<{before_quantity:string;after_quantity:string;reason:string;ingredient_movement_id:string;ingredient_movement_kind:string;recipe_version_id:string}>('select before_quantity,after_quantity,reason,ingredient_movement_id,ingredient_movement_kind,recipe_version_id from finished_goods_stock_adjustments where id=$1',[first.id])).rows[0];
  assert.equal(Number(ledger.before_quantity),Number(baseline));assert.equal(Number(ledger.after_quantity),correctedQuantity);assert.equal(ledger.reason,'Correct mistaken production approval');
+ assert.equal(ledger.ingredient_movement_id,first.ingredient_movement_id);assert.equal(ledger.ingredient_movement_kind,'issue');assert.equal(ledger.recipe_version_id,recipeAtDate.recipe_version_id);
  await assert.rejects(()=>rpc('adjust_finished_goods_stock',[ids.product,date,first.quantity,'8','Unauthorized correction',randomUUID()],identities.a),/FORBIDDEN/);
  await db.query("insert into accounting_periods(starts_on,ends_on,status) values($1,$1,'closed')",[date]);
  await assert.rejects(()=>rpc('adjust_finished_goods_stock',[ids.product,date,first.quantity,'20','Closed period correction',randomUUID()]),/PERIOD_CLOSED/);

@@ -1,3 +1,10 @@
+## 2026-11-28 — Điều chỉnh thành phẩm đồng thời cập nhật kho nguyên liệu (KH-01/KH-03/KH-10)
+
+- Khi tăng tồn thành phẩm, RPC tính BOM theo công thức công bố có hiệu lực trong ngày và ghi phiếu xuất nguyên liệu; khi giảm tồn, ghi phiếu nhập trả nguyên liệu tương ứng. Ghi kho và phiếu điều chỉnh thành phẩm nằm trong cùng transaction, có tham chiếu movement, recipe version và dòng định lượng snapshot; không sửa phiếu sản xuất đã duyệt.
+- Migration: `supabase/migrations/202611280104_finished_goods_adjustment_material_effect.sql`; generated database types, quyền route, thông báo giao diện và workflow test đã cập nhật.
+- Chỉ thực hiện khi có đúng một kho nguyên liệu hoạt động; chặn nếu thiếu công thức/quy đổi, thiếu nguyên liệu, kỳ khóa hoặc số tồn đã cam kết. Yêu cầu quyền production:view/edit và inventory:create.
+- Bằng chứng: workflow PGlite liên quan 15/15, toàn bộ suite 255/255, typecheck, lint và production build đạt; `npm run db:types` sinh đúng các cột mới. Chỉ chạy trong PGlite; chưa áp lên Supabase/cloud và chưa UAT tài khoản thật.
+
 ## 2026-11-28 — Chỉ cho điều chỉnh tồn thành phẩm bằng số nguyên (KH-03/KH-10)
 
 - Ô `Số tồn đúng` dùng `step=1`, kiểm tra số nguyên không âm, khóa nút lưu khi nhập số lẻ và hiển thị lỗi ngay tại ô. Gợi ý tồn dùng định dạng số gọn.

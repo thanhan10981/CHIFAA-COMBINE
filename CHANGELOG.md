@@ -1,3 +1,9 @@
+## 2026-11-28 — Điều chỉnh thành phẩm cập nhật kho nguyên liệu (KH-01/KH-03/KH-10)
+
+- Tăng tồn thành phẩm ghi xuất nguyên liệu theo BOM; giảm tồn ghi nhập trả theo BOM. Snapshot lưu công thức, kho, định lượng và movement liên kết; nguyên tử với điều chỉnh thành phẩm, không sửa lịch sử sản xuất.
+- Chỉ ghi khi có một kho nguyên liệu đang hoạt động và quyền tạo phiếu kho; thiếu công thức, quy đổi hoặc tồn nguyên liệu sẽ từ chối toàn bộ giao dịch.
+- Verification: workflow tests 15/15, full suite 255/255, typecheck, lint and production build passed. Migration 104 remains local; it has not been applied to Supabase.
+
 ## 2026-11-28 - Finished goods corrections accept whole quantities (KH-03/KH-10)
 
 - Stock correction input now accepts nonnegative whole numbers only, shows an inline error for fractional values, and formats the suggested balance without trailing zeroes. PostgreSQL also enforces whole-number `after_quantity` values.
