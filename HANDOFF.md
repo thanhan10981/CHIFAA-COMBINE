@@ -1,3 +1,9 @@
+## 2026-11-28 — Chỉ cho điều chỉnh tồn thành phẩm bằng số nguyên (KH-03/KH-10)
+
+- Ô `Số tồn đúng` dùng `step=1`, kiểm tra số nguyên không âm, khóa nút lưu khi nhập số lẻ và hiển thị lỗi ngay tại ô. Gợi ý tồn dùng định dạng số gọn.
+- Migration `202611280103_finished_goods_whole_quantity_adjustments.sql` thêm CHECK constraint để PostgreSQL từ chối tồn sau điều chỉnh dạng lẻ, kể cả khi gọi RPC trực tiếp. Delta vẫn giữ chính xác để đưa số dư lịch sử có phần lẻ về số nguyên; không viết lại các phiếu sản xuất đã chốt.
+- Kiểm tra: `npm run typecheck`, `npm run lint`, production build, full suite `npm test` (255/255), test tập trung (19/19) và `git diff --check` đạt. SQL chỉ chạy trong PGlite; chưa áp migration lên Supabase/cloud, chưa UAT bằng tài khoản thật.
+
 ## 2026-11-28 — Tab tồn thành phẩm và phiếu điều chỉnh có audit (KH-03/KH-10)
 
 - Trang `04 · Sản xuất – Lỗi – Hủy` có tab `Tồn thành phẩm`; hiển thị tồn theo ngày và chỉ cho nhập số tồn đúng kèm lý do.

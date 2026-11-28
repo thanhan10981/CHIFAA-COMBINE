@@ -18,6 +18,7 @@ export function finishedStockMessage(lines:FinishedStockCheck[]){
 }
 export function storeProductionError(error:RpcError){
  const message=error.message??'';
+ if(message.includes('finished_goods_stock_adjustments_after_quantity_integer'))return 'Chưa thực hiện: số tồn thành phẩm phải là số nguyên không âm.';
  const adjustmentErrors:Record<string,string>={FINISHED_GOODS_VERSION_CONFLICT:'Ồn thành phẩm vừa thay đổi. Tải lại danh sách trước khi sửa.',FINISHED_GOODS_ADJUSTMENT_BELOW_COMMITTED_STOCK:'Số tồn mới thấp hơn lượng đã cam kết cho giao/bán sau ngày này.',INVALID_FINISHED_GOODS_ADJUSTMENT:'Kiểm tra ngày, số tồn không âm (tối đa 6 chữ số thập phân) và lý do từ 5 ký tự.',PRODUCT_NOT_FOUND:'Món không còn tồn tại.'};
  for(const [code,reason] of Object.entries(adjustmentErrors))if(message.includes(code))return `Chưa thực hiện: ${reason}`;
  if(message.includes('INSUFFICIENT_STOCK'))return inventoryPostError(error);

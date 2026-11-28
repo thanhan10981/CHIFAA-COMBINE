@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {database,asUser,identities} from './database-fixture';
-import {storeProductionLines,storeProductionInputsAreZero} from '../features/operations/store-production-input';
+import {storeProductionLines,storeProductionInputsAreZero,isValidFinishedGoodsQuantity} from '../features/operations/store-production-input';
 import {storeProductionError,type FinishedStockCheck} from '../features/operations/store-production-errors';
 
 test('store production requires explicit actual quantities and reports recipe and input errors separately',()=>{
@@ -31,6 +31,16 @@ test('store production errors explain finished goods, raw materials and unavaila
  assert.match(storeProductionError({message:'FORBIDDEN'}),/thiếu quyền/);
  assert.doesNotMatch(storeProductionError({message:'Failed to fetch'}),/thiếu thành phẩm/);
  assert.match(storeProductionError({message:'INSUFFICIENT_FINISHED_GOODS',details:'invalid json'}),/không đủ/);
+});
+
+test('finished goods stock correction accepts only nonnegative whole quantities',()=>{
+ assert.equal(isValidFinishedGoodsQuantity('0'),true);
+ assert.equal(isValidFinishedGoodsQuantity('76'),true);
+ assert.equal(isValidFinishedGoodsQuantity('0.002'),false);
+ assert.equal(isValidFinishedGoodsQuantity('-1'),false);
+ assert.equal(isValidFinishedGoodsQuantity(''),false);
+ assert.equal(isValidFinishedGoodsQuantity('100000000000000'),false);
+ assert.match(storeProductionError({message:'new row violates check constraint "finished_goods_stock_adjustments_after_quantity_integer"'}),/số nguyên/);
 });
 
 test('store readiness diagnoses exact stock, rejects shared shortages atomically, keeps audit and never consumes stock',async()=>{

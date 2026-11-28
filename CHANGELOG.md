@@ -1,3 +1,8 @@
+## 2026-11-28 - Finished goods corrections accept whole quantities (KH-03/KH-10)
+
+- Stock correction input now accepts nonnegative whole numbers only, shows an inline error for fractional values, and formats the suggested balance without trailing zeroes. PostgreSQL also enforces whole-number `after_quantity` values.
+- Verification: typecheck, lint, production build, full suite (255/255), focused store production/workflow tests (19/19), and `git diff --check` passed. Migration is local and has not been applied to Supabase.
+
 ## 2026-11-28 — Tab tồn thành phẩm và phiếu điều chỉnh có audit (KH-03/KH-10)
 
 - Trang `04 · Sản xuất – Lỗi – Hủy` có tab `Tồn thành phẩm`; hiển thị tồn theo ngày và chỉ cho nhập số tồn đúng kèm lý do.

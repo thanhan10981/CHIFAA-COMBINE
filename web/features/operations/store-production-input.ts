@@ -4,6 +4,11 @@ import {recipeIssues} from './store-production-errors';
 export type ProductionInput={main:string;extra:string;defect:string};
 export type ProductionProduct={id:string;code:string;name:string;recipe_version_id:string|null;recipe_issue?:string|null};
 export const emptyProductionInput:ProductionInput={main:'',extra:'',defect:''};
+export function isValidFinishedGoodsQuantity(value:string){
+ const raw=value.trim();if(!/^\d+$/.test(raw))return false;
+ const quantity=Number(raw);
+ return Number.isSafeInteger(quantity)&&quantity<1e14;
+}
 export function storeProductionInputsAreZero(items:{product_id:string}[],inputs:Record<string,ProductionInput>={}){
  return items.length>0&&items.every(item=>{
   const input=inputs[item.product_id];
